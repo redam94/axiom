@@ -16,3 +16,4 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 |---|---|---|
 | 0001 | [Phase 1a — foundation progress](0001-phase-1a-progress.md) | progress |
 | 0002 | [Decisions taken while building the foundation](0002-foundation-decisions.md) | decision |
+| 0003 | [Where axiom deliberately differs from mmm-framework](0003-deviations-from-parent.md) | deviation |

@@ -449,3 +449,29 @@ def test_prior_from_pool_targets_and_families() -> None:
     logged = r.model_copy(update={"scale": "log"})
     ln2, _ = prior_from_pool(logged, target="mu", family="lognormal")
     assert ln2.hyper == {"mu": r.mu.mean, "sigma": r.mu.sd}
+
+
+def test_pool_accepts_scaled_record_admitted_by_normalize() -> None:
+    """A record that ``normalize`` admitted under a licensed plan is poolable (Phase 9 gap)."""
+    from axiom.meta import Corpus, PoolSpec, StudyRecord, pool_model
+
+    base = dict(quantity="elasticity", read="experiment", family="f")
+    admitted = StudyRecord(
+        study="scaled",
+        contributor="c3",
+        estimate=0.4,
+        se=0.1,
+        unit_scale="per_area",
+        detail={"transfer_status": "downgraded", "transfer_plan_hash": "ab" * 32},
+        **base,
+    )
+    refused = admitted.model_copy(update={"study": "scaled2", "detail": {}})
+    ok = [
+        StudyRecord(study="s1", contributor="c1", estimate=0.3, se=0.1, **base),
+        StudyRecord(study="s2", contributor="c2", estimate=0.5, se=0.1, **base),
+    ]
+    spec = PoolSpec(family="f")
+    out = pool_model(spec, Corpus(records=(*ok, admitted)))
+    assert not isinstance(out, Unsupported), out
+    bad = pool_model(spec, Corpus(records=(*ok, refused)))
+    assert isinstance(bad, Unsupported) and "scaled2" in bad.reason

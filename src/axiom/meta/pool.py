@@ -316,7 +316,14 @@ def _family_records(spec: PoolSpec, corpus: Corpus) -> tuple[StudyRecord, ...] |
             reason=f"corpus {corpus.name!r} has no records in family {spec.family!r}",
             detail={"families": ", ".join(corpus.families())},
         )
-    not_poolable = [r.study for r in records if not r.is_dimensionless]
+    # A scaled record is poolable once ``meta.ingest.normalize`` admitted it under a
+    # licensed TransferPlan (the plan's hash and status are stamped into ``detail``).
+    not_poolable = [
+        r.study
+        for r in records
+        if not r.is_dimensionless
+        and r.detail.get("transfer_status") not in ("identified", "downgraded")
+    ]
     if not_poolable:
         return Unsupported(
             reason="pooling is over dimensionless quantities; run meta.ingest.normalize with a "

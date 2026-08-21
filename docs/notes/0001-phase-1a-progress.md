@@ -381,9 +381,46 @@ under NumPyro. Users fitting Hill surfaces with Laplace should run
 **Deferred:** PyMC backend (1.1, D2); block bootstrap for switchback;
 Säilynoja-style simultaneous ECDF bands (DKW used, conservative).
 
-## Next (Phase 9 — documentation, end-to-end notebooks, 1.0)
+### 2026-08-21 — Phase 9 (documentation, end-to-end notebooks, 1.0) complete
 
-1. Sphinx API reference linking each subpackage's notebook series.
-2. `nbs/end-to-end/` — identify, design, surface, calibrate, meta.
-3. README status, `docs/notes/` one note per deliberate divergence,
-   version `1.0.0` and tag on `main`.
+Delivered: Sphinx reference (`docs/conf.py`, `docs/api/*` — one page per
+subpackage linking its notebook series; plan and notes included; `make
+docs`, CI `docs` job, `-W` clean with a documented suppression for eight
+Markdown-table docstrings); `nbs/end-to-end/01–05` (identify, design,
+surface, calibrate, meta), each a worked decision crossing several
+subpackages; `tests/contracts/test_analysis_roundtrip.py` (charter
+criterion 8: graph, estimand + result, surface fit, design, calibration +
+ledger, meta corpus + pooled estimate saved and reloaded with bit-identical
+numbers and no pickle); `docs/notes/0003-deviations-from-parent.md` (22
+deliberate divergences, plus the charter numbers measured); README and
+CLAUDE.md status; version `1.0.0`.
+
+Gaps the end-to-end notebooks exposed and what was done: `meta.pool`
+refused a scaled record `normalize` had admitted under a licensed plan —
+`pool` now honours the admission stamped in `detail` (test added);
+`central_composite` needs `inscribed=True` on a dose box (shown in
+`nbs/end-to-end/03`); `LinearEstimate` has `n` but no `df` (derived as
+`n − 2` for `robustness_value`); `canonical_analysis` reports a near-flat
+stationary point as a maximum rather than a ridge — recorded for 1.1.
+
+**Charter success criteria at 1.0:** 1 — `import axiom.core` adds ~60 ms
+over its four dependencies; no sampler in `sys.modules` (gate 1); 2 —
+38.5 k lines with docstrings (32.8 k non-blank) against a 30 k target:
+recorded as an overrun, not trimmed; no marketing noun outside `adapters`
+(gate 3); 3 ✓ every captured fixture at tolerance, `_pending` documented;
+4 ✓ gate 7/11; 5 ✓ gate 10; 6 ✓ recovery suites for identify, surface,
+design (A/A, A/B), calibrate, meta, sensitivity; 7 ✓ SBC and coverage
+gates for the surface and pool models; 8 ✓ `test_analysis_roundtrip`;
+9 ✓ `make gates`; 10 ✓ 53 notebooks, gate 12 green for all fifteen
+subpackages.
+
+Final state: 1687 fast tests (+ slow tiers run once at each phase),
+53 notebooks, ruff/black/mypy --strict clean, docs `-W` clean.
+
+## Next (1.1)
+
+PyMC backend (D2); Laplace calibration on Hill surfaces (SBC finding,
+Phase 8); block-bootstrap switchback SE; ridge verdict in
+`canonical_analysis`; `df` on `LinearEstimate`; drop the nominal
+`[privacy]` extra; NUTS path for centered pools; conditional estimands
+beyond one stratifying covariate.
