@@ -82,7 +82,9 @@ from axiom.core.model import (
     ModelSpec,
     constrain,
     free_parameters,
+    likelihood_scale,
     log_density,
+    log_likelihood,
     log_prior,
     unconstrain,
 )
@@ -212,6 +214,8 @@ __all__ = [
     "latex_or_unsupported",
     "load_spec",
     "log_density",
+    "likelihood_scale",
+    "log_likelihood",
     "log_prior",
     "mc_standard_error",
     "missing_capabilities",

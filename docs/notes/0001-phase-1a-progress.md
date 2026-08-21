@@ -314,10 +314,39 @@ dose grids in `constraint_for`; `FitResult` does not carry the constrained
 model (recoverable from `provenance["constrained_model_hash"]` or `attach`).
 Roadmap wording for criterion 1 should say "at the density level".
 
-## Next (Phase 7 — `meta`)
+### 2026-08-21 — Phase 7 (`meta`) complete on `feature/phase-7-meta`
 
-1. `meta/schema.py` (study records), `meta/classical.py` (fixed/random
-   effects, DerSimonian–Laird, REML), `meta/pool.py` (Bayesian pooling
-   through `infer.Backend`), moderators and provenance bias, priors
-   hand-off to `calibrate`, influence diagnostics, privacy.
-2. `nbs/meta/01–04`; gate 12.
+Delivered: `schema` (`StudyRecord`, `Corpus`, the poolable-quantity
+catalogue), `ingest` (`normalize` refusing dimensioned records without a
+licensed `TransferPlan`), `contribute`, `store` (`CorpusStore` over
+`io.ArtifactRegistry`), `classical` (FE, DL/PM/REML, Knapp–Hartung,
+prediction intervals; core-only), `pool` (marginal hierarchical model through
+`infer`, exact-conditional `theta` draws), `moderators`, `bias`
+(`delta_identification`), `priors` (`prior_from_pool` → `core.Prior` +
+`LedgerLine`), `influence` (LOO, Egger, funnel/forest/Baujat data),
+`privacy` + `publish` (k-anonymity, dominance, epsilon ledger, Laplace /
+analytic-Gaussian releases, churn-gated carry-forward); `core.Likelihood.
+scale_expr`, `likelihood_scale`, `ModelSpec.data_columns`; 70 exported
+symbols; `nbs/meta/01–05`; CI core job runs the classical tests
+explicitly; decisions 0002.28–0002.31.
+
+**Phase 7 exit criteria:** 1 ✓ 200 replications: tau² relative bias DL
++0.7 %, PM −1.3 %, REML −1.0 % (bounds 15/10/10 % with references); KH
+coverage 191/200 inside the exact region; shrinkage vs `se²/(se²+tau²)`
+within 0.77 %; 2 ✓ delta 0.276 ± 0.077 for truth 0.4 with 30 % dual-read
+contributors; not identified → posterior sd = 1.005 × prior sd and the
+verdict is `blocked`; 3 ✓ `classical`/`influence` import core only; the
+core CI job runs them; 4 ✓ ledger conserves budget to 1e-12, k−1 cell is
+`Blocked`; 5 ✓ two studies in different units refused by `normalize`,
+admitted with licensed plans; 6 ✓.
+
+**Deferred:** a centered parametrization with free tau is refused
+(`Unverified`) rather than sampled — a NUTS path for it is a 1.1 item; the
+`[privacy]` extra is nominal (scipy is core) and can be dropped in Phase 9.
+
+## Next (Phase 8 — `diagnose`, `build`, `adapters`, `viz`)
+
+1. `diagnose/{sbc,coverage,weak_id,sensitivity,learning,spec_curve,refute,
+   backtest,ppc,residuals,surface_prior}` with the SBC and coverage gates.
+2. `build/` fluent builders; `adapters/marketing.py`; `viz/` behind `[viz]`.
+3. Backend equivalence gate (Laplace vs NumPyro; PyMC is 1.1 per D2).

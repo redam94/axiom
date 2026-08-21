@@ -327,3 +327,55 @@ three-way verdict at explicit, argument-controlled thresholds (|z| < 1
 agrees, < 2 tension, otherwise disagrees). It never alters a fit; a
 disagreement is a reason to revisit the transfer plan, which is why it
 returns the realized result alongside.
+
+## 0002.28 — Pooling is over dimensionless quantities, and the record says so
+
+A `meta.StudyRecord` carries a `Dimension` and a catalogued poolable
+quantity; `normalize` refuses any record that is not dimensionless (or
+whose catalogue quantity is not) unless a *licensed* `estimands.TransferPlan`
+for that study is supplied, in which case the plan's hash, status and
+assumptions are written into the record's detail. Two studies reporting the
+same shape in different units therefore cannot meet in a pool by accident.
+The classical path (`meta.classical`: fixed effect, DerSimonian–Laird,
+Paule–Mandel, REML, Knapp–Hartung, prediction intervals) imports only the
+four core dependencies and runs in the core-only CI job.
+
+## 0002.29 — The Bayesian pool is fit on the marginal, not the funnel
+
+The literal hierarchical tree (`theta_i ~ N(mu, tau)`) is built and
+works with `tau` fixed, but with `tau` free its joint density has no mode —
+Laplace returns `Unverified` rather than a number, and the test pins that
+refusal. The default parametrization therefore integrates `theta` out
+exactly (a per-effect whitening so contributors with several records
+share one effect), fits `(mu, tau, gamma, delta)`, and draws `theta` from
+its exact conditional; shrinkage matches `se²/(se² + tau²)` to under 1 %.
+To express the marginal scale `sqrt(se_i² + tau²)`, `core.Likelihood`
+gained `scale_expr` (exactly one of `scale`/`scale_expr`), resolved
+identically by the numpy and jax densities (gate 9) and laid out by Laplace
+through `ModelSpec.data_columns`; `surface`'s predictive sampler refuses a
+`scale_expr` likelihood by name instead of failing on a key.
+
+## 0002.30 — The provenance bias term is identified within contributor or not at all
+
+`delta` (model read minus experiment read) enters the mean only when at
+least one contributor in the family reports both reads — effects are per
+contributor by default, so a dual read shares `theta` and identifies
+`delta` within contributor. With no dual-read contributor the exchangeability
+of model-only and experiment-only contributors is refused as an
+identification route: `delta_identification` is `blocked` with the reason,
+the `PoolResult` flags `delta.identified = False`, and the posterior sd
+equals the prior sd (asserted at 1.005×). The prior handoff
+(`prior_from_pool`) returns a `core.Prior` and a `LedgerLine` — `meta`
+does not import `calibrate`; the predictive target folds `tau` in.
+
+## 0002.31 — Privacy refuses, it does not clip
+
+`check_cell` returns `Blocked` for a cell below `k` contributors or failing
+the dominance rules; no number is produced. The epsilon ledger is immutable:
+`charge` returns a new ledger or `Blocked`, never a partial charge, and
+`used + remaining == budget` exactly. Releases are clipped-mean statistics
+with the clip bounds, sensitivity, mechanism, noise scale (analytic
+Gaussian per Balle & Wang 2018, or Laplace) and seed on the record;
+`carry_forward` re-uses a release for free only while contributor churn
+(Jaccard distance) stays under the stated threshold. The parent's `spend`
+is `charge` here because `spend` is a banned token.

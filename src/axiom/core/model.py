@@ -28,7 +28,7 @@ from pydantic import Field, model_validator
 from scipy import stats as _st
 
 from axiom.core.dimensions import Dimension, DimensionError
-from axiom.core.expr import Data, Expr, Param, Prior, params
+from axiom.core.expr import Data, Expr, Param, Prior, data_names, params
 from axiom.core.interpret.dimension import dimension
 from axiom.core.interpret.value import value
 from axiom.core.result import NonEmptyStr
@@ -42,6 +42,7 @@ __all__ = [
     "ModelSpec",
     "constrain",
     "free_parameters",
+    "likelihood_scale",
     "log_constraint",
     "log_density",
     "log_likelihood",
@@ -59,17 +60,31 @@ class Likelihood(Spec):
 
     ``scale`` names the scale parameter (``sigma``) for the continuous
     families; ``df`` is the Student-t degrees of freedom (fixed, not inferred).
+
+    ``scale_expr`` is the alternative to ``scale`` for a **known or
+    structured per-observation scale**: an expression over ``Data`` and
+    ``Param`` nodes evaluated alongside the mean — a meta-analysis's
+    ``sqrt(se_i² + tau²)`` with ``se`` a data column and ``tau`` a parameter,
+    or a fixed heteroscedastic weight column. Exactly one of ``scale`` and
+    ``scale_expr`` is set for a continuous family; it must dimension-check
+    like a scale parameter would (the outcome's dimension for ``normal`` and
+    ``student_t``, dimensionless for ``lognormal``).
     """
 
     family: LikelihoodFamily
     scale: str | None = None
+    scale_expr: Expr | None = None
     df: float | None = None
 
     @model_validator(mode="after")
     def _consistent(self) -> Likelihood:
-        if self.family in ("normal", "lognormal", "student_t") and not self.scale:
-            raise ValueError(f"{self.family} likelihood needs a scale parameter name")
-        if self.family == "poisson" and self.scale:
+        if self.scale and self.scale_expr is not None:
+            raise ValueError("a likelihood takes either a scale parameter name or a scale_expr")
+        if self.family in ("normal", "lognormal", "student_t") and not (
+            self.scale or self.scale_expr is not None
+        ):
+            raise ValueError(f"{self.family} likelihood needs a scale parameter name or scale_expr")
+        if self.family == "poisson" and (self.scale or self.scale_expr is not None):
             raise ValueError("poisson likelihood has no scale parameter")
         if self.family == "student_t" and (self.df is None or self.df <= 0):
             raise ValueError("student_t likelihood needs df > 0")
@@ -154,6 +169,18 @@ class ModelSpec(Spec):
                 raise ValueError(f"parameter {p.name!r} is declared inconsistently")
         if self.likelihood.scale and self.likelihood.scale not in declared:
             raise ValueError(f"scale parameter {self.likelihood.scale!r} is not declared")
+        if self.likelihood.scale_expr is not None:
+            for p in params(self.likelihood.scale_expr):
+                if p.name not in declared:
+                    raise ValueError(
+                        f"likelihood scale_expr uses parameter {p.name!r}, which the model "
+                        "does not declare"
+                    )
+                if declared[p.name].dimension != p.dimension or declared[p.name].shape != p.shape:
+                    raise ValueError(
+                        f"likelihood scale_expr uses parameter {p.name!r} with a different "
+                        "dimension or shape than the model declares"
+                    )
         names = [c.name for c in self.constraints]
         if len(set(names)) != len(names):
             raise ValueError(f"constraint names must be distinct: {names}")
@@ -196,19 +223,42 @@ class ModelSpec(Spec):
                 f"model {self.name!r}: mean has dimension {got} but outcome "
                 f"{self.outcome.name!r} is {self.outcome.dimension}"
             )
-        if self.likelihood.scale:
-            scale_dim = declared[self.likelihood.scale].dimension
+        if self.likelihood.scale or self.likelihood.scale_expr is not None:
             expected = (
                 self.outcome.dimension
                 if self.likelihood.family in ("normal", "student_t")
                 else Dimension(exponents={})
             )
+            if self.likelihood.scale:
+                scale_dim = declared[self.likelihood.scale].dimension
+                what = f"scale parameter {self.likelihood.scale!r}"
+            else:
+                assert self.likelihood.scale_expr is not None
+                scale_dim = dimension(self.likelihood.scale_expr)
+                what = "likelihood scale_expr"
             if scale_dim != expected:
                 raise DimensionError(
-                    f"scale parameter {self.likelihood.scale!r} has dimension {scale_dim}; "
+                    f"{what} has dimension {scale_dim}; "
                     f"a {self.likelihood.family} likelihood needs {expected}"
                 )
         return self
+
+    @property
+    def data_columns(self) -> tuple[str, ...]:
+        """Every data column the model reads: mean, outcome, scale_expr, constraints."""
+        out: list[str] = list(data_names(self.mean))
+        for name in (self.outcome.name, *self._scale_columns(), *self._constraint_columns()):
+            if name not in out:
+                out.append(name)
+        return tuple(out)
+
+    def _scale_columns(self) -> tuple[str, ...]:
+        if self.likelihood.scale_expr is None:
+            return ()
+        return data_names(self.likelihood.scale_expr)
+
+    def _constraint_columns(self) -> tuple[str, ...]:
+        return tuple(n for c in self.constraints for n in data_names(c.expr))
 
     def parameter(self, name: str) -> Param:
         for p in self.parameters:
@@ -383,6 +433,19 @@ def log_constraint(
     return float(_st.lognorm.logpdf(constraint.observed, s=constraint.scale, scale=x))
 
 
+def likelihood_scale(
+    model: ModelSpec, data: Mapping[str, npt.ArrayLike], theta: Mapping[str, npt.ArrayLike]
+) -> Array:
+    """The likelihood's scale at constrained values: the named parameter, or ``scale_expr``
+    evaluated on ``data`` and ``theta``. ``ValueError`` for a family without one."""
+    lik = model.likelihood
+    if lik.scale:
+        return np.asarray(theta[lik.scale], dtype=float)
+    if lik.scale_expr is not None:
+        return np.asarray(value(lik.scale_expr, data=data, params=theta), dtype=float)
+    raise ValueError(f"a {lik.family} likelihood has no scale")
+
+
 def log_likelihood(
     model: ModelSpec, data: Mapping[str, npt.ArrayLike], theta: Mapping[str, npt.ArrayLike]
 ) -> float:
@@ -392,14 +455,12 @@ def log_likelihood(
     lik = model.likelihood
     match lik.family:
         case "normal":
-            ll = _st.norm.logpdf(y, loc=mu, scale=np.asarray(theta[lik.scale or ""], dtype=float))
+            ll = _st.norm.logpdf(y, loc=mu, scale=likelihood_scale(model, data, theta))
         case "lognormal":
-            sigma = np.asarray(theta[lik.scale or ""], dtype=float)
-            ll = _st.lognorm.logpdf(y, s=sigma, scale=mu)
+            ll = _st.lognorm.logpdf(y, s=likelihood_scale(model, data, theta), scale=mu)
         case "student_t":
             df = float(lik.df or 0.0)
-            scale = np.asarray(theta[lik.scale or ""], dtype=float)
-            ll = _st.t.logpdf(y, df=df, loc=mu, scale=scale)
+            ll = _st.t.logpdf(y, df=df, loc=mu, scale=likelihood_scale(model, data, theta))
         case "poisson":
             ll = _st.poisson.logpmf(np.round(y), mu)
     total = float(np.sum(ll))

@@ -134,6 +134,11 @@ def _noise(
     draw: int | None = None,
 ) -> Array:
     lik = model.likelihood
+    if lik.scale is None and lik.scale_expr is not None:
+        raise ValueError(
+            "predictive noise needs a named scale parameter; a likelihood with `scale_expr` "
+            "(a data-dependent scale) is not a surface model — evaluate core.likelihood_scale"
+        )
     match lik.family:
         case "normal":
             sigma = np.asarray(theta[lik.scale or ""], dtype=float)
