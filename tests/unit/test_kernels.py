@@ -29,10 +29,18 @@ from axiom.surface.kernels import (
     HillKernel,
     LinearKernel,
     LogisticKernel,
+    PiecewiseLinearKernel,
+    PolynomialKernel,
     PowerKernel,
     ResponseKernel,
+    SplineKernel,
     kernel_from_name,
 )
+
+#: The families whose response is a signed sum over a fixed basis rather than
+#: ``amplitude · saturation``. They are not monotone, not bounded by one amplitude,
+#: and linear in every parameter they declare.
+BASIS = ("polynomial", "spline", "piecewise_linear")
 
 DOSE = Data(name="x", dimension=D.currency)
 T = "tv"
@@ -46,7 +54,25 @@ VALUES: dict[str, dict[str, float]] = {
     "exponential": {"k": 2.0, "beta": 3.0},
     "power": {"k": 2.0, "s": 0.7, "beta": 3.0},
     "linear": {"beta_rate": 0.7},
+    # signed coefficients chosen so each basis family turns over inside GRID
+    "polynomial": {"beta1": 2.0, "beta2": -0.9, "beta3": 0.1},
+    "spline": {"beta1": 1.5, "beta2": -2.5},
+    "piecewise_linear": {"beta1": 1.2, "beta2": -2.0},
 }
+
+
+def _natural_spline_basis(kernel: SplineKernel, x: np.ndarray) -> np.ndarray:
+    """An independent natural-cubic basis: ESL 5.2.1 with the constant dropped."""
+    t = np.asarray(kernel.reduced_knots)
+    last = t.size - 1
+    u = x / kernel.reference_dose
+
+    def d(k: int) -> np.ndarray:
+        left = np.maximum(u - t[k], 0.0) ** 3
+        right = np.maximum(u - t[last], 0.0) ** 3
+        return np.asarray((left - right) / (t[last] - t[k]))
+
+    return np.stack([u, *(d(k) - d(last - 1) for k in range(t.size - 2))], axis=-1)
 
 
 def _theta(name: str, scale: float = 1.0) -> dict[str, float]:
@@ -74,6 +100,19 @@ def _closed_form(name: str, x: np.ndarray) -> np.ndarray:
             return np.asarray(v["beta"] * (x / v["k"]) ** v["s"])
         case "linear":
             return np.asarray(v["beta_rate"] * x)
+        case "polynomial":
+            u = x / PolynomialKernel().reference_dose
+            return np.asarray(sum(v[f"beta{j}"] * u**j for j in (1, 2, 3)))
+        case "spline":
+            coefficients = np.asarray([v[f"beta{j}"] for j in (1, 2)])
+            return np.asarray(_natural_spline_basis(SplineKernel(), x) @ coefficients)
+        case "piecewise_linear":
+            kernel = PiecewiseLinearKernel()
+            u = x / kernel.reference_dose
+            out = v["beta1"] * u
+            for j, t in enumerate(kernel.reduced_knots, start=2):
+                out = out + v[f"beta{j}"] * np.maximum(u - t, 0.0)
+            return np.asarray(out)
     raise AssertionError(name)
 
 
@@ -106,6 +145,9 @@ def test_every_family_is_in_the_registry() -> None:
         ExponentialKernel,
         PowerKernel,
         LinearKernel,
+        PolynomialKernel,
+        SplineKernel,
+        PiecewiseLinearKernel,
     }
 
 
@@ -124,6 +166,11 @@ def test_parameter_names_dimensions_and_roles(name: str) -> None:
             assert p.is_shape
             # power is shipped for diminishing returns: its shape lives on (0, 1)
             assert p.prior.family == ("beta" if name == "power" else "gamma")
+        elif name in BASIS:
+            # a basis coefficient is signed: the family exists to bend back down
+            assert p.prior.family == "normal"
+            assert p.prior.hyper == {"mu": 0.0, "sigma": 1.0}
+            assert p.dimension == D.outcome
         else:
             assert p.prior.family == "halfnormal"
             assert p.dimension in (D.outcome, D.outcome / D.currency)
@@ -197,6 +244,9 @@ def test_saturating_families_are_bounded_by_beta() -> None:
 
 
 def test_monotone_increasing(name: str) -> None:
+    """Every family whose amplitude is an asymptote is monotone. The basis families are not."""
+    if name in BASIS:
+        pytest.skip("basis families are non-monotone by construction")
     kernel = kernel_from_name(name)
     got = value(kernel.response(DOSE, T), data={"x": GRID}, params=_theta(name))
     assert np.all(np.diff(got) > 0)
@@ -206,13 +256,24 @@ def test_unit_invariance_of_shapes(name: str) -> None:
     """Exit criterion 6: rescale dose and scale together, shapes untouched, response unchanged."""
     kernel = kernel_from_name(name)
     factor = 1000.0  # e.g. currency in thousands
-    expr = kernel.response(DOSE, T)
-    base = value(expr, data={"x": GRID}, params=_theta(name))
+    base = value(kernel.response(DOSE, T), data={"x": GRID}, params=_theta(name))
+    if name in BASIS:
+        # the basis families carry their scale in spec fields, not parameters: move the
+        # reference dose and the knots with the unit and the coefficients are unchanged
+        fields = {"reference_dose": kernel.reference_dose * factor}
+        if hasattr(kernel, "knots"):
+            fields["knots"] = tuple(t * factor for t in kernel.knots)
+        rescaled_kernel = kernel.model_copy(update=fields)
+        rescaled = value(
+            rescaled_kernel.response(DOSE, T), data={"x": GRID * factor}, params=_theta(name)
+        )
+        np.testing.assert_allclose(rescaled, base, rtol=1e-10)
+        return
     if name == "linear":
         theta = {f"beta_rate_{T}": VALUES["linear"]["beta_rate"] / factor}
     else:
         theta = _theta(name, scale=factor)
-    rescaled = value(expr, data={"x": GRID * factor}, params=theta)
+    rescaled = value(kernel.response(DOSE, T), data={"x": GRID * factor}, params=theta)
     np.testing.assert_allclose(rescaled, base, rtol=1e-10)
 
 
@@ -238,7 +299,8 @@ def test_response_expression_round_trips(name: str) -> None:
     from axiom.core import Mul
 
     expr = kernel_from_name(name).response(DOSE, T)
-    assert isinstance(expr, Mul)
+    # amplitude x saturation for the classic families; a sum over a basis for the rest
+    assert isinstance(expr, Add if name in BASIS else Mul)
     assert load_spec(expr.to_json()) == expr
 
 
@@ -450,3 +512,202 @@ def test_carryover_gradient_with_s_below_one_and_a_zero_carried_dose() -> None:
     assert float(f(data, z)) == pytest.approx(log_density(model, data, z), abs=1e-8)
     g = jax.grad(lambda zz: f(data, zz))(z)
     assert np.isfinite(float(g[f"lam_{T}"]))
+
+
+# -- basis families ------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("name", BASIS)
+def test_basis_families_turn_over(name: str) -> None:
+    """The point of the whole family: a response that rises and then falls."""
+    kernel = kernel_from_name(name)
+    got = np.asarray(value(kernel.response(DOSE, T), data={"x": GRID}, params=_theta(name)))
+    steps = np.diff(got)
+    assert np.any(steps > 0) and np.any(steps < 0), got
+    assert not kernel.saturating
+
+
+@pytest.mark.parametrize("name", BASIS)
+def test_basis_families_are_linear_in_every_parameter(name: str) -> None:
+    """Every coefficient has the ``amplitude`` role, so ``linearize`` is exact, not local."""
+    kernel = kernel_from_name(name)
+    assert set(kernel.roles.values()) == {"amplitude"}
+    theta = _theta(name)
+    expr = kernel.response(DOSE, T)
+    base = np.asarray(value(expr, data={"x": GRID}, params=theta))
+    # doubling every coefficient doubles the response: it is a linear map of the vector
+    doubled = np.asarray(value(expr, data={"x": GRID}, params={k: 2 * v for k, v in theta.items()}))
+    np.testing.assert_allclose(doubled, 2 * base, rtol=1e-12)
+    # and it is additive over the coefficient vector, one basis function at a time
+    pieces = np.zeros_like(base)
+    for stem in kernel.roles:
+        only = {k: (v if k == f"{stem}_{T}" else 0.0) for k, v in theta.items()}
+        pieces = pieces + np.asarray(value(expr, data={"x": GRID}, params=only))
+    np.testing.assert_allclose(pieces, base, rtol=1e-12)
+
+
+@pytest.mark.parametrize("name", BASIS)
+def test_basis_coefficients_may_be_constrained_positive(name: str) -> None:
+    """A signed prior is the default; a positive one is how you ask for monotone."""
+    default = kernel_from_name(name)
+    for p in default.parameters(T, D.currency, D.outcome):
+        assert p.prior is not None and p.prior.family == "normal"
+    positive = KERNELS[name].model_validate(
+        {"amplitude_prior": Prior(family="halfnormal", hyper={"sigma": 2.0})}
+    )
+    for p in positive.parameters(T, D.currency, D.outcome):
+        assert p.prior is not None and p.prior.family == "halfnormal"
+    with pytest.raises(ValueError, match="amplitude_prior must be one of"):
+        KERNELS[name].model_validate(
+            {"amplitude_prior": Prior(family="uniform", hyper={"low": -1.0, "high": 1.0})}
+        )
+
+
+def test_polynomial_degree_sets_the_coefficient_count() -> None:
+    for degree in (1, 2, 5, 8):
+        kernel = PolynomialKernel(degree=degree)
+        assert kernel.stems == tuple(f"beta{j}" for j in range(1, degree + 1))
+        assert len(kernel.parameters(T, D.currency, D.outcome)) == degree
+    with pytest.raises(ValueError):
+        PolynomialKernel(degree=0)
+    with pytest.raises(ValueError):
+        PolynomialKernel(degree=9)
+
+
+def test_polynomial_degree_one_is_the_linear_kernel() -> None:
+    """A degree-1 polynomial and a linear kernel are one function, parameterized twice."""
+    reference = 4.0
+    poly = PolynomialKernel(reference_dose=reference, degree=1)
+    linear = LinearKernel(reference_dose=reference)
+    got = np.asarray(value(poly.response(DOSE, T), data={"x": GRID}, params={f"beta1_{T}": 3.0}))
+    same = np.asarray(
+        value(
+            linear.response(DOSE, T), data={"x": GRID}, params={f"beta_rate_{T}": 3.0 / reference}
+        )
+    )
+    np.testing.assert_allclose(got, same, rtol=1e-12)
+
+
+def test_natural_spline_is_linear_outside_the_boundary_knots() -> None:
+    """The 'natural' in natural cubic spline: no cubic tail to extrapolate off a cliff."""
+    kernel = SplineKernel(reference_dose=10.0, knots=(2.0, 5.0, 8.0, 11.0))
+    theta = {f"beta{j}_{T}": v for j, v in enumerate([4.0, -30.0, 22.0], start=1)}
+    above = np.asarray(
+        value(
+            kernel.response(DOSE, T), data={"x": np.array([12.0, 14.0, 16.0, 18.0])}, params=theta
+        )
+    )
+    below = np.asarray(
+        value(kernel.response(DOSE, T), data={"x": np.array([0.0, 0.5, 1.0, 1.5])}, params=theta)
+    )
+    np.testing.assert_allclose(np.diff(above, 2), 0.0, atol=1e-9)
+    np.testing.assert_allclose(np.diff(below, 2), 0.0, atol=1e-12)
+    # a cubic polynomial over the same range does not have that property
+    cubic = PolynomialKernel(reference_dose=10.0, degree=3)
+    curved = np.asarray(
+        value(
+            cubic.response(DOSE, T),
+            data={"x": np.array([12.0, 14.0, 16.0, 18.0])},
+            params={f"beta{j}_{T}": v for j, v in enumerate([4.0, -3.0, 2.0], start=1)},
+        )
+    )
+    assert np.max(np.abs(np.diff(curved, 2))) > 1e-3
+
+
+def test_natural_spline_matches_an_independent_basis() -> None:
+    kernel = SplineKernel(reference_dose=8.0, knots=(1.0, 3.0, 5.0, 7.0, 9.0))
+    coefficients = np.array([1.2, -0.7, 0.4, 0.9])
+    theta = {f"beta{j}_{T}": c for j, c in enumerate(coefficients, start=1)}
+    got = np.asarray(value(kernel.response(DOSE, T), data={"x": GRID}, params=theta))
+    want = _natural_spline_basis(kernel, GRID) @ coefficients
+    np.testing.assert_allclose(got, want, rtol=1e-12, atol=1e-12)
+
+
+def test_piecewise_linear_coefficients_are_slope_changes() -> None:
+    """beta1 is the slope in the first segment; each later one is the change at its knot."""
+    kernel = PiecewiseLinearKernel(reference_dose=10.0, knots=(3.0, 7.0))
+    theta = {f"beta1_{T}": 5.0, f"beta2_{T}": -9.0, f"beta3_{T}": 6.0}
+    # the derivative is in outcome per dose, so divide the coefficients by the reference
+    slopes = np.asarray(
+        value(kernel.derivative(DOSE, T), data={"x": np.array([1.0, 5.0, 9.0])}, params=theta)
+    )
+    np.testing.assert_allclose(
+        slopes, np.array([5.0, 5.0 - 9.0, 5.0 - 9.0 + 6.0]) / 10.0, rtol=1e-12
+    )
+    # step(0) = 0, so a derivative read exactly at a knot is the slope arriving into it
+    at_knot = float(
+        np.asarray(value(kernel.derivative(DOSE, T), data={"x": np.array([3.0])}, params=theta))[0]
+    )
+    assert at_knot == pytest.approx(0.5)
+
+
+@pytest.mark.parametrize("cls", [SplineKernel, PiecewiseLinearKernel])
+def test_knots_must_be_increasing_and_positive(cls: type) -> None:
+    with pytest.raises(ValueError, match="strictly increasing and strictly positive"):
+        cls(knots=(0.5, 0.5, 0.9))
+    with pytest.raises(ValueError, match="strictly increasing and strictly positive"):
+        cls(knots=(0.0, 0.5, 0.9))
+    with pytest.raises(ValueError, match="strictly increasing and strictly positive"):
+        cls(knots=(0.9, 0.5, 0.2))
+    with pytest.raises(ValueError, match="must be finite"):
+        cls(knots=(0.2, 0.5, float("inf")))
+
+
+def test_a_spline_needs_three_knots() -> None:
+    with pytest.raises(ValueError, match="need at least 3 knots"):
+        SplineKernel(knots=(0.3, 0.6))
+    assert len(SplineKernel(knots=(0.3, 0.6, 0.9)).stems) == 2
+    with pytest.raises(ValueError, match="need at least 1 knots"):
+        PiecewiseLinearKernel(knots=())
+
+
+@pytest.mark.parametrize("name", sorted(KERNELS))
+def test_saturation_derivative_differentiates_the_saturation(name: str) -> None:
+    """The protocol's new member, checked against central differences for every family."""
+    kernel = kernel_from_name(name)
+    theta = _theta(name)
+    grid = GRID + 0.013  # off any default knot
+    h = 1e-6
+    up = np.asarray(value(kernel.saturation(DOSE, T), data={"x": grid + h}, params=theta))
+    down = np.asarray(value(kernel.saturation(DOSE, T), data={"x": grid - h}, params=theta))
+    got = np.asarray(value(kernel.saturation_derivative(DOSE, T), data={"x": grid}, params=theta))
+    np.testing.assert_allclose(np.broadcast_to(got, up.shape), (up - down) / (2 * h), atol=1e-6)
+    assert dimension(kernel.saturation_derivative(DOSE, T)) == dimensionless() / D.currency
+
+
+@pytest.mark.parametrize("name", sorted(set(KERNELS) - set(BASIS) - {"linear"}))
+def test_derivative_is_the_amplitude_times_the_saturation_derivative(name: str) -> None:
+    """For a single-amplitude family the two are the same tree, so they cannot drift."""
+    from axiom.core import Mul
+
+    kernel = kernel_from_name(name)
+    expr = kernel.derivative(DOSE, T)
+    assert isinstance(expr, Mul)
+    amplitude, rest = expr.factors
+    assert kernel.roles[str(amplitude.name).removesuffix(f"_{T}")] == "amplitude"
+    assert rest == kernel.saturation_derivative(DOSE, T)
+
+
+@jax_only
+@pytest.mark.parametrize("name", BASIS)
+def test_basis_families_agree_between_numpy_and_jax(name: str) -> None:
+    """Gate 9 in miniature: relu and step evaluate identically under both interpreters."""
+    import jax
+
+    from axiom.core import compile_log_density
+
+    jax.config.update("jax_enable_x64", True)
+    kernel = kernel_from_name(name)
+    model = _normal_model(kernel, name)
+    theta = {**_theta(name), "sigma": 0.8}
+    x = np.array([0.0, 0.2, 0.5, 0.75, 1.0, 2.5, 5.0])
+    y = np.asarray(value(kernel.response(DOSE, T), data={"x": x}, params=_theta(name))) + 0.1
+    data = {"x": x, "y": y}
+    z = {k: np.asarray(v) for k, v in unconstrain(model, theta).items()}
+    f = compile_log_density(model)
+    assert float(f(data, z)) == pytest.approx(log_density(model, data, z), abs=1e-10)
+    g = jax.grad(lambda zz: f(data, zz))(z)
+    fd = _central_differences(lambda zz: log_density(model, data, zz), z)
+    for k in z:
+        assert np.isfinite(float(g[k])), k
+        assert float(g[k]) == pytest.approx(fd[k], rel=1e-6, abs=1e-6), k

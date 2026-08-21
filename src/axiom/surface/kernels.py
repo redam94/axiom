@@ -44,7 +44,7 @@ limitation with a strict ``xfail``.
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from fractions import Fraction
 from typing import Annotated, Any, Literal, Protocol, Self, runtime_checkable
 
@@ -69,6 +69,7 @@ from axiom.core import (
 
 __all__ = [
     "AMPLITUDE_PRIOR_FAMILIES",
+    "BASIS_PRIOR_FAMILIES",
     "KERNELS",
     "AnyKernel",
     "ExponentialKernel",
@@ -76,8 +77,11 @@ __all__ = [
     "KernelRole",
     "LinearKernel",
     "LogisticKernel",
+    "PiecewiseLinearKernel",
+    "PolynomialKernel",
     "PowerKernel",
     "ResponseKernel",
+    "SplineKernel",
     "kernel_from_name",
 ]
 
@@ -88,14 +92,27 @@ AMPLITUDE_PRIOR_FAMILIES: frozenset[str] = frozenset({"halfnormal", "lognormal",
 """Prior families with support on R+, the only ones an explicit ``amplitude_prior`` may use."""
 
 
-def _check_amplitude_prior(prior: Prior | None) -> None:
-    """An explicit amplitude prior must be positive-support and fully numeric (D6.2)."""
+BASIS_PRIOR_FAMILIES: frozenset[str] = AMPLITUDE_PRIOR_FAMILIES | frozenset({"normal"})
+"""What a *basis* family's coefficients may use: the positive families, plus ``normal``.
+
+A saturating kernel's amplitude is an asymptote, signed by convention, so its prior
+has positive support. A basis coefficient is not: a polynomial or a spline represents
+a dose-response that *turns over* precisely by letting some coefficients go negative,
+so ``normal`` is their default and is admissible here. Declaring a positive family
+instead is how a caller asks a basis family for a monotone fit.
+"""
+
+
+def _check_amplitude_prior(
+    prior: Prior | None, families: frozenset[str] = AMPLITUDE_PRIOR_FAMILIES
+) -> None:
+    """An explicit amplitude prior must come from ``families`` and be fully numeric (D6.2)."""
     if prior is None:
         return
-    if prior.family not in AMPLITUDE_PRIOR_FAMILIES:
+    if prior.family not in families:
+        why = " (positive support)" if families == AMPLITUDE_PRIOR_FAMILIES else " (signed allowed)"
         raise ValueError(
-            f"amplitude_prior must be one of {sorted(AMPLITUDE_PRIOR_FAMILIES)} "
-            f"(positive support), got {prior.family!r}"
+            f"amplitude_prior must be one of {sorted(families)}{why}, got {prior.family!r}"
         )
     if prior.parents:
         raise ValueError("amplitude_prior cannot reference other parameters")
@@ -113,6 +130,11 @@ class ResponseKernel(Protocol):
     dimension is read off the ``dose`` expression; the outcome dimension
     defaults to ``D.outcome``.
 
+    ``saturation_derivative`` is ``d saturation / d dose`` (dimension
+    ``1 / dose``). It is what an interaction term differentiates, and it is
+    why a family does not have to declare exactly one amplitude in order to
+    take part in one.
+
     For every family with a ``scale`` parameter, ``response == amplitude ·
     saturation`` holds node for node. ``LinearKernel`` is the documented
     exception: it has no scale, its ``saturation`` is the identity shape
@@ -121,6 +143,12 @@ class ResponseKernel(Protocol):
     ``beta_rate`` carrying ``outcome / dose``. Callers that decompose a
     response into amplitude and saturation must branch on ``name ==
     "linear"`` (or on ``"scale" not in roles.values()``).
+
+    The **basis** families — ``polynomial``, ``spline``, ``piecewise_linear``
+    — extend that exception. They declare *several* amplitudes, one per basis
+    function and signed; their ``saturation`` is likewise the identity shape
+    ``dose / reference_dose``; and no single parameter can be factored out of
+    the response. ``roles`` tells them apart: more than one ``"amplitude"``.
     """
 
     @property
@@ -133,6 +161,7 @@ class ResponseKernel(Protocol):
         self, treatment: str, dose_dimension: Dimension, outcome_dimension: Dimension
     ) -> tuple[Param, ...]: ...
     def saturation(self, dose: Expr, treatment: str) -> Expr: ...
+    def saturation_derivative(self, dose: Expr, treatment: str) -> Expr: ...
     def response(
         self, dose: Expr, treatment: str, outcome_dimension: Dimension | None = None
     ) -> Expr: ...
@@ -222,6 +251,63 @@ def _over_k(beta: Param, k: Param, df_du: Expr) -> Div:
     return Div(numerator=Mul(factors=(beta, df_du)), denominator=k)
 
 
+# -- basis families: shared pieces -------------------------------------------------------
+
+
+def _reduced(dose: Expr, reference: float) -> Div:
+    """``u = dose / reference_dose`` — the dimensionless coordinate a basis is built on."""
+    return Div(numerator=dose, denominator=Const(value=float(reference), dimension=dimension(dose)))
+
+
+def _inverse_reference(dose: Expr, reference: float) -> Div:
+    """``du / d dose = 1 / reference_dose``, with dimension ``1 / dose``."""
+    return Div(
+        numerator=_one(), denominator=Const(value=float(reference), dimension=dimension(dose))
+    )
+
+
+def _coefficient_param(
+    stem: str, treatment: str, dim: Dimension, scale: float, prior: Prior | None = None
+) -> Param:
+    """A *signed* basis coefficient: the explicit ``prior`` when set, else ``normal(0, scale)``."""
+    if prior is None:
+        prior = Prior(family="normal", hyper={"mu": 0.0, "sigma": float(scale)})
+    return Param(name=f"{stem}_{treatment}", dimension=dim, prior=prior)
+
+
+def _combine(coefficients: Sequence[Param], basis: Sequence[Expr]) -> Expr:
+    """``Σ_j beta_j · B_j`` — the one shape every basis family's response and derivative take."""
+    terms = tuple(Mul(factors=(c, b)) for c, b in zip(coefficients, basis, strict=True))
+    return terms[0] if len(terms) == 1 else Add(terms=terms)
+
+
+def _hinge(u: Expr, knot: float) -> Apply:
+    """``(u − t)_+``, the truncated-power hinge."""
+    return Apply(fn="relu", arg=Add(terms=(u, _num(-float(knot)))))
+
+
+def _hinge_step(u: Expr, knot: float) -> Apply:
+    """``d (u − t)_+ / du``: ``1`` past the knot, ``0`` before it."""
+    return Apply(fn="step", arg=Add(terms=(u, _num(-float(knot)))))
+
+
+def _check_knots(knots: tuple[float, ...], minimum: int, reference: float) -> None:
+    """Knots are in dose units: strictly increasing, strictly positive, finite."""
+    if len(knots) < minimum:
+        raise ValueError(f"need at least {minimum} knots, got {len(knots)}")
+    previous = 0.0
+    for t in knots:
+        if not math.isfinite(t):
+            raise ValueError(f"knots must be finite, got {knots}")
+        if t <= previous:
+            raise ValueError(
+                f"knots must be strictly increasing and strictly positive, got {knots}"
+            )
+        previous = t
+    if reference <= 0.0:  # pragma: no cover - Field(gt=0) already guarantees it
+        raise ValueError("reference_dose must be positive")
+
+
 # -- families --------------------------------------------------------------------------
 
 
@@ -284,21 +370,22 @@ class HillKernel(Spec):
         _, _, beta = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
         return _scaled(beta, self.saturation(dose, treatment))
 
-    def derivative(
-        self, dose: Expr, treatment: str, outcome_dimension: Dimension | None = None
-    ) -> Expr:
-        """``beta · s · x̃^(s-1) · k̃^s / (c · (k̃^s + x̃^s)^2)``.
-
-        Equal to ``beta · s · u^(s-1) / (k · (1 + u^s)^2)`` with ``u = dose / k``.
-        """
-        k, s, beta = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
+    def saturation_derivative(self, dose: Expr, treatment: str) -> Expr:
+        """``s · x̃^(s-1) · k̃^s / (c · (k̃^s + x̃^s)^2)`` = ``s · u^(s-1) / (k · (1 + u^s)^2)``."""
+        k, s, _ = self.parameters(treatment, dimension(dose), D.outcome)
         c, x_tilde, k_tilde = _tilde(dose, k)
         xs = Pow(base=x_tilde, exponent=s)
         ks = Pow(base=k_tilde, exponent=s)
         x_sm1 = Pow(base=x_tilde, exponent=Add(terms=(s, _num(-1.0))))
-        numerator = Mul(factors=(beta, s, x_sm1, ks))
         denominator = Mul(factors=(c, Pow(base=Add(terms=(ks, xs)), exponent=Fraction(2))))
-        return Div(numerator=numerator, denominator=denominator)
+        return Div(numerator=Mul(factors=(s, x_sm1, ks)), denominator=denominator)
+
+    def derivative(
+        self, dose: Expr, treatment: str, outcome_dimension: Dimension | None = None
+    ) -> Expr:
+        """``beta · s · x̃^(s-1) · k̃^s / (c · (k̃^s + x̃^s)^2)``."""
+        _, _, beta = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
+        return _scaled(beta, self.saturation_derivative(dose, treatment))
 
 
 class LogisticKernel(Spec):
@@ -347,14 +434,19 @@ class LogisticKernel(Spec):
         _, beta = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
         return _scaled(beta, self.saturation(dose, treatment))
 
+    def saturation_derivative(self, dose: Expr, treatment: str) -> Expr:
+        """``2 σ(u) (1 − σ(u)) / k``."""
+        k, _ = self.parameters(treatment, dimension(dose), D.outcome)
+        sig = Apply(fn="sigmoid", arg=_ratio(dose, k))
+        df_du = Mul(factors=(_num(2.0), sig, Add(terms=(_one(), Apply(fn="neg", arg=sig)))))
+        return Div(numerator=df_du, denominator=k)
+
     def derivative(
         self, dose: Expr, treatment: str, outcome_dimension: Dimension | None = None
     ) -> Expr:
         """``beta · 2 σ(u) (1 − σ(u)) / k``."""
-        k, beta = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
-        sig = Apply(fn="sigmoid", arg=_ratio(dose, k))
-        df_du = Mul(factors=(_num(2.0), sig, Add(terms=(_one(), Apply(fn="neg", arg=sig)))))
-        return _over_k(beta, k, df_du)
+        _, beta = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
+        return _scaled(beta, self.saturation_derivative(dose, treatment))
 
 
 class ExponentialKernel(Spec):
@@ -402,13 +494,18 @@ class ExponentialKernel(Spec):
         _, beta = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
         return _scaled(beta, self.saturation(dose, treatment))
 
+    def saturation_derivative(self, dose: Expr, treatment: str) -> Expr:
+        """``exp(−u) / k``."""
+        k, _ = self.parameters(treatment, dimension(dose), D.outcome)
+        df_du = Apply(fn="exp", arg=Apply(fn="neg", arg=_ratio(dose, k)))
+        return Div(numerator=df_du, denominator=k)
+
     def derivative(
         self, dose: Expr, treatment: str, outcome_dimension: Dimension | None = None
     ) -> Expr:
         """``beta · exp(−u) / k``."""
-        k, beta = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
-        df_du = Apply(fn="exp", arg=Apply(fn="neg", arg=_ratio(dose, k)))
-        return _over_k(beta, k, df_du)
+        _, beta = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
+        return _scaled(beta, self.saturation_derivative(dose, treatment))
 
 
 class PowerKernel(Spec):
@@ -473,16 +570,20 @@ class PowerKernel(Spec):
         _, _, beta = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
         return _scaled(beta, self.saturation(dose, treatment))
 
+    def saturation_derivative(self, dose: Expr, treatment: str) -> Expr:
+        """``s · x̃^(s−1) / (k̃^s · c)`` = ``s · u^(s−1) / k``."""
+        k, s, _ = self.parameters(treatment, dimension(dose), D.outcome)
+        c, x_tilde, k_tilde = _tilde(dose, k)
+        x_sm1 = Pow(base=x_tilde, exponent=Add(terms=(s, _num(-1.0))))
+        denominator = Mul(factors=(Pow(base=k_tilde, exponent=s), c))
+        return Div(numerator=Mul(factors=(s, x_sm1)), denominator=denominator)
+
     def derivative(
         self, dose: Expr, treatment: str, outcome_dimension: Dimension | None = None
     ) -> Expr:
-        """``beta · s · x̃^(s−1) / (k̃^s · c)`` = ``beta · s · u^(s−1) / k``."""
-        k, s, beta = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
-        c, x_tilde, k_tilde = _tilde(dose, k)
-        x_sm1 = Pow(base=x_tilde, exponent=Add(terms=(s, _num(-1.0))))
-        numerator = Mul(factors=(beta, s, x_sm1))
-        denominator = Mul(factors=(Pow(base=k_tilde, exponent=s), c))
-        return Div(numerator=numerator, denominator=denominator)
+        """``beta · s · u^(s−1) / k``."""
+        _, _, beta = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
+        return _scaled(beta, self.saturation_derivative(dose, treatment))
 
 
 class LinearKernel(Spec):
@@ -538,6 +639,10 @@ class LinearKernel(Spec):
         (beta_rate,) = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
         return Mul(factors=(beta_rate, dose))
 
+    def saturation_derivative(self, dose: Expr, treatment: str) -> Expr:
+        """``1 / reference_dose`` — the identity shape's constant slope."""
+        return _inverse_reference(dose, self.reference_dose)
+
     def derivative(
         self, dose: Expr, treatment: str, outcome_dimension: Dimension | None = None
     ) -> Expr:
@@ -546,8 +651,347 @@ class LinearKernel(Spec):
         return beta_rate
 
 
+# -- basis families ----------------------------------------------------------------------
+
+
+class PolynomialKernel(Spec):
+    """``response = Σ_{j=1..degree} beta_j · u^j``, ``u = dose / reference_dose``.
+
+    The first family that can bend back down. Every coefficient is signed and
+    the response is **linear in all of them**, so ``linearize`` is exact
+    rather than a local approximation, ``design_matrix`` is the real design
+    matrix, and the alphabet-optimality criteria in ``surface.designs`` mean
+    what they say. There is no constant term: the surface supplies the
+    intercept, and ``response(0) = 0`` like every other family.
+
+    ``reference_dose`` is not a parameter here, it is the coordinate: set it
+    to the **top of the dose range you intend to fit**, so that ``u`` lands in
+    ``[0, 1]`` and the default ``normal(0, amplitude_scale)`` prior means the
+    same thing for every power. Leaving it at 1.0 with doses in the tens
+    makes ``u^3`` four orders of magnitude larger than ``u``, and no single
+    prior scale is then sensible for both.
+
+    Not saturating, and not to be extrapolated: outside the fitted range a
+    polynomial does whatever its leading term says, which for ``degree >= 3``
+    is a lot. ``degree`` is capped at 8 because the powers of ``u`` are badly
+    conditioned long before that; past a cubic, prefer ``SplineKernel``,
+    whose basis is local and whose tails are linear.
+    """
+
+    name: Literal["polynomial"] = "polynomial"
+    reference_dose: float = Field(default=1.0, gt=0)
+    amplitude_scale: float = Field(default=1.0, gt=0)
+    amplitude_prior: Prior | None = None
+    degree: int = Field(default=3, ge=1, le=8)
+
+    @model_validator(mode="after")
+    def _signed_amplitude_prior(self) -> Self:
+        _check_amplitude_prior(self.amplitude_prior, BASIS_PRIOR_FAMILIES)
+        return self
+
+    @property
+    def stems(self) -> tuple[str, ...]:
+        """The coefficient stems, in basis order: ``beta1`` is the linear term."""
+        return tuple(f"beta{j}" for j in range(1, self.degree + 1))
+
+    @property
+    def roles(self) -> dict[str, KernelRole]:
+        return dict.fromkeys(self.stems, "amplitude")
+
+    @property
+    def saturating(self) -> bool:
+        return False
+
+    def parameters(
+        self, treatment: str, dose_dimension: Dimension, outcome_dimension: Dimension
+    ) -> tuple[Param, ...]:
+        return tuple(
+            _coefficient_param(
+                stem, treatment, outcome_dimension, self.amplitude_scale, self.amplitude_prior
+            )
+            for stem in self.stems
+        )
+
+    def basis(self, dose: Expr) -> tuple[Expr, ...]:
+        """``(u, u^2, ..., u^degree)`` — the dimensionless basis the coefficients multiply."""
+        u = _reduced(dose, self.reference_dose)
+        return tuple(
+            u if j == 1 else Pow(base=u, exponent=Fraction(j)) for j in range(1, self.degree + 1)
+        )
+
+    def basis_derivative(self, dose: Expr) -> tuple[Expr, ...]:
+        """``d basis / d dose`` — ``(j · u^(j-1) / reference_dose)_j``."""
+        u = _reduced(dose, self.reference_dose)
+        slope = _inverse_reference(dose, self.reference_dose)
+        out: list[Expr] = []
+        for j in range(1, self.degree + 1):
+            if j == 1:
+                out.append(slope)
+            elif j == 2:
+                out.append(Mul(factors=(_num(2.0), u, slope)))
+            else:
+                out.append(
+                    Mul(factors=(_num(float(j)), Pow(base=u, exponent=Fraction(j - 1)), slope))
+                )
+        return tuple(out)
+
+    def saturation(self, dose: Expr, treatment: str) -> Expr:
+        """``u`` — the identity shape, as for ``LinearKernel``; see the module docstring."""
+        return _reduced(dose, self.reference_dose)
+
+    def saturation_derivative(self, dose: Expr, treatment: str) -> Expr:
+        return _inverse_reference(dose, self.reference_dose)
+
+    def response(
+        self, dose: Expr, treatment: str, outcome_dimension: Dimension | None = None
+    ) -> Expr:
+        betas = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
+        return _combine(betas, self.basis(dose))
+
+    def derivative(
+        self, dose: Expr, treatment: str, outcome_dimension: Dimension | None = None
+    ) -> Expr:
+        """``Σ_j j · beta_j · u^(j-1) / reference_dose``."""
+        betas = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
+        return _combine(betas, self.basis_derivative(dose))
+
+
+class SplineKernel(Spec):
+    """A **natural cubic spline** in ``u = dose / reference_dose``, on fixed knots.
+
+    Cubic between the boundary knots and **linear outside them**, which is
+    what makes it the family to reach for when a dose-response might turn
+    over: it can bend as often as the interior knots allow and still
+    extrapolate like a straight line instead of like a cubic. Coefficients
+    are signed and the response is linear in all of them, so everything said
+    about ``PolynomialKernel`` and ``linearize`` holds here too.
+
+    The basis is the standard reduced one (Hastie, Tibshirani & Friedman,
+    *ESL* 5.2.1) with the constant dropped, since the surface supplies the
+    intercept::
+
+        B_1(u)     = u
+        B_{k+1}(u) = d_k(u) - d_{K-1}(u),          k = 1 .. K-2
+        d_k(u)     = [ (u-t_k)_+^3 - (u-t_K)_+^3 ] / (t_K - t_k)
+
+    for ``K`` knots ``t_1 < ... < t_K``, giving ``K - 1`` coefficients. Every
+    basis function vanishes at ``u = 0`` because the knots are strictly
+    positive, so ``response(0) = 0`` like every other family.
+
+    ``knots`` are in **dose units** — write them where you would place them on
+    a dose axis — and are divided by ``reference_dose`` internally. Three
+    knots are the minimum (two coefficients: a slope and one bend); four to
+    six is the usual range for a dose-response study, and more knots than
+    distinct dose levels is a way to fit noise.
+
+    A truncated-power basis is not the best-conditioned way to write a spline
+    — a B-spline basis is — but it is exact, it is expressible in the node
+    set, and at the handful of knots a dose-finding study supports the
+    conditioning is not the binding constraint. ``surface.check_linearization``
+    and ``design.identifiability_ridge`` will say if it becomes one.
+    """
+
+    name: Literal["spline"] = "spline"
+    reference_dose: float = Field(default=1.0, gt=0)
+    amplitude_scale: float = Field(default=1.0, gt=0)
+    amplitude_prior: Prior | None = None
+    knots: tuple[float, ...] = (0.25, 0.5, 0.75)
+
+    @model_validator(mode="after")
+    def _valid(self) -> Self:
+        _check_amplitude_prior(self.amplitude_prior, BASIS_PRIOR_FAMILIES)
+        _check_knots(self.knots, 3, self.reference_dose)
+        return self
+
+    @property
+    def reduced_knots(self) -> tuple[float, ...]:
+        """The knots on the ``u`` scale: ``knot / reference_dose``."""
+        return tuple(t / self.reference_dose for t in self.knots)
+
+    @property
+    def stems(self) -> tuple[str, ...]:
+        return tuple(f"beta{j}" for j in range(1, len(self.knots)))
+
+    @property
+    def roles(self) -> dict[str, KernelRole]:
+        return dict.fromkeys(self.stems, "amplitude")
+
+    @property
+    def saturating(self) -> bool:
+        return False
+
+    def parameters(
+        self, treatment: str, dose_dimension: Dimension, outcome_dimension: Dimension
+    ) -> tuple[Param, ...]:
+        return tuple(
+            _coefficient_param(
+                stem, treatment, outcome_dimension, self.amplitude_scale, self.amplitude_prior
+            )
+            for stem in self.stems
+        )
+
+    def _d(self, u: Expr, index: int, power: int) -> Expr:
+        """``d_k`` at ``power = 3``, or ``3 · d d_k / du`` at ``power = 2``."""
+        t = self.reduced_knots
+        last = t[-1]
+        scale = last - t[index]
+        left = Pow(base=_hinge(u, t[index]), exponent=Fraction(power))
+        right = Pow(base=_hinge(u, last), exponent=Fraction(power))
+        return Div(
+            numerator=Add(terms=(left, Mul(factors=(_num(-1.0), right)))),
+            denominator=_num(scale),
+        )
+
+    def basis(self, dose: Expr) -> tuple[Expr, ...]:
+        """``(u, B_2, ..., B_{K-1})`` — the natural cubic basis, constant dropped."""
+        u = _reduced(dose, self.reference_dose)
+        out: list[Expr] = [u]
+        penultimate = len(self.knots) - 2
+        for k in range(len(self.knots) - 2):
+            out.append(
+                Add(
+                    terms=(
+                        self._d(u, k, 3),
+                        Mul(factors=(_num(-1.0), self._d(u, penultimate, 3))),
+                    )
+                )
+            )
+        return tuple(out)
+
+    def basis_derivative(self, dose: Expr) -> tuple[Expr, ...]:
+        """``d basis / d dose``; the cubic terms differentiate to ``3 (u-t)_+^2``."""
+        u = _reduced(dose, self.reference_dose)
+        slope = _inverse_reference(dose, self.reference_dose)
+        out: list[Expr] = [slope]
+        penultimate = len(self.knots) - 2
+        for k in range(len(self.knots) - 2):
+            inner = Add(
+                terms=(self._d(u, k, 2), Mul(factors=(_num(-1.0), self._d(u, penultimate, 2))))
+            )
+            out.append(Mul(factors=(_num(3.0), inner, slope)))
+        return tuple(out)
+
+    def saturation(self, dose: Expr, treatment: str) -> Expr:
+        """``u`` — the identity shape; see the module docstring on the basis families."""
+        return _reduced(dose, self.reference_dose)
+
+    def saturation_derivative(self, dose: Expr, treatment: str) -> Expr:
+        return _inverse_reference(dose, self.reference_dose)
+
+    def response(
+        self, dose: Expr, treatment: str, outcome_dimension: Dimension | None = None
+    ) -> Expr:
+        betas = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
+        return _combine(betas, self.basis(dose))
+
+    def derivative(
+        self, dose: Expr, treatment: str, outcome_dimension: Dimension | None = None
+    ) -> Expr:
+        betas = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
+        return _combine(betas, self.basis_derivative(dose))
+
+
+class PiecewiseLinearKernel(Spec):
+    """A **linear spline** in ``u = dose / reference_dose``: a broken stick on fixed knots.
+
+    ``response = beta_1 · u + Σ_{j>=1} beta_{j+1} · (u - t_j)_+``. The first
+    coefficient is the initial slope and each later one is the **change** in
+    slope at its knot, so the fitted parameters read directly as "the response
+    per unit dose was this, and at 20 mg it changed by that" — the least
+    interpretive of the non-monotone families, and the one whose derivative is
+    a step function a titration decision can act on.
+
+    Linear in its coefficients, signed, ``response(0) = 0``, not saturating,
+    and — unlike the polynomial — its extrapolation is the last segment's
+    slope rather than a runaway power. What it gives up is smoothness: the
+    derivative jumps at each knot, and a marginal-effect plot will show it.
+    Prefer ``SplineKernel`` when the underlying response is believed smooth
+    and this one when the interpretation matters more than the curvature.
+    """
+
+    name: Literal["piecewise_linear"] = "piecewise_linear"
+    reference_dose: float = Field(default=1.0, gt=0)
+    amplitude_scale: float = Field(default=1.0, gt=0)
+    amplitude_prior: Prior | None = None
+    knots: tuple[float, ...] = (0.5,)
+
+    @model_validator(mode="after")
+    def _valid(self) -> Self:
+        _check_amplitude_prior(self.amplitude_prior, BASIS_PRIOR_FAMILIES)
+        _check_knots(self.knots, 1, self.reference_dose)
+        return self
+
+    @property
+    def reduced_knots(self) -> tuple[float, ...]:
+        """The knots on the ``u`` scale: ``knot / reference_dose``."""
+        return tuple(t / self.reference_dose for t in self.knots)
+
+    @property
+    def stems(self) -> tuple[str, ...]:
+        """``beta1`` is the initial slope; ``beta{j+1}`` is the slope change at knot ``j``."""
+        return tuple(f"beta{j}" for j in range(1, len(self.knots) + 2))
+
+    @property
+    def roles(self) -> dict[str, KernelRole]:
+        return dict.fromkeys(self.stems, "amplitude")
+
+    @property
+    def saturating(self) -> bool:
+        return False
+
+    def parameters(
+        self, treatment: str, dose_dimension: Dimension, outcome_dimension: Dimension
+    ) -> tuple[Param, ...]:
+        return tuple(
+            _coefficient_param(
+                stem, treatment, outcome_dimension, self.amplitude_scale, self.amplitude_prior
+            )
+            for stem in self.stems
+        )
+
+    def basis(self, dose: Expr) -> tuple[Expr, ...]:
+        """``(u, (u - t_1)_+, ..., (u - t_K)_+)``."""
+        u = _reduced(dose, self.reference_dose)
+        return (u, *(_hinge(u, t) for t in self.reduced_knots))
+
+    def basis_derivative(self, dose: Expr) -> tuple[Expr, ...]:
+        """``(1, step(u - t_1), ..., step(u - t_K)) / reference_dose``."""
+        u = _reduced(dose, self.reference_dose)
+        slope = _inverse_reference(dose, self.reference_dose)
+        return (
+            slope,
+            *(Mul(factors=(_hinge_step(u, t), slope)) for t in self.reduced_knots),
+        )
+
+    def saturation(self, dose: Expr, treatment: str) -> Expr:
+        """``u`` — the identity shape; see the module docstring on the basis families."""
+        return _reduced(dose, self.reference_dose)
+
+    def saturation_derivative(self, dose: Expr, treatment: str) -> Expr:
+        return _inverse_reference(dose, self.reference_dose)
+
+    def response(
+        self, dose: Expr, treatment: str, outcome_dimension: Dimension | None = None
+    ) -> Expr:
+        betas = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
+        return _combine(betas, self.basis(dose))
+
+    def derivative(
+        self, dose: Expr, treatment: str, outcome_dimension: Dimension | None = None
+    ) -> Expr:
+        betas = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
+        return _combine(betas, self.basis_derivative(dose))
+
+
 AnyKernel = Annotated[
-    HillKernel | LogisticKernel | ExponentialKernel | PowerKernel | LinearKernel,
+    HillKernel
+    | LogisticKernel
+    | ExponentialKernel
+    | PowerKernel
+    | LinearKernel
+    | PolynomialKernel
+    | SplineKernel
+    | PiecewiseLinearKernel,
     Field(discriminator="name"),
 ]
 """The shipped families as a discriminated union on ``name``, for embedding in other specs."""
@@ -558,6 +1002,9 @@ KERNELS: dict[str, type[Spec]] = {
     "exponential": ExponentialKernel,
     "power": PowerKernel,
     "linear": LinearKernel,
+    "polynomial": PolynomialKernel,
+    "spline": SplineKernel,
+    "piecewise_linear": PiecewiseLinearKernel,
 }
 """Family name to kernel class. Every entry satisfies ``ResponseKernel``."""
 

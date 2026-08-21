@@ -75,11 +75,13 @@ from axiom.design import (
     MDE,
     AnchoredEffect,
     Assignment,
+    Boundary,
     CalibrationResult,
     CandidateScore,
     ClusterDesign,
     CostPerOutcomeInterval,
     CostPerOutcomePower,
+    CrossingProbabilities,
     DecisionSpec,
     DesignCandidate,
     EconomicInputs,
@@ -93,8 +95,10 @@ from axiom.design import (
     Leaderboard,
     LeaderboardRow,
     LearningPriority,
+    LookSchedule,
     MethodEstimate,
     MethodSpec,
+    OperatingCharacteristics,
     OpportunityCost,
     PowerCurve,
     PowerResult,
@@ -107,20 +111,25 @@ from axiom.design import (
     SensitivityTable,
     SimulatedPower,
     SimulationSpec,
+    StoppingRule,
     StudySummary,
     TreatmentCandidate,
     ValuePerOutcome,
+    alpha_spending,
     anchor_draws,
     cost_per_outcome_interval,
     cost_per_outcome_power,
+    crossing_probabilities,
     eig_monte_carlo,
     evaluate_candidate,
     evoi_gaussian,
     experiment_value,
+    harm_boundary,
     holdout_tradeoff,
     match_clusters,
     mde,
     method_spec,
+    operating_characteristics,
     opportunity_cost,
     perturb,
     power,
@@ -249,7 +258,10 @@ from axiom.surface import (
     LogisticKernel,
     NoCarryover,
     NuisanceSet,
+    PiecewiseLinearKernel,
+    PolynomialKernel,
     PowerKernel,
+    SplineKernel,
     StationaryPoint,
     SurfaceSpec,
     WeibullCarryover,
@@ -954,7 +966,28 @@ def _backtest() -> Backtest:
     )
 
 
+_LOOKS = (0.25, 0.5, 0.75, 1.0)
+
+
+def _stopping_rule() -> StoppingRule:
+    return StoppingRule(
+        name="hyper3_primary",
+        looks=LookSchedule(labels=("week_6", "week_12", "week_18", "week_24"), information=_LOOKS),
+        boundaries=(
+            alpha_spending(0.025, _LOOKS, side="upper", kind="efficacy"),
+            harm_boundary(0.95, _LOOKS, margin=2.0, se_at_full_information=1.5),
+        ),
+    )
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
+    LookSchedule: lambda: LookSchedule(
+        labels=("week_6", "week_12", "week_18", "week_24"), information=_LOOKS
+    ),
+    Boundary: lambda: alpha_spending(0.025, _LOOKS, side="upper", kind="efficacy"),
+    StoppingRule: _stopping_rule,
+    CrossingProbabilities: lambda: crossing_probabilities(_stopping_rule(), 0.0),
+    OperatingCharacteristics: lambda: operating_characteristics(_stopping_rule(), 2.8),
     PowerResult: lambda: power(100, 1.0, 2.0, allocation=0.4),
     MDE: lambda: mde(100, 2.0, power=0.9),
     SampleSize: lambda: sample_size(1.0, 2.0, two_sided=False),
@@ -1255,6 +1288,9 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     ExponentialKernel: lambda: ExponentialKernel(reference_dose=50.0),
     PowerKernel: lambda: PowerKernel(reference_dose=50.0),
     LinearKernel: lambda: LinearKernel(reference_dose=50.0),
+    PolynomialKernel: lambda: PolynomialKernel(reference_dose=50.0, degree=3),
+    SplineKernel: lambda: SplineKernel(reference_dose=50.0, knots=(10.0, 25.0, 40.0)),
+    PiecewiseLinearKernel: lambda: PiecewiseLinearKernel(reference_dose=50.0, knots=(15.0, 35.0)),
     GeometricCarryover: lambda: GeometricCarryover(max_lag=8),
     DelayedCarryover: lambda: DelayedCarryover(max_lag=8),
     WeibullCarryover: lambda: WeibullCarryover(max_lag=8),
