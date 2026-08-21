@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from fractions import Fraction
 
+from axiom.adapters import MarketingRoles
 from axiom.calibrate import (
     Agreement,
     CalibratedSpec,
@@ -130,6 +131,44 @@ from axiom.design import (
     sample_size,
     schedule_with_cooldown,
     time_to_re_experiment,
+)
+from axiom.diagnose import (
+    Backtest,
+    Benchmark,
+    BiasBounds,
+    CoverageResult,
+    EstimandCoverage,
+    EstimandCoverageResult,
+    FitSettings,
+    HorizonScore,
+    LearningReport,
+    OriginFailure,
+    OriginForecast,
+    ParameterCoverage,
+    ParameterLearning,
+    ParameterRanks,
+    PPCResult,
+    PriorPredictive,
+    Refutation,
+    ResidualReport,
+    ResidualTest,
+    RobustnessValue,
+    SBCResult,
+    SBCSpec,
+    SpecCurve,
+    SpecCurveSummary,
+    SpecificationAxis,
+    SpecOption,
+    SpecRow,
+    StatisticCheck,
+    TippingPoint,
+    UnitResiduals,
+    WeakIdReport,
+    benchmark,
+    bias_bounds,
+    rank_uniformity,
+    robustness_value,
+    tipping_point,
 )
 from axiom.estimands import Estimand, EstimandResult, FacetDiff, Level, Quantity, TransferPlan
 from axiom.identify import (
@@ -564,6 +603,355 @@ def _release() -> Release:
     )
     assert isinstance(out, tuple), out
     return out[0]
+
+
+# -- diagnose (Phase 8) --------------------------------------------------------------------------
+
+# Cinelli & Hazlett (2020), Table 1: the Darfur "directly harmed" estimate.
+_DARFUR = (0.0973, 0.0232, 783)
+
+
+def _ranks() -> ParameterRanks:
+    """Sixty ranks cycling through 0..19: exactly uniform, so the check passes."""
+    return rank_uniformity("beta", [i % 20 for i in range(60)], n_ranks=19, alpha=0.05)
+
+
+def _sbc_result() -> SBCResult:
+    ranks = _ranks()
+    return SBCResult(
+        spec=SBCSpec(n_simulations=60, draws=100, rank_draws=19, seed=1, parameters=("beta",)),
+        model_hash="a" * 64,
+        refit_model_hash="a" * 64,
+        alpha_per_parameter=0.05,
+        n_simulations=60,
+        n_fitted=60,
+        n_failed_fits=0,
+        parameters=(ranks,),
+        failed_parameters=(),
+        passed=True,
+    )
+
+
+_REGION_10 = clopper_pearson(10, 0.9, 0.01)
+
+
+def _parameter_coverage(name: str = "beta_a", covered: int = 9) -> ParameterCoverage:
+    return ParameterCoverage(
+        name=name,
+        n=10,
+        covered=covered,
+        mass=0.9,
+        definition="eti",
+        region=_REGION_10,
+        passed=_REGION_10.accepts(covered),
+    )
+
+
+def _coverage_result() -> CoverageResult:
+    rows = (_parameter_coverage("alpha", 10), _parameter_coverage("beta_a", 9))
+    return CoverageResult(
+        n=10,
+        mass=0.9,
+        definition="eti",
+        alpha=0.01,
+        n_fitted=10,
+        n_failed_fits=0,
+        nominal_region=_REGION_10,
+        parameters=rows,
+        failed_parameters=(),
+        passed=True,
+        provenance={"backend": "laplace", "draws": 100},
+    )
+
+
+def _estimand_coverage(covered: int = 9) -> EstimandCoverage:
+    return EstimandCoverage(
+        name="contrast_at_dose",
+        estimand_hash="e" * 64,
+        n=10,
+        covered=covered,
+        mass=0.9,
+        definition="eti",
+        region=_REGION_10,
+        passed=_REGION_10.accepts(covered),
+        true_values=tuple(12.0 + 0.1 * i for i in range(10)),
+    )
+
+
+def _estimand_coverage_result() -> EstimandCoverageResult:
+    row = _estimand_coverage()
+    return EstimandCoverageResult(
+        n=10,
+        mass=0.9,
+        definition="eti",
+        alpha=0.01,
+        n_fitted=10,
+        n_failed_fits=0,
+        nominal_region=_REGION_10,
+        estimands=(row,),
+        failed_estimands=(),
+        passed=True,
+    )
+
+
+def _parameter_learning(name: str = "beta_a", dominated: bool = False) -> ParameterLearning:
+    return ParameterLearning(
+        name=name,
+        prior_mean=0.0,
+        prior_sd=2.0,
+        posterior_mean=1.0 if not dominated else 0.05,
+        posterior_sd=0.2 if not dominated else 1.95,
+        contraction=0.99 if not dominated else 0.05,
+        overlap=0.3 if not dominated else 0.99,
+        shift=0.5 if not dominated else 0.025,
+        prior_dominated=dominated,
+    )
+
+
+def _learning_report() -> LearningReport:
+    return LearningReport(
+        parameters=(_parameter_learning(), _parameter_learning("k_a", dominated=True)),
+        n_prior=4000,
+        n_posterior=400,
+        seed=0,
+        threshold=0.1,
+        prior_dominated=("k_a",),
+        passed=False,
+    )
+
+
+def _statistic_check(name: str = "mean", p: float = 0.4) -> StatisticCheck:
+    two = min(1.0, 2.0 * min(p, 1.0 - p))
+    return StatisticCheck(
+        name=name,
+        observed=1.2,
+        interval=Interval(lower=0.8, upper=1.6, definition="eti", mass=0.9),
+        p_value=p,
+        p_two_sided=two,
+        n=200,
+        alpha=0.05,
+        extreme=two < 0.05,
+    )
+
+
+def _ppc_result() -> PPCResult:
+    checks = (_statistic_check("mean", 0.4), _statistic_check("max", 0.01))
+    return PPCResult(
+        n_draws=200,
+        seed=0,
+        mass=0.9,
+        alpha=0.05,
+        statistics=checks,
+        skipped=("nan_statistic",),
+        extreme_statistics=("max",),
+        provenance={"spec_hash": "a" * 64},
+    )
+
+
+def _refutation() -> Refutation:
+    return Refutation(
+        kind="placebo_treatment",
+        estimand_name="contrast_a",
+        estimand_hash="e" * 64,
+        treatment="a",
+        original=3.2,
+        original_interval=Interval(lower=2.4, upper=4.0, definition="eti", mass=0.9),
+        refuted_mean=0.1,
+        refuted_sd=0.3,
+        refuted_interval=Interval(lower=-0.4, upper=0.6, definition="eti", mass=0.9),
+        refuted_estimates=(0.1,),
+        p_value=0.0,
+        n=200,
+        n_refits=1,
+        n_failed=0,
+        alpha=0.1,
+        rule="share of N = 200 placebo draws at or beyond the original is below alpha",
+        passed=True,
+        seed=0,
+        detail={"placebo_ratio": 0.03125},
+    )
+
+
+def _residual_report() -> ResidualReport:
+    tests = (
+        ResidualTest(name="durbin_watson", statistic=1.9, n=24, note="no p-value"),
+        ResidualTest(name="ljung_box[1]", statistic=0.4, p_value=0.52, n=24, lag=1),
+        ResidualTest(name="shapiro_wilk", statistic=0.97, p_value=0.02, n=24),
+    )
+    return ResidualReport(
+        n_units=3,
+        n_periods=8,
+        n=24,
+        alpha=0.05,
+        residual_sd=0.31,
+        units=tuple(UnitResiduals(unit=f"u{i}", n=8, mean=0.01 * i, sd=0.3) for i in range(3)),
+        tests=tests,
+        skipped=("ljung_box[10]: lag must be below n_periods=8",),
+        flagged=("shapiro_wilk",),
+    )
+
+
+def _spec_axes() -> tuple[SpecificationAxis, ...]:
+    return (
+        SpecificationAxis(
+            name="kernel",
+            options=(
+                SpecOption(label="hill"),
+                SpecOption(label="logistic", spec_update={"kernels": {"a": LogisticKernel()}}),
+            ),
+        ),
+        SpecificationAxis(
+            name="draws",
+            options=(SpecOption(label="few", fit_update={"draws": 50}),),
+        ),
+    )
+
+
+def _spec_row(index: int = 0) -> SpecRow:
+    return SpecRow(
+        index=index,
+        labels={"kernel": "hill", "draws": "few"},
+        spec_hash="s" * 64,
+        spec_name="surface",
+        estimate=1.1,
+        interval=Interval(lower=0.6, upper=1.6, definition="eti", mass=0.9),
+        sd=0.3,
+        n_draws=50,
+        converged=True,
+    )
+
+
+def _spec_curve() -> SpecCurve:
+    failed = SpecRow(
+        index=1,
+        labels={"kernel": "logistic", "draws": "few"},
+        spec_hash="t" * 64,
+        spec_name="surface",
+        failure="backend declined",
+    )
+    return SpecCurve(
+        estimand_name="contrast_a",
+        estimand_hash="e" * 64,
+        base_spec_hash="b" * 64,
+        axes=_spec_axes(),
+        rows=(_spec_row(0), failed),
+        n_total=2,
+        n_dropped=0,
+        max_specs=64,
+        definition="eti",
+        mass=0.9,
+        settings=FitSettings(draws=50),
+        seed=0,
+    )
+
+
+def _prior_predictive() -> PriorPredictive:
+    def summary(mean: float, sd: float) -> Summary:
+        return Summary(
+            mean=mean,
+            median=mean,
+            sd=sd,
+            interval=Interval(
+                lower=mean - 1.6 * sd, upper=mean + 1.6 * sd, definition="eti", mass=0.9
+            ),
+            n=200,
+        )
+
+    return PriorPredictive(
+        spec_hash="a" * 64,
+        panel_hash="p" * 64,
+        n=200,
+        seed=0,
+        n_units=3,
+        n_periods=8,
+        treatments=("a",),
+        outcome_sd=1.4,
+        expected_sign="positive",
+        magnitude_factor=10.0,
+        tolerance=0.2,
+        mass=0.9,
+        response=summary(2.0, 1.5),
+        response_range=Interval(lower=-1.0, upper=5.0, definition="eti", mass=0.9),
+        contribution={"a": summary(1.0, 0.8)},
+        share_wrong_sign={"a": 0.0},
+        share_implausible_magnitude={"a": 0.05},
+        share_flagged=0.05,
+        passed=True,
+    )
+
+
+def _weak_id_report() -> WeakIdReport:
+    return WeakIdReport(
+        parameters=("beta_a", "k_a"),
+        n_draws=400,
+        correlation=((1.0, 0.95), (0.95, 1.0)),
+        condition_number=40.0,
+        rho_threshold=0.9,
+        condition_threshold=1e3,
+        ratio_threshold=0.9,
+        high_pairs=(("beta_a", "k_a", 0.95),),
+        prior_sd={"beta_a": 1.0, "k_a": 2.0},
+        posterior_sd={"beta_a": 0.3, "k_a": 1.9},
+        sd_ratio={"beta_a": 0.3, "k_a": 0.95},
+        unlearned=("k_a",),
+        saturated=(),
+        saturation_share=0.1,
+        saturation_eps=1e-3,
+        resolved_hypers={},
+        passed=False,
+    )
+
+
+_REGION_6 = clopper_pearson(6, 0.9, 0.01)
+
+
+def _horizon_score(step: int = 1) -> HorizonScore:
+    covered = 6 if step == 1 else 5
+    return HorizonScore(
+        step=step,
+        n=6,
+        mae=0.1 * step,
+        rmse=0.12 * step,
+        crps=0.05 * step,
+        coverage=covered / 6,
+        coverage_region=_REGION_6,
+        passed=_REGION_6.accepts(covered),
+        bias=0.01 * step,
+    )
+
+
+def _origin_forecast() -> OriginForecast:
+    return OriginForecast(
+        origin=8,
+        periods=(8.0, 9.0),
+        units=("u0", "u1", "u2"),
+        observed=((1.0, 1.1), (0.9, 1.0), (1.2, 1.3)),
+        mean=((1.0, 1.1), (0.95, 1.05), (1.15, 1.25)),
+        lower=((0.8, 0.9), (0.75, 0.85), (0.95, 1.05)),
+        upper=((1.2, 1.3), (1.15, 1.25), (1.35, 1.45)),
+        converged=True,
+    )
+
+
+def _backtest() -> Backtest:
+    return Backtest(
+        spec_hash="a" * 64,
+        spec_name="surface",
+        panel_hash="p" * 64,
+        origins=(8, 10),
+        horizon=2,
+        n_units=3,
+        mass=0.9,
+        definition="eti",
+        alpha=0.01,
+        scores=(_horizon_score(1), _horizon_score(2)),
+        forecasts=(_origin_forecast(),),
+        failures=(OriginFailure(origin=10, reason="backend declined"),),
+        n_failed_fits=1,
+        backend="laplace",
+        draws=100,
+        seed=0,
+    )
 
 
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
@@ -1010,6 +1398,65 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
         seed=7,
         environment={"python": "3.12"},
     ),
+    MarketingRoles: lambda: MarketingRoles(
+        kpi="revenue",
+        channels=("tv", "search"),
+        geo="region",
+        date="week",
+        impressions=("tv_impressions",),
+        controls=("holiday",),
+        kpi_dimension="currency",
+    ),
+    RobustnessValue: lambda: robustness_value(*_DARFUR, q=1.0, alpha=0.05),
+    BiasBounds: lambda: bias_bounds(*_DARFUR, r2_yz_dx=0.1246, r2_dz_x=0.0092),
+    Benchmark: lambda: benchmark(
+        *_DARFUR, covariate="female", r2_dxj_x=0.00916, r2_yxj_dx=0.11, k_d=1.0, k_y=1.0
+    ),
+    TippingPoint: lambda: tipping_point(
+        [0.8 + 0.01 * i for i in range(41)], 0.5, [0.0, 0.25, 0.5, 0.75], certainty=0.5
+    ),
+    SBCSpec: lambda: SBCSpec(n_simulations=40, draws=100, rank_draws=19, bins=4, seed=1),
+    ParameterRanks: _ranks,
+    SBCResult: _sbc_result,
+    ParameterCoverage: _parameter_coverage,
+    CoverageResult: _coverage_result,
+    EstimandCoverage: _estimand_coverage,
+    EstimandCoverageResult: _estimand_coverage_result,
+    ParameterLearning: _parameter_learning,
+    LearningReport: _learning_report,
+    StatisticCheck: _statistic_check,
+    PPCResult: _ppc_result,
+    Refutation: _refutation,
+    ResidualTest: lambda: ResidualTest(
+        name="ljung_box[1]", statistic=0.4, p_value=0.52, n=24, lag=1
+    ),
+    UnitResiduals: lambda: UnitResiduals(unit="u0", n=8, mean=0.01, sd=0.3),
+    ResidualReport: _residual_report,
+    FitSettings: lambda: FitSettings(backend="laplace", draws=50, tune=50, chains=1),
+    SpecOption: lambda: SpecOption(
+        label="logistic", spec_update={"kernels": {"a": LogisticKernel()}}, fit_update={"draws": 50}
+    ),
+    SpecificationAxis: lambda: _spec_axes()[0],
+    SpecRow: _spec_row,
+    SpecCurveSummary: lambda: SpecCurveSummary(
+        n=2,
+        n_failed=1,
+        n_converged=1,
+        median=1.1,
+        iqr_lower=1.1,
+        iqr_upper=1.1,
+        minimum=1.1,
+        maximum=1.1,
+        share_excluding_zero=1.0,
+        share_positive=1.0,
+    ),
+    SpecCurve: _spec_curve,
+    PriorPredictive: _prior_predictive,
+    WeakIdReport: _weak_id_report,
+    HorizonScore: _horizon_score,
+    OriginForecast: _origin_forecast,
+    OriginFailure: lambda: OriginFailure(origin=10, reason="backend declined"),
+    Backtest: _backtest,
 }
 
 
