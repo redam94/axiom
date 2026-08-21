@@ -11,8 +11,15 @@ import pytest
 
 from axiom.core import D, Posterior, Treatment, clopper_pearson, is_failure
 from axiom.data import Panel
-from axiom.sim import DosePlan, surface_world
-from axiom.surface import GeometricCarryover, HillKernel, fit
+from axiom.sim import DosePlan, arms_world, surface_world
+from axiom.surface import (
+    GeometricCarryover,
+    HillKernel,
+    PiecewiseLinearKernel,
+    PolynomialKernel,
+    SplineKernel,
+    fit,
+)
 
 pytestmark = pytest.mark.recovery
 
@@ -102,3 +109,89 @@ def test_nuts_interval_coverage() -> None:
         hits += int(s.interval.contains(float(np.asarray(world.theta["beta_a"]))))
     region = clopper_pearson(n, 0.9, alpha=0.001)
     assert region.accepts(hits), (hits, region)
+
+
+# -- basis families (note 0005) ------------------------------------------------------------
+
+BASIS_WORLDS = [
+    pytest.param(
+        PolynomialKernel(reference_dose=100.0, amplitude_scale=5.0, degree=3),
+        {"alpha": 1.0, "beta1_a": 9.0, "beta2_a": -16.0, "beta3_a": 8.0},
+        id="polynomial",
+    ),
+    pytest.param(
+        SplineKernel(reference_dose=100.0, amplitude_scale=5.0, knots=(25.0, 50.0, 75.0)),
+        {"alpha": 1.0, "beta1_a": 6.0, "beta2_a": -9.0},
+        id="spline",
+    ),
+    pytest.param(
+        PiecewiseLinearKernel(reference_dose=100.0, amplitude_scale=5.0, knots=(40.0,)),
+        {"alpha": 1.0, "beta1_a": 5.0, "beta2_a": -11.0},
+        id="piecewise_linear",
+    ),
+]
+
+
+@pytest.mark.parametrize(("kernel", "truth"), BASIS_WORLDS)
+def test_basis_families_recover_a_response_that_turns_over(
+    kernel: object, truth: dict[str, float]
+) -> None:
+    """The families exist for non-monotone worlds, so the recovery world is one.
+
+    ``truth`` is stated rather than drawn from the prior centre: the centre of a signed
+    coefficient prior is zero, so ``truth_mode="centre"`` would build a world in which
+    the treatment does nothing and the recovery would be vacuous.
+    """
+    world = arms_world(
+        n_units=400,
+        treatments=("a",),
+        kernels=kernel,  # type: ignore[arg-type]
+        doses={"a": np.linspace(0.0, 100.0, 400)},
+        truth=truth,
+        noise_sd=0.5,
+        seed=3,
+    )
+    response = np.ravel(np.asarray(world.mean))
+    steps = np.diff(response)
+    assert np.any(steps > 0) and np.any(steps < 0), "the recovery world must turn over"
+
+    res = fit(world.spec, world.panel, backend="laplace", draws=800, chains=1, seed=3)
+    post = res.posterior
+    assert isinstance(post, Posterior), post
+    assert res.converged
+    for name in (*truth, "sigma"):
+        s = post.summary(name, definition="hdi", mass=0.9)
+        assert s.interval.contains(float(np.asarray(world.theta[name]))), (name, s)
+
+
+def test_a_saturating_family_cannot_hold_a_reversal() -> None:
+    """The negative control for note 0005: the monotone family misses, and says where.
+
+    The noise is small here on purpose. The point is not that a Hill curve fits a
+    reversing world badly at any noise level — at the noise the other tests use, the
+    misfit is inside the residual and neither family can tell. It is that the misfit goes
+    into ``sigma`` and *stays* there as the data get better, which is what a shape
+    assumption the data reject looks like.
+    """
+    kernel, truth = BASIS_WORLDS[0].values  # type: ignore[misc]
+    world = arms_world(
+        n_units=400,
+        treatments=("a",),
+        kernels=kernel,
+        doses={"a": np.linspace(0.0, 100.0, 400)},
+        truth=truth,
+        noise_sd=0.05,
+        seed=3,
+    )
+    basis = fit(world.spec, world.panel, backend="laplace", draws=400, chains=1, seed=3)
+    wrong = world.spec.model_copy(
+        update={"kernels": {"a": HillKernel(reference_dose=50.0, amplitude_scale=10.0)}}
+    )
+    saturating = fit(wrong, world.panel, backend="laplace", draws=400, chains=1, seed=3)
+    assert isinstance(basis.posterior, Posterior)
+    assert isinstance(saturating.posterior, Posterior)
+    basis_sigma = basis.posterior.summary("sigma").mean
+    wrong_sigma = saturating.posterior.summary("sigma").mean
+    # the basis family recovers the noise it was given; the monotone one cannot
+    assert basis_sigma == pytest.approx(0.05, rel=0.15), basis_sigma
+    assert wrong_sigma > 3 * basis_sigma, (wrong_sigma, basis_sigma)

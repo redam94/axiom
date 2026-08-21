@@ -56,6 +56,12 @@ napoleon_numpy_docstring = True
 #   src/axiom/identify/frontdoor.py:195     enumerated list without blank line
 suppress_warnings = ["docutils"]
 
+# A bare word in a docstring can resolve as a Python cross-reference, so a common
+# noun that also names a documented attribute becomes an *ambiguous* target and
+# fails ``-W`` the moment a second class gains an attribute of that name. This bit
+# ``rule`` when ``design.sequential`` landed. Prefer ``a rule of this kind`` over a
+# bare ``rule`` in prose, or quote it as ``rule``.
+
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable/", None),

@@ -65,7 +65,7 @@ Array = npt.NDArray[np.float64]
 Method = Literal["ols", "2sls", "frontdoor"]
 
 WEAK_INSTRUMENT_F = 10.0
-"""Staiger & Stock (1997) rule of thumb: a first-stage F below 10 is a weak instrument."""
+"""Staiger & Stock (1997): a first-stage F below 10 indicates a weak instrument."""
 
 _PERFECT_FIT_RELATIVE_RSS = 1e-18
 """``rss <= this * tss`` (or ``tss == 0``) is a perfect fit; ``least_squares`` rejects it.

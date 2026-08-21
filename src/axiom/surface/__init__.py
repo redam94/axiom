@@ -55,6 +55,7 @@ from axiom.surface.forward import (
 )
 from axiom.surface.frontier import Frontier, frontier
 from axiom.surface.kernels import (
+    BASIS_PRIOR_FAMILIES,
     KERNELS,
     AnyKernel,
     ExponentialKernel,
@@ -62,8 +63,11 @@ from axiom.surface.kernels import (
     KernelRole,
     LinearKernel,
     LogisticKernel,
+    PiecewiseLinearKernel,
+    PolynomialKernel,
     PowerKernel,
     ResponseKernel,
+    SplineKernel,
     kernel_from_name,
 )
 from axiom.surface.linearize import (
@@ -96,16 +100,15 @@ from axiom.surface.nuisance import (
 from axiom.surface.optimize import Allocation, AllocationMethod, Objective, allocate
 
 __all__ = [
-    "CARRYOVERS",
-    "GRID_VERSION",
-    "KERNELS",
     "Allocation",
     "AllocationMethod",
     "AnyCarryover",
     "AnyKernel",
     "AnyNuisanceTerm",
     "AscentPath",
+    "BASIS_PRIOR_FAMILIES",
     "Bounds",
+    "CARRYOVERS",
     "CarryoverKernel",
     "CarryoverRole",
     "Criterion",
@@ -116,9 +119,11 @@ __all__ = [
     "FitResult",
     "FourierSeasonality",
     "Frontier",
+    "GRID_VERSION",
     "GeometricCarryover",
     "HillKernel",
     "InterceptKind",
+    "KERNELS",
     "KernelRole",
     "LinearKernel",
     "LinearTrend",
@@ -130,8 +135,11 @@ __all__ = [
     "NuisanceTerm",
     "Objective",
     "ParameterRole",
+    "PiecewiseLinearKernel",
+    "PolynomialKernel",
     "PowerKernel",
     "ResponseKernel",
+    "SplineKernel",
     "StationaryPoint",
     "Surface",
     "SurfaceSpec",

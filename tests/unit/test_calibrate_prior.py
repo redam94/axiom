@@ -144,22 +144,31 @@ def test_every_kernel_accepts_amplitude_prior(kernel_cls: type[Any]) -> None:
     prior = Prior(family="lognormal", hyper={"mu": 0.2, "sigma": 0.3})
     kernel = kernel_cls(amplitude_prior=prior)
     params = kernel.parameters("a", D.currency, D.outcome)
-    (amp,) = [p for p in params if kernel.roles[p.name.removesuffix("_a")] == "amplitude"]
-    assert amp.prior == prior
+    amplitudes = [p for p in params if kernel.roles[p.name.removesuffix("_a")] == "amplitude"]
+    # the basis families declare one coefficient per basis function; each takes the prior
+    assert amplitudes and all(p.prior == prior for p in amplitudes)
+    names = {p.name for p in amplitudes}
     default = kernel_cls().parameters("a", D.currency, D.outcome)
-    assert [p.prior for p in default if p.name != amp.name] == [
-        p.prior for p in params if p.name != amp.name
+    assert [p.prior for p in default if p.name not in names] == [
+        p.prior for p in params if p.name not in names
     ]
     assert load_spec(kernel.to_json()) == kernel
     assert kernel.content_hash() != kernel_cls().content_hash()
 
 
 @pytest.mark.parametrize("kernel_cls", list(KERNELS.values()))
-def test_amplitude_prior_must_have_positive_support(kernel_cls: type[Any]) -> None:
-    with pytest.raises(ValueError, match="positive support"):
-        kernel_cls(amplitude_prior=Prior(family="normal", hyper={"mu": 0.0, "sigma": 1.0}))
+def test_amplitude_prior_support_is_checked(kernel_cls: type[Any]) -> None:
+    """Saturating families take positive priors only; a basis family may take a signed one."""
+    signed = Prior(family="normal", hyper={"mu": 0.0, "sigma": 1.0})
+    if set(kernel_cls().roles.values()) == {"amplitude"} and len(kernel_cls().roles) > 1:
+        assert kernel_cls(amplitude_prior=signed).amplitude_prior == signed
+    else:
+        with pytest.raises(ValueError, match="positive support"):
+            kernel_cls(amplitude_prior=signed)
     with pytest.raises(ValueError, match="other parameters"):
         kernel_cls(amplitude_prior=Prior(family="lognormal", hyper={"mu": "m", "sigma": 1.0}))
+    with pytest.raises(ValueError, match="amplitude_prior must be one of"):
+        kernel_cls(amplitude_prior=Prior(family="uniform", hyper={"low": 0.1, "high": 1.0}))
 
 
 def test_default_kernels_unchanged() -> None:

@@ -61,7 +61,19 @@ __all__ = [
     "walk",
 ]
 
-ApplyFn = Literal["exp", "log", "log1p", "expm1", "tanh", "sigmoid", "logit", "softplus", "neg"]
+ApplyFn = Literal[
+    "exp",
+    "log",
+    "log1p",
+    "expm1",
+    "tanh",
+    "sigmoid",
+    "logit",
+    "softplus",
+    "neg",
+    "relu",
+    "step",
+]
 LinkFn = Literal["identity", "log", "logit"]
 
 
@@ -234,7 +246,17 @@ class Pow(Spec):
 
 
 class Apply(Spec):
-    """A transcendental function. Argument and result are dimensionless."""
+    """A scalar function of one argument. Argument and result are dimensionless.
+
+    ``relu`` (``max(x, 0)``) and ``step`` (``1`` where ``x > 0``, else ``0``)
+    are the two non-smooth members, shipped for the truncated-power bases the
+    spline kernels build: ``relu`` raised to a power ``p >= 2`` is
+    ``C^(p-1)``, so a cubic spline's kink is invisible to a gradient, and
+    ``step`` is exactly ``d relu / dx`` away from the origin. Both take the
+    value ``0`` at ``x = 0``, identically under numpy and jax, so a
+    piecewise-linear derivative evaluated *at* a knot reports the slope
+    arriving into it rather than the one leaving.
+    """
 
     node: Literal["apply"] = "apply"
     fn: ApplyFn

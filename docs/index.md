@@ -28,6 +28,13 @@ in reading order:
 
 Each [API page](api/index.md) links its own series.
 
+For what using all of it at once looks like, read the **case study** under
+`nbs/case-studies/hypertension/`: HYPER-3, a sequential dose-finding trial that
+must stop a dose arm early if it is harming people. Six notebooks, one synthetic
+world, from the causal graph to the boundary crossing that stops an arm at the
+first safety review. Its design notes are
+[note 0004](notes/0004-case-study-hypertension.md).
+
 ## Layering
 
 Imports point down only; `tests/contracts/test_layering.py` enforces it.

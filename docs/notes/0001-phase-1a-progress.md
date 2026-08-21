@@ -417,10 +417,36 @@ subpackages.
 Final state: 1687 fast tests (+ slow tiers run once at each phase),
 53 notebooks, ruff/black/mypy --strict clean, docs `-W` clean.
 
+## Post-1.0 — the HYPER-3 case study and `design.sequential`
+
+Written after 1.0 was tagged, on `feature/case-study-hypertension`, in
+answer to "what does using all of this on one real problem look like".
+`nbs/case-studies/hypertension/` is a sequential dose-finding trial in
+hypertension: three doses against the standard of care, three age strata,
+weekly blood-pressure monitoring, and a boundary that stops a dose arm if
+it is harming people. Six notebooks, one shared synthetic world in
+`hyper3.py`, 37 figures, crossing `core` → `data` → `sim` → `identify` →
+`estimands` → `surface` → `design` → `meta` → `viz`.
+
+The case study needed one thing the library did not have, so
+`src/axiom/design/sequential.py` landed with it: group-sequential
+boundaries (Pocock, O'Brien–Fleming, Lan–DeMets spending, and a
+posterior-probability harm rule stated the way a monitoring committee
+states it), exact first-crossing probabilities by numerical integration of
+the canonical joint distribution rather than by simulation, and `monitor`
+for walking a realized path against a rule. 22 public symbols, 45 unit
+tests pinning the published boundary tables and the recursion's
+second-order convergence, gate-4 factories, and `nbs/design/07-sequential`
+for gate 12. Design decisions and the three first-draft claims the numbers
+refused are in note 0004.
+
+Version is left at 1.0.0 on `develop`; the new API is a 1.1.0 item.
+
 ## Next (1.1)
 
 PyMC backend (D2); Laplace calibration on Hill surfaces (SBC finding,
 Phase 8); block-bootstrap switchback SE; ridge verdict in
 `canonical_analysis`; `df` on `LinearEstimate`; drop the nominal
 `[privacy]` extra; NUTS path for centered pools; conditional estimands
-beyond one stratifying covariate.
+beyond one stratifying covariate; stage-wise-ordered estimates for a
+sequential trial stopped at a boundary (note 0004).

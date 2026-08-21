@@ -309,12 +309,19 @@ def combine_measurements(
 
 
 def _amplitude_name(spec: SurfaceSpec, treatment: str) -> str:
+    """The single amplitude the prior route rewrites, or a refusal naming why there isn't one."""
     kernel = spec.kernel_of(treatment)
-    for stem, role in kernel.roles.items():
-        if role == "amplitude":
-            return f"{stem}_{treatment}"
-    raise ValueError(  # pragma: no cover - every shipped kernel declares an amplitude
-        f"kernel {kernel.name!r} declares no amplitude parameter"
+    stems = [stem for stem, role in kernel.roles.items() if role == "amplitude"]
+    if len(stems) == 1:
+        return f"{stems[0]}_{treatment}"
+    if not stems:  # pragma: no cover - every shipped kernel declares an amplitude
+        raise ValueError(f"kernel {kernel.name!r} declares no amplitude parameter")
+    raise ValueError(
+        f"kernel {kernel.name!r} declares {len(stems)} amplitudes ({', '.join(stems)}); the "
+        "prior route rewrites the one amplitude a randomized contrast identifies, and a basis "
+        "family spreads the response over several coefficients with no such single target. "
+        "Use the likelihood route (calibrate.attach) for a basis family: it constrains a "
+        "function of the whole coefficient vector instead."
     )
 
 
