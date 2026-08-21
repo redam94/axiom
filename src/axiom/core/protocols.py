@@ -6,8 +6,10 @@ anything you can ask a counterfactual of. ``Capability`` is the typed
 replacement for the parent's runtime ``inspect`` checks: a producer declares
 what it can do, and a request needing more returns ``Unsupported``.
 
-``SupportsForward`` (needs ``Expr``) and ``SupportsEstimands`` (needs
-``Estimand``) land with the expression tree in Phase 1b.
+``SupportsForward`` is the design layer's dependency: a deterministic
+response surface whose ``forward`` is ``interpret.value`` over ``expr``.
+``linearize`` joins it in Phase 3 with the design matrix; ``SupportsEstimands``
+joins in Phase 4 with realization.
 """
 
 from __future__ import annotations
@@ -21,10 +23,12 @@ import numpy as np
 import numpy.typing as npt
 
 from axiom.core.entities import Intervention, TimeWindow, Treatment
+from axiom.core.expr import Model
 
 __all__ = [
     "Capability",
     "PredictiveDraws",
+    "SupportsForward",
     "SupportsIntervention",
     "SupportsPosterior",
     "missing_capabilities",
@@ -77,6 +81,22 @@ class SupportsIntervention(Protocol):
         self, iv: Intervention, window: TimeWindow | None = None, seed: int | None = None
     ) -> PredictiveDraws: ...
     def capabilities(self) -> frozenset[Capability]: ...
+
+
+@runtime_checkable
+class SupportsForward(Protocol):
+    """A deterministic response surface: ``forward`` == ``interpret.value(expr)``.
+
+    ``dose`` maps data column name to array; ``theta`` maps parameter name to
+    array. Implementations must not reimplement the transform chain — they
+    call the interpreter on ``expr`` (rule 3, "one forward()").
+    """
+
+    @property
+    def expr(self) -> Model: ...
+    def forward(
+        self, dose: Mapping[str, npt.ArrayLike], theta: Mapping[str, npt.ArrayLike]
+    ) -> npt.NDArray[np.float64]: ...
 
 
 def missing_capabilities(
