@@ -38,6 +38,76 @@ The seam, stated once: **the causal/design/calibration layer should depend on a
 posterior, not on a model class.** `axiom.core.protocols` defines that
 dependency in about 120 lines. Everything downstream is written against it.
 
+## Estimands are the transfer key
+
+The loop above only closes if a quantity measured by an experiment and a
+quantity read off a model can be compared. That comparison *is* the product;
+everything else is machinery around it. So `axiom` takes a hard position, and it
+is the second seam in this repo:
+
+**An `Estimand` must be a complete transferability key.** Two estimands denote
+the same quantity if and only if all eight facets match.
+
+| Facet | What it fixes |
+|---|---|
+| `quantity` | the functional — contrast, marginal derivative, ratio, elasticity, area |
+| `intervention` | what is set, to what value, over what support |
+| `outcome` | which outcome, at what aggregation, in what dimension |
+| `population` | the target population, and the covariate distribution defining it |
+| `window` | the time window, and the time basis — per-period rate or cumulative |
+| `level` | the unit of analysis: individual, cluster, or aggregate |
+| `conditioning` | the strata it is conditional on; empty for a marginal quantity |
+| `dimension` | the derived dimension, asserted against the declaration |
+
+Nothing about an estimand may be implicit in the model that produced it. The
+producers differ by construction — one is an experiment, one is a fitted
+surface, one is a pooled literature — so any facet left to convention is a facet
+that silently differs. In the parent repo most of these live in a variable name.
+
+Where facets differ, the difference must be expressible as a finite set of
+named, falsifiable assumptions, or the transfer is blocked:
+
+| Facet differs | Assumption required | Challenged by |
+|---|---|---|
+| `population` | S-admissibility given Z (transportability) | overlap; moderator interaction in `meta` |
+| `window` | dynamics stationary; carryover contained in the window | half-life against window length |
+| `intervention` | the response surface is correct *between* the two dose levels | curvature; the chord-versus-marginal correction |
+| `level` | linear aggregation, or an explicit aggregation model | the Jensen gap |
+| `outcome` | commensurability or surrogate validity | usually not falsifiable; must be asserted |
+| `conditioning` | effect homogeneity across the collapsed strata | interaction test |
+
+Note that the chord-versus-marginal correction already in scope below falls out
+of this table as the `intervention` row. The abstraction subsumes machinery that
+was going to be built anyway rather than sitting beside it.
+
+`Estimand.transfer_to(target)` returns a `TransferPlan` carrying
+`status ∈ {identified, downgraded, blocked}` — deliberately the same vocabulary
+as an identification `Verdict`, because transport *is* an identification
+problem: d-separation on a selection diagram. The answer is derived from a
+graph, not asserted in prose.
+
+### Dimensions are necessary, not sufficient
+
+Every quantity carries a dimension, and dimensional consistency is enforced. It
+buys two things, and the smaller one is catching unit errors.
+
+The larger one is structural. A nonlinear kernel requires a dimensionless
+argument, so a saturation kernel is not `f(x)` but `f(x / k)` with `k` in dose
+units. That forces every kernel to declare which of its parameters are
+**scales** — carrying units, elicited per population — and which are **shapes**,
+dimensionless. That split is the meta-analysis story: shape parameters are the
+Buckingham Pi groups that pool across studies with different currencies, time
+grids, and populations, while scale parameters are local and cross a population
+boundary only with a stated assumption. It is also the differential-equation
+story: `d(state)/dt` has dimension `[state]/T` and every term on the right-hand
+side must match it, which is checkable before anything is sampled.
+
+**The limit, stated so it is not overclaimed:** a passing dimension check is a
+*necessary* condition for transfer and never a sufficient one. Outcome-per-dose
+measured in three cities and outcome-per-dose measured nationally have identical
+dimensions and are different estimands. Dimensions settle the `dimension` row of
+the facet table. The other seven rows are settled by the graph and the ledger.
+
 ## Scope
 
 ### In
@@ -47,7 +117,14 @@ dependency in about 120 lines. Everything downstream is written against it.
   proxy), the honest downgrade when an adjustment variable is unmeasured, and
   linear estimators for the routes the graph says are open.
 - **Declarative estimands.** Named, versioned, content-hashed counterfactual
-  quantities realized from a posterior, with interval definitions attached.
+  quantities realized from a posterior. An estimand names all eight facets that
+  determine whether two quantities are the same quantity, plus its interval
+  definition, and can produce a typed transfer plan against another estimand.
+- **Dimensional typing and model expression.** A declarable base-dimension
+  registry, unit conversion within a dimension, and a model expression tree
+  whose dimensions are verified by abstract interpretation at spec-construction
+  time. Regression, systems of equations, and ODEs are instances of one tree,
+  and `forward()` is one interpreter over it.
 - **Response-surface methodology.** Parametric dose–response families (Hill,
   logistic, exponential, power) with carryover, a Bayesian surface model with
   interaction terms, classical and optimal designs (central-composite,
@@ -58,10 +135,11 @@ dependency in about 120 lines. Everything downstream is written against it.
   synthetic control / TBR / GBR / ghost ads / switchback / DiD, A/A and A/B
   simulation, structural-parameter identification design, opportunity cost and
   net value, Pareto-front design selection, and program sequencing.
-- **Experimental calibration.** Evidence records, the prior route and the
-  in-graph likelihood route, scope transfer between an experiment's population
-  and the model's, chord-versus-marginal corrections, and an assumption ledger
-  that records every one of those steps.
+- **Experimental calibration and transport.** Evidence records, the prior route
+  and the in-graph likelihood route, selection diagrams and transport verdicts,
+  the typed `TransferPlan` between a source and a target estimand,
+  chord-versus-marginal corrections, and an assumption ledger — which is now a
+  typed diff between two estimand specs rather than free text.
 - **Meta-analysis.** Bayesian random-effects pooling with moderators, a
   provenance bias term identified by contributors reporting both a model read
   and an experimental read, evidence-to-prior handoff, and privacy-gated
@@ -104,14 +182,23 @@ The repo is version 1.0 when all of these hold:
 3. Every ported computation reproduces its mmm-framework value to the tolerance
    recorded in `tests/golden/` — or the difference is a documented, deliberate
    correction with a note in `docs/notes/`.
-4. Every estimator in `identify`, `surface`, `design`, `calibrate`, and `meta`
+4. Every `Estimand` populates all eight facets, and for every pair differing in
+   exactly one facet, `transfer_to` returns a plan naming that facet's licensing
+   assumption or `status="blocked"` with a reason. No facet returns a silent pass.
+5. Every declared estimand's expression tree derives to its declared dimension,
+   no nonlinear node takes a dimensioned argument, and every shipped `Equation`
+   balances.
+6. Every estimator in `identify`, `surface`, `design`, `calibrate`, and `meta`
    has a recovery test against `axiom.sim` ground truth.
-5. SBC rank-uniformity and nominal interval coverage pass for the surface model
+7. SBC rank-uniformity and nominal interval coverage pass for the surface model
    and the meta-analysis model.
-6. A complete analysis — graph, estimand, surface fit, design, calibration,
+8. A complete analysis — graph, estimand, surface fit, design, calibration,
    meta contribution — round-trips through `axiom.io.serialize` and reproduces
    its numbers, with no pickle in the path.
-7. The four gates in `make gates` are green in CI on every commit.
+9. The twelve gates in `make gates` are green in CI on every commit.
+10. Every public symbol in every subpackage appears, executed, in that
+    subpackage's notebook series under `nbs/`, and `make notebooks` is green
+    in CI. A subpackage with an undemonstrated API is not complete.
 
 ## What "lighter weight" means here, in numbers
 

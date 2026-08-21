@@ -1,6 +1,6 @@
 [project]
 name = "axiom"
-version = "0.0.0"
+version = "1.0.0"
 description = "Bayesian causal decision science: identification, experimental design and calibration, response-surface methodology, and evidence meta-analysis"
 readme = "README.md"
 license = "LicenseRef-Proprietary"
@@ -69,6 +69,9 @@ dev = [
     "pytest-xdist>=3.8",
     "pytest-cov>=7.0",
     "ipykernel>=7.1",
+    "nbmake>=1.5",
+    "pandas-stubs>=3.0.5.260730",
+    "scipy-stubs>=1.18.0.1",
 ]
 docs = ["sphinx>=8.0", "furo>=2024.8", "myst-parser>=4.0"]
 

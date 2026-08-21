@@ -1,0 +1,415 @@
+from __future__ import annotations
+
+import numpy as np
+import pytest
+from scipy import stats
+
+from axiom.core import (
+    Add,
+    Const,
+    Convolve,
+    D,
+    Data,
+    DimensionError,
+    Div,
+    Gather,
+    Likelihood,
+    ModelSpec,
+    Mul,
+    Param,
+    Pow,
+    Prior,
+    Reduce,
+    Spec,
+    constrain,
+    dimension,
+    dimensionless,
+    free_parameters,
+    jax_available,
+    latex,
+    log_density,
+    log_prior,
+    unconstrain,
+    value,
+)
+
+jax_only = pytest.mark.skipif(not jax_available(), reason="jax not installed")
+
+
+def _panel_model() -> tuple[ModelSpec, dict[str, np.ndarray], dict[str, np.ndarray]]:
+    unit = Data(name="unit", dimension=dimensionless())
+    dose = Data(name="dose", dimension=D.currency)
+    y = Data(name="y", dimension=D.outcome)
+    k = Param(
+        name="k",
+        dimension=D.currency,
+        prior=Prior(family="lognormal", hyper={"mu": float(np.log(50)), "sigma": 0.5}),
+    )
+    s = Param(
+        name="s",
+        dimension=dimensionless(),
+        prior=Prior(family="gamma", hyper={"alpha": 4.0, "beta": 2.0}),
+    )
+    beta = Param(
+        name="beta", dimension=D.outcome, prior=Prior(family="halfnormal", hyper={"sigma": 20.0})
+    )
+    lam = Param(
+        name="lam",
+        dimension=dimensionless(),
+        prior=Prior(family="beta", hyper={"alpha": 2.0, "beta": 2.0}),
+    )
+    a_mean = Param(
+        name="a_mean",
+        dimension=D.outcome,
+        prior=Prior(family="normal", hyper={"mu": 0.0, "sigma": 10.0}),
+    )
+    a_sd = Param(
+        name="a_sd", dimension=D.outcome, prior=Prior(family="halfnormal", hyper={"sigma": 5.0})
+    )
+    alpha = Param(
+        name="alpha",
+        dimension=D.outcome,
+        shape=(3,),
+        prior=Prior(family="normal", hyper={"mu": "a_mean", "sigma": "a_sd"}),
+    )
+    sigma = Param(
+        name="sigma", dimension=D.outcome, prior=Prior(family="halfnormal", hyper={"sigma": 5.0})
+    )
+    theta_ = Param(
+        name="theta",
+        dimension=dimensionless(),
+        prior=Prior(family="uniform", hyper={"low": 0.0, "high": 3.0}),
+    )
+    lags = Const(value=(0.0, 1.0, 2.0, 3.0), dimension=dimensionless())
+    raw = Pow(
+        base=lam,
+        exponent=Mul(
+            factors=(
+                Add(
+                    terms=(
+                        lags,
+                        Mul(factors=(Const(value=-1.0, dimension=dimensionless()), theta_)),
+                    )
+                ),
+            )
+            * 2
+        ),
+    )
+    w = Div(numerator=raw, denominator=Reduce(op="sum", arg=raw))
+    u = Div(numerator=Convolve(signal=dose, kernel=w), denominator=k)
+    hill = Mul(
+        factors=(
+            beta,
+            Div(
+                numerator=Pow(base=u, exponent=s),
+                denominator=Add(
+                    terms=(Const(value=1.0, dimension=dimensionless()), Pow(base=u, exponent=s))
+                ),
+            ),
+        )
+    )
+    mean = Add(terms=(Gather(source=alpha, index=unit), hill))
+    model = ModelSpec(
+        name="panel",
+        mean=mean,
+        outcome=y,
+        likelihood=Likelihood(family="normal", scale="sigma"),
+        parameters=(k, s, beta, lam, theta_, a_mean, a_sd, alpha, sigma),
+    )
+    rng = np.random.default_rng(0)
+    n = 20
+    data = {"unit": rng.integers(0, 3, n), "dose": rng.uniform(0, 150, n)}
+    theta = {
+        "k": 50.0,
+        "s": 2.0,
+        "beta": 10.0,
+        "lam": 0.5,
+        "theta": 1.0,
+        "a_mean": 1.0,
+        "a_sd": 0.5,
+        "alpha": np.array([0.5, 1.0, 1.5]),
+        "sigma": 1.0,
+    }
+    data["y"] = value(mean, data=data, params=theta) + rng.normal(0, 1, n)
+    return model, data, theta
+
+
+def test_new_nodes_dimension_value_latex() -> None:
+    lam = Param(name="lam", dimension=dimensionless())
+    lags = Const(value=(0.0, 1.0, 2.0), dimension=dimensionless())
+    raw = Pow(base=lam, exponent=lags)
+    w = Div(numerator=raw, denominator=Reduce(op="sum", arg=raw))
+    assert (
+        dimension(w).is_dimensionless
+        and lags.is_vector
+        and not Const(value=1.0, dimension=D.time).is_vector
+    )
+    np.testing.assert_allclose(value(w, params={"lam": 0.5}), np.array([1, 0.5, 0.25]) / 1.75)
+    assert "\\sum" in latex(w)
+    alpha = Param(name="alpha", dimension=D.outcome, shape=(2,))
+    g = Gather(source=alpha, index=Data(name="u", dimension=dimensionless()))
+    assert dimension(g) == D.outcome
+    np.testing.assert_allclose(
+        value(g, data={"u": [1, 0, 1]}, params={"alpha": [3.0, 4.0]}), [4, 3, 4]
+    )
+    assert "_{[u]}" in latex(g)
+    with pytest.raises(KeyError, match="index column"):
+        value(g, params={"alpha": [1.0, 2.0]})
+    assert Spec.from_json(g.to_json()) == g
+    with pytest.raises(ValueError):
+        Const(value=(), dimension=D.time)
+    with pytest.raises(ValueError):
+        Const(value=float("inf"), dimension=D.time)
+
+
+def test_prior_validation_and_hierarchy() -> None:
+    with pytest.raises(ValueError, match="takes"):
+        Prior(family="normal", hyper={"mu": 0.0})
+    with pytest.raises(ValueError, match="unexpected"):
+        Prior(family="halfnormal", hyper={"sigma": 1.0, "mu": 0.0})
+    p = Prior(family="normal", hyper={"mu": "m", "sigma": 1.0})
+    assert p.parents == ("m",)
+    with pytest.raises(ValueError):
+        Param(name="a", dimension=D.outcome, shape=(0,))
+
+
+def test_modelspec_closure_checks() -> None:
+    y = Data(name="y", dimension=D.outcome)
+    a = Param(
+        name="a", dimension=D.outcome, prior=Prior(family="normal", hyper={"mu": 0.0, "sigma": 1.0})
+    )
+    sig = Param(
+        name="sigma", dimension=D.outcome, prior=Prior(family="halfnormal", hyper={"sigma": 1.0})
+    )
+    lik = Likelihood(family="normal", scale="sigma")
+    ModelSpec(name="ok", mean=a, outcome=y, likelihood=lik, parameters=(a, sig))
+    with pytest.raises(ValueError, match="not declared"):
+        ModelSpec(name="x", mean=a, outcome=y, likelihood=lik, parameters=(sig,))
+    with pytest.raises(ValueError, match="scale parameter"):
+        ModelSpec(name="x", mean=a, outcome=y, likelihood=lik, parameters=(a,))
+    with pytest.raises(ValueError, match="no prior"):
+        ModelSpec(
+            name="x",
+            mean=a,
+            outcome=y,
+            likelihood=lik,
+            parameters=(a, Param(name="sigma", dimension=D.outcome)),
+        )
+    with pytest.raises(ValueError, match="cycle"):
+        m = Param(
+            name="m",
+            dimension=D.outcome,
+            prior=Prior(family="normal", hyper={"mu": "a2", "sigma": 1.0}),
+        )
+        a2 = Param(
+            name="a2",
+            dimension=D.outcome,
+            prior=Prior(family="normal", hyper={"mu": "m", "sigma": 1.0}),
+        )
+        ModelSpec(name="x", mean=a2, outcome=y, likelihood=lik, parameters=(m, a2, sig))
+    with pytest.raises(DimensionError, match="mean has dimension"):
+        ModelSpec(
+            name="x",
+            mean=Param(name="t", dimension=D.time, prior=a.prior),
+            outcome=y,
+            likelihood=lik,
+            parameters=(Param(name="t", dimension=D.time, prior=a.prior), sig),
+        )
+    with pytest.raises(DimensionError, match="scale parameter"):
+        ModelSpec(
+            name="x",
+            mean=a,
+            outcome=y,
+            likelihood=Likelihood(family="lognormal", scale="sigma"),
+            parameters=(a, sig),
+        )
+    with pytest.raises(ValueError):
+        Likelihood(family="poisson", scale="s")
+    with pytest.raises(ValueError):
+        Likelihood(family="student_t", scale="s")
+    fixed = Param(name="f", dimension=D.outcome, prior=Prior(family="fixed", hyper={"value": 2.0}))
+    m2 = ModelSpec(
+        name="fx", mean=Add(terms=(a, fixed)), outcome=y, likelihood=lik, parameters=(a, fixed, sig)
+    )
+    assert [p.name for p in free_parameters(m2)] == ["a", "sigma"]
+    theta, _ = constrain(m2, {"a": 0.3, "sigma": 0.0})
+    assert theta["f"] == 2.0 and theta["sigma"] == 1.0
+
+
+def test_transforms_round_trip_and_jacobian() -> None:
+    model, data, theta = _panel_model()
+    z = unconstrain(model, theta)
+    back, log_jac = constrain(model, z)
+    for k_, v in theta.items():
+        np.testing.assert_allclose(back[k_], v)
+    # log k + log s + log beta + log(lam(1-lam)) + log(u(1-u)*3) for theta + log a_sd + log sigma
+    expected = (
+        np.log(50)
+        + np.log(2.0)
+        + np.log(10)
+        + np.log(0.5 * 0.5)
+        + np.log((1 / 3) * (2 / 3) * 3)
+        + np.log(0.5)
+        + np.log(1.0)
+    )
+    assert log_jac == pytest.approx(expected)
+
+
+def test_log_prior_matches_scipy_and_density_is_finite() -> None:
+    model, data, theta = _panel_model()
+    lp = log_prior(model, theta)
+    manual = (
+        stats.lognorm.logpdf(50, s=0.5, scale=50)
+        + stats.gamma.logpdf(2.0, a=4, scale=0.5)
+        + stats.halfnorm.logpdf(10, scale=20)
+        + stats.beta.logpdf(0.5, 2, 2)
+        + stats.uniform.logpdf(1.0, 0, 3)
+        + stats.norm.logpdf(1.0, 0, 10)
+        + stats.halfnorm.logpdf(0.5, scale=5)
+        + stats.norm.logpdf([0.5, 1.0, 1.5], 1.0, 0.5).sum()
+        + stats.halfnorm.logpdf(1.0, scale=5)
+    )
+    assert lp == pytest.approx(manual)
+    assert np.isfinite(log_density(model, data, unconstrain(model, theta)))
+
+
+@jax_only
+def test_jax_agrees_with_numpy_on_panel_model() -> None:
+    import jax
+
+    from axiom.core import compile_jax, compile_log_density
+
+    jax.config.update("jax_enable_x64", True)
+    model, data, theta = _panel_model()
+    z = unconstrain(model, theta)
+    np.testing.assert_allclose(
+        np.asarray(compile_jax(model.mean)(data, theta)),
+        value(model.mean, data=data, params=theta),
+        rtol=1e-12,
+    )
+    assert float(compile_log_density(model)(data, z)) == pytest.approx(
+        log_density(model, data, z), abs=1e-8
+    )
+    g = jax.grad(lambda zz: compile_log_density(model)(data, zz))(z)
+    assert all(np.all(np.isfinite(np.asarray(v))) for v in g.values())
+
+
+# -- soft constraints (D6.3) -------------------------------------------------------------
+
+
+def _constrained_model(
+    family: str, observed: float
+) -> tuple[ModelSpec, dict[str, np.ndarray], dict[str, np.ndarray]]:
+    """The panel model plus a constraint on the mean response over the panel."""
+    from axiom.core import Constraint
+
+    model, data, theta = _panel_model()
+    expr = Reduce(op="mean", arg=model.mean)
+    c = Constraint(
+        name="mean_response",
+        expr=expr,
+        family=family,  # type: ignore[arg-type]
+        observed=observed,
+        scale=0.3,
+        detail={"source": "test"},
+    )
+    return (
+        ModelSpec(
+            name=model.name,
+            mean=model.mean,
+            outcome=model.outcome,
+            likelihood=model.likelihood,
+            parameters=model.parameters,
+            constraints=(c,),
+        ),
+        data,
+        theta,
+    )
+
+
+def test_constraint_validation_and_density_terms() -> None:
+    from axiom.core import Constraint, Spec
+
+    model, data, theta = _constrained_model("normal", 5.0)
+    base, _, _ = _panel_model()
+    mu = float(np.mean(value(base.mean, data=data, params=theta)))
+    z = unconstrain(model, theta)
+    assert log_density(model, data, z) == pytest.approx(
+        log_density(base, data, z) + stats.norm.logpdf(5.0, loc=mu, scale=0.3)
+    )
+    logn, _, _ = _constrained_model("lognormal", 5.0)
+    assert log_density(logn, data, z) == pytest.approx(
+        log_density(base, data, z) + stats.lognorm.logpdf(5.0, s=0.3, scale=mu)
+    )
+    # a lognormal constraint at a non-positive value is -inf, not an exception
+    neg = {**theta, "beta": -50.0, "alpha": np.array([-100.0, -100.0, -100.0])}
+    from axiom.core.model import log_likelihood
+
+    assert log_likelihood(logn, data, neg) == -np.inf
+    # round trip and closure
+    assert Spec.from_json(model.to_json()) == model
+    assert model.content_hash() != base.content_hash()
+    with pytest.raises(ValueError, match="does not declare"):
+        ModelSpec(
+            name="x",
+            mean=base.mean,
+            outcome=base.outcome,
+            likelihood=base.likelihood,
+            parameters=base.parameters,
+            constraints=(
+                Constraint(
+                    name="c",
+                    expr=Param(name="ghost", dimension=D.outcome),
+                    family="normal",
+                    observed=1.0,
+                    scale=1.0,
+                ),
+            ),
+        )
+    with pytest.raises(ValueError, match="observed > 0"):
+        Constraint(
+            name="c",
+            expr=Param(name="beta", dimension=D.outcome),
+            family="lognormal",
+            observed=0.0,
+            scale=1.0,
+        )
+    with pytest.raises(ValueError):
+        Constraint(
+            name="c",
+            expr=Param(name="beta", dimension=D.outcome),
+            family="normal",
+            observed=1.0,
+            scale=0.0,
+        )
+    with pytest.raises(DimensionError, match="constraint 'c'"):
+        Constraint(
+            name="c",
+            expr=Add(
+                terms=(
+                    Param(name="beta", dimension=D.outcome),
+                    Param(name="k", dimension=D.currency),
+                )
+            ),
+            family="normal",
+            observed=1.0,
+            scale=1.0,
+        )
+
+
+@jax_only
+@pytest.mark.parametrize("family", ["normal", "lognormal"])
+def test_jax_agrees_with_numpy_on_constrained_model(family: str) -> None:
+    """Gate 9 for a ModelSpec with a soft constraint: numpy and jax densities agree."""
+    import jax
+
+    from axiom.core import compile_log_density
+
+    jax.config.update("jax_enable_x64", True)
+    model, data, theta = _constrained_model(family, 5.0)
+    z = unconstrain(model, theta)
+    assert float(compile_log_density(model)(data, z)) == pytest.approx(
+        log_density(model, data, z), abs=1e-10
+    )
+    g = jax.grad(lambda zz: compile_log_density(model)(data, zz))(z)
+    assert all(np.all(np.isfinite(np.asarray(v))) for v in g.values())

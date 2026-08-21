@@ -17,9 +17,13 @@ Four pillars, one vocabulary:
 
 ## Status
 
-**Pre-implementation.** This repository currently holds the architecture and
-the implementation plan. No algorithms are implemented yet. Start at
-[`docs/plan/00-charter.md`](docs/plan/00-charter.md).
+**1.0.** All fifteen subpackages are implemented, every public symbol is
+demonstrated in an executed notebook under `nbs/`, and the twelve contract
+gates plus the recovery suites are green. Start with the end-to-end
+notebooks in `nbs/end-to-end/`, then the subpackage series; the plan that
+produced the code is in `docs/plan/`, the decisions taken along the way in
+`docs/notes/`. Deferred to 1.1: a PyMC backend, block-bootstrap switchback
+SEs, non-parametric surfaces.
 
 ## Design commitments
 
