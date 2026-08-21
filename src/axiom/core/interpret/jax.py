@@ -37,7 +37,7 @@ from axiom.core.expr import (
     Reduce,
     System,
 )
-from axiom.core.model import ModelSpec, free_parameters, support_of
+from axiom.core.model import Constraint, ModelSpec, free_parameters, support_of
 from axiom.core.result import Unsupported
 
 __all__ = [
@@ -208,14 +208,41 @@ def _log_prior_jax(prior: Prior, x: Any, theta: Mapping[str, Any]) -> Any:
     return jnp.zeros_like(x)  # fixed
 
 
+def _log_constraint_jax(constraint: Constraint, x: Any) -> Any:
+    """The same term as ``core.model.log_constraint``: ``-inf`` for a lognormal at ``x <= 0``."""
+    import jax.numpy as jnp
+    from jax.scipy import stats as jst
+
+    x = jnp.reshape(x, ())
+    obs, s = constraint.observed, constraint.scale
+    if constraint.family == "normal":
+        return jst.norm.logpdf(obs, loc=x, scale=s)
+    # Guarded log: where x <= 0 the density is zero; the where keeps both the value and the
+    # gradient finite on the positive branch (log of a clamped 1.0 on the dead branch).
+    positive = x > 0
+    safe = jnp.where(positive, x, 1.0)
+    lp = (
+        -jnp.log(obs)
+        - jnp.log(s)
+        - 0.5 * jnp.log(2 * jnp.pi)
+        - 0.5 * ((jnp.log(obs) - jnp.log(safe)) / s) ** 2
+    )
+    return jnp.where(positive, lp, -jnp.inf)
+
+
 def compile_log_density(
     model: ModelSpec, *, opaque: JaxOpaqueRegistry | None = None
 ) -> Callable[[Mapping[str, Any], Mapping[str, Any]], Any]:
-    """``f(data, z) -> log posterior`` in unconstrained coordinates, traceable by jax."""
+    """``f(data, z) -> log posterior`` in unconstrained coordinates, traceable by jax.
+
+    Matches ``core.model.log_density`` term for term: priors, the Jacobian,
+    the outcome likelihood, and every soft ``Constraint``.
+    """
     import jax.numpy as jnp
     from jax.scipy import stats as jst
 
     mean = compile(model.mean, opaque=opaque)
+    constraints = tuple((c, compile(c.expr, opaque=opaque)) for c in model.constraints)
     free = free_parameters(model)
     lik = model.likelihood
 
@@ -271,6 +298,9 @@ def compile_log_density(
                 ll = jst.t.logpdf(y, df=float(lik.df or 0.0), loc=mu, scale=theta[lik.scale or ""])
             case "poisson":
                 ll = jst.poisson.logpmf(jnp.round(y), mu)
-        return lp + jnp.sum(ll)
+        out = lp + jnp.sum(ll)
+        for c, fn in constraints:
+            out = out + _log_constraint_jax(c, fn(data, theta))
+        return out
 
     return f

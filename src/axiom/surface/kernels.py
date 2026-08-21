@@ -46,9 +46,9 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping
 from fractions import Fraction
-from typing import Annotated, Any, Literal, Protocol, runtime_checkable
+from typing import Annotated, Any, Literal, Protocol, Self, runtime_checkable
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from axiom.core import (
     Add,
@@ -68,6 +68,7 @@ from axiom.core import (
 )
 
 __all__ = [
+    "AMPLITUDE_PRIOR_FAMILIES",
     "KERNELS",
     "AnyKernel",
     "ExponentialKernel",
@@ -82,6 +83,22 @@ __all__ = [
 
 KernelRole = Literal["scale", "shape", "amplitude"]
 """What a kernel parameter is: a dose-dimensioned scale, a dimensionless shape, or an amplitude."""
+
+AMPLITUDE_PRIOR_FAMILIES: frozenset[str] = frozenset({"halfnormal", "lognormal", "gamma"})
+"""Prior families with support on R+, the only ones an explicit ``amplitude_prior`` may use."""
+
+
+def _check_amplitude_prior(prior: Prior | None) -> None:
+    """An explicit amplitude prior must be positive-support and fully numeric (D6.2)."""
+    if prior is None:
+        return
+    if prior.family not in AMPLITUDE_PRIOR_FAMILIES:
+        raise ValueError(
+            f"amplitude_prior must be one of {sorted(AMPLITUDE_PRIOR_FAMILIES)} "
+            f"(positive support), got {prior.family!r}"
+        )
+    if prior.parents:
+        raise ValueError("amplitude_prior cannot reference other parameters")
 
 
 @runtime_checkable
@@ -166,13 +183,18 @@ def _unit_shape_param(role: str, treatment: str) -> Param:
     )
 
 
-def _amplitude_param(role: str, treatment: str, dim: Dimension, scale: float) -> Param:
-    """A non-negative amplitude: halfnormal with the given scale."""
-    return Param(
-        name=f"{role}_{treatment}",
-        dimension=dim,
-        prior=Prior(family="halfnormal", hyper={"sigma": float(scale)}),
-    )
+def _amplitude_param(
+    role: str, treatment: str, dim: Dimension, scale: float, prior: Prior | None = None
+) -> Param:
+    """A non-negative amplitude: the explicit ``prior`` when set, else halfnormal(``scale``).
+
+    The explicit prior is how ``calibrate`` hands randomized evidence to the
+    surface (the prior route, D6.2): the kernel stays the same family and
+    shape, only the amplitude's prior changes.
+    """
+    if prior is None:
+        prior = Prior(family="halfnormal", hyper={"sigma": float(scale)})
+    return Param(name=f"{role}_{treatment}", dimension=dim, prior=prior)
 
 
 def _ratio(dose: Expr, k: Param) -> Div:
@@ -223,6 +245,12 @@ class HillKernel(Spec):
     name: Literal["hill"] = "hill"
     reference_dose: float = Field(default=1.0, gt=0)
     amplitude_scale: float = Field(default=1.0, gt=0)
+    amplitude_prior: Prior | None = None
+
+    @model_validator(mode="after")
+    def _positive_amplitude_prior(self) -> Self:
+        _check_amplitude_prior(self.amplitude_prior)
+        return self
 
     @property
     def roles(self) -> dict[str, KernelRole]:
@@ -238,7 +266,9 @@ class HillKernel(Spec):
         return (
             _scale_param("k", treatment, dose_dimension, self.reference_dose),
             _shape_param("s", treatment),
-            _amplitude_param("beta", treatment, outcome_dimension, self.amplitude_scale),
+            _amplitude_param(
+                "beta", treatment, outcome_dimension, self.amplitude_scale, self.amplitude_prior
+            ),
         )
 
     def saturation(self, dose: Expr, treatment: str) -> Expr:
@@ -281,6 +311,12 @@ class LogisticKernel(Spec):
     name: Literal["logistic"] = "logistic"
     reference_dose: float = Field(default=1.0, gt=0)
     amplitude_scale: float = Field(default=1.0, gt=0)
+    amplitude_prior: Prior | None = None
+
+    @model_validator(mode="after")
+    def _positive_amplitude_prior(self) -> Self:
+        _check_amplitude_prior(self.amplitude_prior)
+        return self
 
     @property
     def roles(self) -> dict[str, KernelRole]:
@@ -295,7 +331,9 @@ class LogisticKernel(Spec):
     ) -> tuple[Param, ...]:
         return (
             _scale_param("k", treatment, dose_dimension, self.reference_dose),
-            _amplitude_param("beta", treatment, outcome_dimension, self.amplitude_scale),
+            _amplitude_param(
+                "beta", treatment, outcome_dimension, self.amplitude_scale, self.amplitude_prior
+            ),
         )
 
     def saturation(self, dose: Expr, treatment: str) -> Expr:
@@ -328,6 +366,12 @@ class ExponentialKernel(Spec):
     name: Literal["exponential"] = "exponential"
     reference_dose: float = Field(default=1.0, gt=0)
     amplitude_scale: float = Field(default=1.0, gt=0)
+    amplitude_prior: Prior | None = None
+
+    @model_validator(mode="after")
+    def _positive_amplitude_prior(self) -> Self:
+        _check_amplitude_prior(self.amplitude_prior)
+        return self
 
     @property
     def roles(self) -> dict[str, KernelRole]:
@@ -342,7 +386,9 @@ class ExponentialKernel(Spec):
     ) -> tuple[Param, ...]:
         return (
             _scale_param("k", treatment, dose_dimension, self.reference_dose),
-            _amplitude_param("beta", treatment, outcome_dimension, self.amplitude_scale),
+            _amplitude_param(
+                "beta", treatment, outcome_dimension, self.amplitude_scale, self.amplitude_prior
+            ),
         )
 
     def saturation(self, dose: Expr, treatment: str) -> Expr:
@@ -388,6 +434,12 @@ class PowerKernel(Spec):
     name: Literal["power"] = "power"
     reference_dose: float = Field(default=1.0, gt=0)
     amplitude_scale: float = Field(default=1.0, gt=0)
+    amplitude_prior: Prior | None = None
+
+    @model_validator(mode="after")
+    def _positive_amplitude_prior(self) -> Self:
+        _check_amplitude_prior(self.amplitude_prior)
+        return self
 
     @property
     def roles(self) -> dict[str, KernelRole]:
@@ -403,7 +455,9 @@ class PowerKernel(Spec):
         return (
             _scale_param("k", treatment, dose_dimension, self.reference_dose),
             _unit_shape_param("s", treatment),
-            _amplitude_param("beta", treatment, outcome_dimension, self.amplitude_scale),
+            _amplitude_param(
+                "beta", treatment, outcome_dimension, self.amplitude_scale, self.amplitude_prior
+            ),
         )
 
     def saturation(self, dose: Expr, treatment: str) -> Expr:
@@ -446,6 +500,12 @@ class LinearKernel(Spec):
     name: Literal["linear"] = "linear"
     reference_dose: float = Field(default=1.0, gt=0)
     amplitude_scale: float = Field(default=1.0, gt=0)
+    amplitude_prior: Prior | None = None
+
+    @model_validator(mode="after")
+    def _positive_amplitude_prior(self) -> Self:
+        _check_amplitude_prior(self.amplitude_prior)
+        return self
 
     @property
     def roles(self) -> dict[str, KernelRole]:
@@ -464,6 +524,7 @@ class LinearKernel(Spec):
                 treatment,
                 outcome_dimension / dose_dimension,
                 self.amplitude_scale / self.reference_dose,
+                self.amplitude_prior,
             ),
         )
 

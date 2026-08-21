@@ -281,12 +281,43 @@ comparison); parent ports are "by specification" — `../mmm-framework` is
 not on this machine, so the ledger's PORT rows for `planning/*` were
 implemented from the plan and the golden fixture.
 
-## Next (Phase 6 — `calibrate`)
+### 2026-08-21 — Phase 6 (`calibrate`) complete on `feature/phase-6-calibrate`
 
-1. `calibrate/{evidence,prior}.py` — `design_factor`, `mean_sd_to_gamma`,
-   `combine_inverse_variance`, `derive_prior` against the
-   `calibration.*` golden cases.
-2. `calibrate/transfer.py` — scope transfer, chord-vs-marginal, carryover
-   corrected design factors (the parent's notebook-only math).
-3. Conditional (stratified) estimands realized with the transfer machinery.
-4. `nbs/calibrate/`; gate 12.
+Delivered: `evidence` (`Measurement`, `combine_inverse_variance`), `prior`
+(`design_factor`, `mean_sd_to_gamma`, `lognormal_from_moments`,
+`amplitude_prior`, `combine_measurements`, `derive_prior` → `CalibratedSpec`),
+`likelihood` (`lognormal_sigma_from_moments`, `constraint_for`, `attach`,
+`fit_calibrated`), `transfer` (five correction operators + `resolve` →
+`ResolvedTransfer`), `ledger` (`Ledger`, `check_complete`), `check`
+(`agreement`); `core.Constraint` + `ModelSpec.constraints` (numpy and jax
+densities, gate 9 covers it); `amplitude_prior` on every surface kernel;
+`nbs/calibrate/01–04` and a `Constraint` section in `nbs/core/07`;
+decisions 0002.25–0002.27. 31 exported symbols.
+
+**Phase 6 exit criteria:** 1 ✓ with a nuance — on a confounded panel
+(6×40, bias z = +4.5 on the amplitude) both routes move the amplitude
+toward truth and the likelihood route reaches `agrees` (z = −0.78); the
+roadmap's "the prior route does not move the shape" is true of what the
+route *adds to the density* (asserted exactly: the prior change is
+invariant to k/s shifts at 1e-12) but not of the posterior, where the
+tightened amplitude prior makes the likelihood re-explain the confounding
+through k/s. The test asserts the true statement and documents it. 2 ✓
+chord·factor = closed-form derivative at 1e-10; 3 ✓
+`tests/contracts/test_ledger_completeness.py` with a negative control;
+4 ✓ every `calibration.*` fixture at 1e-12 (`design_factor` is the mean of
+per-draw ratios — the only candidate that reproduces the fixture); 5 ✓.
+
+**Deferred:** a single-treatment-at-a-time `derive_prior` (multi-treatment
+design factors need the transfer machinery for cross-treatment scope);
+`marginal` constraints under carryover (typed `Unsupported`); per-unit
+dose grids in `constraint_for`; `FitResult` does not carry the constrained
+model (recoverable from `provenance["constrained_model_hash"]` or `attach`).
+Roadmap wording for criterion 1 should say "at the density level".
+
+## Next (Phase 7 — `meta`)
+
+1. `meta/schema.py` (study records), `meta/classical.py` (fixed/random
+   effects, DerSimonian–Laird, REML), `meta/pool.py` (Bayesian pooling
+   through `infer.Backend`), moderators and provenance bias, priors
+   hand-off to `calibrate`, influence diagnostics, privacy.
+2. `nbs/meta/01–04`; gate 12.

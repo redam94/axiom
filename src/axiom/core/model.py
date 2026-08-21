@@ -7,6 +7,14 @@ saved without pickle — the spec replays.
 This module also provides the sampler-free numpy log density over
 *unconstrained* parameters (``log_density``), with the change-of-variables
 Jacobian, used by ``infer.laplace`` and by the ``value == jax`` gate.
+
+A ``ModelSpec`` may also carry **soft constraints** (``Constraint``, decision
+D6.3): a scalar expression over the model's parameters and data — typically
+an estimand realized at an experiment's doses and reduced over its units and
+periods — with an observed value and a scale. Each adds ``log p(observed |
+expr(theta), scale)`` to the likelihood, which is how ``calibrate`` folds a
+randomized measurement into the graph without a second model. The jax
+interpreter adds the identical term (gate 9).
 """
 
 from __future__ import annotations
@@ -16,27 +24,33 @@ from typing import Any, Literal
 
 import numpy as np
 import numpy.typing as npt
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from scipy import stats as _st
 
 from axiom.core.dimensions import Dimension, DimensionError
 from axiom.core.expr import Data, Expr, Param, Prior, params
 from axiom.core.interpret.dimension import dimension
 from axiom.core.interpret.value import value
+from axiom.core.result import NonEmptyStr
 from axiom.core.spec import Spec
 
 __all__ = [
+    "Constraint",
+    "ConstraintFamily",
     "Likelihood",
     "LikelihoodFamily",
     "ModelSpec",
     "constrain",
     "free_parameters",
+    "log_constraint",
     "log_density",
+    "log_likelihood",
     "log_prior",
     "unconstrain",
 ]
 
 LikelihoodFamily = Literal["normal", "lognormal", "student_t", "poisson"]
+ConstraintFamily = Literal["normal", "lognormal"]
 Array = npt.NDArray[np.float64]
 
 
@@ -62,6 +76,44 @@ class Likelihood(Spec):
         return self
 
 
+class Constraint(Spec):
+    """A soft constraint on a scalar function of the parameters: ``observed ~ p(expr(θ), scale)``.
+
+    ``expr`` is an expression over the model's ``Param`` and ``Data`` nodes
+    whose value is a scalar (an estimand at an experiment's doses, reduced
+    over its units and periods); it must dimension-check and may only use
+    parameters the model declares. ``family="normal"`` contributes
+    ``log N(observed | expr, scale)``; ``family="lognormal"`` contributes
+    ``log LogNormal(observed | log expr, scale)`` — a multiplicative error
+    with ``scale`` on the log scale — and requires ``observed > 0``; where
+    ``expr`` is not positive the term is ``-inf`` (never an exception
+    inside the density). ``detail`` carries provenance: the estimand hash,
+    the measurement source, what the doses were.
+    """
+
+    name: NonEmptyStr
+    expr: Expr
+    family: ConstraintFamily
+    observed: float
+    scale: float = Field(gt=0)
+    detail: dict[str, str] = {}
+
+    @model_validator(mode="after")
+    def _consistent(self) -> Constraint:
+        if not np.isfinite(self.observed) or not np.isfinite(self.scale):
+            raise ValueError(f"constraint {self.name!r}: observed and scale must be finite")
+        if self.family == "lognormal" and self.observed <= 0.0:
+            raise ValueError(
+                f"constraint {self.name!r}: a lognormal constraint needs observed > 0, "
+                f"got {self.observed}"
+            )
+        try:
+            dimension(self.expr)
+        except DimensionError as e:
+            raise DimensionError(f"constraint {self.name!r}: {e}") from e
+        return self
+
+
 class ModelSpec(Spec):
     """Mean expression + outcome column + likelihood + every parameter's prior.
 
@@ -69,7 +121,11 @@ class ModelSpec(Spec):
     any that appear only in the likelihood or as hyperparameters of other
     priors. Construction checks that the set is closed (every referenced
     parameter is declared exactly once, every hyper-reference resolves, no
-    cycles) and that ``mean`` has the outcome's dimension.
+    cycles) and that ``mean`` has the outcome's dimension. ``constraints``
+    are soft constraints whose expressions may only use declared
+    parameters (with the declared dimension and shape); their data columns
+    should be ones the mean already reads, since backends lay out only
+    those.
     """
 
     name: str
@@ -77,6 +133,7 @@ class ModelSpec(Spec):
     outcome: Data
     likelihood: Likelihood
     parameters: tuple[Param, ...]
+    constraints: tuple[Constraint, ...] = ()
 
     @model_validator(mode="after")
     def _closed(self) -> ModelSpec:
@@ -97,6 +154,21 @@ class ModelSpec(Spec):
                 raise ValueError(f"parameter {p.name!r} is declared inconsistently")
         if self.likelihood.scale and self.likelihood.scale not in declared:
             raise ValueError(f"scale parameter {self.likelihood.scale!r} is not declared")
+        names = [c.name for c in self.constraints]
+        if len(set(names)) != len(names):
+            raise ValueError(f"constraint names must be distinct: {names}")
+        for c in self.constraints:
+            for p in params(c.expr):
+                if p.name not in declared:
+                    raise ValueError(
+                        f"constraint {c.name!r} uses parameter {p.name!r}, which the model "
+                        "does not declare"
+                    )
+                if declared[p.name].dimension != p.dimension or declared[p.name].shape != p.shape:
+                    raise ValueError(
+                        f"constraint {c.name!r} uses parameter {p.name!r} with a different "
+                        "dimension or shape than the model declares"
+                    )
         for p in self.parameters:
             if p.prior is None:
                 raise ValueError(f"parameter {p.name!r} has no prior")
@@ -288,9 +360,33 @@ def log_prior(model: ModelSpec, theta: Mapping[str, npt.ArrayLike]) -> float:
     return total
 
 
+def log_constraint(
+    constraint: Constraint, data: Mapping[str, npt.ArrayLike], theta: Mapping[str, npt.ArrayLike]
+) -> float:
+    """``log p(observed | expr(theta), scale)`` for one soft constraint.
+
+    The expression must evaluate to one number (a trailing singleton axis is
+    fine); anything else is a ``ValueError`` — a malformed constraint, not a
+    point of the density. A lognormal constraint at a non-positive value is
+    ``-inf``.
+    """
+    v = np.asarray(value(constraint.expr, data=data, params=theta), dtype=float)
+    if v.size != 1:
+        raise ValueError(
+            f"constraint {constraint.name!r} must evaluate to a scalar; got shape {v.shape}"
+        )
+    x = float(v.reshape(-1)[0])
+    if constraint.family == "normal":
+        return float(_st.norm.logpdf(constraint.observed, loc=x, scale=constraint.scale))
+    if not (x > 0.0):
+        return float("-inf")
+    return float(_st.lognorm.logpdf(constraint.observed, s=constraint.scale, scale=x))
+
+
 def log_likelihood(
     model: ModelSpec, data: Mapping[str, npt.ArrayLike], theta: Mapping[str, npt.ArrayLike]
 ) -> float:
+    """Outcome log-likelihood at constrained values, plus every soft constraint's term."""
     y = np.asarray(data[model.outcome.name], dtype=float)
     mu = value(model.mean, data=data, params=theta)
     lik = model.likelihood
@@ -306,7 +402,10 @@ def log_likelihood(
             ll = _st.t.logpdf(y, df=df, loc=mu, scale=scale)
         case "poisson":
             ll = _st.poisson.logpmf(np.round(y), mu)
-    return float(np.sum(ll))
+    total = float(np.sum(ll))
+    for c in model.constraints:
+        total += log_constraint(c, data, theta)
+    return total
 
 
 def log_density(

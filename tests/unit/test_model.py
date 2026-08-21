@@ -292,3 +292,124 @@ def test_jax_agrees_with_numpy_on_panel_model() -> None:
     )
     g = jax.grad(lambda zz: compile_log_density(model)(data, zz))(z)
     assert all(np.all(np.isfinite(np.asarray(v))) for v in g.values())
+
+
+# -- soft constraints (D6.3) -------------------------------------------------------------
+
+
+def _constrained_model(
+    family: str, observed: float
+) -> tuple[ModelSpec, dict[str, np.ndarray], dict[str, np.ndarray]]:
+    """The panel model plus a constraint on the mean response over the panel."""
+    from axiom.core import Constraint
+
+    model, data, theta = _panel_model()
+    expr = Reduce(op="mean", arg=model.mean)
+    c = Constraint(
+        name="mean_response",
+        expr=expr,
+        family=family,  # type: ignore[arg-type]
+        observed=observed,
+        scale=0.3,
+        detail={"source": "test"},
+    )
+    return (
+        ModelSpec(
+            name=model.name,
+            mean=model.mean,
+            outcome=model.outcome,
+            likelihood=model.likelihood,
+            parameters=model.parameters,
+            constraints=(c,),
+        ),
+        data,
+        theta,
+    )
+
+
+def test_constraint_validation_and_density_terms() -> None:
+    from axiom.core import Constraint, Spec
+
+    model, data, theta = _constrained_model("normal", 5.0)
+    base, _, _ = _panel_model()
+    mu = float(np.mean(value(base.mean, data=data, params=theta)))
+    z = unconstrain(model, theta)
+    assert log_density(model, data, z) == pytest.approx(
+        log_density(base, data, z) + stats.norm.logpdf(5.0, loc=mu, scale=0.3)
+    )
+    logn, _, _ = _constrained_model("lognormal", 5.0)
+    assert log_density(logn, data, z) == pytest.approx(
+        log_density(base, data, z) + stats.lognorm.logpdf(5.0, s=0.3, scale=mu)
+    )
+    # a lognormal constraint at a non-positive value is -inf, not an exception
+    neg = {**theta, "beta": -50.0, "alpha": np.array([-100.0, -100.0, -100.0])}
+    from axiom.core.model import log_likelihood
+
+    assert log_likelihood(logn, data, neg) == -np.inf
+    # round trip and closure
+    assert Spec.from_json(model.to_json()) == model
+    assert model.content_hash() != base.content_hash()
+    with pytest.raises(ValueError, match="does not declare"):
+        ModelSpec(
+            name="x",
+            mean=base.mean,
+            outcome=base.outcome,
+            likelihood=base.likelihood,
+            parameters=base.parameters,
+            constraints=(
+                Constraint(
+                    name="c",
+                    expr=Param(name="ghost", dimension=D.outcome),
+                    family="normal",
+                    observed=1.0,
+                    scale=1.0,
+                ),
+            ),
+        )
+    with pytest.raises(ValueError, match="observed > 0"):
+        Constraint(
+            name="c",
+            expr=Param(name="beta", dimension=D.outcome),
+            family="lognormal",
+            observed=0.0,
+            scale=1.0,
+        )
+    with pytest.raises(ValueError):
+        Constraint(
+            name="c",
+            expr=Param(name="beta", dimension=D.outcome),
+            family="normal",
+            observed=1.0,
+            scale=0.0,
+        )
+    with pytest.raises(DimensionError, match="constraint 'c'"):
+        Constraint(
+            name="c",
+            expr=Add(
+                terms=(
+                    Param(name="beta", dimension=D.outcome),
+                    Param(name="k", dimension=D.currency),
+                )
+            ),
+            family="normal",
+            observed=1.0,
+            scale=1.0,
+        )
+
+
+@jax_only
+@pytest.mark.parametrize("family", ["normal", "lognormal"])
+def test_jax_agrees_with_numpy_on_constrained_model(family: str) -> None:
+    """Gate 9 for a ModelSpec with a soft constraint: numpy and jax densities agree."""
+    import jax
+
+    from axiom.core import compile_log_density
+
+    jax.config.update("jax_enable_x64", True)
+    model, data, theta = _constrained_model(family, 5.0)
+    z = unconstrain(model, theta)
+    assert float(compile_log_density(model)(data, z)) == pytest.approx(
+        log_density(model, data, z), abs=1e-10
+    )
+    g = jax.grad(lambda zz: compile_log_density(model)(data, zz))(z)
+    assert all(np.all(np.isfinite(np.asarray(v))) for v in g.values())
