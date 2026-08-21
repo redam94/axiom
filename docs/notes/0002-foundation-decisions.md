@@ -283,3 +283,47 @@ explicit per-period weights, and `mid_horizon_factor` is the exact mean of
 those weights rather than the midpoint approximation. The parent's finance
 reporting (`finance/*`, `planning/{pacing,calendar,forecast,variance,
 payback}`) is dropped per the ledger.
+
+## 0002.25 — Two calibration routes, one evidence record
+
+A `calibrate.Measurement` is an `Estimand` plus an estimate, its SE, the
+interval definition, the method, and a source; it is the only way evidence
+enters. The **prior route** (`derive_prior`) combines measurements of the
+same target by inverse variance, converts the target quantity to the
+amplitude scale through the design factor — `mean(contribution / beta)` over
+posterior draws, the formula that reproduces the parent's fixture exactly
+(ratio-of-means, median-of-ratios and regression-through-origin do not) —
+moment-matches a lognormal or gamma prior, and returns a new `SurfaceSpec`
+whose kernel carries an explicit `amplitude_prior`. It moves the amplitude
+and nothing else. The **likelihood route** (`attach`, `fit_calibrated`)
+adds a `core.Constraint` — a scalar expression over the model's parameters
+built by `estimands.estimand_expr` at the experiment's doses and reduced to
+the estimand's aggregate per 0002.20 — to `ModelSpec.constraints`; it moves
+the whole curve. `log_likelihood` and the jax `compile_log_density` add the
+same term, so gate 9 covers it. Both routes write ledger lines with the
+counterfactual number.
+
+## 0002.26 — Corrections are typed operators that carry their own ledger line
+
+Every scope correction in `calibrate.transfer` returns a `Correction` —
+kind (multiplicative, additive, SE scale), the operator value, the number
+before and after, and a `LedgerLine` whose `assumption` is a typed
+`Assumption` on the estimand facet it serves. Chord-to-marginal and
+dose-path accumulation go through `surface.forward` / `surface.marginal` and
+`core.causal_convolve`; there is no second transform chain. `resolve`
+folds the plan's lines and the corrections into one `Ledger`, replacing
+the plan's uncorrected line for a facet with the correction's; a facet
+nobody corrected is recorded as `uncorrected: source estimate read as-is`
+rather than omitted. `Ledger.check_complete(plan)` is the gate rule: every
+differing facet in exactly one line, with an assumption and a
+counterfactual. A transport verdict that is blocked blocks the transfer.
+
+## 0002.27 — `check.agreement` compares, it does not decide
+
+`calibrate.check.agreement` realizes the measurement's estimand on the
+calibrated producer and reports the z-score against the combined
+uncertainty, whether the point lies in the posterior interval, and a
+three-way verdict at explicit, argument-controlled thresholds (|z| < 1
+agrees, < 2 tension, otherwise disagrees). It never alters a fit; a
+disagreement is a reason to revisit the transfer plan, which is why it
+returns the realized result alongside.

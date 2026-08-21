@@ -76,6 +76,7 @@ from axiom.core.interpret import (
 )
 from axiom.core.intervals import Interval, Summary, eti, hdi, interval, summarize, wald
 from axiom.core.model import (
+    Constraint,
     Likelihood,
     LikelihoodFamily,
     ModelSpec,
@@ -129,6 +130,7 @@ __all__ = [
     "Blocked",
     "Capability",
     "Const",
+    "Constraint",
     "Convolve",
     "Covariate",
     "Data",

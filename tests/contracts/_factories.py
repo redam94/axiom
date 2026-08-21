@@ -11,6 +11,19 @@ from __future__ import annotations
 from collections.abc import Callable
 from fractions import Fraction
 
+from axiom.calibrate import (
+    Agreement,
+    CalibratedSpec,
+    Correction,
+    Ledger,
+    Measurement,
+    ResolvedTransfer,
+    aggregation_level,
+    carryover_window_factor,
+    derive_prior,
+    resolve,
+    variance_reweight,
+)
 from axiom.core import (
     AcceptanceRegion,
     Add,
@@ -18,6 +31,7 @@ from axiom.core import (
     Assumption,
     Blocked,
     Const,
+    Constraint,
     Convolve,
     Covariate,
     D,
@@ -187,6 +201,27 @@ def _hill() -> Mul:
     )
 
 
+def _constraint(family: str = "normal") -> Constraint:
+    """A soft constraint on the mean Hill response over the dose column (D6.3)."""
+    if family == "lognormal":
+        return Constraint(
+            name="lift_log@study-2",
+            expr=Reduce(op="mean", arg=Add(terms=(Param(name="a", dimension=D.outcome), _hill()))),
+            family="lognormal",
+            observed=2.0,
+            scale=0.25,
+            detail={"measurement": "study-2"},
+        )
+    return Constraint(
+        name="lift@study-1",
+        expr=Reduce(op="mean", arg=_hill()),
+        family="normal",
+        observed=1.2,
+        scale=0.3,
+        detail={"measurement": "study-1"},
+    )
+
+
 def _estimand(**over: object) -> Estimand:
     base: dict[str, object] = dict(
         name="lift_at_100",
@@ -203,6 +238,81 @@ def _estimand(**over: object) -> Estimand:
     )
     base.update(over)
     return Estimand(**base)  # type: ignore[arg-type]
+
+
+def _measurement() -> Measurement:
+    return Measurement(
+        estimand=_estimand(),
+        estimate=1.2,
+        se=0.3,
+        definition="wald",
+        mass=0.95,
+        method="difference_in_differences",
+        n_units=40,
+        n_periods=8,
+        source="study-1",
+    )
+
+
+def _plan() -> TransferPlan:
+    """A source/target pair differing in window and level (the ledger gate's shape)."""
+    source = _estimand(
+        name="experiment",
+        window=TimeWindow(start=0, stop=2, basis="cumulative"),
+        level=Level(unit="individual"),
+    )
+    target = _estimand(
+        name="decision",
+        window=TimeWindow(start=0, stop=8, basis="cumulative"),
+        level=Level(unit="cluster"),
+    )
+    return source.transfer_to(target)
+
+
+def _resolved() -> ResolvedTransfer:
+    window = carryover_window_factor(
+        GeometricCarryover(max_lag=6), {"lam_fertilizer": 0.7}, 2, treatment="fertilizer"
+    )
+    level = aggregation_level(
+        Level(unit="individual"), Level(unit="cluster"), cluster_size=25, icc=0.05
+    )
+    assert isinstance(window, Correction) and isinstance(level, Correction)
+    return resolve(_plan(), corrections=[window, level])
+
+
+def _calibrated_spec() -> CalibratedSpec:
+    spec = SurfaceSpec(
+        name="calibrated_demo",
+        treatments=(Treatment(name="fertilizer", dimension=D.currency, unit="USD"),),
+        outcome=Outcome(name="yield_total", dimension=D.outcome, unit="kg"),
+        kernels={"fertilizer": HillKernel(reference_dose=50.0)},
+    )
+    out = derive_prior(
+        [_measurement()],
+        spec,
+        "fertilizer",
+        beta_draws=(1.0, 1.1, 0.9, 1.05),
+        contribution_draws=(10.0, 11.2, 8.9, 10.4),
+    )
+    assert isinstance(out, CalibratedSpec)
+    return out
+
+
+def _estimand_result() -> EstimandResult:
+    return EstimandResult(
+        estimand_hash="a" * 64,
+        estimand_name="lift_at_100",
+        kind="contrast",
+        summary=Summary(mean=0.3, median=0.28, sd=0.5, interval=_interval(), n=4000),
+        dimension=D.outcome,
+        unit="kg",
+        status="downgraded",
+        assumptions=(_assumption(),),
+        ledger=(),
+        n_draws=4000,
+        producer_hash="b" * 64,
+        detail={"dose_iv": 100.0, "dose_ref": 0.0},
+    )
 
 
 def _assumption() -> Assumption:
@@ -581,6 +691,7 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
                 prior=Prior(family="halfnormal", hyper={"sigma": 5.0}),
             ),
         ),
+        constraints=(_constraint("normal"), _constraint("lognormal")),
     ),
     Quantity: lambda: Quantity(kind="marginal", scale="log"),
     Level: lambda: Level(
@@ -591,19 +702,31 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     .transfer_to(_estimand(window=TimeWindow(start=0, stop=12)))
     .entries[0],
     TransferPlan: lambda: _estimand().transfer_to(_estimand(population=Population(name="all"))),
-    EstimandResult: lambda: EstimandResult(
-        estimand_hash="a" * 64,
+    EstimandResult: _estimand_result,
+    Measurement: _measurement,
+    Constraint: _constraint,
+    Ledger: lambda: Ledger.from_plan(_plan()),
+    Correction: lambda: variance_reweight(0.3, 40, 80, icc=0.05, cluster_size=10),
+    ResolvedTransfer: _resolved,
+    CalibratedSpec: _calibrated_spec,
+    Agreement: lambda: Agreement(
         estimand_name="lift_at_100",
-        kind="contrast",
-        summary=Summary(mean=0.3, median=0.28, sd=0.5, interval=_interval(), n=4000),
-        dimension=D.outcome,
-        unit="kg",
-        status="downgraded",
-        assumptions=(_assumption(),),
-        ledger=(),
+        estimand_hash="a" * 64,
+        measurement_hash="c" * 64,
+        source="study-1",
+        estimate=1.2,
+        se=0.3,
+        posterior_mean=0.3,
+        posterior_sd=0.5,
+        interval=_interval(),
+        z=1.5434,
+        p=0.1227,
+        inside=True,
+        verdict="tension",
+        tension_at=1.0,
+        disagrees_at=2.0,
         n_draws=4000,
-        producer_hash="b" * 64,
-        detail={"dose_iv": 100.0, "dose_ref": 0.0},
+        realized=_estimand_result(),
     ),
     CausalGraph: lambda: _G.with_selection("Z").model_copy(update={"feedback": True}),
     RoleAssignment: lambda: assign_roles(_G, "X", "Y"),
