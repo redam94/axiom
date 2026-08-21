@@ -1,0 +1,106 @@
+[project]
+name = "axiom"
+version = "0.0.0"
+description = "Bayesian causal decision science: identification, experimental design and calibration, response-surface methodology, and evidence meta-analysis"
+readme = "README.md"
+license = "LicenseRef-Proprietary"
+license-files = ["LICENSE"]
+authors = [{ name = "Matthew Reda", email = "m.reda94@gmail.com" }]
+requires-python = ">=3.12"
+
+# ---------------------------------------------------------------------------
+# THE DEPENDENCY BUDGET IS A DESIGN CONSTRAINT, NOT AN ACCIDENT.
+#
+# `pip install axiom` must give a working *design + planning + meta-analysis*
+# toolkit with NO sampler, NO plotting stack, NO compiler toolchain. Every
+# module under core/ identify/ design/ data/ io/ build/ and the closed-form half
+# of meta/ and surface/ is numpy+scipy+pandas+pydantic only.
+#
+# Sampling is an EXTRA because it is the single heaviest thing we could pull in:
+#   [numpyro] ~ 252 MB on disk (jaxlib alone is 228 MB)
+#   [pymc]    ~ 177 MB on disk (llvmlite alone is 113 MB, plus a C++ toolchain
+#              at runtime -- the macOS clang trap the parent repo documents)
+# Core, by contrast, is ~160 MB and almost all of that is numpy/scipy/pandas.
+#
+# tests/contracts/test_import_weight.py pins this: `import axiom` must not put
+# jax, numpyro, pymc, pytensor, or plotly into sys.modules.
+# ---------------------------------------------------------------------------
+dependencies = [
+    "numpy>=2.3",
+    "scipy>=1.16",
+    "pandas>=2.3",
+    "pydantic>=2.12",
+]
+
+[project.optional-dependencies]
+# Default inference backend. JAX/NumPyro: no compiler at runtime, one wheel.
+numpyro = [
+    "numpyro>=0.19",
+    "jax>=0.8",
+    "arviz-base>=1.2",
+    "arviz-stats>=1.2",
+]
+# Alternative backend for models NumPyro serves badly (discrete latents without
+# enumeration, some hierarchies). Optional on purpose -- see the note above.
+pymc = [
+    "pymc>=6.0.1",
+    "arviz-base>=1.2",
+    "arviz-stats>=1.2",
+]
+# Posterior persistence to netCDF (io.serialize `trace` flavor). Without it,
+# posteriors round-trip as npz and the DataTree groups are flattened.
+netcdf = ["h5netcdf>=1.6.4", "h5py>=3.12"]
+# Hard-constrained allocation on a fitted surface (surface.optimize with
+# sign/box/simplex constraints a prior cannot make impossible).
+convex = ["cvxpy>=1.5"]
+# Differentially-private benchmark publication (meta.privacy / meta.publish).
+privacy = ["scipy>=1.16"]
+# Figures. Never imported by core.
+viz = ["plotly>=6.5"]
+all = ["axiom[numpyro,netcdf,convex,privacy,viz]"]
+
+[dependency-groups]
+dev = [
+    "axiom[all]",
+    "black>=24.0",
+    "ruff>=0.13",
+    "mypy>=1.11",
+    "pytest>=9.0",
+    "pytest-xdist>=3.8",
+    "pytest-cov>=7.0",
+    "ipykernel>=7.1",
+]
+docs = ["sphinx>=8.0", "furo>=2024.8", "myst-parser>=4.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/axiom"]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "BLE"]
+# BLE001 is on deliberately: the parent repo shipped four silent-degradation
+# bugs behind bare `except Exception`. See docs/plan/04-contracts-and-testing.md.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: long-running (sampling) tests",
+    "golden: compares against fixtures captured from mmm-framework",
+    "recovery: recovers known ground truth from axiom.sim",
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src/axiom"]
