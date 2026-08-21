@@ -1,4 +1,4 @@
-# 0001 — Phase 1a: foundation progress
+# 0001 — Phase 1: foundation progress (1a and 1b)
 
 Branch: `feature/phase-1a-foundation` (cut from `develop` 2026-08-21).
 Scope is the Phase 1a split proposed in `docs/plan/06-review.md` §F:
@@ -83,7 +83,36 @@ typed errors subclass `Exception`, not `ValueError` (0002.12); pandas
 | gates 1, 2, 3, 4, 5, 8, 12 | done | 6 constructive; 7, 9, 10, 11 need 1b+ |
 | `nbs/core`, `nbs/data`, `nbs/io`, `nbs/infer` | done for 1a | |
 
-## Next (Phase 1b, new branch `feature/phase-1b-expression-tree`)
+### 2026-08-21 — Phase 1b complete on `feature/phase-1b-expression-tree`
+
+- `core/expr.py` — `Const`, `Data`, `Param` (+`Prior`), `Add`, `Mul`, `Div`,
+  `Pow`, `Apply`, `Convolve`, `Link`, `Opaque`, `Equation`, `System`,
+  `ODESystem`; `Expr` is a discriminated union (no node base class);
+  `children` / `walk` / `params` / `data_names` / `node_path`.
+- `core/interpret/{dimension,value,latex}.py` — dispatch-table interpreters.
+  `dimension` raises naming the node path; `value` is `forward()`; `latex`
+  degrades to `Unsupported` on `Opaque`.
+- `core/protocols.py` — `SupportsForward` (`expr` + `forward`; `linearize`
+  joins in Phase 3).
+- `estimands/spec.py` — `Quantity`, `Level`, `Estimand` (eight facets, all
+  required, derived dimension asserted), `FacetDiff`, `TransferPlan`,
+  `transfer_to` with a rule per facet (`_RULES`, asserted complete against
+  `FACETS`).
+- Gates 10 and 11 (11 parametrized over facets *and* the B2 sub-fields);
+  unit tests; `nbs/core/03-expression-tree`, `nbs/estimands/01,02`.
+- 196 tests pass; 12 notebooks execute; gate 12 green for `core`, `data`,
+  `io`, `infer`, `estimands`.
+
+All seven Phase 1 exit criteria hold (criterion 3's "pickle absent" is gate
+5; criterion 5 is `test_checker_and_evaluator_agree_on_200_random_trees`).
+
+## Deferred from Phase 1 (tracked)
+
+- Golden case for `intervals` against the parent — parent not available.
+- Single-file `.axiom` zip artifact (review E) — directory format only.
+- `SupportsEstimands`, `EstimandResult`, realization — Phase 4 by design.
+
+## Next (Phase 2 — `identify`, or Phase 3 — `surface` + `infer`; independent after Phase 1)
 
 1. `core/expr.py` — the closed node set (with C1: `ODESystem` dimension-check
    only; C2: no general `Deriv`; A3: rational `Pow` on dimensioned bases).

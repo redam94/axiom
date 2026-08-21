@@ -13,19 +13,34 @@ from fractions import Fraction
 
 from axiom.core import (
     AcceptanceRegion,
+    Add,
+    Apply,
     Assumption,
     Blocked,
+    Const,
+    Convolve,
     Covariate,
     D,
+    Data,
     Dimension,
+    Div,
     Dose,
+    Equation,
     Interval,
     Intervention,
     LedgerLine,
+    Link,
+    Mul,
+    ODESystem,
+    Opaque,
     Outcome,
+    Param,
     Population,
+    Pow,
+    Prior,
     Spec,
     Summary,
+    System,
     TimeWindow,
     Treatment,
     Unit,
@@ -35,7 +50,47 @@ from axiom.core import (
     dimensionless,
 )
 from axiom.data import ColumnScaling, Completeness, RoleMap, ScalingParameters
+from axiom.estimands import Estimand, FacetDiff, Level, Quantity, TransferPlan
 from axiom.io import Provenance
+
+_DOSE = Data(name="dose", dimension=D.currency)
+_K = Param(
+    name="k", dimension=D.currency, prior=Prior(family="lognormal", hyper={"mu": 3.0, "sigma": 1.0})
+)
+_S = Param(name="s", dimension=dimensionless())
+_X = Div(numerator=_DOSE, denominator=_K)
+
+
+def _hill() -> Mul:
+    return Mul(
+        factors=(
+            Param(name="beta", dimension=D.outcome),
+            Div(
+                numerator=Pow(base=_X, exponent=_S),
+                denominator=Add(
+                    terms=(Const(value=1.0, dimension=dimensionless()), Pow(base=_X, exponent=_S))
+                ),
+            ),
+        )
+    )
+
+
+def _estimand(**over: object) -> Estimand:
+    base: dict[str, object] = dict(
+        name="lift_at_100",
+        quantity=Quantity(kind="contrast"),
+        treatment=Treatment(name="fertilizer", dimension=D.currency, unit="USD"),
+        intervention=Intervention(doses={"fertilizer": 100.0}, version="granular"),
+        reference=Intervention(doses={"fertilizer": 0.0}, version="granular"),
+        outcome=Outcome(name="yield_total", dimension=D.outcome, unit="kg"),
+        population=Population(name="north", strata={"soil": {"clay": 0.3, "loam": 0.7}}),
+        window=TimeWindow(start=0, stop=8),
+        level=Level(unit="cluster"),
+        conditioning=(),
+        dimension=D.outcome,
+    )
+    base.update(over)
+    return Estimand(**base)  # type: ignore[arg-type]
 
 
 def _assumption() -> Assumption:
@@ -105,6 +160,52 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     ScalingParameters: lambda: ScalingParameters(
         columns={"y": ColumnScaling(method="max", scale=10.0), "x": ColumnScaling(method="none")}
     ),
+    Prior: lambda: Prior(family="normal", hyper={"mu": 0.0, "sigma": 1.0}),
+    Const: lambda: Const(value=2.5, dimension=D.time),
+    Data: lambda: _DOSE,
+    Param: lambda: _K,
+    Add: lambda: Add(terms=(_DOSE, Const(value=1.0, dimension=D.currency))),
+    Mul: _hill,
+    Div: lambda: _X,
+    Pow: lambda: Pow(base=_DOSE, exponent=Fraction(1, 2)),
+    Apply: lambda: Apply(fn="log1p", arg=_X),
+    Convolve: lambda: Convolve(
+        signal=_DOSE,
+        kernel=Opaque(
+            name="geometric",
+            inputs=(Param(name="lam", dimension=dimensionless()),),
+            dimension=dimensionless(),
+        ),
+    ),
+    Link: lambda: Link(fn="log", arg=_X),
+    Opaque: lambda: Opaque(name="user_kernel", inputs=(_DOSE, _K), dimension=D.outcome),
+    Equation: lambda: Equation(
+        lhs=Data(name="y", dimension=D.outcome), rhs=_hill(), name="response"
+    ),
+    System: lambda: System(
+        equations=(
+            Equation(lhs=Data(name="y", dimension=D.outcome), rhs=_hill()),
+            Equation(lhs=Data(name="z", dimension=D.currency), rhs=Mul(factors=(_K, _S))),
+        )
+    ),
+    ODESystem: lambda: ODESystem(
+        states=(Data(name="S", dimension=D.outcome),),
+        rhs=(
+            Mul(
+                factors=(Param(name="r", dimension=D.time**-1), Data(name="S", dimension=D.outcome))
+            ),
+        ),
+        time=Data(name="t", dimension=D.time),
+    ),
+    Quantity: lambda: Quantity(kind="marginal", scale="log"),
+    Level: lambda: Level(
+        unit="aggregate", interference="declared", interference_model="spatial lag 1"
+    ),
+    Estimand: _estimand,
+    FacetDiff: lambda: _estimand()
+    .transfer_to(_estimand(window=TimeWindow(start=0, stop=12)))
+    .entries[0],
+    TransferPlan: lambda: _estimand().transfer_to(_estimand(population=Population(name="all"))),
     Provenance: lambda: Provenance(
         axiom_version="0.0.0",
         created="2026-08-21T00:00:00+00:00",

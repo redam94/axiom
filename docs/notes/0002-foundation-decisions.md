@@ -115,3 +115,26 @@ flat classes sharing `EntityName` and one validator function;
 (which `Assumption` and `LedgerLine` also use). The only inheritance left is
 `X(Spec)`, which pydantic requires, and exception hierarchies. A unit test
 asserts the entity classes' MRO is ``[cls, Spec, BaseModel, ...]``.
+
+## 0002.14 — Expression-tree node set as shipped
+
+Applied from the review: `Pow` with a rational constant exponent is legal on
+any base and gives `dim ** q`; a variable exponent requires a dimensionless
+base and exponent (A3). `ODESystem` is dimension-check-only — `value` raises
+`NotImplementedError` (C1). There is no `Deriv` node (C2); `ODESystem`
+carries the derivative structurally as `(states, rhs, time)` and the checker
+enforces `dim(rhs_i) == dim(state_i) / dim(t)`. `Expr` is a pydantic
+discriminated union on a `node` literal, so there is no node base class
+(0002.13) and the tree serializes. *Update:* `01-architecture.md` node table.
+
+## 0002.15 — Estimand facet representation
+
+The `intervention` facet is three fields — `treatment`, `intervention`,
+`reference` — compared together; `Intervention.version` (B2) and
+`Level.interference` (B2) are sub-fields and gate 11 parametrizes over them.
+`dimension` is a required field that the validator derives and checks, so it
+can never differ alone; gate 11 records that explicitly. The rule table
+`_RULES` is a dict keyed by facet and asserted equal to `FACETS` at import,
+so a ninth facet without a rule fails before any test runs. `FacetDiff`
+refuses to exist with neither an assumption nor a block — the "no silent
+pass" property is constructive, not tested-for.

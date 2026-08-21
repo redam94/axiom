@@ -1,7 +1,29 @@
-"""estimands: Declarative, versioned, content-hashed counterfactual quantities, realized against
-any SupportsPosterior.
+"""estimands: declarative, content-hashed counterfactual quantities.
 
-STATUS: not implemented. See docs/plan/03-roadmap.md.
+Phase 1b ships the declaration half — the facets, the derived dimension, and
+``transfer_to``. Realization against a posterior lands in Phase 4.
 """
 
-__all__: list[str] = []
+from axiom.estimands.spec import (
+    FACETS,
+    Estimand,
+    Facet,
+    FacetDiff,
+    Level,
+    Quantity,
+    QuantityKind,
+    TransferPlan,
+    derived_dimension,
+)
+
+__all__ = [
+    "FACETS",
+    "Estimand",
+    "Facet",
+    "FacetDiff",
+    "Level",
+    "Quantity",
+    "QuantityKind",
+    "TransferPlan",
+    "derived_dimension",
+]
