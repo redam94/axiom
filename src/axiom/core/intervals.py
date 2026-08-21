@@ -17,9 +17,20 @@ from pydantic import field_validator
 
 from axiom.core.spec import Spec
 
-__all__ = ["Interval", "IntervalDefinition", "Summary", "eti", "hdi", "interval", "summarize"]
+__all__ = [
+    "Interval",
+    "IntervalDefinition",
+    "Summary",
+    "eti",
+    "hdi",
+    "interval",
+    "summarize",
+    "wald",
+]
 
-IntervalDefinition = Literal["eti", "hdi"]
+IntervalDefinition = Literal["eti", "hdi", "wald"]
+"""``eti``/``hdi`` are posterior credible intervals; ``wald`` is a frequentist
+``estimate ± z · se`` confidence interval. The type says which."""
 
 
 class Interval(Spec):
@@ -102,7 +113,21 @@ def interval(draws: npt.ArrayLike, *, definition: IntervalDefinition, mass: floa
         return eti(draws, mass)
     if definition == "hdi":
         return hdi(draws, mass)
-    raise ValueError(f"unknown interval definition {definition!r}")  # pragma: no cover
+    raise ValueError(f"{definition!r} is not a posterior interval; use wald() for a CI")
+
+
+def wald(estimate: float, se: float, mass: float) -> Interval:
+    """Frequentist ``estimate ± z_{(1+mass)/2} · se``, labelled as such."""
+    if se < 0 or not np.isfinite(se):
+        raise ValueError(f"standard error must be finite and non-negative, got {se}")
+    z = float(_norm_ppf((1.0 + mass) / 2.0))
+    return Interval(lower=estimate - z * se, upper=estimate + z * se, definition="wald", mass=mass)
+
+
+def _norm_ppf(p: float) -> float:
+    from scipy.special import ndtri
+
+    return float(ndtri(p))
 
 
 def summarize(

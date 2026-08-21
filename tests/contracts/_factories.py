@@ -51,7 +51,23 @@ from axiom.core import (
 )
 from axiom.data import ColumnScaling, Completeness, RoleMap, ScalingParameters
 from axiom.estimands import Estimand, FacetDiff, Level, Quantity, TransferPlan
+from axiom.identify import (
+    CausalGraph,
+    EndogeneityTest,
+    FrontDoorRoute,
+    InstrumentRoute,
+    LinearEstimate,
+    RoleAssignment,
+    assign_roles,
+    identify,
+    transport_verdict,
+)
+from axiom.identify.transport import TransportVerdict
+from axiom.identify.verdict import IdentificationVerdict
 from axiom.io import Provenance
+from axiom.sim import LinearSCM
+
+_G = CausalGraph.from_edges("Z -> X, Z -> Y, X -> Y, X <-> W, W -> Y", unmeasured=["W"], name="toy")
 
 _DOSE = Data(name="dose", dimension=D.currency)
 _K = Param(
@@ -206,6 +222,45 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     .transfer_to(_estimand(window=TimeWindow(start=0, stop=12)))
     .entries[0],
     TransferPlan: lambda: _estimand().transfer_to(_estimand(population=Population(name="all"))),
+    CausalGraph: lambda: _G.with_selection("Z").model_copy(update={"feedback": True}),
+    RoleAssignment: lambda: assign_roles(_G, "X", "Y"),
+    FrontDoorRoute: lambda: FrontDoorRoute(mediators=("M",), treatment="X", outcome="Y"),
+    InstrumentRoute: lambda: InstrumentRoute(
+        instrument="Z", conditioning=("W",), treatment="X", outcome="Y"
+    ),
+    TransportVerdict: lambda: transport_verdict(
+        CausalGraph.from_edges("Z -> X, Z -> Y, X -> Y", selection=["Z"]), "X", "Y"
+    ),
+    IdentificationVerdict: lambda: identify(
+        CausalGraph.from_edges("Z -> X, Z -> Y, X -> Y", selection=["Z"]), "X", "Y"
+    ),
+    LinearEstimate: lambda: LinearEstimate(
+        estimate=2.0,
+        se=0.1,
+        n=100,
+        method="2sls",
+        treatment="X",
+        outcome="Y",
+        covariates=("Z",),
+        detail={"first_stage_f": 50.0},
+    ),
+    EndogeneityTest: lambda: EndogeneityTest(
+        statistic=3.2,
+        p_value=0.001,
+        df=97,
+        method="durbin_wu_hausman_control_function",
+        conclusion="endogenous",
+        treatment="X",
+        outcome="Y",
+        detail={"first_stage_f": 50.0},
+    ),
+    LinearSCM: lambda: LinearSCM.from_text(
+        "Z -> X: 0.8, Z -> Y: 1.5, X -> Y: 2.0, X <-> Y: 0.7",
+        unmeasured=["Z"],
+        selection=["Z"],
+        intercepts={"Z": 1.5},
+        noise_sd={"Y": 0.5},
+    ),
     Provenance: lambda: Provenance(
         axiom_version="0.0.0",
         created="2026-08-21T00:00:00+00:00",

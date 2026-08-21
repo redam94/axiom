@@ -19,7 +19,7 @@ LAYER: dict[str, int] = {
     "surface": 4,
     "estimands": 4,
     "identify": 4,
-    "sim": 4,
+    "sim": 5,
     "meta": 5,
     "calibrate": 5,
     "design": 5,

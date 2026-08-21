@@ -138,3 +138,23 @@ can never differ alone; gate 11 records that explicitly. The rule table
 so a ninth facet without a rule fails before any test runs. `FacetDiff`
 refuses to exist with neither an assumption nor a block — the "no silent
 pass" property is constructive, not tested-for.
+
+## 0002.16 — `sim` sits above the domain layer; graph-established sets are `identified`
+
+Two calls made while integrating Phase 2:
+
+1. `sim` moves from layer 4 to layer 5 in `test_layering.py` so `LinearSCM`
+   can *compose* a `CausalGraph` (`graph: CausalGraph`) rather than duplicate
+   its seven fields. Nothing in the pillars imports `sim`; `diagnose`
+   (layer 6) and tests do. *Update:* `01-architecture.md` layer diagram.
+2. A back-door set or an S-admissible set that the graph establishes yields
+   status `identified`, in both `identify.verdict` and `identify.transport`.
+   Positivity / overlap of the adjustment set is a *data* property and is
+   reported by `diagnose.overlap` (review B12), not smuggled into the graph
+   verdict as an unverified assumption — the `Verdict` invariant (identified
+   carries no unverified assumption) forces the choice to be explicit.
+3. When no sufficient transportability condition holds, the transport
+   verdict is `unsupported` (the complete sID algorithm is not implemented),
+   not `blocked`; `blocked` is reserved for a proposed set (`given=...`) that
+   the graph shows is *not* S-admissible. Roadmap Phase 2 criterion 4
+   ("blocked unadjusted") is read as `given=()`.
