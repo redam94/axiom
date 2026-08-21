@@ -28,6 +28,7 @@ from axiom.core.expr import (
     Data,
     Div,
     Equation,
+    Gather,
     Link,
     Model,
     Mul,
@@ -35,6 +36,7 @@ from axiom.core.expr import (
     Opaque,
     Param,
     Pow,
+    Reduce,
     System,
 )
 
@@ -55,6 +57,11 @@ _APPLY: dict[str, Callable[[Array], Array]] = {
     "softplus": lambda x: np.logaddexp(0.0, x),
     "neg": np.negative,
 }
+_REDUCE: dict[str, Callable[[Array, bool], Array]] = {
+    "sum": lambda x, k: np.sum(np.atleast_1d(x), axis=-1, keepdims=k),
+    "mean": lambda x, k: np.mean(np.atleast_1d(x), axis=-1, keepdims=k),
+    "max": lambda x, k: np.max(np.atleast_1d(x), axis=-1, keepdims=k),
+}
 _LINK: dict[str, Callable[[Array], Array]] = {
     "identity": lambda x: x,
     "log": np.log,
@@ -63,12 +70,20 @@ _LINK: dict[str, Callable[[Array], Array]] = {
 
 
 def causal_convolve(signal: Array, weights: Array) -> Array:
-    """``y[..., t] = Σ_l w[l] · x[..., t-l]`` with zero history before ``t=0``."""
-    w = np.asarray(weights, dtype=float).ravel()
+    """``y[..., t] = Σ_l w[..., l] · x[..., t-l]`` with zero history before ``t=0``.
+
+    ``weights`` is ``(..., L)``; its leading axes broadcast against the
+    leading axes of ``signal`` (so a ``(draws, 1, L)`` kernel against a
+    ``(units, T)`` signal gives ``(draws, units, T)``).
+    """
+    w = np.atleast_1d(np.asarray(weights, dtype=float))
     x = np.asarray(signal, dtype=float)
-    out = np.zeros_like(x)
     n = x.shape[-1]
-    for lag, wl in enumerate(w[:n]):
+    n_lags = min(int(w.shape[-1]), n)
+    lead = np.broadcast_shapes(w.shape[:-1], x.shape[:-1])
+    out = np.zeros(lead + (n,), dtype=float)
+    for lag in range(n_lags):
+        wl = w[..., lag : lag + 1]
         if lag == 0:
             out += wl * x
         else:
@@ -115,6 +130,13 @@ class _Env:
                 return _APPLY[node.fn](self.ev(node.arg))
             case Link():
                 return _LINK[node.fn](self.ev(node.arg))
+            case Reduce():
+                return _REDUCE[node.op](self.ev(node.arg), node.keepdims)
+            case Gather():
+                if node.index.name not in self.data:
+                    raise KeyError(f"index column {node.index.name!r} was not supplied")
+                idx = np.asarray(self.data[node.index.name], dtype=int)
+                return np.take(self.ev(node.source), idx, axis=-1)
             case Convolve():
                 return causal_convolve(self.ev(node.signal), self.ev(node.kernel))
             case Opaque():

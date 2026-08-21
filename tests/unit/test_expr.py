@@ -185,4 +185,7 @@ def test_supports_forward_protocol() -> None:
         def forward(self, dose, theta):  # type: ignore[no-untyped-def]
             return value(self.expr, data=dose, params=theta)
 
+        def linearize(self, dose, theta_at):  # type: ignore[no-untyped-def]
+            raise NotImplementedError
+
     assert isinstance(Surface(), SupportsForward)

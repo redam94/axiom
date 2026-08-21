@@ -40,6 +40,7 @@ __all__ = [
     "Div",
     "Equation",
     "Expr",
+    "Gather",
     "Link",
     "LinkFn",
     "Model",
@@ -48,7 +49,10 @@ __all__ = [
     "Opaque",
     "Param",
     "Pow",
+    "PRIOR_HYPER",
     "Prior",
+    "PriorFamily",
+    "Reduce",
     "System",
     "children",
     "data_names",
@@ -61,22 +65,85 @@ ApplyFn = Literal["exp", "log", "log1p", "expm1", "tanh", "sigmoid", "logit", "s
 LinkFn = Literal["identity", "log", "logit"]
 
 
-class Prior(Spec):
-    """A named prior family with numeric hyperparameters. Interpreted by ``infer``."""
+PriorFamily = Literal["normal", "halfnormal", "lognormal", "beta", "gamma", "uniform", "fixed"]
+PRIOR_HYPER: dict[str, tuple[str, ...]] = {
+    "normal": ("mu", "sigma"),
+    "halfnormal": ("sigma",),
+    "lognormal": ("mu", "sigma"),
+    "beta": ("alpha", "beta"),
+    "gamma": ("alpha", "beta"),
+    "uniform": ("low", "high"),
+    "fixed": ("value",),
+}
+"""Required hyperparameters per family. ``gamma`` uses shape ``alpha`` and *rate* ``beta``."""
 
-    family: Literal["normal", "halfnormal", "lognormal", "beta", "gamma", "uniform", "fixed"]
-    hyper: dict[str, float]
+
+class Prior(Spec):
+    """A named prior family with hyperparameters.
+
+    A hyperparameter is a number or the *name of another parameter* — that is
+    how a hierarchy is declared (``alpha_unit ~ normal(mu="alpha_mean",
+    sigma="alpha_sd")``). The support follows the family: ``normal`` on R;
+    ``halfnormal``, ``lognormal``, ``gamma`` on R+; ``beta`` on (0, 1);
+    ``uniform`` on (low, high); ``fixed`` is a point mass and not inferred.
+    """
+
+    family: PriorFamily
+    hyper: dict[str, float | str]
+
+    @model_validator(mode="after")
+    def _complete(self) -> Prior:
+        need = PRIOR_HYPER[self.family]
+        missing = [h for h in need if h not in self.hyper]
+        extra = [h for h in self.hyper if h not in need]
+        if missing or extra:
+            raise ValueError(
+                f"{self.family} prior takes {need}; missing {missing}, unexpected {extra}"
+            )
+        for k, v in self.hyper.items():
+            if isinstance(v, str) and not v.strip():
+                raise ValueError(f"hyperparameter {k!r} names an empty parameter")
+            if isinstance(v, bool):
+                raise ValueError(f"hyperparameter {k!r} cannot be bool")
+        return self
+
+    @property
+    def parents(self) -> tuple[str, ...]:
+        """Names of parameters this prior's hyperparameters refer to."""
+        return tuple(v for v in self.hyper.values() if isinstance(v, str))
 
 
 # -- leaves --------------------------------------------------------------------
 
 
 class Const(Spec):
-    """A literal with a declared dimension."""
+    """A literal with a declared dimension: a scalar, or a short vector (a lag index, knots).
+
+    Specs hold no large arrays; a vector ``Const`` is for structural constants
+    of a model (``(0, 1, ..., L-1)`` for carryover lags), not for data.
+    """
 
     node: Literal["const"] = "const"
-    value: float
+    value: float | tuple[float, ...]
     dimension: Dimension
+
+    @field_validator("value")
+    @classmethod
+    def _finite(cls, v: float | tuple[float, ...]) -> float | tuple[float, ...]:
+        vals = v if isinstance(v, tuple) else (v,)
+        if not vals:
+            raise ValueError("a vector Const needs at least one element")
+        if len(vals) > 4096:
+            raise ValueError("a Const holds at most 4096 values; data belongs in the Panel")
+        import math
+
+        if not all(math.isfinite(x) for x in vals):
+            raise ValueError("Const values must be finite")
+        return v
+
+    @property
+    def is_vector(self) -> bool:
+        return isinstance(self.value, tuple)
 
 
 class Data(Spec):
@@ -98,10 +165,25 @@ class Param(Spec):
     name: NonEmptyStr
     dimension: Dimension
     prior: Prior | None = None
+    shape: tuple[int, ...] = ()
+
+    @field_validator("shape")
+    @classmethod
+    def _positive(cls, v: tuple[int, ...]) -> tuple[int, ...]:
+        if any(n < 1 for n in v):
+            raise ValueError("shape entries must be positive")
+        return v
 
     @property
     def is_shape(self) -> bool:
         return self.dimension.is_dimensionless
+
+    @property
+    def size(self) -> int:
+        out = 1
+        for n in self.shape:
+            out *= n
+        return out
 
 
 # -- combinators ------------------------------------------------------------------
@@ -162,15 +244,44 @@ class Apply(Spec):
 class Convolve(Spec):
     """Causal convolution of ``signal`` with ``kernel`` along the time axis.
 
-    ``kernel`` evaluates to a 1-D weight vector and must be dimensionless
-    (discrete weights); the result has ``dim(signal) · dim(kernel)``. The
-    value interpreter computes ``y[t] = Σ_l w[l] · x[t-l]`` along the last
-    axis of ``signal``.
+    ``kernel`` evaluates to a weight vector ``(..., L)`` and must be
+    dimensionless (discrete weights); the result has ``dim(signal) ·
+    dim(kernel)``. The value interpreter computes ``y[..., t] = Σ_l w[..., l]
+    · x[..., t-l]`` along the last axis of ``signal``, broadcasting any
+    leading (draw) axes of ``kernel`` against those of ``signal``.
     """
 
     node: Literal["convolve"] = "convolve"
     signal: Expr
     kernel: Expr
+
+
+class Reduce(Spec):
+    """Reduce ``arg`` along its last axis: ``sum``, ``mean``, ``max``. Dimension is preserved.
+
+    Used to normalize carryover weights (``w / sum(w)``) and for aggregate
+    outcomes; the last axis is the one ``Convolve`` acts along.
+    """
+
+    node: Literal["reduce"] = "reduce"
+    op: Literal["sum", "mean", "max"]
+    arg: Expr
+    keepdims: bool = False
+    """Keep the reduced axis (length 1) so the result broadcasts against ``arg`` —
+    use this to normalize a vector by its sum when parameters carry draw axes."""
+
+
+class Gather(Spec):
+    """``source[..., index]``: pick entries of a vector-valued expression by an integer column.
+
+    This is how a unit-level parameter meets the panel: ``Gather(Param("alpha",
+    shape=(n_units,)), Data("unit_index"))``. ``index`` is a ``Data`` column of
+    zero-based integers; its dimension is ignored. Dimension is ``dim(source)``.
+    """
+
+    node: Literal["gather"] = "gather"
+    source: Expr
+    index: Data
 
 
 class Link(Spec):
@@ -196,7 +307,19 @@ class Opaque(Spec):
 
 
 Expr = Annotated[
-    Const | Data | Param | Add | Mul | Div | Pow | Apply | Convolve | Link | Opaque,
+    Const
+    | Data
+    | Param
+    | Add
+    | Mul
+    | Div
+    | Pow
+    | Apply
+    | Convolve
+    | Reduce
+    | Gather
+    | Link
+    | Opaque,
     Field(discriminator="node"),
 ]
 
@@ -247,7 +370,21 @@ class ODESystem(Spec):
 Model = Expr | Equation | System | ODESystem
 """Anything an interpreter accepts."""
 
-for _cls in (Add, Mul, Div, Pow, Apply, Convolve, Link, Opaque, Equation, System, ODESystem):
+for _cls in (
+    Add,
+    Mul,
+    Div,
+    Pow,
+    Apply,
+    Convolve,
+    Reduce,
+    Gather,
+    Link,
+    Opaque,
+    Equation,
+    System,
+    ODESystem,
+):
     _cls.model_rebuild()
 
 # -- traversal ------------------------------------------------------------------------
@@ -268,10 +405,12 @@ def children(node: Model) -> tuple[Model, ...]:
                 if not isinstance(node.exponent, Fraction)
                 else (node.base,)
             )
-        case Apply() | Link():
+        case Apply() | Link() | Reduce():
             return (node.arg,)
         case Convolve():
             return (node.signal, node.kernel)
+        case Gather():
+            return (node.source, node.index)
         case Opaque():
             return node.inputs
         case Equation():

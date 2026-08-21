@@ -151,7 +151,60 @@ review C5; sID recursion (Thm 3) not implemented — the verdict says so.
 Exit criterion 1 (golden verdicts) is therefore open until the parent is
 captured; criteria 2–5 hold.
 
-## Next (Phase 3 — `surface` deterministic half + `infer`)
+### 2026-08-21 — Phase 3 (`surface` + `infer`) complete on `feature/phase-3-surface-infer`
+
+Staged build. Foundation (done, by hand): vector `Const`, `Reduce`, `Gather`,
+hierarchical `Prior`, `Param.shape`; `core/model.py` (`ModelSpec`,
+unconstraining transforms, numpy `log_density`); `core/interpret/jax.py`
+(`compile_jax`, `compile_log_density`); `DesignMatrix` + `linearize` on
+`SupportsForward`; gate 9 rewritten as numerical `value == jax` agreement
+(200 random trees + every shipped `ModelSpec`); `nbs/core/07`. Decision
+0002.17.
+
+Round B (agents, parallel, each with a reviewer): `surface/{kernels,
+carryover,nuisance}.py`; `infer/{backend,laplace,numpyro_backend,
+diagnostics,_arviz}.py`; `surface/{design,ascent}.py`.
+Round C: `surface/{model,forward,linearize,optimize,frontier}.py`,
+`sim/{surface_world,panel}.py`.
+
+Each round was followed by an independent adversarial review, a fix round,
+and a verification round; the decisions those forced are 0002.17–0002.19.
+Headline defects caught before merge: carryover weights mis-normalized for
+draw-shaped parameters (a `Reduce` semantics gap in core); NaN jax gradients
+in `k` at zero dose for `s < 1`; Laplace trusting BFGS-free but
+absolutely-scaled tolerances (wrong mode, wrong SD, fabricated "verified"
+covariance on non-unit problems); a carryover surface convolving allocation
+rows as time; design criteria rejecting well-posed designs in raw dose
+units; ascent finite differences with an absolute floor. Every one of these
+was a *wrong number*, not a crash — which is the failure class the charter
+is written against.
+
+Recovery: `tests/recovery/test_surface_recovery.py` (Laplace recovery,
+negative control with the wrong kernel family, unit invariance of a fit,
+NUTS coverage over N=60 worlds as a `slow` test with a Clopper–Pearson
+region). Notebooks: `nbs/surface/01–05`, `nbs/infer/01–03`, `nbs/sim/02`,
+`nbs/core/07`.
+
+**Phase 3 exit criteria:** 1 (linearize invariant, 200 random surfaces,
+< 1e-12) ✓; 2 (NUTS recovery at nominal rate) — written as the `slow`
+test `test_nuts_interval_coverage` (N=60, Clopper–Pearson α=0.001), not
+executed in this session; Laplace recovery ✓; 3 (Laplace zero non-finite
+draws on the hierarchical world, `nonfinite_draw_frac` always reported) ✓;
+4 (D-optimal beats equal spacing, margin recorded in the test) ✓; 5
+(steepest ascent reaches the optimum; canonical analysis classifies
+max/saddle/min) ✓; 6 (every kernel dimension-checks; shapes invariant,
+scales scale by the conversion factor, fit in two units) ✓; 7 (gate 12
+green for `surface`, `infer`, `sim`) ✓. Gate 9 is the numerical
+`value == jax` agreement (A2/C8). Totals: 968 tests, 25 notebooks.
+
+**Deferred from Phase 3:** `infer/pymc_backend.py` (review C3 → 1.1);
+`surface/arms.py`, `surface/acquire.py`, `surface/sequential.py` (the wave
+loop and acquisition — not needed by Phases 4–6; revisit in Phase 8 or
+1.1); ridge analysis and lack-of-fit (C6, 1.1); D9's log-reference
+convention is still open (the nuisance-conventions mechanism is the hook
+for it).
+
+## Next (Phase 4 — `estimands` realization)
 
 1. `core/expr.py` — the closed node set (with C1: `ODESystem` dimension-check
    only; C2: no general `Deriv`; A3: rational `Pow` on dimensioned bases).

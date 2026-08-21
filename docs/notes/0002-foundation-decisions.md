@@ -158,3 +158,57 @@ Two calls made while integrating Phase 2:
    not `blocked`; `blocked` is reserved for a proposed set (`given=...`) that
    the graph shows is *not* S-admissible. Roadmap Phase 2 criterion 4
    ("blocked unadjusted") is read as `given=()`.
+
+## 0002.17 — Tree extensions for Phase 3, and the backend contract
+
+Added to `core.expr` so that carryover, normalization, and panel hierarchy
+are *expressions* rather than opaque functions (which the jax interpreter
+could not see): a vector `Const` (≤ 4096 structural values — a lag index,
+knots; data still lives in the `Panel`), `Reduce(op, arg)` along the last
+axis, and `Gather(source, index)` for a vector `Param` indexed by an integer
+column. `Param` gains `shape`; `Prior.hyper` values may name another
+parameter, which is how a hierarchy is declared and validated for closure
+and cycles in `ModelSpec`.
+
+`core.model.ModelSpec` = mean expression + outcome column + likelihood +
+every parameter's prior. `Backend.sample` takes a `ModelSpec` (review A2);
+the NumPyro backend runs NUTS on `potential_fn = -compile_log_density`, so
+the sampler sees exactly the tree the numpy evaluator sees, and gate 9 is
+the numerical agreement `value == jax` / `log_density == compile_log_density`
+rather than an AST check (C8). Inference happens in unconstrained
+coordinates with the Jacobian applied (B13); `constrain` returns it.
+
+## 0002.18 — Phase 3 review outcomes folded into core
+
+`Reduce` gained `keepdims` and `Convolve` accepts `(..., L)` kernels with
+broadcasting leading axes, after a reviewer showed the original
+`Div(raw, Reduce(raw))` normalization silently mixed draws when carryover
+parameters carried a draw axis. Hill/Power kernels are parameterized as
+`x̃^s / (k̃^s + x̃^s)` (both sides divided by a unit constant of the dose
+dimension) so jax gradients in `k` are finite at zero dose for `s < 1`.
+Laplace returns `Unverified` rather than a posterior when the mode search
+does not converge or the Hessian is not positive definite; an explicit
+`allow_unverified=True` is the only way to get jittered draws. Every
+tolerance in `infer.laplace` and `surface.ascent` is relative to the problem
+scale — a reviewer produced wrong modes, wrong SDs, and sign-flipped
+Hessians from absolute floors on non-unit or non-default-unit problems,
+which is precisely the unit-invariance the dimension system promises.
+
+## 0002.19 — Carryover surfaces and row grids; units at the panel boundary
+
+A reviewer showed that a `Surface` with carryover would convolve *any* dose
+array's last axis as time — so the allocator and the optimal-design code,
+which evaluate candidate allocations as independent rows, were silently
+wrong. The contract is now explicit: with carryover declared, `forward` /
+`linearize` require `(n_units, n_periods)` arrays and refuse 1-D grids;
+`Surface.steady_state()` (the same spec with `NoCarryover`, valid because
+weights sum to one) is what row-wise callers use, and `allocate` /
+`frontier` return `Unsupported` naming it when handed a carryover surface.
+
+`prepare()` also requires the panel's entities to carry the *same unit
+string* as the spec's, not merely the same dimension — the only place the
+unit tier of D6 is checked before a fit — and equispaced periods whenever
+carryover is declared. Nuisance conventions resolved at fit time
+(`LinearTrend` origin/scale) are recorded in `FitResult.provenance` and
+reused for prediction panels. Default treatment names in `sim` are `a`/`b`
+— no marketing nouns even where the vocabulary gate would not object.

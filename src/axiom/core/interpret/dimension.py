@@ -23,6 +23,7 @@ from axiom.core.expr import (
     Data,
     Div,
     Equation,
+    Gather,
     Link,
     Model,
     Mul,
@@ -30,6 +31,7 @@ from axiom.core.expr import (
     Opaque,
     Param,
     Pow,
+    Reduce,
     System,
 )
 
@@ -86,6 +88,14 @@ def _apply(node: Apply, path: str) -> Dimension:
             "divide by a reference or scale parameter first"
         )
     return dimensionless()
+
+
+def _gather(node: Gather, path: str) -> Dimension:
+    return dimension(node.source, f"{path}[0]")
+
+
+def _reduce(node: Reduce, path: str) -> Dimension:
+    return dimension(node.arg, f"{path}[0]")
 
 
 def _link(node: Link, path: str) -> Dimension:
@@ -153,6 +163,8 @@ _DISPATCH: dict[type, Callable[..., Dimension]] = {
     Pow: _pow,
     Apply: _apply,
     Link: _link,
+    Reduce: _reduce,
+    Gather: _gather,
     Convolve: _convolve,
     Equation: _equation,
     System: _system,

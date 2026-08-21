@@ -17,6 +17,7 @@ from axiom.core.expr import (
     Data,
     Div,
     Equation,
+    Gather,
     Link,
     Model,
     Mul,
@@ -24,6 +25,7 @@ from axiom.core.expr import (
     Opaque,
     Param,
     Pow,
+    Reduce,
     System,
     walk,
 )
@@ -83,6 +85,9 @@ def _paren(node: Model, s: str) -> str:
 def latex(model: Model) -> str:
     match model:
         case Const():
+            if isinstance(model.value, tuple):
+                shown = ", ".join(_num(v) for v in model.value[:4])
+                return f"({shown}{', \\ldots' if len(model.value) > 4 else ''})"
             return _num(model.value)
         case Data() | Param():
             return _sym(model.name)
@@ -112,6 +117,11 @@ def latex(model: Model) -> str:
                 if model.fn != "identity"
                 else latex(model.arg)
             )
+        case Gather():
+            return f"{latex(model.source)}_{{[{_sym(model.index.name)}]}}"
+        case Reduce():
+            op = {"sum": "\\sum", "mean": "\\operatorname{mean}", "max": "\\max"}[model.op]
+            return f"{op}\\left({latex(model.arg)}\\right)"
         case Convolve():
             return f"\\left({latex(model.kernel)}\\right) * \\left({latex(model.signal)}\\right)"
         case Opaque():

@@ -22,7 +22,14 @@ source-available with a non-compete (BUSL/PolyForm) · split, with `core`,
 **Blocks:** whether Phase 9 publishes to PyPI, and whether the docs may link the
 repository.
 
-## D2 — Default inference backend on non-JAX platforms · blocks: Phase 3
+## D2 — Default inference backend on non-JAX platforms · **resolved 2026-08-21**
+
+Resolution: the sampler-free Laplace approximation (`infer.laplace`, numpy +
+scipy, finite differences scaled from the priors when jax is absent) is the
+default backend and is honest about its limits (`Unverified` on a
+non-converged mode or non-PD Hessian). NumPyro NUTS is the sampling backend
+behind `[numpyro]`; PyMC moves to 1.1 (review C3). A hand-written NUTS stays
+an option for 1.1. Original text kept below.
 
 NumPyro is the default. On platforms where `jaxlib` is awkward (some ARM Linux
 images, some locked-down environments) that is a hard stop, and the fallback is

@@ -27,6 +27,7 @@ from axiom.core.expr import Model
 
 __all__ = [
     "Capability",
+    "DesignMatrix",
     "PredictiveDraws",
     "SupportsForward",
     "SupportsIntervention",
@@ -83,6 +84,39 @@ class SupportsIntervention(Protocol):
     def capabilities(self) -> frozenset[Capability]: ...
 
 
+@dataclass(frozen=True)
+class DesignMatrix:
+    """``mu = offset + X @ theta[columns]`` at a fixed point of the nonlinear parameters.
+
+    ``columns`` names the linear parameters (one per column of ``X``);
+    ``offset`` collects every term that does not depend on them; ``at`` is
+    the nonlinear parameter point the linearization was taken at. The
+    invariant ``‖X @ theta − forward(dose, theta)‖∞ < 1e-12`` is gate 9.
+    """
+
+    X: npt.NDArray[np.float64]
+    columns: tuple[str, ...]
+    offset: npt.NDArray[np.float64]
+    at: Mapping[str, npt.NDArray[np.float64]]
+
+    def predict(self, theta: Mapping[str, npt.ArrayLike]) -> npt.NDArray[np.float64]:
+        """``offset + X @ theta[columns]``; a column named ``name[i]`` reads element ``i``."""
+        beta = np.empty(len(self.columns))
+        for j, col in enumerate(self.columns):
+            name, _, idx = col.partition("[")
+            v = np.asarray(theta[name], dtype=float)
+            if idx:
+                beta[j] = v.ravel()[int(idx.rstrip("]"))]
+            elif v.size == 1:
+                beta[j] = float(v.ravel()[0])
+            else:
+                raise ValueError(
+                    f"parameter {name!r} has {v.size} values but column {col!r} needs one; "
+                    "pass a point value, not draws"
+                )
+        return np.asarray(self.offset + self.X @ beta, dtype=np.float64)
+
+
 @runtime_checkable
 class SupportsForward(Protocol):
     """A deterministic response surface: ``forward`` == ``interpret.value(expr)``.
@@ -90,6 +124,8 @@ class SupportsForward(Protocol):
     ``dose`` maps data column name to array; ``theta`` maps parameter name to
     array. Implementations must not reimplement the transform chain — they
     call the interpreter on ``expr`` (rule 3, "one forward()").
+    ``linearize`` returns the design matrix in the *linear* parameters at a
+    fixed point of the nonlinear ones.
     """
 
     @property
@@ -97,6 +133,9 @@ class SupportsForward(Protocol):
     def forward(
         self, dose: Mapping[str, npt.ArrayLike], theta: Mapping[str, npt.ArrayLike]
     ) -> npt.NDArray[np.float64]: ...
+    def linearize(
+        self, dose: Mapping[str, npt.ArrayLike], theta_at: Mapping[str, npt.ArrayLike]
+    ) -> DesignMatrix: ...
 
 
 def missing_capabilities(
