@@ -26,10 +26,13 @@ from axiom.core import (
     Div,
     Dose,
     Equation,
+    Gather,
     Interval,
     Intervention,
     LedgerLine,
+    Likelihood,
     Link,
+    ModelSpec,
     Mul,
     ODESystem,
     Opaque,
@@ -38,6 +41,7 @@ from axiom.core import (
     Population,
     Pow,
     Prior,
+    Reduce,
     Spec,
     Summary,
     System,
@@ -64,8 +68,37 @@ from axiom.identify import (
 )
 from axiom.identify.transport import TransportVerdict
 from axiom.identify.verdict import IdentificationVerdict
+from axiom.infer import (
+    ConvergenceReport,
+    ConvergenceThresholds,
+    ParameterDiagnostics,
+    PointEstimate,
+    SampleSettings,
+)
 from axiom.io import Provenance
-from axiom.sim import LinearSCM
+from axiom.sim import DosePlan, LinearSCM
+from axiom.surface import (
+    Allocation,
+    AscentPath,
+    Bounds,
+    DelayedCarryover,
+    Design,
+    EventIndicators,
+    ExponentialKernel,
+    FourierSeasonality,
+    Frontier,
+    GeometricCarryover,
+    HillKernel,
+    LinearKernel,
+    LinearTrend,
+    LogisticKernel,
+    NoCarryover,
+    NuisanceSet,
+    PowerKernel,
+    StationaryPoint,
+    SurfaceSpec,
+    WeibullCarryover,
+)
 
 _G = CausalGraph.from_edges("Z -> X, Z -> Y, X -> Y, X <-> W, W -> Y", unmeasured=["W"], name="toy")
 
@@ -213,6 +246,47 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
         ),
         time=Data(name="t", dimension=D.time),
     ),
+    Reduce: lambda: Reduce(
+        op="sum", arg=Pow(base=_S, exponent=Const(value=(0.0, 1.0, 2.0), dimension=dimensionless()))
+    ),
+    Gather: lambda: Gather(
+        source=Param(name="alpha", dimension=D.outcome, shape=(3,)),
+        index=Data(name="unit", dimension=dimensionless()),
+    ),
+    Likelihood: lambda: Likelihood(family="student_t", scale="sigma", df=4.0),
+    ModelSpec: lambda: ModelSpec(
+        name="toy",
+        mean=Add(terms=(Param(name="a", dimension=D.outcome), _hill())),
+        outcome=Data(name="y", dimension=D.outcome),
+        likelihood=Likelihood(family="normal", scale="sigma"),
+        parameters=(
+            Param(
+                name="a",
+                dimension=D.outcome,
+                prior=Prior(family="normal", hyper={"mu": 0.0, "sigma": 10.0}),
+            ),
+            Param(
+                name="beta",
+                dimension=D.outcome,
+                prior=Prior(family="halfnormal", hyper={"sigma": 10.0}),
+            ),
+            Param(
+                name="k",
+                dimension=D.currency,
+                prior=Prior(family="lognormal", hyper={"mu": 3.0, "sigma": 1.0}),
+            ),
+            Param(
+                name="s",
+                dimension=dimensionless(),
+                prior=Prior(family="gamma", hyper={"alpha": 4.0, "beta": 2.0}),
+            ),
+            Param(
+                name="sigma",
+                dimension=D.outcome,
+                prior=Prior(family="halfnormal", hyper={"sigma": 5.0}),
+            ),
+        ),
+    ),
     Quantity: lambda: Quantity(kind="marginal", scale="log"),
     Level: lambda: Level(
         unit="aggregate", interference="declared", interference_model="spatial lag 1"
@@ -260,6 +334,107 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
         selection=["Z"],
         intercepts={"Z": 1.5},
         noise_sd={"Y": 0.5},
+    ),
+    HillKernel: lambda: HillKernel(reference_dose=50.0, amplitude_scale=2.0),
+    LogisticKernel: lambda: LogisticKernel(reference_dose=50.0),
+    ExponentialKernel: lambda: ExponentialKernel(reference_dose=50.0),
+    PowerKernel: lambda: PowerKernel(reference_dose=50.0),
+    LinearKernel: lambda: LinearKernel(reference_dose=50.0),
+    GeometricCarryover: lambda: GeometricCarryover(max_lag=8),
+    DelayedCarryover: lambda: DelayedCarryover(max_lag=8),
+    WeibullCarryover: lambda: WeibullCarryover(max_lag=8),
+    NoCarryover: lambda: NoCarryover(),
+    FourierSeasonality: lambda: FourierSeasonality(period=52.0, order=2),
+    LinearTrend: lambda: LinearTrend(origin=0.0, scale=52.0),
+    EventIndicators: lambda: EventIndicators(events=("holiday", "outage")),
+    NuisanceSet: lambda: NuisanceSet(
+        terms=(
+            FourierSeasonality(period=52.0, order=2),
+            LinearTrend(),
+            EventIndicators(events=("holiday",)),
+        )
+    ),
+    Bounds: lambda: Bounds(treatments=("x1", "x2"), low=(0.0, 10.0), high=(4.0, 30.0)),
+    Design: lambda: Design(
+        treatments=("x1", "x2"),
+        points=((0.0, 10.0), (4.0, 30.0)),
+        kind="full_factorial",
+        detail={"levels[x1]": 2.0, "levels[x2]": 2.0},
+    ),
+    AscentPath: lambda: AscentPath(
+        treatments=("x1",), points=((0.0,), (0.5,)), values=(1.0, 2.0), stop="decrease"
+    ),
+    StationaryPoint: lambda: StationaryPoint(
+        treatments=("x1", "x2"),
+        origin=(0.0, 0.0),
+        point=(1.0, -1.0),
+        value=3.0,
+        kind="maximum",
+        gradient=(2.0, -2.0),
+        eigenvalues=(-2.0, -1.0),
+        eigenvectors=((1.0, 0.0), (0.0, 1.0)),
+    ),
+    SurfaceSpec: lambda: SurfaceSpec(
+        name="demo",
+        treatments=(Treatment(name="a", dimension=D.currency, unit="USD"),),
+        outcome=Outcome(name="y", dimension=D.outcome),
+        kernels={"a": HillKernel(reference_dose=2.0)},
+        carryover={"a": GeometricCarryover(max_lag=3)},
+        intercept="hierarchical",
+        unit_labels=("u0", "u1", "u2"),
+    ),
+    DosePlan: lambda: DosePlan(distribution="lognormal", scale=50.0, spread=0.5, zero_fraction=0.1),
+    Allocation: lambda: Allocation(
+        doses={"x1": 3.3, "x2": 2.7},
+        expected_outcome=8.2,
+        budget=6.0,
+        objective="mean",
+        method="slsqp",
+    ),
+    Frontier: lambda: Frontier(
+        budgets=(2.0,),
+        outcomes=(5.0,),
+        allocations=(
+            Allocation(
+                doses={"x1": 1.0, "x2": 1.0},
+                expected_outcome=5.0,
+                budget=2.0,
+                objective="mean",
+                method="slsqp",
+            ),
+        ),
+    ),
+    PointEstimate: lambda: PointEstimate(
+        theta={"mu": 1.0, "alpha": (0.5, 1.5)},
+        log_density=-12.3,
+        converged=True,
+        method="trust-ncg",
+        n_iter=7,
+    ),
+    SampleSettings: lambda: SampleSettings(draws=500, tune=500, chains=2, target_accept=0.95),
+    ConvergenceThresholds: lambda: ConvergenceThresholds(
+        rhat_max=1.01, ess_min=400.0, divergences_max=0
+    ),
+    ParameterDiagnostics: lambda: ParameterDiagnostics(
+        name="mu", rhat=1.001, ess_bulk=900.0, ess_tail=850.0, mcse_mean=0.03, mean=1.2, sd=0.4
+    ),
+    ConvergenceReport: lambda: ConvergenceReport(
+        rows=(
+            ParameterDiagnostics(
+                name="mu",
+                rhat=1.001,
+                ess_bulk=900.0,
+                ess_tail=850.0,
+                mcse_mean=0.03,
+                mean=1.2,
+                sd=0.4,
+            ),
+        ),
+        divergences=0,
+        thresholds=ConvergenceThresholds(),
+        converged=True,
+        n_chains=4,
+        n_draws=1000,
     ),
     Provenance: lambda: Provenance(
         axiom_version="0.0.0",
