@@ -70,6 +70,8 @@ dev = [
     "pytest-cov>=7.0",
     "ipykernel>=7.1",
     "nbmake>=1.5",
+    "pandas-stubs>=3.0.5.260730",
+    "scipy-stubs>=1.18.0.1",
 ]
 docs = ["sphinx>=8.0", "furo>=2024.8", "myst-parser>=4.0"]
 

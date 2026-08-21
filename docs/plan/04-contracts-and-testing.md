@@ -56,9 +56,10 @@ AST-inspects `axiom.io` and asserts no import of `pickle`, `cloudpickle`, or
 off the parent's documented cross-environment cloudpickle failures.
 
 ### 6. `test_interval_provenance.py`
-Every function returning an interval returns a type carrying
-`interval_definition` and `hdi_prob`. Checked by walking return annotations and
-by a runtime pass over the estimand registry.
+Every function returning an interval returns `core.Interval`, whose
+`definition` and `mass` fields are required with no defaults — an interval
+without provenance cannot be constructed (review C8). A runtime pass over the
+estimand registry (Phase 4) asserts every result carries one.
 
 *Protects:* design commitment #4. The parent shipped `contribution_roi` in two
 places at two masses and two interval definitions before it noticed.

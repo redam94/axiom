@@ -40,6 +40,14 @@ meta-analysis. It is a clean-room rewrite that ports selected mathematics from
    `nbs/<subpackage>/`. A subpackage is not complete until its series exists
    and runs in CI (`make notebooks`). Gate 12 fails on an uncovered symbol.
 
+## Style
+
+- **Composition over inheritance; protocols over ABCs.** `Spec` is the one
+  pydantic base every config object shares, and nothing else in the codebase
+  should inherit from anything but `Spec`, a `Protocol`, or an exception.
+  Share behaviour with functions, annotated field types, and composition;
+  describe "anything that can do X" with a `typing.Protocol`.
+
 ## Quick commands
 
 ```bash
