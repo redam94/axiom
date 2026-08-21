@@ -67,15 +67,30 @@ does not if it is only ever a credibility exhibit.
 **Position:** port the ~500-line harness, mark it clearly as predictive
 validation and not causal validation, and let usage decide by 1.1.
 
-## D6 — Unit and numeraire enforcement strictness · blocks: Phase 1
+## D6 — Unit and numeraire enforcement strictness · **resolved 2026-08-20**
 
-`Dose` carries units. The question is whether mismatched units raise, warn, or
+`Dose` carries units. The question was whether mismatched units raise, warn, or
 are silently coerced. Strict raises catch real errors and also make every
 notebook cell a fight.
 
-**Position:** raise on a *dimension* mismatch (dose vs outcome vs currency),
-convert automatically within a dimension when a conversion is registered, and
-warn once when a `Dose` has no declared unit at all.
+**Resolution: three tiers, because three distinct things were being called
+"units".**
+
+| | On mismatch |
+|---|---|
+| **Dimension** — currency vs time vs outcome | raise, always. No flag disables it. |
+| **Unit** — USD vs EUR, day vs week | convert automatically when a conversion is registered in the `UnitSystem`, and write a ledger line. Raise when none is registered. |
+| **Scope** — this population, this window | never auto-resolved. Requires an explicit assumption through `TransferPlan`. |
+
+An entity with no declared dimension warns once and is treated as dimensionless.
+That leniency is for user code only: gate 10 still fails if anything shipped in
+`src/axiom/` is undimensioned.
+
+The decision grew in scope while being made. The base dimension set is
+**declarable**, not fixed, and dimension checking is abstract interpretation
+over `core.expr` at spec-construction time rather than a check at call time —
+see `01-architecture.md`. The scope tier is what `00-charter.md` means by
+"dimensions are necessary, not sufficient".
 
 ## D7 — Does `axiom` own a fitted-model concept at all? · blocks: Phase 4
 
@@ -97,3 +112,26 @@ delegate, and it may never contain math.
 typing syntax.
 
 **Position:** stay at 3.12, test on 3.12 and 3.13 in CI.
+
+## D9 — The reference quantity for log and logit transforms · blocks: nothing; Phase 1 ships (b) provisionally
+
+`log(outcome)` is not dimensionally well-formed; `log(y / y_ref)` is. People fit
+log-space models constantly, and a checker that rejects them is a checker
+everyone routes around — which is worse than not having one, because it converts
+a hard failure into an unexamined `Opaque` node.
+
+Options: **(a)** raise, and require an explicit `y_ref` on every
+`Apply(log, ...)`; **(b)** synthesize `y_ref = 1 [unit of y]`, warn once, and
+record the synthesized reference on the spec so it serializes and shows up in
+the ledger; **(c)** treat a log-space outcome as its own declared dimension and
+convert at the boundary.
+
+**Position:** ship (b) in Phase 1, matching D6's temperament. But this is the
+one item in this document that should be settled by trying it rather than by
+argument. The failure mode of (b) is that the synthesized reference is
+unit-dependent, so a model fit in one currency and the same model fit in another
+have different intercepts and nothing complains — precisely the class of error
+the dimension system exists to catch, reintroduced by the concession that makes
+it usable. Whether that is tolerable depends on how often the intercept is the
+quantity being transferred. Revisit at the end of Phase 3 with the surface
+notebook in hand.
