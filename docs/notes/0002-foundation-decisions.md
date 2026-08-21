@@ -379,3 +379,41 @@ Gaussian per Balle & Wang 2018, or Laplace) and seed on the record;
 `carry_forward` re-uses a release for free only while contributor churn
 (Jaccard distance) stays under the stated threshold. The parent's `spend`
 is `charge` here because `spend` is a banned token.
+
+## 0002.32 — Every diagnostic states the N and the region it would fail at
+
+`diagnose.sbc` ranks the true parameter among `L` posterior draws over `N`
+prior-predictive refits and reports per-parameter chi-square and ECDF
+statistics with their alpha; `diagnose.coverage` reports covered / n per
+parameter with `clopper_pearson(n, mass, alpha)`; `ppc`, `residuals`,
+`refute` and `backtest` carry the test statistic, the N, and the rule they
+passed under in words. Both gates ship a negative control — a wrong refit
+fails SBC and a world generated with carryover but fit without fails
+coverage — so a check that cannot fail is not in the suite. Failed refits
+are counted (`n_failed_fits`) and never dropped silently.
+
+## 0002.33 — One sensitivity engine, three views
+
+Cinelli–Hazlett partial-R² benchmarking (closed forms, the published Darfur
+example reproduced to four digits), a bias-parameter shift over existing
+draws (no refit), and decision-scale tipping points share one module and
+one vocabulary. On a planted linear confounder the benchmark priced the
+omitted-variable bias within 2.1 % of the observed naive−true gap. A
+benchmark multiple that implies a partial R² ≥ 1 is `Unsupported`, not NaN.
+
+## 0002.34 — Forecasts replay the same forward; builders compose, they do not inherit
+
+`diagnose.backtest` forecasts by preparing the training-plus-horizon panel
+and calling `surface.forward.predict`, so carryover state crosses the
+origin (the parent's "graph-faithful saturation" fix is structural here,
+not a patch); `FrozenPredictor` replays a frozen posterior and spec on a new
+panel with a content hash over every draw. The placebo refutation's rule is
+the tail share of the placebo posterior beyond the original estimate, not
+"interval contains zero": a one-signed amplitude prior cannot straddle
+zero. `build/` is a frozen `Fields` dict plus fluent methods returning new
+builders — no class hierarchy — and every `.build()` returns a `Spec` that
+round-trips. `adapters.marketing` is the only module with marketing nouns;
+every number it returns is an `EstimandResult`. `viz` imports plotly inside
+each figure and returns `Unsupported` without it. PyMC stays a 1.1 item
+(D2); backend equivalence is Laplace vs NumPyro with the normal-
+approximation caveat stated for half-normal scale parameters.

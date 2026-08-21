@@ -344,9 +344,46 @@ admitted with licensed plans; 6 ✓.
 (`Unverified`) rather than sampled — a NUTS path for it is a 1.1 item; the
 `[privacy]` extra is nominal (scipy is core) and can be dropped in Phase 9.
 
-## Next (Phase 8 — `diagnose`, `build`, `adapters`, `viz`)
+### 2026-08-21 — Phase 8 (`diagnose`, `build`, `adapters`, `viz`) complete on `feature/phase-8-diagnose-build`
 
-1. `diagnose/{sbc,coverage,weak_id,sensitivity,learning,spec_curve,refute,
-   backtest,ppc,residuals,surface_prior}` with the SBC and coverage gates.
-2. `build/` fluent builders; `adapters/marketing.py`; `viz/` behind `[viz]`.
-3. Backend equivalence gate (Laplace vs NumPyro; PyMC is 1.1 per D2).
+Delivered: all eleven `diagnose` modules (79 symbols) with the SBC and
+coverage gates (fast tier by default, `slow` tier at the roadmap's N);
+`build/` (Fields/Builder composition; Prior, Variable, Surface, Study, Meta,
+Graph builders); `adapters/marketing.py` (the only marketing-named module;
+ROAS/ROI/contribution/marginal ROAS as `EstimandResult`s); `viz/` (seven
+plotly figures behind a lazy import, `Unsupported` without plotly);
+`tests/contracts/test_backend_equivalence.py` (slow, Laplace vs NumPyro);
+`nbs/diagnose/01–05`, `nbs/build/01`, `nbs/adapters/01`, `nbs/viz/01`;
+decisions 0002.32–0002.34. `.gitignore`'s `build/` became `/build/` so the
+package is tracked. A Phase 3 defect surfaced and was fixed: `FitResult.
+marginal_under` on a `LinearKernel` surface dropped the unit axis
+(`surface/model.py::_select`), with a regression test.
+
+**Phase 8 exit criteria:** 1 ✓ SBC rank uniformity at N=200 for the
+linear surface under Laplace (p 0.23–0.92), the pool model (mu p=0.81, tau
+p=0.37), and the Hill surface under NumPyro (all p ≥ 0.19); negative
+controls fail at p ≈ 1e-36; 2 ✓ 90 % intervals inside the exact region
+[168, 190] at n=200; the carryover-mis-specified world fails (alpha 1/30);
+the roadmap's "88–92 %" is asserted as the exact Clopper–Pearson region;
+3 ✓ planted confounder priced within 2.1 % (bound 15 %); Darfur reproduced;
+4 ✓ Laplace vs NUTS means within 0.25 sd, sds within 25 % on every
+parameter; KS > 0.01 on the structural parameters (half-normal scales are
+the documented normal-approximation caveat); 5 ✓ every builder round-trips;
+6 ✓ gate 12 green for all fifteen subpackages.
+
+**Finding worth a 1.1 ticket:** Laplace is measurably miscalibrated on
+the Hill surface at SBC resolution (k ranks pile at the top bin when the
+true k is large; small-panel skew on half-normal amplitude priors). The
+SBC gate detects it, which is the point; the Hill tier of the gate runs
+under NumPyro. Users fitting Hill surfaces with Laplace should run
+`diagnose.sbc_surface` on their panel shape.
+
+**Deferred:** PyMC backend (1.1, D2); block bootstrap for switchback;
+Säilynoja-style simultaneous ECDF bands (DKW used, conservative).
+
+## Next (Phase 9 — documentation, end-to-end notebooks, 1.0)
+
+1. Sphinx API reference linking each subpackage's notebook series.
+2. `nbs/end-to-end/` — identify, design, surface, calibrate, meta.
+3. README status, `docs/notes/` one note per deliberate divergence,
+   version `1.0.0` and tag on `main`.

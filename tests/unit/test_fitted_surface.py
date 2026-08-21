@@ -360,3 +360,25 @@ def test_predict_marginal_helper_horizons(res: FitResult) -> None:
         support_indicator(16, TimeWindow(start=10, stop=20))
     with pytest.raises(KeyError):
         predict_marginal(res.surface, post, res.data, "zzz")
+
+
+def test_marginal_under_linear_kernel_restores_unit_axis() -> None:
+    """A linear kernel's marginal is constant across units; ``_select`` must still
+    return the full ``(chain, draw, n_units, n_periods)`` grid (Phase 8 finding)."""
+    from axiom.core import Intervention
+    from axiom.sim import DosePlan, surface_world
+    from axiom.surface import LinearKernel, fit
+
+    w = surface_world(
+        n_units=3,
+        n_periods=12,
+        treatments=("a",),
+        kernels=LinearKernel(),
+        doses=DosePlan(scale=10.0),
+        intercept="shared",
+        seed=0,
+    )
+    r = fit(w.spec, w.panel, backend="laplace", draws=50, seed=0)
+    out = r.marginal_under(Intervention(doses={"a": 1.0}, mode="scale"), "a")
+    assert not isinstance(out, Unsupported), out
+    assert out.values.shape[2:] == (3, 12)

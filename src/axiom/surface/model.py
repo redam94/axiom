@@ -941,6 +941,12 @@ class FitResult:
         n_units, n_periods = self.shape
         values = np.asarray(draws.values, dtype=np.float64)
         chains, per_chain = int(values.shape[0]), int(values.shape[1])
+        # A marginal that is constant across units (linear kernel) or across the whole
+        # grid arrives without those axes; restore them before broadcasting.
+        if values.ndim == 3 and values.shape[-1] == n_periods and n_units != n_periods:
+            values = values[:, :, None, :]
+        elif values.ndim == 2:
+            values = values[:, :, None, None]
         grid = np.broadcast_to(values, (chains, per_chain, n_units, n_periods))
         sel = self._window(window)
         coords: dict[str, list[Any]] = {
