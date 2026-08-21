@@ -240,12 +240,53 @@ conversion with ledger line); 5 — golden ROI/contribution is an
 **Deferred:** conditional (stratified) estimands realize in Phase 6 with the
 transfer machinery (`Unsupported` until then, with that reason).
 
-## Next (Phase 5 — `design`)
+### 2026-08-21 — Phase 5 (`design`) complete on `feature/phase-5-design`
 
-1. `core/expr.py` — the closed node set (with C1: `ODESystem` dimension-check
-   only; C2: no general `Deriv`; A3: rational `Pow` on dimensioned bases).
-2. `core/interpret/{value,dimension,latex}.py`; `SupportsForward`.
-3. `estimands/spec.py` — facets, derived dimension, `transfer_to` →
-   `TransferPlan` built on `core.verdict`.
-4. Gates 10 and 11; `nbs/core/03-expression-tree`, `nbs/estimands/01,02`.
-5. Plan-doc edits listed under "*Update:*" in 0002.
+The first build attempt died on a session limit, and the uv-managed CPython
+3.13.1 was later found SIGKILLed on launch (reinstalled with
+`uv python install --reinstall 3.13.1`); the phase was rebuilt in three
+parallel builders plus a calibration fix round.
+
+Delivered: `eig`, `evoi`, `precision` (cost per outcome, Fieller), `anchor`,
+`power`, `cluster` (the parent's geo design, renamed), `schedule`,
+`structural` (Fisher information by differentiating `forward`; jax or
+central differences, agreeing to 1e-6), `methods/*` (registry with typed
+method assumptions + DiD, synthetic control, time-based regression,
+cluster-based regression, switchback, ghost), `simulate` (A/A, A/B,
+`calibrate_registry`, leaderboard), `economics`, `portfolio`, `optimizer`,
+`sensitivity`; 127 exported symbols; `nbs/design/01–06`; decisions
+0002.21–0002.24.
+
+**Phase 5 exit criteria:** 1 ✓ all 14 `planning.*` golden cases at 1e-12
+(`tests/golden/test_design.py`); `methods/` estimators have no parent
+fixture — recovery tests against seeded panels instead; 2 ✓ A/A gate on
+500 simulations, 40×24 panel: DiD 23, SC 29, TBR 29, CBR 25, switchback 29,
+ghost 31 false positives (region [11, 42], all in [3 %, 7 %]); all six
+`stable`; 3 ✓ DiD realized power 0.353/0.686/0.946 vs predicted
+0.363/0.707/0.947; 4 — EIG vs refit ranking is shown in `nbs/design/02`
+(MC converges to the closed form) rather than a refit-based test; 5 ✓
+(gate 9 is numerical); 6 ✓.
+
+Fix round (A/A): every method used a normal critical value on a small-df
+variance → Student-t at the recorded df (0002.21); switchback lacked the
+unit-fixed-effect dof factor; synthetic control's pseudo-treated subsets
+fit each donor on a single remaining donor (SE 6× too large) → per-donor
+placebo noise with the `‖w̄‖²` donor-overlap correction (measured
+sd/SE ratio 1.009). TBR's forecast variance assumes white residuals; the
+DGP's AR(1) shock leaves ~8 % excess sd, documented in its docstring.
+
+**Deferred:** block-bootstrap SE for switchback (HAC only); a refit-based
+EIG ranking test (needs the Phase 6 transfer machinery for a fair
+comparison); parent ports are "by specification" — `../mmm-framework` is
+not on this machine, so the ledger's PORT rows for `planning/*` were
+implemented from the plan and the golden fixture.
+
+## Next (Phase 6 — `calibrate`)
+
+1. `calibrate/{evidence,prior}.py` — `design_factor`, `mean_sd_to_gamma`,
+   `combine_inverse_variance`, `derive_prior` against the
+   `calibration.*` golden cases.
+2. `calibrate/transfer.py` — scope transfer, chord-vs-marginal, carryover
+   corrected design factors (the parent's notebook-only math).
+3. Conditional (stratified) estimands realized with the transfer machinery.
+4. `nbs/calibrate/`; gate 12.

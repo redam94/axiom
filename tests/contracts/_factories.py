@@ -51,9 +51,72 @@ from axiom.core import (
     Unsupported,
     Unverified,
     Verdict,
+    clopper_pearson,
     dimensionless,
+    wald,
 )
 from axiom.data import ColumnScaling, Completeness, RoleMap, ScalingParameters
+from axiom.design import (
+    MDE,
+    AnchoredEffect,
+    Assignment,
+    CalibrationResult,
+    CandidateScore,
+    ClusterDesign,
+    CostPerOutcomeInterval,
+    CostPerOutcomePower,
+    DecisionSpec,
+    DesignCandidate,
+    EconomicInputs,
+    EIGEstimate,
+    EVOIResult,
+    ExperimentValue,
+    FisherInformation,
+    HoldoutTradeoff,
+    IdentifiabilityRidge,
+    IdentifyingDesign,
+    Leaderboard,
+    LeaderboardRow,
+    LearningPriority,
+    MethodEstimate,
+    MethodSpec,
+    OpportunityCost,
+    PowerCurve,
+    PowerResult,
+    ProgramSchedule,
+    Recommendation,
+    ReExperimentTiming,
+    SampleSize,
+    Schedule,
+    ScheduledExperiment,
+    SensitivityTable,
+    SimulatedPower,
+    SimulationSpec,
+    StudySummary,
+    TreatmentCandidate,
+    ValuePerOutcome,
+    anchor_draws,
+    cost_per_outcome_interval,
+    cost_per_outcome_power,
+    eig_monte_carlo,
+    evaluate_candidate,
+    evoi_gaussian,
+    experiment_value,
+    holdout_tradeoff,
+    match_clusters,
+    mde,
+    method_spec,
+    opportunity_cost,
+    perturb,
+    power,
+    power_curve,
+    pulse,
+    rank_treatments,
+    recommend,
+    sample_size,
+    schedule_with_cooldown,
+    time_to_re_experiment,
+)
 from axiom.estimands import Estimand, EstimandResult, FacetDiff, Level, Quantity, TransferPlan
 from axiom.identify import (
     CausalGraph,
@@ -166,7 +229,239 @@ def _rolemap() -> RoleMap:
     )
 
 
+_CLUSTER = Unit(name="region", dimension=D.entity, kind="cluster")
+
+
+def _cluster_design() -> ClusterDesign:
+    return ClusterDesign(unit=_CLUSTER, n_clusters=20, cluster_size=50, icc=0.05, allocation=0.5)
+
+
+def _decision() -> DecisionSpec:
+    return DecisionSpec(
+        name="scale_up", threshold=0.5, value_per_outcome_unit=100.0, numeraire="USD"
+    )
+
+
+def _value_per_outcome() -> ValuePerOutcome:
+    return ValuePerOutcome(
+        value=3.0, outcome_unit="kg", numeraire="USD", source="contract price", assumption=None
+    )
+
+
+def _opportunity_cost() -> OpportunityCost:
+    return opportunity_cost(
+        0.2, 8, 100.0, (1.5, 2.0, 2.5), _value_per_outcome(), 0.01, dose_cost_per_unit=1.0
+    )
+
+
+def _candidate(name: str = "holdout_a", se: float = 0.2, cost: float = 50.0) -> DesignCandidate:
+    return DesignCandidate(
+        name=name,
+        method="difference_in_differences",
+        n_units=40,
+        n_periods=8,
+        holdout_fraction=0.25,
+        experiment_se=se,
+        cost=cost,
+        cooldown_periods=2,
+    )
+
+
+def _economics() -> EconomicInputs:
+    return EconomicInputs(
+        value_per_outcome=_value_per_outcome(),
+        dose_per_period=100.0,
+        discount_rate=0.01,
+        dose_cost_per_unit=1.0,
+        marginal_value_ratio=1.2,
+    )
+
+
+def _score(name: str = "holdout_a", se: float = 0.2, cost: float = 50.0) -> CandidateScore:
+    return evaluate_candidate(_candidate(name, se, cost), _decision(), 1.0, 0.8, _economics())
+
+
+def _treatment_candidate(name: str = "fertilizer", se: float = 0.3) -> TreatmentCandidate:
+    return TreatmentCandidate(
+        name=name,
+        prior_mean=1.0,
+        prior_sd=0.8,
+        experiment_se=se,
+        decision=_decision(),
+        opportunity_cost=2.0,
+        fixed_cost=4.0,
+    )
+
+
+def _calibration() -> CalibrationResult:
+    return CalibrationResult(
+        method="difference_in_differences",
+        design="holdout",
+        n_simulations=100,
+        n_unsupported=0,
+        false_positive_count=4,
+        false_positive_rate=0.04,
+        alpha=0.05,
+        region=clopper_pearson(100, 0.05, 1e-3),
+        passed=True,
+        seed=0,
+    )
+
+
+def _simulated_power() -> SimulatedPower:
+    return SimulatedPower(
+        method="difference_in_differences",
+        design="holdout",
+        effect=0.5,
+        truth=0.5,
+        n_simulations=100,
+        n_unsupported=0,
+        rejections=81,
+        power=0.81,
+        alpha=0.05,
+        mean_effect=0.49,
+        bias=-0.01,
+        coverage=0.95,
+        rmse=0.2,
+        predicted_power=0.8,
+        region=clopper_pearson(100, 0.8, 1e-3),
+        within_prediction=True,
+        seed=0,
+    )
+
+
+def _leaderboard_row() -> LeaderboardRow:
+    return LeaderboardRow(
+        method="difference_in_differences",
+        design="holdout",
+        status="stable",
+        calibrated=True,
+        false_positive_rate=0.04,
+        powers=(0.81,),
+        mean_power=0.81,
+        biases=(-0.01,),
+        coverages=(0.95,),
+        rmses=(0.2,),
+        n_unsupported=0,
+        rank=1,
+    )
+
+
+def _fisher() -> FisherInformation:
+    return FisherInformation(
+        parameters=("alpha", "beta_a", "k_a"),
+        matrix=((4.0, 1.0, 0.5), (1.0, 3.0, 0.2), (0.5, 0.2, 2.0)),
+        noise_sd=0.5,
+        n_observations=24,
+        det=19.37,
+        min_eigenvalue=1.76,
+        singular=False,
+        method="finite",
+        detail={"round_off_columns": ""},
+    )
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
+    PowerResult: lambda: power(100, 1.0, 2.0, allocation=0.4),
+    MDE: lambda: mde(100, 2.0, power=0.9),
+    SampleSize: lambda: sample_size(1.0, 2.0, two_sided=False),
+    PowerCurve: lambda: power_curve(100, 2.0, (0.0, 0.5, 1.0, 1.5)),
+    ClusterDesign: _cluster_design,
+    Assignment: lambda: match_clusters(
+        ((1.0, 1.2), (3.0, 3.1), (1.1, 0.9), (2.9, 3.3), (5.0, 5.0)), metric="trajectory", seed=1
+    ),
+    HoldoutTradeoff: lambda: holdout_tradeoff(_cluster_design(), 2.0, (0.2, 0.3, 0.5)),
+    AnchoredEffect: lambda: anchor_draws(
+        (0.2, 0.4, 0.5, 0.55, 0.6, 0.7, 0.8, 0.9, 1.0, 1.3), "beta", 0.5, credence=0.8
+    ),
+    CostPerOutcomeInterval: lambda: cost_per_outcome_interval(100.0, 5.0, 1.5, alpha=0.1),
+    CostPerOutcomePower: lambda: cost_per_outcome_power(100.0, 5.0, 1.5, threshold=30.0),
+    EIGEstimate: lambda: eig_monte_carlo((-1.0, -0.5, 0.0, 0.5, 1.0), 0.5, n_sims=16, seed=3),
+    ReExperimentTiming: lambda: time_to_re_experiment(0.2, 10.0, 0.3, 0.1, design_kind="ghost"),
+    DecisionSpec: _decision,
+    EVOIResult: lambda: evoi_gaussian(_decision(), 1.0, 0.8, 0.4),
+    MethodSpec: lambda: method_spec("switchback").model_copy(update={"status": "experimental"}),
+    MethodEstimate: lambda: MethodEstimate(
+        method="difference_in_differences",
+        effect=0.42,
+        se=0.1,
+        interval=wald(0.42, 0.1, 0.95),
+        n_treated=10,
+        n_control=10,
+        n_pre=8,
+        n_post=8,
+        se_method="unit_changes",
+        detail={"df": 18.0},
+    ),
+    ValuePerOutcome: _value_per_outcome,
+    OpportunityCost: _opportunity_cost,
+    ExperimentValue: lambda: experiment_value(120.0, _opportunity_cost(), 25.0),
+    StudySummary: lambda: StudySummary(
+        treatment="fertilizer", estimate=1.2, se=0.3, periods_ago=4.0, definition="wald"
+    ),
+    TreatmentCandidate: _treatment_candidate,
+    LearningPriority: lambda: rank_treatments(
+        (_treatment_candidate(), _treatment_candidate("water", 0.5))
+    )[0],
+    Recommendation: lambda: recommend(
+        (_treatment_candidate(), _treatment_candidate("water", 0.5)), budget=8.0
+    ),
+    DesignCandidate: _candidate,
+    EconomicInputs: _economics,
+    CandidateScore: _score,
+    ScheduledExperiment: lambda: ScheduledExperiment(
+        name="holdout_a", start=0, end=8, free_at=10, net_value=12.5
+    ),
+    ProgramSchedule: lambda: schedule_with_cooldown(
+        (_score(), _score("holdout_b", 0.1, 80.0)), horizon_periods=24
+    ),
+    SensitivityTable: lambda: perturb(
+        (_candidate(), _candidate("holdout_b", 0.1, 80.0)),
+        _decision(),
+        1.0,
+        0.8,
+        _economics(),
+        "value_per_outcome",
+        (1.0, 3.0, 6.0),
+    ),
+    Schedule: lambda: pulse(8, 80.0, 20.0, on=2, off=2, treatment="a"),
+    SimulationSpec: lambda: SimulationSpec(n_units=12, n_periods=10, n_pre=5, n_treated=6, seed=3),
+    CalibrationResult: _calibration,
+    SimulatedPower: _simulated_power,
+    LeaderboardRow: _leaderboard_row,
+    Leaderboard: lambda: Leaderboard(
+        spec=SimulationSpec(n_units=12, n_periods=10, n_pre=5, n_treated=6, n_simulations=100),
+        alpha=0.05,
+        effects=(0.5,),
+        rows=(_leaderboard_row(),),
+        calibrations=(_calibration(),),
+        powers=((_simulated_power(),),),
+    ),
+    FisherInformation: _fisher,
+    IdentifiabilityRidge: lambda: IdentifiabilityRidge(
+        parameters=("alpha", "beta_a", "k_a"),
+        direction={"alpha": 0.1, "beta_a": 0.7, "k_a": 0.707},
+        min_eigenvalue=0.02,
+        max_eigenvalue=1.9,
+        condition_number=95.0,
+        pairs=(("beta_a", "k_a"),),
+        correlations=(0.85,),
+        detail={"noise_sd": "0.5"},
+    ),
+    IdentifyingDesign: lambda: IdentifyingDesign(
+        target="k_a",
+        design=Design(
+            treatments=("a",), points=((0.0,), (50.0,), (50.0,), (200.0,)), kind="identify:k_a"
+        ),
+        indices=(0, 2, 2, 4),
+        expected_sd=7.5,
+        expected_sds={"alpha": 0.4, "beta_a": 1.1, "k_a": 7.5},
+        prior_sds={"alpha": 5.0, "k_a": 20.0},
+        noise_sd=0.5,
+        seed=0,
+        n_restarts=3,
+        passes=4,
+    ),
     Dimension: lambda: D.outcome / D.currency ** Fraction(1, 2),
     Treatment: lambda: Treatment(name="fertilizer", dimension=D.currency, unit="USD"),
     Dose: lambda: Dose(name="dose", dimension=D.currency, unit="USD", numeraire="USD"),
