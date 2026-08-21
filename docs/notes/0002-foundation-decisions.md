@@ -226,3 +226,60 @@ are basis-invariant and do not. The `Quantity` docstring is the reference.
 `estimands.graph` returns `Unsupported` where a per-row expression cannot
 express the aggregated functional (scale-mode ratios), rather than a
 different number under the same name.
+
+## 0002.21 — Method estimates are comparable numbers with stated assumptions
+
+Every experiment method in `design.methods` returns the same quantity — the
+average effect per treated unit per post period — as a `MethodEstimate`
+carrying a `wald` interval, the SE method by name, the degrees of freedom
+and every intermediate in `detail`. Methods whose natural quantity is
+cumulative (time-based regression) put the total in `detail`. Each
+`MethodSpec` names its `core.Assumption`s (facet `"method"`, default
+`unverified`) and its data requirements; `estimate()` checks the
+requirements and returns `Unsupported` before an estimator sees data it
+cannot use. Where an SE is an estimated variance with finite degrees of
+freedom, the interval's critical value is Student-t at the recorded df
+(recorded as `detail["critical"]`), still labelled `wald` because that is
+what it is: estimate ± critical × se.
+
+## 0002.22 — The A/A gate decides a method's status, not its author
+
+`design.simulate.calibrate_registry` runs every registered method on A/A
+panels (no effect) from one documented DGP — unit intercepts, stationary
+AR(1) common period shocks, iid noise, Bernoulli switchback assignment and
+ghost exposure — and returns a *new* registry in which a method whose
+false-positive count lies outside `clopper_pearson(n, α, 1e-3)` or whose
+rate leaves the roadmap's [3 %, 7 %] is `"experimental"`. `METHODS` itself
+records the status measured by `tests/recovery/test_aa_calibration.py` on
+the gate panel (40 units, 24 periods, 12 pre, 500 simulations), with the
+measured rate in a comment; the gate asserts the rule in both directions —
+a stable method must be inside, an outside method must be experimental —
+so a method can neither be shipped quietly nor demoted silently.
+
+## 0002.23 — Structural design differentiates `forward`, nothing else
+
+`design.structural.fisher_information` builds the Jacobian of the
+response with respect to the structural parameters by differentiating a
+`SupportsForward` object's `forward` (jax when available and x64 is on,
+central differences otherwise — the two agree to 1e-6 and the unit tests
+assert it). There is no numpy mirror of the transform chain in `design`;
+the information matrix is `Jᵀ J / σ²` plus the prior precision, and a
+constant dose schedule is reported as `Unsupported` (singular on the
+correlation form) rather than as a large number. Schedules (`pulse`,
+`alternating`, `random_switchback`) are the design variable: temporal
+contrast is what identifies carryover, which is why `schedule` feeds
+`structural`. `contrast_score` is a heuristic ordering, not a substitute
+for the information matrix — a reviewer found a pattern where the two
+disagree.
+
+## 0002.24 — Value of information carries its numeraire
+
+`design.economics` takes one scalar, `ValuePerOutcome(value, outcome_unit,
+numeraire, source)`, and every monetary output (`OpportunityCost`,
+`ExperimentValue`, `CandidateScore`, `LearningPriority`) carries the
+numeraire string; opportunity cost is *signed* (a prior that says the
+treatment is net-negative makes withholding it a gain), discounting uses
+explicit per-period weights, and `mid_horizon_factor` is the exact mean of
+those weights rather than the midpoint approximation. The parent's finance
+reporting (`finance/*`, `planning/{pacing,calendar,forecast,variance,
+payback}`) is dropped per the ledger.
