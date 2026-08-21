@@ -204,7 +204,43 @@ loop and acquisition — not needed by Phases 4–6; revisit in Phase 8 or
 convention is still open (the nuisance-conventions mechanism is the hook
 for it).
 
-## Next (Phase 4 — `estimands` realization)
+### 2026-08-21 — Phase 4 (`estimands` realization) in progress on `feature/phase-4-estimands`
+
+`SupportsEstimands` added to `core.protocols` (a fitted producer = posterior
++ counterfactuals + declared estimands + the units it was fit in). Two
+agents in parallel: (A) `FitResult` becomes the producer
+(`predict_under`, `marginal_under`, `capabilities`, `restrict`) and
+`estimands/evaluate.py` (`EstimandResult`, `realize`, `evaluate`); (B)
+`estimands/registry.py` and `estimands/graph.py` (the estimand as an
+expression, for gate 10). Gates 6 and 7 drafted against the spec.
+
+Landed: `FitResult` is the `SupportsEstimands` producer (`predict_under`
+with set/scale/shift on a support window, `marginal_under` as the derivative
+of the windowed outcome, `capabilities`/`restrict`, units it was fit in);
+`estimands/evaluate.py` (`EstimandResult`, `realize`, `evaluate`) with
+capability, identification, dimension and unit checks — every refusal typed,
+every unit crossing a ledger line; `estimands/registry.py` (the domain-general
+standard library); `estimands/graph.py` (the estimand as an expression tree
+with `substitute`, refusing where a per-row tree cannot express the
+aggregated functional); gates 6 and 7; `nbs/estimands/03`.
+
+Reviewer-caught before merge: intervention levels were passed to the
+producer in the estimand's unit while outputs were converted (a wrong number
+with a plausible ledger line); negative realized doses under shift/scale;
+a windowed marginal that was not the derivative of the windowed outcome
+under carryover (the per-period-vs-cumulative class again); two different
+`ratio` definitions under one name → ratified as 0002.20.
+
+**Phase 4 exit criteria:** 1 — hand-built dict and Laplace agree exactly;
+the NUTS leg is a `slow` test; 2 ✓ (constructive + runtime gate 6); 3 ✓
+(gate 7 over every capability); 4 ✓ (dimension mismatch raises; unit
+conversion with ledger line); 5 — golden ROI/contribution is an
+`adapters.marketing` deliverable (Phase 8); 6 ✓.
+
+**Deferred:** conditional (stratified) estimands realize in Phase 6 with the
+transfer machinery (`Unsupported` until then, with that reason).
+
+## Next (Phase 5 — `design`)
 
 1. `core/expr.py` — the closed node set (with C1: `ODESystem` dimension-check
    only; C2: no general `Deriv`; A3: rational `Pow` on dimensioned bases).

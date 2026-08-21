@@ -60,8 +60,8 @@ conventions=...)`` reuses them for a prediction panel.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass, replace
 from typing import Any, Literal
 
 import numpy as np
@@ -71,12 +71,14 @@ from pydantic import Field, model_validator
 
 from axiom.core import (
     Add,
+    Capability,
     Data,
     DesignMatrix,
     Dimension,
     DimensionError,
     Expr,
     Gather,
+    Intervention,
     Likelihood,
     ModelSpec,
     Mul,
@@ -84,8 +86,10 @@ from axiom.core import (
     Outcome,
     Param,
     Posterior,
+    PredictiveDraws,
     Prior,
     Spec,
+    TimeWindow,
     Treatment,
     Unsupported,
     Unverified,
@@ -756,6 +760,8 @@ class FitResult:
     data: Mapping[str, npt.NDArray[Any]]
     report: ConvergenceReport | None
     provenance: dict[str, Any]
+    dropped: frozenset[Capability] = frozenset()
+    declared: tuple[str, ...] = ()
 
     @property
     def converged(self) -> bool:
@@ -766,6 +772,288 @@ class FitResult:
             return self.report.converged
         prov = self.posterior.provenance
         return bool(prov.get("converged", False)) and bool(prov.get("hessian_pd", True))
+
+    # -- SupportsPosterior (delegation) ----------------------------------------------
+    #
+    # ``FitResult`` satisfies ``SupportsEstimands`` by composition: it *holds* a
+    # posterior, a surface, and the fitted data, and forwards the protocol's
+    # questions to them. A fit without a posterior answers none of them.
+
+    def _require_posterior(self) -> Posterior:
+        if isinstance(self.posterior, Posterior):
+            return self.posterior
+        raise ValueError(
+            f"this fit has no posterior: the backend returned "
+            f"{type(self.posterior).__name__}({self.posterior.reason!r})"
+        )
+
+    def draws(self, name: str) -> npt.NDArray[np.float64]:
+        return self._require_posterior().draws(name)
+
+    def names(self) -> frozenset[str]:
+        return self._require_posterior().names()
+
+    def coords(self) -> Mapping[str, Sequence[Any]]:
+        return self._require_posterior().coords()
+
+    def n_draws(self) -> int:
+        return self._require_posterior().n_draws()
+
+    # -- the fitted panel ---------------------------------------------------------------
+
+    @property
+    def treatments(self) -> tuple[Treatment, ...]:
+        """The spec's treatment entities (name, dimension, unit)."""
+        return self.surface.spec.treatments
+
+    @property
+    def outcome(self) -> Outcome:
+        return self.surface.spec.outcome
+
+    @property
+    def outcome_unit(self) -> str | None:
+        return self.surface.spec.outcome.unit
+
+    def dose_unit(self, treatment: str) -> str | None:
+        """The unit the named treatment's dose was fit in; ``KeyError`` for an unknown one."""
+        return self.surface.spec.treatment(treatment).unit
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        """``(n_units, n_periods)`` of the fitted panel, read off the first treatment's grid."""
+        grid = np.asarray(self.data[self.surface.spec.treatment_names[0]])
+        if grid.ndim != 2:
+            raise ValueError(
+                f"fitted dose arrays must be (n_units, n_periods); got ndim={grid.ndim}"
+            )
+        return int(grid.shape[0]), int(grid.shape[1])
+
+    @property
+    def n_units(self) -> int:
+        return self.shape[0]
+
+    @property
+    def n_periods(self) -> int:
+        return self.shape[1]
+
+    @property
+    def unit_labels(self) -> tuple[str, ...]:
+        """Row labels of the panel: the spec's ``unit_labels``, else the panel's units as
+        ``fit`` recorded them under ``provenance["unit_labels"]``, else the row index."""
+        labels = self.surface.spec.unit_labels
+        if labels:
+            return labels
+        recorded = self.provenance.get("unit_labels")
+        if recorded:
+            return tuple(str(u) for u in recorded)
+        return tuple(str(i) for i in range(self.n_units))
+
+    @property
+    def periods(self) -> tuple[float, ...]:
+        """Numeric period labels, as ``prepare`` laid the time column out."""
+        spec = self.surface.spec
+        if spec.time_column in self.data:
+            t = np.asarray(self.data[spec.time_column], dtype=float)
+            return tuple(float(x) for x in (t[0] if t.ndim == 2 else t).reshape(-1))
+        return tuple(float(i) for i in range(self.n_periods))
+
+    # -- capabilities -------------------------------------------------------------------
+
+    def capabilities(self) -> frozenset[Capability]:
+        """What this fit can answer, minus anything ``restrict`` dropped.
+
+        A fit with a posterior answers counterfactuals (``predict_under``),
+        closed-form marginals (``marginal_under``), windowed quantities, and
+        outcome-scale predictive draws (``surface.forward.predict(noise=True)``);
+        it answers per-unit questions when the intercept indexes units or the
+        panel has more than one unit. A fit whose posterior is a typed failure
+        answers nothing.
+        """
+        if not isinstance(self.posterior, Posterior):
+            return frozenset()
+        caps = {
+            Capability.COUNTERFACTUAL,
+            Capability.MARGINAL,
+            Capability.TIME_WINDOW,
+            Capability.PREDICTIVE,
+        }
+        if self.surface.spec.intercept in ("per_unit", "hierarchical") or self.n_units > 1:
+            caps.add(Capability.PER_UNIT)
+        return frozenset(caps - self.dropped)
+
+    def restrict(self, drop: Iterable[Capability | str]) -> FitResult:
+        """A copy that no longer claims the given capabilities.
+
+        The methods behind a dropped capability return ``Unsupported`` naming
+        it — honest degradation for a producer that should not be trusted
+        with, say, per-unit questions, and the lever gate 7 pulls.
+        """
+        dropped = frozenset(Capability(c) for c in drop)
+        return replace(self, dropped=self.dropped | dropped)
+
+    def _unsupported(self, capability: Capability, what: str) -> Unsupported:
+        if not isinstance(self.posterior, Posterior):
+            why = (
+                f"this fit has no posterior ({type(self.posterior).__name__}: "
+                f"{self.posterior.reason})"
+            )
+        elif capability in self.dropped:
+            why = "this fit dropped it"
+        else:
+            why = "this fit does not have it"
+        return Unsupported(
+            reason=f"{what} needs the {capability.value!r} capability; {why}",
+            missing=(capability.value,),
+            detail={"surface": self.surface.spec.name},
+        )
+
+    # -- declared estimands -------------------------------------------------------------
+
+    @property
+    def declared_estimands(self) -> tuple[str, ...]:
+        """Content hashes of the estimands this fit was declared with."""
+        return self.declared
+
+    def with_estimands(self, *hashes: str) -> FitResult:
+        """A copy declaring the given estimand content hashes (appended, de-duplicated)."""
+        bad = [h for h in hashes if not isinstance(h, str) or not h.strip()]
+        if bad:
+            raise ValueError(f"estimand hashes must be non-empty strings, got {bad}")
+        return replace(self, declared=tuple(dict.fromkeys((*self.declared, *hashes))))
+
+    # -- SupportsIntervention -----------------------------------------------------------
+
+    def _window(self, window: TimeWindow | None) -> slice:
+        n_periods = self.n_periods
+        if window is None:
+            return slice(0, n_periods)
+        if window.stop > n_periods:
+            raise ValueError(
+                f"window [{window.start}, {window.stop}) runs past the fitted horizon of "
+                f"{n_periods} periods"
+            )
+        return slice(window.start, window.stop)
+
+    def _select(
+        self, draws: PredictiveDraws, iv: Intervention, window: TimeWindow | None, seed: int | None
+    ) -> PredictiveDraws:
+        """Broadcast to the panel grid, select the reporting window, attach panel coords."""
+        n_units, n_periods = self.shape
+        values = np.asarray(draws.values, dtype=np.float64)
+        chains, per_chain = int(values.shape[0]), int(values.shape[1])
+        grid = np.broadcast_to(values, (chains, per_chain, n_units, n_periods))
+        sel = self._window(window)
+        coords: dict[str, list[Any]] = {
+            "unit": list(self.unit_labels),
+            "period": list(self.periods[sel]),
+        }
+        for t, flat in draws.coords.items():
+            if t in self.surface.spec.treatment_names:
+                dose_grid = np.asarray(flat, dtype=np.float64).reshape(n_units, n_periods)
+                coords[t] = [float(x) for x in dose_grid[:, sel].reshape(-1)]
+        return PredictiveDraws(
+            values=np.ascontiguousarray(grid[..., sel]),
+            intervention=iv,
+            window=window,
+            coords=coords,
+            seed=seed,
+        )
+
+    def predict_under(
+        self, iv: Intervention, window: TimeWindow | None = None, seed: int | None = None
+    ) -> PredictiveDraws | Unsupported:
+        """The posterior of the **mean** outcome under ``iv``, per unit and period.
+
+        ``values`` is ``(chain, draw, n_units, n_periods_in_window)``. The
+        counterfactual doses come from the fitted panel through
+        ``surface.forward.counterfactual_doses``: within the intervention's
+        support (``iv.window``, else every period) ``set`` replaces,
+        ``scale`` multiplies, and ``shift`` adds, for every treatment in
+        ``iv.doses``; treatments not named keep their observed doses.
+        ``iv.version`` is carried, not interpreted. The whole horizon is
+        always evaluated — carryover needs the full time axis — and
+        ``window`` selects the reporting periods afterwards; a window past
+        the horizon is a ``ValueError``. ``coords`` holds ``unit`` and
+        ``period`` labels and, under each treatment's name, the realized
+        (window-selected) dose grid flattened in C order, so a caller can
+        recover the dose actually applied under ``scale`` / ``shift``.
+
+        One tree evaluation per draw, no likelihood noise (``seed`` is
+        recorded, not used). ``Unsupported`` when ``COUNTERFACTUAL`` — or,
+        for a window, ``TIME_WINDOW`` — was dropped; ``ValueError`` for an
+        unknown treatment or a fit without a posterior.
+        """
+        from axiom.surface.forward import counterfactual_doses, predict
+
+        if Capability.COUNTERFACTUAL not in self.capabilities():
+            return self._unsupported(Capability.COUNTERFACTUAL, "predict_under")
+        if window is not None and Capability.TIME_WINDOW not in self.capabilities():
+            return self._unsupported(Capability.TIME_WINDOW, "predict_under with a window")
+        posterior = self._require_posterior()
+        dose = counterfactual_doses(self.surface, self.data, iv)
+        draws = predict(self.surface, posterior, dose, seed=seed, noise=False)
+        return self._select(draws, iv, window, seed)
+
+    def marginal_under(
+        self,
+        iv: Intervention,
+        treatment: str,
+        window: TimeWindow | None = None,
+        seed: int | None = None,
+    ) -> PredictiveDraws | Unsupported:
+        """The posterior of ``∂mu_t/∂δ`` for ``treatment`` under a common shift ``δ`` of the
+        doses in ``iv``'s support, at the doses ``iv`` realizes.
+
+        The closed-form derivative through the chain (``surface.forward.
+        predict_marginal`` with ``horizon="shift"`` and ``support=iv.window``):
+        per (unit, period) cell ``g_t · Σ_{l: t−l ∈ support} w_l``, so that
+        the sum over any reporting ``window`` is the derivative of that
+        window's aggregate outcome with respect to the shift — the windowed
+        ``marginal`` estimand, and the limit of the ``ratio`` of two nearby
+        interventions. Without carryover this is the kernel's derivative on
+        the support and zero off it. Per draw, laid out like
+        ``predict_under``; the whole horizon is evaluated and ``window``
+        selects afterwards. ``Unsupported`` when ``MARGINAL`` (or, with a
+        window, ``TIME_WINDOW``) was dropped, and when the derivative is not
+        finite somewhere — a kernel with shape ``s < 1`` has infinite slope
+        at zero dose — naming the number of cells rather than returning
+        ``inf``.
+        """
+        from axiom.surface.forward import counterfactual_doses, predict_marginal
+
+        if Capability.MARGINAL not in self.capabilities():
+            return self._unsupported(Capability.MARGINAL, "marginal_under")
+        if window is not None and Capability.TIME_WINDOW not in self.capabilities():
+            return self._unsupported(Capability.TIME_WINDOW, "marginal_under with a window")
+        if treatment not in self.surface.spec.treatment_names:
+            raise ValueError(
+                f"no treatment {treatment!r}; have {list(self.surface.spec.treatment_names)}"
+            )
+        posterior = self._require_posterior()
+        dose = counterfactual_doses(self.surface, self.data, iv)
+        # An infinite slope is reported as Unsupported below, not as a numpy warning here.
+        with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
+            draws = predict_marginal(
+                self.surface,
+                posterior,
+                dose,
+                treatment,
+                horizon="shift",
+                support=iv.window,
+                seed=seed,
+            )
+        out = self._select(draws, iv, window, seed)
+        bad = ~np.isfinite(out.values)
+        if np.any(bad):
+            return Unsupported(
+                reason=(
+                    f"marginal of {treatment!r} is not finite in {int(bad.sum())} of "
+                    f"{bad.size} (draw, unit, period) cells; a kernel with shape s < 1 "
+                    "has infinite slope at zero dose"
+                ),
+                detail={"treatment": treatment, "n_cells": str(int(bad.sum()))},
+            )
+        return out
 
 
 def fit(
@@ -797,6 +1085,7 @@ def fit(
         "panel_hash": panel.content_hash(),
         "n_units": completeness.n_units,
         "n_periods": completeness.n_periods,
+        "unit_labels": list(spec.unit_labels or panel.units),
         "draws": draws,
         "tune": tune,
         "chains": chains,

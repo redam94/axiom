@@ -212,3 +212,17 @@ carryover is declared. Nuisance conventions resolved at fit time
 (`LinearTrend` origin/scale) are recorded in `FitResult.provenance` and
 reused for prediction panels. Default treatment names in `sim` are `a`/`b`
 — no marketing nouns even where the vocabulary gate would not object.
+
+## 0002.20 — Estimand functionals are defined over the aggregated outcome and dose
+
+A reviewer showed `ratio` meant two different things in `estimands.graph`
+(per-row `Δmean/Δdose`) and `estimands.evaluate` (`Δagg(Y)/Δagg(X)`), and
+that `transfer_to` emitted a basis correction for a ratio that this
+realization makes basis-invariant. Ratified: every functional is taken over
+`agg(Y)` and `agg(X)` as the `window` (basis) and `level` facets define them.
+`contrast` and `area` scale with the basis and get the
+`per_period_to_cumulative` correction; `ratio`, `marginal`, `elasticity`
+are basis-invariant and do not. The `Quantity` docstring is the reference.
+`estimands.graph` returns `Unsupported` where a per-row expression cannot
+express the aggregated functional (scale-mode ratios), rather than a
+different number under the same name.
