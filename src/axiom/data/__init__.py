@@ -1,6 +1,17 @@
-"""data: Role-tagged Panel container and scaling. No sampler, no I/O format lock-in.
+"""data: the role-tagged ``Panel`` and its scaling. Imports only ``core``."""
 
-STATUS: not implemented. See docs/plan/03-roadmap.md.
-"""
+from axiom.data.frame import Completeness, Panel, PanelError
+from axiom.data.roles import RoleKind, RoleMap
+from axiom.data.scale import ColumnScaling, ScalingMethod, ScalingParameters, fit_scaling
 
-__all__: list[str] = []
+__all__ = [
+    "ColumnScaling",
+    "Completeness",
+    "Panel",
+    "PanelError",
+    "RoleKind",
+    "RoleMap",
+    "ScalingMethod",
+    "ScalingParameters",
+    "fit_scaling",
+]

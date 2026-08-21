@@ -92,7 +92,13 @@ over `core.expr` at spec-construction time rather than a check at call time —
 see `01-architecture.md`. The scope tier is what `00-charter.md` means by
 "dimensions are necessary, not sufficient".
 
-## D7 — Does `axiom` own a fitted-model concept at all? · blocks: Phase 4
+## D7 — Does `axiom` own a fitted-model concept at all? · **resolved 2026-08-21: yes**
+
+Resolution: `axiom.io.analysis.Analysis`, a frozen container over
+`(specs, panel, posterior, evidence, ledger, provenance)` that delegates and
+holds no math. It lives in `io` rather than `core` because it holds a
+`Panel` (see `docs/notes/0002-foundation-decisions.md` §2). Original text
+kept below for the record.
 
 Currently no: there is a surface spec, a posterior, and protocols. A user
 holding "the fitted thing" holds a tuple. That is clean and slightly awkward.

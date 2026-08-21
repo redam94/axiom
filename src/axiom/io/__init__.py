@@ -1,6 +1,20 @@
-"""io: Serialization without pickle, provenance fingerprints, and the content-addressed artifact registry.
+"""io: the ``analysis.axiom`` format, provenance, and a content-addressed registry.
 
-STATUS: not implemented. See docs/plan/03-roadmap.md.
+No pickle, cloudpickle, or dill anywhere in this package; gate 5 asserts it.
 """
 
-__all__: list[str] = []
+from axiom.io.analysis import Analysis
+from axiom.io.provenance import Provenance, environment_fingerprint
+from axiom.io.registry import ArtifactRegistry
+from axiom.io.serialize import FORMAT_VERSION, FormatError, load_analysis, save_analysis
+
+__all__ = [
+    "FORMAT_VERSION",
+    "Analysis",
+    "ArtifactRegistry",
+    "FormatError",
+    "Provenance",
+    "environment_fingerprint",
+    "load_analysis",
+    "save_analysis",
+]
