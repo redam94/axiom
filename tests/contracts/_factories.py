@@ -153,6 +153,45 @@ from axiom.infer import (
     SampleSettings,
 )
 from axiom.io import Provenance
+from axiom.meta import (
+    BaujatData,
+    Cell,
+    Corpus,
+    EffectShrinkage,
+    EggerTest,
+    EpsilonCharge,
+    EpsilonLedger,
+    EpsilonSplit,
+    ForestData,
+    ForestRow,
+    FunnelContour,
+    FunnelData,
+    Heterogeneity,
+    LeaveOneOut,
+    ParameterSummary,
+    Pooled,
+    PooledEstimate,
+    PoolPriors,
+    PoolResult,
+    PoolSpec,
+    PrivacyPolicy,
+    Release,
+    StudyRecord,
+    TauEstimate,
+    baujat,
+    charge,
+    egger,
+    fixed_effect,
+    forest_data,
+    funnel_data,
+    heterogeneity,
+    leave_one_out,
+    orthogonal_split,
+    pool,
+    random_effects,
+    release,
+    tau_dersimonian_laird,
+)
 from axiom.sim import DosePlan, LinearSCM
 from axiom.surface import (
     Allocation,
@@ -469,6 +508,62 @@ def _fisher() -> FisherInformation:
         method="finite",
         detail={"round_off_columns": ""},
     )
+
+
+# -- meta ------------------------------------------------------------------------------------
+
+_META_Y = (0.42, 0.55, 0.31, 0.67, 0.48, 0.39)
+_META_SE = (0.10, 0.15, 0.12, 0.20, 0.11, 0.14)
+
+
+def _study(i: int) -> StudyRecord:
+    return StudyRecord(
+        study=f"s{i}",
+        contributor=f"c{i % 3}",
+        quantity="elasticity",
+        estimate=_META_Y[i],
+        se=_META_SE[i],
+        read="experiment" if i % 2 else "model",
+        family="fertilizer",
+        n=40 + 10 * i,
+        moderators={"follow_up": float(4 + 2 * i)},
+        source=f"report-{i}",
+    )
+
+
+def _corpus() -> Corpus:
+    return Corpus(records=tuple(_study(i) for i in range(6)), name="demo")
+
+
+def _pool_result() -> PoolResult:
+    spec = PoolSpec(family="fertilizer", bias_term=True, priors=PoolPriors(mu_scale=2.0))
+    out = pool(spec, _corpus(), draws=200, seed=0)
+    assert isinstance(out, Pooled), out
+    return out.result
+
+
+def _cell() -> Cell:
+    return Cell(records=(("c0", 0.42), ("c1", 0.55), ("c2", 0.31), ("c3", 0.67)), name="fertilizer")
+
+
+def _ledger() -> EpsilonLedger:
+    out = charge(EpsilonLedger(budget=1.0), release_id="r1", epsilon=0.25, mechanism="laplace")
+    assert isinstance(out, EpsilonLedger), out
+    return out
+
+
+def _release() -> Release:
+    out = release(
+        _cell(),
+        PrivacyPolicy(k=3, epsilon_total=1.0),
+        EpsilonLedger(budget=1.0),
+        release_id="r1",
+        epsilon=0.5,
+        clip=(0.0, 1.0),
+        seed=0,
+    )
+    assert isinstance(out, tuple), out
+    return out[0]
 
 
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
@@ -868,6 +963,46 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
         n_chains=4,
         n_draws=1000,
     ),
+    StudyRecord: lambda: _study(0),
+    Corpus: _corpus,
+    Heterogeneity: lambda: heterogeneity(_META_Y, _META_SE),
+    TauEstimate: lambda: tau_dersimonian_laird(_META_Y, _META_SE),
+    PooledEstimate: lambda: random_effects(
+        _META_Y, _META_SE, tau_method="reml", knapp_hartung=True
+    ),
+    PoolPriors: lambda: PoolPriors(mu_scale=2.0, tau_scale=0.5, tau_fixed=None),
+    PoolSpec: lambda: PoolSpec(
+        family="fertilizer", moderators=("follow_up",), bias_term=True, mass=0.9
+    ),
+    ParameterSummary: lambda: ParameterSummary(
+        name="mu_fertilizer", mean=0.47, sd=0.06, interval=wald(0.47, 0.06, 0.95)
+    ),
+    EffectShrinkage: lambda: EffectShrinkage(
+        effect="c0",
+        studies=("s0", "s3"),
+        estimate=0.47,
+        se=0.09,
+        theta=0.465,
+        interval=wald(0.465, 0.08, 0.95),
+        analytic=0.45,
+        empirical=0.44,
+    ),
+    PoolResult: _pool_result,
+    LeaveOneOut: lambda: leave_one_out(_META_Y, _META_SE, method="dl"),
+    EggerTest: lambda: egger(_META_Y, _META_SE),
+    FunnelContour: lambda: funnel_data(
+        _META_Y, _META_SE, fixed_effect(_META_Y, _META_SE), n_grid=5
+    ).contours[0],
+    FunnelData: lambda: funnel_data(_META_Y, _META_SE, fixed_effect(_META_Y, _META_SE), n_grid=5),
+    ForestRow: lambda: ForestRow(label="s0", estimate=0.42, se=0.1, interval=wald(0.42, 0.1, 0.95)),
+    ForestData: lambda: forest_data(_corpus(), None, random_effects(_META_Y, _META_SE)),
+    BaujatData: lambda: baujat(_META_Y, _META_SE),
+    Cell: _cell,
+    PrivacyPolicy: lambda: PrivacyPolicy(k=3, dominance_p=0.5, epsilon_total=1.0),
+    EpsilonCharge: lambda: EpsilonCharge(release_id="r1", epsilon=0.25, mechanism="laplace"),
+    EpsilonLedger: _ledger,
+    Release: _release,
+    EpsilonSplit: lambda: orthogonal_split(1.0, 3),
     Provenance: lambda: Provenance(
         axiom_version="0.0.0",
         created="2026-08-21T00:00:00+00:00",

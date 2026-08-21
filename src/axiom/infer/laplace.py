@@ -74,7 +74,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy import optimize as _opt
 
-from axiom.core.expr import Param, Prior, data_names
+from axiom.core.expr import Param, Prior
 from axiom.core.interpret.jax import compile_log_density, jax_available
 from axiom.core.model import ModelSpec, constrain, free_parameters, log_density, unconstrain
 from axiom.core.posterior import Posterior
@@ -172,9 +172,7 @@ def _flat_names(layout: tuple[tuple[str, tuple[int, ...]], ...]) -> tuple[str, .
 
 def _model_data(model: ModelSpec, data: Mapping[str, npt.ArrayLike]) -> dict[str, Array]:
     """Only the columns the model reads, as float arrays (integer index columns survive)."""
-    names = set(data_names(model.mean)) | {model.outcome.name}
-    for c in model.constraints:
-        names |= set(data_names(c.expr))
+    names = set(model.data_columns)
     missing = sorted(n for n in names if n not in data)
     if missing:
         raise KeyError(f"model {model.name!r} needs data columns {missing} that were not supplied")

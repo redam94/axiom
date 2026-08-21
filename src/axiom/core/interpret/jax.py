@@ -245,6 +245,14 @@ def compile_log_density(
     constraints = tuple((c, compile(c.expr, opaque=opaque)) for c in model.constraints)
     free = free_parameters(model)
     lik = model.likelihood
+    scale_expr = None if lik.scale_expr is None else compile(lik.scale_expr, opaque=opaque)
+
+    def scale(data: Mapping[str, Any], theta: Mapping[str, Any]) -> Any:
+        # The same resolution as ``core.model.likelihood_scale``: the named parameter, or
+        # ``scale_expr`` evaluated on the data and the constrained parameters.
+        if scale_expr is not None:
+            return scale_expr(data, theta)
+        return theta[lik.scale or ""]
 
     def constrain(z: Mapping[str, Any]) -> tuple[dict[str, Any], Any]:
         theta: dict[str, Any] = {}
@@ -284,9 +292,9 @@ def compile_log_density(
         mu = mean(data, theta)
         match lik.family:
             case "normal":
-                ll = jst.norm.logpdf(y, loc=mu, scale=theta[lik.scale or ""])
+                ll = jst.norm.logpdf(y, loc=mu, scale=scale(data, theta))
             case "lognormal":
-                s = theta[lik.scale or ""]
+                s = scale(data, theta)
                 ly = jnp.log(y)
                 ll = (
                     -ly
@@ -295,7 +303,7 @@ def compile_log_density(
                     - 0.5 * ((ly - jnp.log(mu)) / s) ** 2
                 )
             case "student_t":
-                ll = jst.t.logpdf(y, df=float(lik.df or 0.0), loc=mu, scale=theta[lik.scale or ""])
+                ll = jst.t.logpdf(y, df=float(lik.df or 0.0), loc=mu, scale=scale(data, theta))
             case "poisson":
                 ll = jst.poisson.logpmf(jnp.round(y), mu)
         out = lp + jnp.sum(ll)
