@@ -89,11 +89,22 @@ COLLAPSIBLE: frozenset[str] = frozenset({"contrast", "marginal", "area"})
 class Quantity(Spec):
     """The functional applied to the response.
 
-    * ``contrast`` — ``E[Y(iv)] - E[Y(ref)]``, dimension of the outcome.
-    * ``marginal`` — ``dE[Y]/d(dose)`` at ``iv``, outcome per dose.
-    * ``ratio`` — ``(E[Y(iv)] - E[Y(ref)]) / (dose(iv) - dose(ref))``, outcome per dose.
-    * ``elasticity`` — ``d log E[Y] / d log dose``, dimensionless.
-    * ``area`` — ``∫ E[Y] d(dose)`` between ``ref`` and ``iv``, outcome × dose.
+    Every functional is taken over the *aggregated* outcome ``agg(Y)`` and
+    dose ``agg(X)`` that the ``window`` (basis) and ``level`` facets define,
+    so the same words mean the same thing for an arm, a unit, and a panel
+    (decision 0002.20):
+
+    * ``contrast`` — ``agg Y(iv) − agg Y(ref)``; dimension of the outcome.
+      Scales with the window basis (a cumulative contrast is ``T`` times a
+      per-period one).
+    * ``marginal`` — ``d agg Y / d dose`` at ``iv``; outcome per dose.
+    * ``ratio`` — ``(agg Y(iv) − agg Y(ref)) / (agg X(iv) − agg X(ref))``;
+      outcome per unit of dose, *invariant* to the basis because numerator
+      and denominator aggregate identically.
+    * ``elasticity`` — ``marginal · agg X / agg Y`` at ``iv``; dimensionless,
+      basis-invariant.
+    * ``area`` — ``∫ agg Y d(dose)`` along the dose path from ``ref`` to
+      ``iv``; outcome × dose; scales with the basis.
     """
 
     kind: QuantityKind
@@ -450,7 +461,9 @@ def _window(s: Estimand, t: Estimand) -> FacetDiff:
         ),
     ]
     corrections: list[str] = []
-    if s.window.basis != t.window.basis:
+    if s.window.basis != t.window.basis and s.quantity.kind in ("contrast", "area"):
+        # ratio, marginal and elasticity aggregate numerator and denominator alike and are
+        # basis-invariant (Quantity docstring, decision 0002.20); only level-type quantities rescale
         corrections.append(
             "per_period_to_cumulative"
             if t.window.basis == "cumulative"

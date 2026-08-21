@@ -8,8 +8,10 @@ what it can do, and a request needing more returns ``Unsupported``.
 
 ``SupportsForward`` is the design layer's dependency: a deterministic
 response surface whose ``forward`` is ``interpret.value`` over ``expr``.
-``linearize`` joins it in Phase 3 with the design matrix; ``SupportsEstimands``
-joins in Phase 4 with realization.
+``SupportsEstimands`` is what a *fitted* thing offers: it is a posterior, it
+answers counterfactuals, and it names the estimands it was declared with.
+``estimands.realize`` is written against it; a fitted surface, a stored
+analysis, or a hand-built test double all satisfy it.
 """
 
 from __future__ import annotations
@@ -24,11 +26,13 @@ import numpy.typing as npt
 
 from axiom.core.entities import Intervention, TimeWindow, Treatment
 from axiom.core.expr import Model
+from axiom.core.result import Unsupported
 
 __all__ = [
     "Capability",
     "DesignMatrix",
     "PredictiveDraws",
+    "SupportsEstimands",
     "SupportsForward",
     "SupportsIntervention",
     "SupportsPosterior",
@@ -80,7 +84,7 @@ class SupportsIntervention(Protocol):
     def treatments(self) -> Sequence[Treatment]: ...
     def predict_under(
         self, iv: Intervention, window: TimeWindow | None = None, seed: int | None = None
-    ) -> PredictiveDraws: ...
+    ) -> PredictiveDraws | Unsupported: ...
     def capabilities(self) -> frozenset[Capability]: ...
 
 
@@ -136,6 +140,31 @@ class SupportsForward(Protocol):
     def linearize(
         self, dose: Mapping[str, npt.ArrayLike], theta_at: Mapping[str, npt.ArrayLike]
     ) -> DesignMatrix: ...
+
+
+@runtime_checkable
+class SupportsEstimands(SupportsPosterior, SupportsIntervention, Protocol):
+    """A fitted producer: posterior draws + counterfactual predictions + declared estimands.
+
+    ``declared_estimands`` holds the content hashes of the estimands the
+    producer was declared with (the ``Estimand`` type lives above ``core``).
+    ``outcome_unit`` / ``dose_unit(treatment)`` report the units the
+    posterior was fit in, so realization can convert — with a ledger line —
+    when an estimand is declared in another unit of the same dimension.
+    """
+
+    @property
+    def declared_estimands(self) -> Sequence[str]: ...
+    @property
+    def outcome_unit(self) -> str | None: ...
+    def dose_unit(self, treatment: str) -> str | None: ...
+    def marginal_under(
+        self,
+        iv: Intervention,
+        treatment: str,
+        window: TimeWindow | None = None,
+        seed: int | None = None,
+    ) -> PredictiveDraws | Unsupported: ...
 
 
 def missing_capabilities(

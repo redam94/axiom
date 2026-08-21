@@ -54,7 +54,7 @@ from axiom.core import (
     dimensionless,
 )
 from axiom.data import ColumnScaling, Completeness, RoleMap, ScalingParameters
-from axiom.estimands import Estimand, FacetDiff, Level, Quantity, TransferPlan
+from axiom.estimands import Estimand, EstimandResult, FacetDiff, Level, Quantity, TransferPlan
 from axiom.identify import (
     CausalGraph,
     EndogeneityTest,
@@ -296,6 +296,20 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     .transfer_to(_estimand(window=TimeWindow(start=0, stop=12)))
     .entries[0],
     TransferPlan: lambda: _estimand().transfer_to(_estimand(population=Population(name="all"))),
+    EstimandResult: lambda: EstimandResult(
+        estimand_hash="a" * 64,
+        estimand_name="lift_at_100",
+        kind="contrast",
+        summary=Summary(mean=0.3, median=0.28, sd=0.5, interval=_interval(), n=4000),
+        dimension=D.outcome,
+        unit="kg",
+        status="downgraded",
+        assumptions=(_assumption(),),
+        ledger=(),
+        n_draws=4000,
+        producer_hash="b" * 64,
+        detail={"dose_iv": 100.0, "dose_ref": 0.0},
+    ),
     CausalGraph: lambda: _G.with_selection("Z").model_copy(update={"feedback": True}),
     RoleAssignment: lambda: assign_roles(_G, "X", "Y"),
     FrontDoorRoute: lambda: FrontDoorRoute(mediators=("M",), treatment="X", outcome="Y"),

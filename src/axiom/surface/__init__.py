@@ -44,11 +44,14 @@ from axiom.surface.design import (
 )
 from axiom.surface.forward import (
     GRID_VERSION,
+    MarginalHorizon,
+    counterfactual_doses,
     forward,
     marginal,
     marginal_expr,
     marginal_total,
     predict,
+    predict_marginal,
 )
 from axiom.surface.frontier import Frontier, frontier
 from axiom.surface.kernels import (
@@ -120,6 +123,7 @@ __all__ = [
     "LinearKernel",
     "LinearTrend",
     "LogisticKernel",
+    "MarginalHorizon",
     "Method",
     "NoCarryover",
     "NuisanceSet",
@@ -142,6 +146,7 @@ __all__ = [
     "central_composite",
     "check_linearization",
     "column_names",
+    "counterfactual_doses",
     "d_criterion",
     "defining_relation",
     "design_matrix",
@@ -164,6 +169,7 @@ __all__ = [
     "optimal_exchange",
     "parameter_roles",
     "predict",
+    "predict_marginal",
     "prepare",
     "resolve_conventions",
     "steepest_ascent",
