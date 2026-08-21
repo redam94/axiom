@@ -66,7 +66,7 @@ from axiom.core.interpret import (
     latex_or_unsupported,
     value,
 )
-from axiom.core.intervals import Interval, Summary, eti, hdi, interval, summarize
+from axiom.core.intervals import Interval, Summary, eti, hdi, interval, summarize, wald
 from axiom.core.posterior import Posterior
 from axiom.core.protocols import (
     Capability,
@@ -182,6 +182,7 @@ __all__ = [
     "spec_type_name",
     "summarize",
     "value",
+    "wald",
     "walk",
     "z_score",
 ]

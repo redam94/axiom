@@ -52,7 +52,9 @@ same `Estimand` object be produced by an experiment, a fitted surface, and a
 meta-analysis. See *Estimands and transport* below.
 
 `tests/contracts/test_layering.py` enforces this by walking the import graph.
-Within the foundation row the order is `core < data < io` (`io` persists a
+`sim` sits one layer above the domain layer (it composes `identify.CausalGraph`
+and, later, `surface` specs); nothing in the pillars imports it
+(`docs/notes/0002-foundation-decisions.md` §16). Within the foundation row the order is `core < data < io` (`io` persists a
 `Panel`), and the sampler-free `Posterior` is defined in `core.posterior` and
 re-exported by `infer` so that `io` can write it — see
 `docs/notes/0002-foundation-decisions.md` §1 and §11.

@@ -1,4 +1,4 @@
-# 0001 — Phase 1: foundation progress (1a and 1b)
+# 0001 — Implementation progress log
 
 Branch: `feature/phase-1a-foundation` (cut from `develop` 2026-08-21).
 Scope is the Phase 1a split proposed in `docs/plan/06-review.md` §F:
@@ -112,7 +112,46 @@ All seven Phase 1 exit criteria hold (criterion 3's "pickle absent" is gate
 - Single-file `.axiom` zip artifact (review E) — directory format only.
 - `SupportsEstimands`, `EstimandResult`, realization — Phase 4 by design.
 
-## Next (Phase 2 — `identify`, or Phase 3 — `surface` + `infer`; independent after Phase 1)
+### 2026-08-21 — Phase 2 (`identify`) complete on `feature/phase-2-identify`
+
+Built with a four-agent parallel workflow (backdoor · front-door/IV ·
+transport · sim+estimators), each followed by an independent skeptical
+review against the literature and random-graph oracles, then a fix round
+verified by fresh agents. Landed:
+
+- `identify/graph.py` — `CausalGraph` (Spec; bidirected edges as hidden
+  common causes; `unmeasured`, `selection`, `feedback`), Bayes-ball
+  d-separation, `G_{x̲}` / `G_{x̄}` surgery, `from_edges` parser.
+- `identify/backdoor.py` — back-door criterion, enumeration, canonical set
+  and polynomial existence test (van der Zander et al. 2014), roles.
+- `identify/frontdoor.py` — front-door criterion, (conditional) instruments.
+- `identify/transport.py` — selection diagrams, direct / S-admissible /
+  trivial transportability (B&P 2014 Defs 6–8, Thm 2), `TransportVerdict`.
+- `identify/verdict.py` — `identify()` with route preference, alternatives,
+  typed assumptions per route, B4 feedback downgrade.
+- `identify/estimators.py` — OLS, 2SLS, linear front-door (multivariate
+  first stage for the delta-method SE); `identify/endogeneity.py` — DWH and
+  Hausman, degenerate branches return `Unverified`.
+- `sim/scm.py`, `sim/worlds.py` — `LinearSCM` composing a `CausalGraph`,
+  seven named worlds with exact truths and interventional means.
+- Recovery tests (`tests/recovery/test_identify_recovery.py`,
+  `test_transport_recovery.py`) with negative controls; 507 tests total.
+- Notebooks `nbs/identify/01–03`, `nbs/sim/01`.
+
+Reviewer-found defects fixed before merge: transport `blocked` overclaimed
+(B&P's own Examples 4/8 are transportable) → trivial route + `unsupported`
+fall-through; status convention unified (0002.16); multi-mediator front-door
+SE understated by ~12% → multivariate first stage; outcome allowed on the
+right-hand side → refused; minimal-set search capped on the wrong candidate
+pool → canonical-set enumeration.
+
+**Deferred from Phase 2:** the ~25-DAG golden verdict corpus (parent not
+available — `_pending` in the fixture); `identify/narrative.py` dropped per
+review C5; sID recursion (Thm 3) not implemented — the verdict says so.
+Exit criterion 1 (golden verdicts) is therefore open until the parent is
+captured; criteria 2–5 hold.
+
+## Next (Phase 3 — `surface` deterministic half + `infer`)
 
 1. `core/expr.py` — the closed node set (with C1: `ODESystem` dimension-check
    only; C2: no general `Deriv`; A3: rational `Pow` on dimensioned bases).
