@@ -442,6 +442,21 @@ refused are in note 0004.
 
 Version is left at 1.0.0 on `develop`; the new API is a 1.1.0 item.
 
+Two things the verification runs turned up that are not about this work:
+
+- `tests/contracts/test_import_weight.py::test_import_time_is_bounded` measures
+  wall clock against a fixed 0.6 s allowance and **fails under load**. It went
+  red in both runs that shared the machine with another `-n 4` suite and green
+  in both that had it to themselves. Run the gates on their own before
+  believing that one.
+- `tests/recovery/test_surface_recovery.py::test_nuts_interval_coverage` gives
+  29/60 against an acceptance region of [45, 60]. It is **pre-existing**:
+  reproduced with the identical hit count on a clean `develop` worktree, so it
+  is deterministic rather than flaky and predates the case study. The most
+  likely cause is a jax/numpyro change since the tier was last run — the same
+  reinstall that fixed the SIGKILLed interpreter. It is a real miscalibration
+  to chase, not a tolerance to widen, and it is open.
+
 ## Next (1.1)
 
 PyMC backend (D2); Laplace calibration on Hill surfaces (SBC finding,
