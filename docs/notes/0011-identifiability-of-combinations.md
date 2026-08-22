@@ -153,8 +153,34 @@ after-the-fact.
   boolean mask of the wrong length. The missing singular values are exact zeros — directions
   the design has no row to see at all — and are now padded in explicitly.
 
+## Where the two halves meet
+
+The case the whole pair of notes was written for. A latent compartment fills from the dose
+and the outcome reads it, scaled:
+
+```
+state   = decay * state[t-1] + uptake * dose      # unobserved
+outcome = gain * state
+```
+
+Unrolled, `outcome[t] = gain * sum_k decay^k * uptake * dose[t-k]`, so `gain` and `uptake`
+appear only as a product. The analysis says exactly that, before any data exists:
+
+| design | rank | flat | estimable |
+|---|---|---|---|
+| the outcome, 7 periods | 2 of 3 | `uptake -> uptake*c, gain -> gain/c` | `decay`, `gain * uptake` |
+| the outcome, more periods | 2 of 3 | unchanged | unchanged |
+| **one reading of `state`** | **3 of 3** | — | all three |
+
+More of the same measurement cannot break a symmetry; one measurement of the quantity in the
+middle can. That is the answer to "what else has to be measured", and it comes out in the
+model's own vocabulary rather than as an eigenvalue. Neither module knows about the other —
+the compiled expression is the whole interface between them.
+
 ## Evidence
 
+* `tests/unit/test_dynamics_identifiability.py` — the two-compartment case above, all three
+  rows of that table.
 * `tests/unit/test_design_identifiability.py` — 27 tests: the log sensitivity against its
   analytic form, the product model's `a·b`, the low-dose design's `α/k` at a practical
   tolerance and its full rank at machine tolerance, the prescription, the profiles, and
