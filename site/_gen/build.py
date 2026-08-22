@@ -34,6 +34,7 @@ WORKFLOW = [
 ]
 EXTRA = [
     ("examples", "Examples"),
+    ("benchmarks", "Benchmarks"),
     ("case-study", "Case study"),
     ("api", "API"),
 ]
@@ -214,6 +215,61 @@ def examples_html(data: dict[str, Any]) -> str:
     return "\n".join(blocks)
 
 
+def benchmarks_html(data: dict[str, Any]) -> str:
+    """One block per dataset: the comparison table, the terms, the full output."""
+    blocks = []
+    for e in data["benchmarks"]["entries"]:
+        rows = []
+        for r in e["rows"]:
+            fmt = r["fmt"]
+            ok = r["rel"] < 1e-2
+            rows.append(
+                f"<tr><td>{html.escape(r['label'])}</td>"
+                f"<td>{format(r['axiom'], fmt)}</td>"
+                f"<td>{format(r['published'], fmt)}</td>"
+                f"<td>{r['rel']:.1e}</td>"
+                f"<td class=\"{'num-good' if ok else 'num-bad'}\">"
+                f"{'match' if ok else 'CHECK'}</td></tr>"
+            )
+        tag = (
+            '<span class="tag is-good">committed</span>'
+            if e["availability"] == "vendored"
+            else '<span class="tag is-warn">fetch to run</span>'
+        )
+        blocks.append(f"""<article class="ex" id="{e['name']}">
+  <div class="ex-head">
+    <p class="ex-n">{html.escape(e['field']).upper()} &middot; {html.escape(e['pillar'])}</p>
+    <h3>{html.escape(e['title'])}</h3>
+    <p class="ex-q">Checked against <strong>{html.escape(e['reference'])}</strong> &mdash;
+      {html.escape(e['scale'])}.</p>
+    <div class="ex-meta">{tag}
+      <span class="pkg">{len(e['rows'])} published values</span>
+      <span class="pkg">worst relative error {e['worst_rel']:.1e}</span></div>
+  </div>
+  <div class="ex-body" style="padding-top:16px">
+    <div class="tbl-wrap">
+      <table class="t">
+        <caption>{html.escape(e['citation'])}</caption>
+        <thead><tr><th>quantity</th><th>axiom</th><th>published</th>
+          <th>relative error</th><th></th></tr></thead>
+        <tbody>{''.join(rows)}</tbody>
+      </table>
+    </div>
+    <p class="stamp"><b>licence</b> &middot; {html.escape(e['licence'])}</p>
+  </div>
+  <details class="ex-more">
+    <summary>Read the full run</summary>
+    <div class="ex-body">
+      <div class="out">
+        <div class="out-h">benchmarks/case_{e['name'].replace('lalonde_nsw', 'lalonde')}.py</div>
+        <pre>{html.escape(e['output'])}</pre>
+      </div>
+    </div>
+  </details>
+</article>""")
+    return "\n".join(blocks)
+
+
 def nav_html(active: str) -> str:
     steps = []
     for i, (key, label, hint) in enumerate(WORKFLOW):
@@ -302,6 +358,7 @@ def main() -> int:
         meta, body = parse_meta(frag.read_text(), frag.name)
         body = body.replace("<!--API-->", api_html(data))
         body = body.replace("<!--EXAMPLES-->", examples_html(data))
+        body = body.replace("<!--BENCHMARKS-->", benchmarks_html(data))
         body = substitute(body, data, frag.name)
         page = frag.stem
         out = SHELL.format(

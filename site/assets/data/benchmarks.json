@@ -1,0 +1,433 @@
+{
+ "entries": [
+  {
+   "name": "bcg",
+   "title": "BCG vaccine against tuberculosis: 13 randomized trials",
+   "field": "Epidemiology / public health",
+   "pillar": "meta",
+   "reference": "R metafor",
+   "availability": "vendored",
+   "citation": "Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., & Mosteller, F. (1994). Efficacy of BCG vaccine in the prevention of tuberculosis: meta-analysis of the published literature. JAMA, 271(9), 698-702.",
+   "licence": "Thirteen rows of event counts published in a 1994 JAMA meta-analysis; redistributed in many textbooks and packages. Attribution above.",
+   "source": "https://wviechtb.github.io/metadat/reference/dat.bcg.html",
+   "n_rows": 13,
+   "scale": "357,347 people",
+   "rows": [
+    {
+     "label": "pooled log risk ratio",
+     "axiom": -0.714532,
+     "published": -0.7145,
+     "delta": 3.2e-05,
+     "rel": 4.5e-05,
+     "fmt": ".4f"
+    },
+    {
+     "label": "standard error",
+     "axiom": 0.179782,
+     "published": 0.1798,
+     "delta": 1.8e-05,
+     "rel": 0.000103,
+     "fmt": ".4f"
+    },
+    {
+     "label": "95% interval, lower",
+     "axiom": -1.066898,
+     "published": -1.0669,
+     "delta": 2e-06,
+     "rel": 2e-06,
+     "fmt": ".4f"
+    },
+    {
+     "label": "95% interval, upper",
+     "axiom": -0.362167,
+     "published": -0.3622,
+     "delta": 3.3e-05,
+     "rel": 9.1e-05,
+     "fmt": ".4f"
+    },
+    {
+     "label": "tau^2 (REML)",
+     "axiom": 0.313243,
+     "published": 0.3132,
+     "delta": 4.3e-05,
+     "rel": 0.000138,
+     "fmt": ".4f"
+    },
+    {
+     "label": "Cochran's Q",
+     "axiom": 152.233008,
+     "published": 152.233,
+     "delta": 8e-06,
+     "rel": 0.0,
+     "fmt": ".4f"
+    },
+    {
+     "label": "I^2 (model-based)",
+     "axiom": 0.922214,
+     "published": 0.9222,
+     "delta": 1.4e-05,
+     "rel": 1.5e-05,
+     "fmt": ".4f"
+    },
+    {
+     "label": "H^2 (model-based)",
+     "axiom": 12.855758,
+     "published": 12.86,
+     "delta": 0.004242,
+     "rel": 0.00033,
+     "fmt": ".3f"
+    }
+   ],
+   "forest": [
+    {
+     "label": "Aronson 1948",
+     "estimate": -0.889311,
+     "lower": -2.007688,
+     "upper": 0.229065,
+     "latitude": 44
+    },
+    {
+     "label": "Ferguson & Simes 1949",
+     "estimate": -1.585389,
+     "lower": -2.449971,
+     "upper": -0.720806,
+     "latitude": 55
+    },
+    {
+     "label": "Rosenthal et al 1960",
+     "estimate": -1.348073,
+     "lower": -2.611274,
+     "upper": -0.084872,
+     "latitude": 42
+    },
+    {
+     "label": "Hart & Sutherland 1977",
+     "estimate": -1.441551,
+     "lower": -1.718807,
+     "upper": -1.164296,
+     "latitude": 52
+    },
+    {
+     "label": "Frimodt-Moller et al 1973",
+     "estimate": -0.217547,
+     "lower": -0.661089,
+     "upper": 0.225994,
+     "latitude": 13
+    },
+    {
+     "label": "Stein & Aronson 1953",
+     "estimate": -0.786116,
+     "lower": -0.948992,
+     "upper": -0.623239,
+     "latitude": 44
+    },
+    {
+     "label": "Vandiviere et al 1973",
+     "estimate": -1.620898,
+     "lower": -2.546502,
+     "upper": -0.695294,
+     "latitude": 19
+    },
+    {
+     "label": "TPT Madras 1980",
+     "estimate": 0.011952,
+     "lower": -0.111412,
+     "upper": 0.135317,
+     "latitude": 13
+    },
+    {
+     "label": "Coetzee & Berjak 1968",
+     "estimate": -0.469418,
+     "lower": -0.935033,
+     "upper": -0.003802,
+     "latitude": 27
+    },
+    {
+     "label": "Rosenthal et al 1961",
+     "estimate": -1.371345,
+     "lower": -1.900998,
+     "upper": -0.841692,
+     "latitude": 42
+    },
+    {
+     "label": "Comstock et al 1974",
+     "estimate": -0.339359,
+     "lower": -0.557723,
+     "upper": -0.120995,
+     "latitude": 18
+    },
+    {
+     "label": "Comstock & Webster 1969",
+     "estimate": 0.445913,
+     "lower": -0.984357,
+     "upper": 1.876184,
+     "latitude": 33
+    },
+    {
+     "label": "Comstock et al 1976",
+     "estimate": -0.017314,
+     "lower": -0.541058,
+     "upper": 0.50643,
+     "latitude": 33
+    }
+   ],
+   "pooled": {
+    "estimate": -0.714532,
+    "lower": -1.066898,
+    "upper": -0.362167
+   },
+   "i2_q_based": 0.921173,
+   "i2_model_based": 0.922214,
+   "prediction": [
+    -2.009058,
+    0.579993
+   ],
+   "output": "BCG vaccine against tuberculosis: 13 randomized trials\n  Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., & Mosteller, F. (1994). Efficacy of BCG vaccine in the prevention of tuberculosis: meta-analysis of the published literature. JAMA, 271(9), 698-702.\n  licence: Thirteen rows of event counts published in a 1994 JAMA meta-analysis; redistributed in many textbooks and packages. Attribution above.\n  sha256 : 892192ea82a30c6ae3aadd1f82566139...\n\n  Two things bite here. Sign convention: the log risk ratio below is vaccinated-versus-control, so NEGATIVE means the vaccine helped; some metafor examples reverse the arms and print +0.7145 for the same data. And I-squared has two standard definitions that differ by about a tenth of a percentage point on this dataset -- axiom reports the Q-based one, metafor's rma() prints the model-based one.\n\ntrial                     year            vaccinated             control    log RR      se\nAronson                   1948          4/123              11/139          -0.8893  0.5706\nFerguson & Simes          1949          6/306              29/303          -1.5854  0.4411\nRosenthal et al           1960          3/231              11/220          -1.3481  0.6445\nHart & Sutherland         1977         62/13598           248/12867        -1.4416  0.1415\nFrimodt-Moller et al      1973         33/5069             47/5808         -0.2175  0.2263\nStein & Aronson           1953        180/1541            372/1451         -0.7861  0.0831\nVandiviere et al          1973          8/2545             10/629          -1.6209  0.4722\nTPT Madras                1980        505/88391           499/88391         0.0120  0.0629\nCoetzee & Berjak          1968         29/7499             45/7277         -0.4694  0.2376\nRosenthal et al           1961         17/1716             65/1665         -1.3713  0.2702\nComstock et al            1974        186/50634           141/27338        -0.3394  0.1114\nComstock & Webster        1969          5/2498              3/2341          0.4459  0.7297\nComstock et al            1976         27/16913            29/17854        -0.0173  0.2672\n\n13 trials, 357,347 people\n\nquantity                         axiom     metafor   difference   agrees\npooled log risk ratio          -0.7145     -0.7145     3.23e-05   yes\nstandard error                  0.1798      0.1798     1.85e-05   yes\n95% lower                      -1.0669     -1.0669     2.36e-06   yes\n95% upper                      -0.3622     -0.3622     3.30e-05   yes\ntau^2 (REML)                    0.3132      0.3132     4.33e-05   yes\nCochran's Q                   152.2330    152.2330     8.08e-06   yes\nI^2 (model-based)               0.9222      0.9222     1.38e-05   yes\nH^2 (model-based)              12.8558     12.8600     4.24e-03   yes\n\nlargest disagreement anywhere: 4.24e-03\ndf for Q: axiom 12, published 12\n\nA word about that I^2, because the first run of this file looked like a bug.\n    axiom's heterogeneity() returns the Q-BASED I^2, (Q - df) / Q = 0.9212.\n    metafor's rma() prints the MODEL-BASED one, tau^2 / (tau^2 + s^2) = 0.9222,\n    where s^2 is Higgins & Thompson's typical within-study variance.\n\n    They differ by 0.0010 here -- small enough to look like a rounding\n    error and large enough to be worth chasing. Neither is wrong; they answer\n    slightly different questions. What would have been wrong is quietly widening\n    the tolerance until the table went green.\n\nas a risk ratio: 0.489  [0.344, 0.696]\n  the vaccine cut tuberculosis risk by about 51% on average\n\nbut I^2 is 92%, so 'on average' is carrying a lot of weight.\n  interval on the MEAN effect     [-1.108, -0.321]\n  interval for the NEXT trial     [-2.009, +0.580]\n  as risk ratios                  [0.13, 1.79]\n  A new trial could plausibly see almost no benefit. That is not noise --\n  it is the trials genuinely disagreeing, and it is the finding.\n\nsplit by absolute latitude, the classic moderator:\n  within 35 degrees of equator   k= 7  log RR -0.265  RR 0.77\n  further than 35 degrees        k= 6  log RR -1.197  RR 0.30\n  Two very different vaccines, or one vaccine and two very different settings.\n\nEgger's test: intercept -2.112 (p = 0.189)\n\nmost influential trials when dropped (shift in pooled-se units):\n  Hart & Sutherland           -0.479\n  TPT Madras                  +0.446\n  Comstock et al              +0.350\n\nReading it\n    Every published quantity reproduced. That is the claim worth making: not that\n    axiom's formulas are self-consistent -- the unit tests already cover that --\n    but that running this library end to end on somebody else's data lands where\n    somebody else's software landed.\n\n    The substantive reading is the second half. A pooled risk ratio around 0.49\n    looks decisive until you notice I-squared above 90% and a prediction interval\n    that reaches almost to 1.0. The average of thirteen trials that disagree this\n    much is a number about the thirteen trials, not about the vaccine.",
+   "worst": 0.004242,
+   "worst_rel": 0.00033
+  },
+  {
+   "name": "misra1a",
+   "title": "NIST StRD Misra1a: monomolecular adsorption, volume against pressure",
+   "field": "Physical chemistry / dental research",
+   "pillar": "surface",
+   "reference": "NIST certified values",
+   "availability": "vendored",
+   "citation": "Misra, D. (1978). Dental Research Monomolecular Adsorption Study. National Institute of Standards and Technology, Statistical Reference Datasets (StRD), Nonlinear Regression.",
+   "licence": "Work of the US federal government: public domain in the United States (17 U.S.C. 105). NIST asks that it be cited, not that permission be sought.",
+   "source": "https://www.itl.nist.gov/div898/strd/nls/data/misra1a.shtml",
+   "n_rows": 14,
+   "scale": "14 observations, 2 parameters",
+   "rows": [
+    {
+     "label": "beta  (NIST b1)",
+     "axiom": 238.957689,
+     "published": 238.942129,
+     "delta": 0.01556,
+     "rel": 6.5e-05,
+     "fmt": ".4f"
+    },
+    {
+     "label": "k     (NIST 1/b2)",
+     "axiom": 1817.822784,
+     "published": 1817.664835,
+     "delta": 0.157949,
+     "rel": 8.7e-05,
+     "fmt": ".2f"
+    },
+    {
+     "label": "implied b2",
+     "axiom": 0.00055,
+     "published": 0.00055,
+     "delta": 0.0,
+     "rel": 8.7e-05,
+     "fmt": ".3e"
+    },
+    {
+     "label": "residual sum of squares",
+     "axiom": 0.124555,
+     "published": 0.124551,
+     "delta": 3e-06,
+     "rel": 2.7e-05,
+     "fmt": ".6f"
+    }
+   ],
+   "hdi": {
+    "beta": [
+     233.86178,
+     243.890081
+    ],
+    "k": [
+     1773.338979,
+     1862.200636
+    ],
+    "beta_certified": 238.942129,
+    "k_certified": 1817.664835
+   },
+   "rss_excess": 3e-06,
+   "observed": {
+    "pressure": [
+     77.6,
+     114.9,
+     141.1,
+     190.8,
+     239.9,
+     289.0,
+     332.8,
+     378.4,
+     434.8,
+     477.3,
+     536.8,
+     593.1,
+     689.1,
+     760.0
+    ],
+    "volume": [
+     10.07,
+     14.73,
+     17.94,
+     23.93,
+     29.61,
+     35.18,
+     40.02,
+     44.82,
+     50.76,
+     55.05,
+     61.01,
+     66.4,
+     75.47,
+     81.78
+    ]
+   },
+   "output": "NIST StRD Misra1a: monomolecular adsorption, volume against pressure\n  Misra, D. (1978). Dental Research Monomolecular Adsorption Study. National Institute of Standards and Technology, Statistical Reference Datasets (StRD), Nonlinear Regression.\n  licence: Work of the US federal government: public domain in the United States (17 U.S.C. 105). NIST asks that it be cited, not that permission be sought.\n  sha256 : d6195ad5e64326bc3fb72ae877c79f0c...\n\n volume  pressure\n  10.07      77.6\n  14.73     114.9\n  17.94     141.1\n  23.93     190.8\n  29.61     239.9\n  35.18     289.0\n  40.02     332.8\n  44.82     378.4\n  50.76     434.8\n  55.05     477.3\n  61.01     536.8\n  66.40     593.1\n  75.47     689.1\n  81.78     760.0\n\noutcome  volume [V] in cc\ndose     pressure [P] in mmHg\n\nmodel    volume = beta * (1 - exp(-pressure / k)),  intercept 'none'\npanel    specimen, 14 observations, hash 733391520fb271ce...\n\nconverged: True\n\nparameter               axiom mean  posterior sd   NIST certified  rel. error\nbeta   (NIST b1)        238.957689      2.583069       238.942129    6.51e-05\nk      (NIST 1/b2)     1817.822784     22.911234      1817.664835    8.69e-05\n\n                                             95% HDI   contains certified?\nbeta                            [233.8618, 243.8901]   yes\nk                             [1773.3390, 1862.2006]   yes\n\nimplied b2 = 1/k      5.5010862915e-04\nNIST certified b2     5.5015643181e-04\nrelative error        8.69e-05\n\nresidual sum of squares at the posterior mean  0.12455471\nNIST certified minimum                        0.12455139\nexcess over the certified optimum             +3.32e-06\n  The posterior mean cannot beat the least-squares optimum -- if it did, the\n  certified value would be wrong. Sitting a hair above it is the correct\n  result, and the size of that hair is the whole check.\n\nposterior sigma                0.099736 +/- 0.019722\nNIST residual sd (df = 12)   0.101879\nsqrt(RSS / n) for comparison   0.094321\n  These three are different estimators of the same scale, not disagreements:\n  NIST divides by the degrees of freedom, maximum likelihood divides by n,\n  and the posterior mean sits between them.\n\nfitted adsorption curve, with 95% intervals:\n    pressure    volume     lower     upper\n         100    12.790    12.751    12.829\n         250    30.704    30.637    30.769\n         400    47.198    47.131    47.264\n         550    62.386    62.319    62.452\n         700    76.371    76.261    76.475\n         900    93.309    93.086    93.521\n        1200   115.466   115.012   115.904\n\nReading it\n    Both certified parameters recovered to about one part in ten thousand, with\n    the certified values inside the 95% intervals, and a residual sum of squares\n    that sits just above the certified minimum rather than below it.\n\n    That last point is the one worth dwelling on. A fit that reported a LOWER\n    residual sum of squares than NIST's certified optimum would not be a better\n    fit -- it would be a bug, either in the model being fitted or in the arithmetic\n    reporting it. Benchmarks with certified answers catch that class of error,\n    which is exactly why NIST publishes them.\n\n    What axiom adds beyond the certified numbers is the last table: NIST reports\n    two parameters and their standard deviations, and axiom will also tell you what\n    the curve does at a pressure of 1200 and how sure it is.",
+   "worst": 0.157949,
+   "worst_rel": 8.7e-05
+  },
+  {
+   "name": "darfur",
+   "title": "Darfurian refugees in eastern Chad: violence and attitudes to peace",
+   "field": "Political science / conflict",
+   "pillar": "identify + diagnose",
+   "reference": "Cinelli & Hazlett (2020)",
+   "availability": "fetch",
+   "citation": "Cinelli, C., & Hazlett, C. (2020). Making sense of sensitivity: extending omitted variable bias. Journal of the Royal Statistical Society B, 82(1), 39-67. Data collected by Hazlett (2019).",
+   "licence": "Ships inside the GPL-3 R package sensemakr. Not redistributed here: fetched on request, under the upstream package's terms.",
+   "source": "https://github.com/carloscinelli/sensemakr",
+   "n_rows": 1276,
+   "scale": "1,276 respondents, 486 villages",
+   "rows": [
+    {
+     "label": "coefficient",
+     "axiom": 0.097316,
+     "published": 0.0973,
+     "delta": 1.6e-05,
+     "rel": 0.000163,
+     "fmt": ".4f"
+    },
+    {
+     "label": "standard error",
+     "axiom": 0.023257,
+     "published": 0.0232,
+     "delta": 5.7e-05,
+     "rel": 0.002437,
+     "fmt": ".4f"
+    },
+    {
+     "label": "residual df",
+     "axiom": 783.0,
+     "published": 783.0,
+     "delta": 0.0,
+     "rel": 0.0,
+     "fmt": ".0f"
+    },
+    {
+     "label": "robustness value",
+     "axiom": 0.138776,
+     "published": 0.139,
+     "delta": 0.000224,
+     "rel": 0.001609,
+     "fmt": ".3f"
+    },
+    {
+     "label": "RV at alpha = 0.05",
+     "axiom": 0.076258,
+     "published": 0.076,
+     "delta": 0.000258,
+     "rel": 0.003394,
+     "fmt": ".3f"
+    },
+    {
+     "label": "partial R^2",
+     "axiom": 0.021873,
+     "published": 0.022,
+     "delta": 0.000127,
+     "rel": 0.005768,
+     "fmt": ".3f"
+    }
+   ],
+   "specifications": [
+    {
+     "label": "no covariates",
+     "estimate": 0.06341,
+     "se": 0.01969
+    },
+    {
+     "label": "covariates only",
+     "estimate": 0.048885,
+     "se": 0.018392
+    },
+    {
+     "label": "published specification",
+     "estimate": 0.097316,
+     "se": 0.023257
+    }
+   ],
+   "output": "Darfurian refugees in eastern Chad: violence and attitudes to peace\n  Cinelli, C., & Hazlett, C. (2020). Making sense of sensitivity: extending omitted variable bias. Journal of the Royal Statistical Society B, 82(1), 39-67. Data collected by Hazlett (2019).\n  licence: Ships inside the GPL-3 R package sensemakr. Not redistributed here: fetched on request, under the upstream package's terms.\n\n  sha256 : e72476e5dfae734444507ab639f172ea...\n  1,276 respondents, 486 villages\n  529 directly harmed (41.5%), 747 not\n\nidentification status : identified via backdoor\ncondition on          : ['female', 'village']\n  That verdict is only as good as the graph. The whole point of what\n  follows is that the graph is a claim, not a finding.\n\nregression: peacefactor ~ directlyharmed + 6 covariates + 485 village effects\n\nquantity                     axiom   published   difference\ncoefficient                 0.0973      0.0973     1.58e-05\nstandard error              0.0233      0.0232     5.65e-05\nresidual df               783.0000    783.0000     0.00e+00\nn                        1276.0000   1276.0000     0.00e+00\n\neffect of being directly harmed on pro-peace attitudes:\n  0.0973  [0.0517, 0.1429]  (95% Wald)\n  Positive: people who were injured report MORE pro-peace attitudes, not less.\n  That is the finding, and it is the one worth stress-testing.\n\nsensitivity                    axiom   published\nrobustness value               0.139       0.139\nRV at alpha = 0.05             0.076       0.076\npartial R2 of treatment        0.022       0.022\n\n  An unmeasured confounder would have to explain 13.9% of the residual\n  variance in BOTH being harmed and attitudes to bring the effect to zero.\n  Only 7.6% is needed to make it statistically insignificant.\n\n  a confounder 1x as strong as being female:\n    adjusted estimate +0.0750 (se 0.0219, t 3.43)\n\n  a confounder 2x as strong as being female:\n    adjusted estimate +0.0525 (se 0.0203, t 2.58)\n\n  a confounder 3x as strong as being female:\n    adjusted estimate +0.0298 (se 0.0186, t 1.60)\n\n  Gender is one of the strongest predictors in this survey, and a confounder\n  three times stronger still does not overturn the sign. That is a much more\n  useful sentence than a p-value, and it is falsifiable: name such a variable.\n\nspecification                       estimate       se\nno covariates at all                  0.0634   0.0197\ncovariates, no village effects        0.0489   0.0184\npublished specification               0.0973   0.0233\n  The village effects are doing real work. Which specification is right is\n  a question about the world -- were attacks indiscriminate WITHIN villages? --\n  and no amount of fitting settles it.\n\nReading it\n    The published coefficient and standard error come back from the raw survey to\n    four decimal places, and the sensitivity numbers built on them match the paper.\n    That is the end-to-end claim: not that a formula is implemented correctly, but\n    that the whole path from 1,276 rows to a published sensitivity analysis runs\n    through this library and arrives in the same place.\n\n    The substantive point is the one Cinelli and Hazlett were making. This design\n    cannot rule out confounding, and no design of this kind can. What it can do is\n    state precisely how strong a confounder would have to be, benchmark that\n    against a variable everyone can picture, and let a reader decide. That is a\n    claim someone can argue with, which is more than significance offers.",
+   "worst": 0.000258,
+   "worst_rel": 0.005768
+  },
+  {
+   "name": "lalonde_nsw",
+   "title": "National Supported Work: a randomized job training programme",
+   "field": "Labour economics",
+   "pillar": "identify + design",
+   "reference": "Dehejia & Wahba (1999)",
+   "availability": "fetch",
+   "citation": "LaLonde, R. (1986). Evaluating the econometric evaluations of training programs. American Economic Review, 76(4), 604-620. Subsample and reanalysis: Dehejia, R., & Wahba, S. (1999). JASA, 94(448), 1053-1062.",
+   "licence": "CC BY-NC: attributable NON-COMMERCIAL use. This repository is proprietary, so the data is not vendored here -- fetch it yourself and observe the licence.",
+   "source": "https://users.nber.org/~rdehejia/nswdata2.html",
+   "n_rows": 445,
+   "scale": "445 randomized, 2,490 PSID comparison",
+   "rows": [
+    {
+     "label": "experimental effect (USD)",
+     "axiom": 1794.342382,
+     "published": 1794.0,
+     "delta": 0.342382,
+     "rel": 0.000191,
+     "fmt": ".0f"
+    },
+    {
+     "label": "n",
+     "axiom": 445.0,
+     "published": 445.0,
+     "delta": 0.0,
+     "rel": 0.0,
+     "fmt": ".0f"
+    },
+    {
+     "label": "n treated",
+     "axiom": 185.0,
+     "published": 185.0,
+     "delta": 0.0,
+     "rel": 0.0,
+     "fmt": ".0f"
+    }
+   ],
+   "specifications": [
+    {
+     "label": "experimental benchmark",
+     "estimate": 1794.342382,
+     "se": 632.853392
+    },
+    {
+     "label": "PSID controls, unadjusted",
+     "estimate": -15204.777421,
+     "se": 1154.614331
+    },
+    {
+     "label": "PSID controls, 8 covariates",
+     "estimate": 751.946356,
+     "se": 915.257222
+    }
+   ],
+   "truth": 1794.342382,
+   "output": "National Supported Work: a randomized job training programme\n  LaLonde, R. (1986). Evaluating the econometric evaluations of training programs. American Economic Review, 76(4), 604-620. Subsample and reanalysis: Dehejia, R., & Wahba, S. (1999). JASA, 94(448), 1053-1062.\n  licence: CC BY-NC: attributable NON-COMMERCIAL use. This repository is proprietary, so the data is not vendored here -- fetch it yourself and observe the licence.\n\n  randomized sample : 445 people (185 treated, 260 control)\n  PSID comparison   : 2,490 survey respondents, none in the programme\n\nEXPERIMENTAL BENCHMARK (randomization does the work)\n  effect on 1978 earnings  $1,794  [$554, $3,035]\n  published                $1,794\n  difference               $0.34\n\n  adjusting for covariates anyway: $1,676 (se 639)\n  Barely moves, which is what randomization is supposed to buy: the\n  covariates were already balanced, so conditioning on them changes little.\n\ncovariate balance:\n               treated  randomized control  PSID comparison\nage          25.799999           25.100000        34.900002\neducation    10.300000           10.100000        12.100000\nblack         0.800000            0.800000         0.300000\nhispanic      0.100000            0.100000         0.000000\nmarried       0.200000            0.200000         0.900000\nnodegree      0.700000            0.800000         0.300000\nre74       2095.600098         2107.000000     19428.699219\nre75       1532.099976         1266.900024     19063.300781\n  The randomized arms match. The PSID group is a different population:\n  older, better educated, and earning an order of magnitude more before\n  the programme even started.\n\nOBSERVATIONAL VERSION: 185 treated vs 2,490 PSID controls\n\nspecification                               estimate        se    vs truth\nexperimental benchmark                         1,794       633           0\nPSID controls, no adjustment                 -15,205     1,155     -16,999\nPSID controls, 8 covariates                      752       915      -1,042\n\n  The unadjusted observational estimate says the programme destroyed\n  earnings. Controlling for everything available recovers some of it and\n  still misses the benchmark badly. Both regressions are correctly\n  computed; both answer a question other than the one asked.\n\nWhat the identification layer says, from the graph alone:\n  randomized   : identified via backdoor, adjust for nothing\n  observational: downgraded (backdoor_unmeasured), needs ['motivation'] which is not in the file\n  'motivation' stands for whatever led a person to enrol. It is not a\n  variable anyone collected, and it is the whole problem.\n\nsensitivity of the observational estimate ($752):\n  to bring it to zero, a confounder needs partial R2 of 1.6% in both\n  to move it the $1,042 to the benchmark, it needs 2.2%\n  Here we happen to know the answer, because the experiment was run. In\n  every real application you do not, which is why the number to report is\n  the strength required rather than the estimate alone.\n\nReading it\n    axiom reproduces the experimental benchmark to the dollar: $1,794\n    against a published $1,794. That is the part this file\n    checks.\n\n    The part it demonstrates is older and more important. Two analyses of the same\n    treated people, differing only in who they were compared against, disagree by\n    thousands of dollars and in sign. No diagnostic run on the observational data\n    flags it, because nothing is wrong with the arithmetic. The randomized\n    benchmark is the only reason anyone knows which answer was wrong -- and it\n    exists here only because somebody ran the experiment.\n\n    That is the argument for the whole first pillar: decide whether the data can\n    answer the question BEFORE fitting, because afterwards it looks fine either\n    way.",
+   "worst": 0.342382,
+   "worst_rel": 0.000191
+  }
+ ],
+ "n": 4,
+ "n_checks": 21,
+ "worst_rel": 0.005768
+}

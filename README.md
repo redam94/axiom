@@ -9,6 +9,11 @@ and pool the evidence across every study you have run.
 five pillars and the HYPER-3 case study, where every figure and every number was
 produced by actually running the library. Source in [`site/`](site/).
 
+✅ **[Checked against published results →](benchmarks/)** — 21 numbers from four real
+datasets, reproduced end to end: R `metafor` on the BCG vaccine trials, NIST
+certified values for a nonlinear fit, Cinelli & Hazlett (2020) on Darfur, and the
+LaLonde/Dehejia–Wahba experimental benchmark. Worst relative disagreement 6×10⁻³.
+
 🧪 **[Twelve runnable examples →](examples/)** — the same library across agronomy,
 labour economics, education, epidemiology, conservation ecology, public health,
 clinical research, energy, process engineering, marketing, behavioural science and

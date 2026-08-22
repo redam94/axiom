@@ -14,7 +14,8 @@ the call that made it.
 ```
 site/
   index.html  identify.html  design.html  calibrate.html  surface.html
-  meta.html  examples.html  case-study.html  api.html     <- generated; committed
+  meta.html  examples.html  benchmarks.html              <- generated; committed
+  case-study.html  api.html
   _src/*.html          content fragments (edit these)
   _gen/generate.py     runs axiom, writes assets/data/*.json
   _gen/build.py        wraps _src fragments in the shared shell

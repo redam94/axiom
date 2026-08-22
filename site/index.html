@@ -30,7 +30,7 @@
     <a class="brand brand-on" href="index.html">
       <span class="brand-mark" aria-hidden="true"></span>axiom</a>
     <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
-    <nav class="navx-wrap" aria-label="More"><a class="navx" href="examples.html">Examples</a><a class="navx" href="case-study.html">Case study</a><a class="navx" href="api.html">API</a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">Case study</a><a class="navx" href="api.html">API</a></nav>
     <button class="theme" type="button" aria-label="Switch between light and dark">
       <span class="theme-ico" aria-hidden="true"></span>
     </button>
@@ -409,7 +409,10 @@ hash      : 0ba29b126aa4df1a</pre>
             series. A subpackage is not complete until its series runs in CI. Gate 12 fails
             the build on an uncovered symbol.</p>
           <p class="rule-proof">724 exported symbols,
-            16 notebook series, all executed on every build.</p>
+            16 notebook series, all executed on every build. And
+            because a library that only ever tests itself against its own simulator is
+            checking one thing twice, <a href="benchmarks.html">21
+            published values</a> from four real datasets are reproduced too.</p>
         </div>
       </div>
     </div>
@@ -495,6 +498,13 @@ pip install <span class="s">"axiom[pymc]"</span></pre>
         <h3>Where to go next</h3>
         <p class="small muted">Three ways in, depending on what you came for.</p>
         <div class="ledger mt">
+          <div class="ledger-row">
+            <span class="ledger-f">is it right?</span>
+            <span class="ledger-s"><a href="benchmarks.html">21 published
+              values</a> reproduced from four real datasets — checked against R metafor,
+              NIST certified values, and two published papers.</span>
+            <span class="ledger-v">6e-03 worst</span>
+          </div>
           <div class="ledger-row">
             <span class="ledger-f">by field</span>
             <span class="ledger-s"><a href="examples.html">12 runnable

@@ -208,6 +208,20 @@ code { font-family: var(--f-mono); font-size: .87em; }
   .step-link { width: 8px; }
 }
 
+/* On a narrow phone the brand, the secondary links and the theme button together
+   are wider than the viewport, and `flex: none` means they cannot give. Let the
+   link group shrink and scroll rather than pushing the whole page sideways. */
+@media (max-width: 560px) {
+  .topbar-in { gap: 10px; }
+  .navx-wrap {
+    flex: 1 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none;
+    justify-content: flex-end;
+  }
+  .navx-wrap::-webkit-scrollbar { display: none; }
+  .navx { padding: 6px 7px; }
+  .brand { font-size: 1.18rem; }
+}
+
 /* -- structural bits ------------------------------------------------------- */
 
 .eyebrow {
