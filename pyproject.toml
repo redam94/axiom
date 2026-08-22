@@ -57,7 +57,11 @@ convex = ["cvxpy>=1.5"]
 privacy = ["scipy>=1.16"]
 # Figures. Never imported by core.
 viz = ["plotly>=6.5"]
-all = ["axiom[numpyro,netcdf,convex,privacy,viz]"]
+# Static report output: slides and paged PDF. HTML needs none of this -- it keeps
+# plotly figures live and only wants the viz extra. kaleido ships a browser engine
+# to turn a figure into a PNG, which is exactly why it is not a core dependency.
+report = ["axiom[viz]", "python-pptx>=1.0", "reportlab>=4.0", "kaleido>=1.0"]
+all = ["axiom[numpyro,netcdf,convex,privacy,viz,report]"]
 
 [dependency-groups]
 dev = [
@@ -107,3 +111,10 @@ markers = [
 python_version = "3.12"
 strict = true
 files = ["src/axiom"]
+
+# Optional report backends that ship no type information. They are reached only
+# from axiom.report.render.*, always behind a try/ImportError that returns a typed
+# Unsupported, so nothing in axiom's own surface loses a type to this.
+[[tool.mypy.overrides]]
+module = ["pptx.*", "reportlab.*", "kaleido.*"]
+ignore_missing_imports = true

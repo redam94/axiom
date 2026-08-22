@@ -78,6 +78,7 @@ from axiom.surface.forward import marginal as surface_marginal
 from axiom.surface.forward import marginal_total as surface_marginal_total
 from axiom.surface.kernels import (
     ExponentialKernel,
+    GaussianProcessKernel,
     HillKernel,
     LinearKernel,
     LogisticKernel,
@@ -113,6 +114,7 @@ Kernel = (
     | PolynomialKernel
     | SplineKernel
     | PiecewiseLinearKernel
+    | GaussianProcessKernel
 )
 Carryover = GeometricCarryover | DelayedCarryover | WeibullCarryover | NoCarryover
 

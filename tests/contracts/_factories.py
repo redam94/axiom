@@ -240,6 +240,23 @@ from axiom.meta import (
     release,
     tau_dersimonian_laird,
 )
+from axiom.report import (
+    Divider,
+    Heading,
+    LedgerBlock,
+    Metric,
+    PageBreak,
+    Paragraph,
+    Report,
+    Section,
+    Theme,
+)
+from axiom.report import (
+    Figure as ReportFigure,
+)
+from axiom.report import (
+    Table as ReportTable,
+)
 from axiom.sim import DosePlan, LinearSCM
 from axiom.surface import (
     Allocation,
@@ -251,6 +268,7 @@ from axiom.surface import (
     ExponentialKernel,
     FourierSeasonality,
     Frontier,
+    GaussianProcessKernel,
     GeometricCarryover,
     HillKernel,
     LinearKernel,
@@ -261,6 +279,7 @@ from axiom.surface import (
     PiecewiseLinearKernel,
     PolynomialKernel,
     PowerKernel,
+    ResponseBand,
     SplineKernel,
     StationaryPoint,
     SurfaceSpec,
@@ -980,7 +999,53 @@ def _stopping_rule() -> StoppingRule:
     )
 
 
+def _report_section() -> Section:
+    return Section(
+        title="Readout",
+        summary="Every number carries its interval.",
+        blocks=(
+            Heading(text="Headline", level=2),
+            Paragraph(text="The effect is {effect:.1f} units."),
+            Metric(source="contrast", label="Effect at 50", unit="mmHg"),
+            ReportFigure(source="response", caption="With its 90 % band"),
+            ReportTable(source="arms", caption="Arm means"),
+            LedgerBlock(source="ledger"),
+            Divider(),
+            PageBreak(),
+        ),
+    )
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
+    ResponseBand: lambda: ResponseBand(
+        treatment="a",
+        outcome="y",
+        kind="response",
+        doses=(0.0, 25.0, 50.0),
+        mean=(0.0, 4.1, 6.2),
+        median=(0.0, 4.0, 6.1),
+        lower=(-0.3, 3.4, 5.1),
+        upper=(0.3, 4.9, 7.4),
+        definition="eti",
+        mass=0.9,
+        n_draws=200,
+        dimension=D.outcome,
+        dose_unit="USD",
+        outcome_unit="units",
+    ),
+    Theme: lambda: Theme(name="house", accent_color="#2f7fd1"),
+    Heading: lambda: Heading(text="Headline", level=2),
+    Paragraph: lambda: Paragraph(text="The effect is {effect:.1f} units."),
+    ReportFigure: lambda: ReportFigure(source="response", caption="With its 90 % band"),
+    ReportTable: lambda: ReportTable(source="arms", caption="Arm means"),
+    Metric: lambda: Metric(source="contrast", label="Effect at 50", unit="mmHg"),
+    LedgerBlock: lambda: LedgerBlock(source="ledger", show_detail=True),
+    Divider: Divider,
+    PageBreak: PageBreak,
+    Section: _report_section,
+    Report: lambda: Report(
+        name="readout", title="HYPER-3", subtitle="as of {as_of}", sections=(_report_section(),)
+    ),
     LookSchedule: lambda: LookSchedule(
         labels=("week_6", "week_12", "week_18", "week_24"), information=_LOOKS
     ),
@@ -1291,6 +1356,7 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     PolynomialKernel: lambda: PolynomialKernel(reference_dose=50.0, degree=3),
     SplineKernel: lambda: SplineKernel(reference_dose=50.0, knots=(10.0, 25.0, 40.0)),
     PiecewiseLinearKernel: lambda: PiecewiseLinearKernel(reference_dose=50.0, knots=(15.0, 35.0)),
+    GaussianProcessKernel: lambda: GaussianProcessKernel(reference_dose=50.0, n_basis=6),
     GeometricCarryover: lambda: GeometricCarryover(max_lag=8),
     DelayedCarryover: lambda: DelayedCarryover(max_lag=8),
     WeibullCarryover: lambda: WeibullCarryover(max_lag=8),

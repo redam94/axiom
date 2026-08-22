@@ -26,6 +26,7 @@ from axiom.core import (
 from axiom.surface.kernels import (
     KERNELS,
     ExponentialKernel,
+    GaussianProcessKernel,
     HillKernel,
     LinearKernel,
     LogisticKernel,
@@ -41,6 +42,13 @@ from axiom.surface.kernels import (
 #: ``amplitude · saturation``. They are not monotone, not bounded by one amplitude,
 #: and linear in every parameter they declare.
 BASIS = ("polynomial", "spline", "piecewise_linear")
+
+#: Families that are not monotone in the dose. The basis families plus the GP, whose
+#: sign comes from its coefficients rather than from its (positive) amplitude.
+NON_MONOTONE = (*BASIS, "gaussian_process")
+
+#: A fixed set of standard-normal GP coefficients, so the family's tests are deterministic.
+_GP_Z = np.sin(np.arange(1, 64) * 2.399963) * 1.3
 
 DOSE = Data(name="x", dimension=D.currency)
 T = "tv"
@@ -58,6 +66,11 @@ VALUES: dict[str, dict[str, float]] = {
     "polynomial": {"beta1": 2.0, "beta2": -0.9, "beta3": 0.1},
     "spline": {"beta1": 1.5, "beta2": -2.5},
     "piecewise_linear": {"beta1": 1.2, "beta2": -2.0},
+    "gaussian_process": {
+        "ell": 0.30,
+        "beta": 2.0,
+        **{f"z{j}": float(_GP_Z[j - 1]) for j in range(1, GaussianProcessKernel().n_basis + 1)},
+    },
 }
 
 
@@ -113,6 +126,18 @@ def _closed_form(name: str, x: np.ndarray) -> np.ndarray:
             for j, t in enumerate(kernel.reduced_knots, start=2):
                 out = out + v[f"beta{j}"] * np.maximum(u - t, 0.0)
             return np.asarray(out)
+        case "gaussian_process":
+            kernel = GaussianProcessKernel()
+            u = x / kernel.reference_dose - kernel.half_width
+            total = np.zeros_like(u)
+            for j, w in enumerate(kernel.frequencies, start=1):
+                phi = np.sin(w * (u + kernel.boundary)) / np.sqrt(kernel.boundary)
+                at_zero = np.sin(w * (kernel.boundary - kernel.half_width)) / np.sqrt(
+                    kernel.boundary
+                )
+                sd = np.sqrt(np.sqrt(2 * np.pi) * v["ell"] * np.exp(-(v["ell"] ** 2) * w**2 / 2))
+                total = total + sd * v[f"z{j}"] * (phi - at_zero)
+            return np.asarray(v["beta"] * total)
     raise AssertionError(name)
 
 
@@ -148,6 +173,7 @@ def test_every_family_is_in_the_registry() -> None:
         PolynomialKernel,
         SplineKernel,
         PiecewiseLinearKernel,
+        GaussianProcessKernel,
     }
 
 
@@ -164,8 +190,15 @@ def test_parameter_names_dimensions_and_roles(name: str) -> None:
         elif role == "shape":
             assert p.dimension == dimensionless()
             assert p.is_shape
-            # power is shipped for diminishing returns: its shape lives on (0, 1)
-            assert p.prior.family == ("beta" if name == "power" else "gamma")
+            if name == "gaussian_process":
+                # the GP's shapes are a lengthscale and its standard-normal coefficients
+                expected = "lognormal" if p.name == f"ell_{T}" else "normal"
+                assert p.prior.family == expected
+                if expected == "normal":
+                    assert p.prior.hyper == {"mu": 0.0, "sigma": 1.0}
+            else:
+                # power is shipped for diminishing returns: its shape lives on (0, 1)
+                assert p.prior.family == ("beta" if name == "power" else "gamma")
         elif name in BASIS:
             # a basis coefficient is signed: the family exists to bend back down
             assert p.prior.family == "normal"
@@ -245,8 +278,8 @@ def test_saturating_families_are_bounded_by_beta() -> None:
 
 def test_monotone_increasing(name: str) -> None:
     """Every family whose amplitude is an asymptote is monotone. The basis families are not."""
-    if name in BASIS:
-        pytest.skip("basis families are non-monotone by construction")
+    if name in NON_MONOTONE:
+        pytest.skip("these families are non-monotone by construction")
     kernel = kernel_from_name(name)
     got = value(kernel.response(DOSE, T), data={"x": GRID}, params=_theta(name))
     assert np.all(np.diff(got) > 0)
@@ -257,8 +290,8 @@ def test_unit_invariance_of_shapes(name: str) -> None:
     kernel = kernel_from_name(name)
     factor = 1000.0  # e.g. currency in thousands
     base = value(kernel.response(DOSE, T), data={"x": GRID}, params=_theta(name))
-    if name in BASIS:
-        # the basis families carry their scale in spec fields, not parameters: move the
+    if name in NON_MONOTONE:
+        # these families carry their scale in spec fields, not parameters: move the
         # reference dose and the knots with the unit and the coefficients are unchanged
         fields = {"reference_dose": kernel.reference_dose * factor}
         if hasattr(kernel, "knots"):
@@ -711,3 +744,134 @@ def test_basis_families_agree_between_numpy_and_jax(name: str) -> None:
     for k in z:
         assert np.isfinite(float(g[k])), k
         assert float(g[k]) == pytest.approx(fd[k], rel=1e-6, abs=1e-6), k
+
+
+# -- the Gaussian process (note 0006) ------------------------------------------------------
+
+
+def test_gp_implied_covariance_matches_the_exact_one() -> None:
+    """The claim that makes it a GP: the basis reproduces the covariance it approximates."""
+    kernel = GaussianProcessKernel()
+    for lengthscale in (0.15, 0.3, 0.5):
+        u = np.linspace(0.0, 1.0, 41)
+        implied = kernel.implied_covariance(lengthscale, u)
+        exact = kernel.exact_covariance(lengthscale, u)
+        assert np.max(np.abs(implied - exact)) < 0.02, lengthscale
+        # symmetric, positive semi-definite, unit marginal variance
+        np.testing.assert_allclose(implied, implied.T, atol=1e-12)
+        assert np.min(np.linalg.eigvalsh(implied)) > -1e-9
+        np.testing.assert_allclose(np.diag(implied), 1.0, atol=0.02)
+
+
+@pytest.mark.parametrize("covariance", ["squared_exponential", "matern32", "matern52"])
+def test_gp_covariance_families_are_each_approximated(covariance: str) -> None:
+    kernel = GaussianProcessKernel(covariance=covariance, n_basis=48, boundary_factor=3.0)
+    assert kernel.covariance_error(0.3) < 0.02, covariance
+    # a Matern is rougher than a squared exponential, so its spectral tail is heavier
+    tail = kernel.implied_covariance(0.3, np.array([0.0, 0.5]))[0, 1]
+    assert 0.0 < tail < 1.0
+
+
+def test_gp_reports_when_its_basis_is_too_small() -> None:
+    """The approximation is allowed to be wrong; it is not allowed to be quiet about it."""
+    kernel = GaussianProcessKernel()
+    assert kernel.sufficient_for(0.3)
+    assert kernel.sufficient_for(0.10)
+    assert kernel.sufficient_for(0.70)
+    # too few basis functions for a short lengthscale, too small a boundary for a long one
+    assert not kernel.sufficient_for(0.03)
+    assert not kernel.sufficient_for(2.0)
+    assert kernel.covariance_error(0.03) > kernel.covariance_error(0.3)
+    # more basis functions buy the short end
+    assert GaussianProcessKernel(n_basis=96).sufficient_for(0.03)
+    # a wider boundary buys the long end
+    assert GaussianProcessKernel(n_basis=96, boundary_factor=8.0).sufficient_for(2.0)
+    with pytest.raises(ValueError, match="lengthscale must be positive"):
+        kernel.covariance_error(0.0)
+
+
+def test_gp_boundary_and_frequencies() -> None:
+    kernel = GaussianProcessKernel(n_basis=4, boundary_factor=2.0)
+    assert kernel.half_width == 0.5
+    assert kernel.boundary == 1.0
+    np.testing.assert_allclose(
+        kernel.frequencies, [np.pi * j / 2.0 for j in (1, 2, 3, 4)], rtol=1e-12
+    )
+    assert kernel.stems == ("ell", "z1", "z2", "z3", "z4", "beta")
+
+
+def test_gp_has_one_amplitude_so_the_classic_invariant_holds() -> None:
+    """Unlike the basis families: the sign lives in the coefficients, so beta stays positive."""
+    from axiom.core import Mul
+
+    kernel = GaussianProcessKernel()
+    amplitudes = [s for s, r in kernel.roles.items() if r == "amplitude"]
+    assert amplitudes == ["beta"]
+    response = kernel.response(DOSE, T)
+    assert isinstance(response, Mul)
+    beta, saturation = response.factors
+    assert beta.name == f"beta_{T}"
+    assert saturation == kernel.saturation(DOSE, T)
+    derivative = kernel.derivative(DOSE, T)
+    assert isinstance(derivative, Mul)
+    assert derivative.factors[1] == kernel.saturation_derivative(DOSE, T)
+    with pytest.raises(ValueError, match="positive support"):
+        GaussianProcessKernel(
+            amplitude_prior=Prior(family="normal", hyper={"mu": 0.0, "sigma": 1.0})
+        )
+
+
+def test_gp_roughness_tracks_its_lengthscale() -> None:
+    """The GP property: a shorter lengthscale wiggles more, relative to its own scale.
+
+    Measured as total variation over the function's own standard deviation. The raw
+    total variation is not the right statistic — the spectral density carries the
+    amplitude too, so a short lengthscale gives a *smaller* function as well as a
+    rougher one.
+    """
+    grid = np.linspace(0.0, 1.0, 101)
+    kernel = GaussianProcessKernel(n_basis=48)
+    roughness = []
+    for lengthscale in (0.08, 0.15, 0.30, 0.50):
+        theta = {f"ell_{T}": lengthscale, f"beta_{T}": 1.0}
+        theta |= {f"z{j}_{T}": float(_GP_Z[j - 1]) for j in range(1, kernel.n_basis + 1)}
+        got = np.ravel(np.asarray(value(kernel.response(DOSE, T), data={"x": grid}, params=theta)))
+        roughness.append(float(np.sum(np.abs(np.diff(got))) / np.std(got)))
+    assert all(a > b for a, b in zip(roughness[:-1], roughness[1:], strict=True)), roughness
+    assert roughness[0] > 5 * roughness[-1], roughness
+
+
+def test_gp_response_is_zero_at_zero_dose_for_any_coefficients() -> None:
+    """Centring the basis is what keeps the surface intercept meaning what it says."""
+    rng = np.random.default_rng(0)
+    kernel = GaussianProcessKernel(reference_dose=40.0)
+    for _ in range(5):
+        theta = {f"ell_{T}": float(rng.uniform(0.1, 0.6)), f"beta_{T}": float(rng.uniform(0.5, 3))}
+        theta |= {f"z{j}_{T}": float(rng.normal()) for j in range(1, kernel.n_basis + 1)}
+        at_zero = value(kernel.response(DOSE, T), data={"x": np.array([0.0])}, params=theta)
+        assert float(np.ravel(np.asarray(at_zero))[0]) == pytest.approx(0.0, abs=1e-12)
+
+
+@jax_only
+def test_gp_agrees_between_numpy_and_jax() -> None:
+    """sin and cos through the whole log density, values and gradients."""
+    import jax
+
+    from axiom.core import compile_log_density
+
+    jax.config.update("jax_enable_x64", True)
+    kernel = GaussianProcessKernel(n_basis=6)
+    model = _normal_model(kernel, "gaussian_process")
+    theta = {f"ell_{T}": 0.3, f"beta_{T}": 2.0, "sigma": 0.5}
+    theta |= {f"z{j}_{T}": float(_GP_Z[j - 1]) for j in range(1, 7)}
+    x = np.linspace(0.0, 1.0, 9)
+    y = np.ravel(np.asarray(value(kernel.response(DOSE, T), data={"x": x}, params=theta))) + 0.05
+    data = {"x": x, "y": y}
+    z = {k: np.asarray(v) for k, v in unconstrain(model, theta).items()}
+    f = compile_log_density(model)
+    assert float(f(data, z)) == pytest.approx(log_density(model, data, z), abs=1e-9)
+    g = jax.grad(lambda zz: f(data, zz))(z)
+    fd = _central_differences(lambda zz: log_density(model, data, zz), z)
+    for k in z:
+        assert np.isfinite(float(g[k])), k
+        assert float(g[k]) == pytest.approx(fd[k], rel=1e-5, abs=1e-6), k

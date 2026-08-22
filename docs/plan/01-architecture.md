@@ -19,7 +19,8 @@ src/axiom/
 ├── io/              serialize, provenance, artifact registry
 ├── sim/             DGPs with causal ground truth
 ├── adapters/        marketing.py (channel/spend/geo/KPI over the general core)
-└── viz/             optional plotly figures
+├── viz/             optional plotly figures
+└── report/          templates rendered to HTML, PPTX and PDF (note 0007)
 ```
 
 ### The dependency rule
@@ -28,7 +29,9 @@ Arrows point *down only*. A module may import from any layer below it and never
 from one above.
 
 ```
-  viz    adapters                          (leaves; nothing imports them)
+  report                                   (leaf; templates over viz, layer 8)
+   |
+  viz    adapters                          (adapters is a leaf; viz is imported by report)
    |        |
   build   diagnose                         (compose everything below)
    |        |

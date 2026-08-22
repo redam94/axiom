@@ -87,3 +87,10 @@ The **basis response families** in `axiom.surface` — `PolynomialKernel`, `Spli
 every kernel that existed was monotone and this trial's oldest age band has a response
 that turns over. Notebook 4 §3b is the before and after. See
 [`docs/notes/0005`](../../../docs/notes/0005-basis-response-families.md).
+
+And `GaussianProcessKernel`, which commits to less again: a stationary GP prior on the
+dose–response whose smoothness is estimated rather than assumed, as its Hilbert-space
+basis approximation with the accuracy of that approximation exposed as a number. Notebook
+4 §6 is the point of it — the marginal effect, where a monotone family reports a slope of
+zero in the band where the drug is raising pressure, because it has no way to report
+anything else. See [`docs/notes/0006`](../../../docs/notes/0006-gaussian-process-surfaces.md).

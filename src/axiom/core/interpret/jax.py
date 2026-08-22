@@ -88,6 +88,8 @@ def compile(model: Model, *, opaque: JaxOpaqueRegistry | None = None) -> JaxFn: 
         "neg": jnp.negative,
         "relu": lambda x: jnp.maximum(x, 0.0),
         "step": lambda x: jnp.where(x > 0.0, 1.0, 0.0),
+        "sin": jnp.sin,
+        "cos": jnp.cos,
     }
     link_fns: dict[str, Callable[[Any], Any]] = {
         "identity": lambda x: x,
