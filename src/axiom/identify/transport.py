@@ -490,7 +490,10 @@ def _feedback_assumption() -> Assumption:
             "the static summary graph is adequate despite treatment–outcome feedback over time; "
             "the transport formula is applied to a single-period effect"
         ),
-        challenged_by="carryover in the treatment; g-methods or an unrolled graph are needed",
+        challenged_by=(
+            "carryover in the treatment; unroll the system and run "
+            "identify.sequential_plan on the time-indexed graph instead"
+        ),
         state="unverified",
     )
 

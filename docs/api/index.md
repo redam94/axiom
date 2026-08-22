@@ -11,6 +11,7 @@ core
 data
 io
 infer
+dynamics
 identify
 estimands
 surface

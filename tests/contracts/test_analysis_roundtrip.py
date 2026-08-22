@@ -12,11 +12,12 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from axiom.calibrate import CalibratedSpec, Ledger, Measurement, derive_prior
-from axiom.core import Intervention, Population, Posterior, TimeWindow
-from axiom.data import Panel
+from axiom.core import D, Intervention, Outcome, Population, Posterior, TimeWindow, Treatment
+from axiom.data import Panel, RoleMap
 from axiom.design import DesignCandidate, SimulationSpec
 from axiom.estimands import Estimand, EstimandResult, Level, Quantity, RealizedDraws, realize
 from axiom.identify import CausalGraph, identify
@@ -228,3 +229,48 @@ def test_no_pickle_in_the_directory(
     # the npz holds only ndarray members, readable with allow_pickle=False
     with np.load(root / "posterior.npz", allow_pickle=False) as z:
         assert set(z.files) >= {"__meta__", "beta_a"}
+
+
+def test_a_stored_panel_survives_declaration_order_and_whole_valued_floats(
+    tmp_path: Path,
+) -> None:
+    """Two ways a panel used to fail its own hash on reload, neither a number changing.
+
+    A ``RoleMap`` is a ``Spec``, so its JSON sorts its mappings: two role maps that
+    differ only in the order their treatments were *declared* are equal and hash the
+    same, and the declaration order does not come back. And ``%.17g`` writes a float
+    column whose values happen to all be integral -- a dose in whole dollars -- as
+    ``1200``, which pandas infers back as ``int64`` unless the manifest's recorded
+    dtype is used. Both were found by the tutoring case study, whose treatments are
+    declared ``tutoring`` before ``messaging`` and whose doses are whole dollars.
+    """
+    frame = pd.DataFrame(
+        {
+            "u": np.repeat(["a", "b"], 3),
+            "t": np.tile(range(3), 2),
+            "y": np.arange(6, dtype=float) + 0.5,
+            "zeta": np.array([100.0, 200.0, 300.0] * 2),  # whole-valued float dose
+            "alpha": np.array([9.0, 18.0, 27.0] * 2),  # sorts before 'zeta'
+        }
+    )
+    roles = RoleMap(
+        unit="u",
+        time="t",
+        outcome=("y", Outcome(name="y", dimension=D.outcome)),
+        # Declared out of alphabetical order on purpose: this is the failing case.
+        treatments={
+            "zeta": Treatment(name="zeta", dimension=D.currency, unit="USD"),
+            "alpha": Treatment(name="alpha", dimension=D.currency, unit="USD"),
+        },
+    )
+    panel = Panel(frame, roles)
+    assert list(panel.roles.treatments) == ["zeta", "alpha"]
+
+    root = tmp_path / "order.axiom"
+    saved = save_analysis(Analysis(specs={}).with_panel(panel), root, seed=0)
+    loaded = load_analysis(root)
+
+    assert loaded == saved
+    assert loaded.panel is not None
+    assert loaded.panel.content_hash() == panel.content_hash()
+    assert dict(loaded.panel.frame.dtypes)["zeta"] == np.dtype("float64")

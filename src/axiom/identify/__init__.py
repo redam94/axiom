@@ -1,6 +1,7 @@
 """identify: DAGs, adjustment sets, front-door and IV routes, transport, honest verdicts.
 
-Imports only ``axiom.core``. ``networkx`` is not a dependency.
+Imports ``axiom.core`` and ``axiom.dynamics`` (for the unrolled graph of a
+system with feedback or simultaneity). ``networkx`` is not a dependency.
 """
 
 from axiom.identify.backdoor import (
@@ -14,6 +15,12 @@ from axiom.identify.backdoor import (
     minimal_adjustment_sets,
     requires_unmeasured,
     roles,
+)
+from axiom.identify.dynamic import (
+    SequentialPlan,
+    sequential_backdoor_admissible,
+    sequential_plan,
+    unrolled_graph,
 )
 from axiom.identify.endogeneity import EndogeneityTest, durbin_wu_hausman, hausman_iv_vs_ols
 from axiom.identify.estimators import (
@@ -56,6 +63,7 @@ __all__ = [
     "Role",
     "RoleAssignment",
     "Route",
+    "SequentialPlan",
     "TransportVerdict",
     "adjustment_sets",
     "admissible_set_exists",
@@ -81,8 +89,11 @@ __all__ = [
     "s_admissible",
     "s_admissible_sets",
     "selection_diagram",
+    "sequential_backdoor_admissible",
+    "sequential_plan",
     "transport_verdict",
     "trivially_transportable",
     "two_stage_least_squares",
+    "unrolled_graph",
     "weak_instrument_check",
 ]
