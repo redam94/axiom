@@ -19,6 +19,13 @@ with graph theory rather than with a pilot study. ``ges`` and ``gies``
 search over equivalence classes, scored with a decomposable BIC that knows
 which rows were randomized.
 
+``ges`` and ``gies`` assume **causal sufficiency**; ``fci`` does not, and
+returns a PAG whose edges can say *confounded* (``x <-> y``) as distinct from
+*undetermined* (``x o-o y``). ``edge_stability`` resamples the rows and reports
+how much of a discovered graph survives — separating an unstable edge from a
+stable edge whose *direction* the data cannot settle, which is the one an
+intervention fixes.
+
 Two cautions this subpackage states rather than assumes. Every discovery
 method here assumes **faithfulness** — that the data's independencies are
 exactly the graph's, with no coincidental cancellation — which is not
@@ -41,22 +48,36 @@ from axiom.discover.essential import (
     orientation_gain,
     v_structures,
 )
+from axiom.discover.fci import PAG, Mark, PagEdge, fci, fci_from_data, oracle_independence
+from axiom.discover.independence import IndependenceResult, PartialCorrelation
 from axiom.discover.score import Dataset, GaussianBIC
 from axiom.discover.search import DiscoveryResult, ges, gies
+from axiom.discover.stability import EdgeSupport, StabilityReport, edge_stability
 
 __all__ = [
     "Dataset",
     "DiscoveryResult",
+    "EdgeSupport",
     "EssentialGraph",
     "GaussianBIC",
+    "IndependenceResult",
+    "Mark",
+    "PAG",
+    "PagEdge",
+    "PartialCorrelation",
+    "StabilityReport",
     "consistent_extension",
     "consistent_extensions",
     "cpdag",
+    "edge_stability",
+    "fci",
+    "fci_from_data",
     "ges",
     "gies",
     "interventional_essential_graph",
     "markov_equivalent",
     "meek_closure",
+    "oracle_independence",
     "orientation_gain",
     "v_structures",
 ]

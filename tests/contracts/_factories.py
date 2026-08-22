@@ -185,9 +185,18 @@ from axiom.diagnose import (
     robustness_value,
     tipping_point,
 )
+from axiom.diagnose.structure import (
+    ImpliedIndependence,
+    IndependenceCheck,
+    StructureRefutation,
+    refute_structure,
+)
 from axiom.discover import Dataset as DiscoveryDataset
 from axiom.discover import EssentialGraph, GaussianBIC
+from axiom.discover.fci import PAG, PagEdge
+from axiom.discover.independence import IndependenceResult
 from axiom.discover.search import DiscoveryResult, ges
+from axiom.discover.stability import EdgeSupport, StabilityReport
 from axiom.dynamics import (
     Block,
     BlockOrder,
@@ -1219,7 +1228,84 @@ def _discovery_result() -> DiscoveryResult:
     return ges(GaussianBIC(_discovery_dataset()))
 
 
+# -- refutation and discovery under latents ----------------------------------------------
+
+
+def _independence_result() -> IndependenceResult:
+    return IndependenceResult(
+        x="heat",
+        y="growth",
+        given=("light",),
+        correlation=0.65,
+        p_value=1e-60,
+        n=2000,
+        statistic=38.5,
+    )
+
+
+def _implied_independence() -> ImpliedIndependence:
+    return ImpliedIndependence(x="heat", y="growth", given=("light",))
+
+
+def _structure_refutation() -> StructureRefutation:
+    import numpy as np
+
+    rng = np.random.default_rng(0)
+    rows = 400
+    a = rng.normal(size=rows)
+    b = 1.4 * a + rng.normal(size=rows)
+    c = 0.9 * b + rng.normal(size=rows)
+    data = DiscoveryDataset(np.column_stack([a, b, c]), ("a", "b", "c"), (frozenset(),) * rows)
+    report = refute_structure(CausalGraph.from_edges("a -> b, b -> c"), data)
+    assert isinstance(report, StructureRefutation)
+    return report
+
+
+def _independence_check() -> IndependenceCheck:
+    return _structure_refutation().checks[0]
+
+
+def _pag_edge() -> PagEdge:
+    return PagEdge(a="sprout", b="harvest", mark_a="arrow", mark_b="arrow")
+
+
+def _pag() -> PAG:
+    return PAG(
+        nodes=("harvest", "seed", "sprout"),
+        edges=(
+            _pag_edge(),
+            PagEdge(a="seed", b="sprout", mark_a="circle", mark_b="arrow"),
+        ),
+        limits_hit=("Zhang's rules R4 and R5-R10 are not implemented",),
+    )
+
+
+def _edge_support() -> EdgeSupport:
+    return EdgeSupport(
+        a="heat", b="light", adjacent=0.97, forward=0.10, backward=0.02, undirected=0.85
+    )
+
+
+def _stability_report() -> StabilityReport:
+    return StabilityReport(
+        variables=("heat", "light"),
+        edges=(_edge_support(),),
+        n_bootstrap=60,
+        n_rows=2000,
+        penalty=1.0,
+        seed=7,
+    )
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
+    IndependenceResult: _independence_result,
+    ImpliedIndependence: _implied_independence,
+    IndependenceCheck: _independence_check,
+    StructureRefutation: _structure_refutation,
+    PagEdge: _pag_edge,
+    PAG: _pag,
+    EdgeSupport: _edge_support,
+    StabilityReport: _stability_report,
     ClusterDAG: _cluster_dag,
     EssentialGraph: _essential_graph,
     DiscoveryResult: _discovery_result,
