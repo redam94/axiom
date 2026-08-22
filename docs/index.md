@@ -24,7 +24,7 @@ in reading order:
 - Foundation: `nbs/core/`, `nbs/data/`, `nbs/io/`, `nbs/infer/`
 - Domain: `nbs/identify/`, `nbs/estimands/`, `nbs/surface/`, `nbs/sim/`
 - Pillars: `nbs/design/`, `nbs/calibrate/`, `nbs/meta/`
-- Composition: `nbs/diagnose/`, `nbs/build/`, `nbs/adapters/`, `nbs/viz/`
+- Composition: `nbs/diagnose/`, `nbs/build/`, `nbs/adapters/`, `nbs/viz/`, `nbs/report/`
 
 Each [API page](api/index.md) links its own series.
 
@@ -40,7 +40,9 @@ first safety review. Its design notes are
 Imports point down only; `tests/contracts/test_layering.py` enforces it.
 
 ```text
-  viz    adapters                          (leaves; nothing imports them)
+  report                                   (leaf; templates over viz)
+   |
+  viz    adapters
    |        |
   build   diagnose                         (compose everything below)
    |        |

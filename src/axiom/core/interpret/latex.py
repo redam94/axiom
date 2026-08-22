@@ -45,6 +45,8 @@ _FN = {
     "neg": "-",
     "relu": "\\operatorname{relu}",
     "step": "\\operatorname{step}",
+    "sin": "\\sin",
+    "cos": "\\cos",
 }
 _GREEK = {
     "alpha",

@@ -27,6 +27,7 @@ LAYER: dict[str, int] = {
     "diagnose": 6,
     "viz": 7,
     "adapters": 7,
+    "report": 8,
 }
 
 # Same-layer exceptions that the architecture names explicitly. None yet.

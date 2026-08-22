@@ -73,6 +73,8 @@ ApplyFn = Literal[
     "neg",
     "relu",
     "step",
+    "sin",
+    "cos",
 ]
 LinkFn = Literal["identity", "log", "logit"]
 
@@ -256,6 +258,10 @@ class Apply(Spec):
     value ``0`` at ``x = 0``, identically under numpy and jax, so a
     piecewise-linear derivative evaluated *at* a knot reports the slope
     arriving into it rather than the one leaving.
+
+    ``sin`` and ``cos`` are here for the Laplacian eigenfunctions of the
+    Hilbert-space Gaussian-process basis (``surface.GaussianProcessKernel``):
+    the basis is a sine and its derivative is a cosine.
     """
 
     node: Literal["apply"] = "apply"

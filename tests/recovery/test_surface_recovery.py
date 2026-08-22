@@ -25,18 +25,48 @@ pytestmark = pytest.mark.recovery
 
 
 def _world(seed: int = 0, noise_sd: float = 0.5):  # type: ignore[no-untyped-def]
+    """The recovery world. Its dose plan is a design decision, not a default.
+
+    A Hill surface's intercept, amplitude and shape are confounded when the doses
+    do not span the rising part of the curve: ``design.identifiability_ridge`` on
+    the narrow plan this world used to carry (``spread=0.8``, ``zero_fraction=0.05``)
+    reports a condition number of 847 with ``corr(beta_a, s_a) = -0.97``, and the
+    fixed-truth coverage of ``beta_a`` there is 45 %, not 90 % — under Laplace as
+    well as NUTS, so it was never a sampler problem. Widening the dose distribution
+    and putting a fifth of the rows at zero dose takes the condition number to 119
+    and the coverage back to nominal. See ``docs/notes/0006``.
+    """
     return surface_world(
         n_units=4,
         n_periods=40,
         treatments=("a",),
         kernels=HillKernel(reference_dose=50.0, amplitude_scale=10.0),
         carryover=GeometricCarryover(max_lag=4),
-        doses=DosePlan(scale=50.0, spread=0.8, zero_fraction=0.05),
+        doses=DosePlan(scale=50.0, spread=1.3, zero_fraction=0.2),
         intercept="shared",
         truth={"beta_a": 10.0, "alpha": 5.0, "k_a": 50.0, "s_a": 2.0, "lam_a": 0.5},
         noise_sd=noise_sd,
         seed=seed,
     )
+
+
+def test_the_recovery_world_is_identified() -> None:
+    """Guard the design decision above: if the dose plan narrows, this fails first."""
+    from axiom.design import identifiability_ridge
+
+    world = _world()
+    theta = {k: v for k, v in world.theta.items() if k != "sigma"}
+    ridge = identifiability_ridge(
+        world.surface,
+        {"a": world.data["a"]},
+        theta,
+        0.5,
+        pairs=(("beta_a", "s_a"), ("alpha", "beta_a")),
+        method="finite",
+    )
+    assert not is_failure(ridge)
+    assert ridge.condition_number < 200.0, ridge.condition_number
+    assert all(abs(c) < 0.95 for c in ridge.correlations), ridge.correlations
 
 
 def test_laplace_recovers_structural_parameters() -> None:
@@ -195,3 +225,104 @@ def test_a_saturating_family_cannot_hold_a_reversal() -> None:
     # the basis family recovers the noise it was given; the monotone one cannot
     assert basis_sigma == pytest.approx(0.05, rel=0.15), basis_sigma
     assert wrong_sigma > 3 * basis_sigma, (wrong_sigma, basis_sigma)
+
+
+def test_a_gaussian_process_learns_a_curve_from_no_shipped_family() -> None:
+    """The GP's claim: it fits a dose-response that no parametric family here can express.
+
+    The truth is a rise, a turn and a slow drift — outside Hill, outside a
+    natural cubic on any small knot set, and outside a low-degree polynomial.
+    A correctly-specified GP should recover the noise scale it was given; a
+    saturating family has to bury the misfit in ``sigma`` instead.
+    """
+    import pandas as pd
+
+    from axiom.core import Outcome, Treatment
+    from axiom.data import Panel, RoleMap
+    from axiom.surface import GaussianProcessKernel, SurfaceSpec, forward
+
+    rng = np.random.default_rng(4)
+    n, top, noise = 300, 40.0, 0.8
+    dose = rng.uniform(0.0, top, n)
+
+    def curve(x: np.ndarray) -> np.ndarray:
+        u = x / 12.0
+        return np.asarray(9.0 * u / (1.0 + u**2) * 2.2 + 0.02 * x)
+
+    outcome = Outcome(name="y", dimension=D.outcome, unit="u", aggregation="mean")
+    drug = Treatment(name="dose", dimension=D.currency, unit="mg")
+    panel = Panel(
+        pd.DataFrame(
+            {
+                "unit": [f"u{i:03d}" for i in range(n)],
+                "t": 0,
+                "y": curve(dose) + rng.normal(0.0, noise, n),
+                "dose": dose,
+            }
+        ),
+        RoleMap(unit="unit", time="t", outcome=("y", outcome), treatments={"dose": drug}),
+    )
+
+    kernel = GaussianProcessKernel(reference_dose=top, amplitude_scale=10.0)
+    spec = SurfaceSpec(
+        name="gp",
+        treatments=(drug,),
+        outcome=outcome,
+        kernels={"dose": kernel},
+        intercept="shared",
+        noise_scale=1.0,
+    )
+    gp = fit(spec, panel, backend="laplace", draws=600, chains=1, seed=1)
+    assert gp.converged
+    assert isinstance(gp.posterior, Posterior)
+
+    # the fitted lengthscale is inside the band the basis can actually represent
+    lengthscale = gp.posterior.summary("ell_dose").mean
+    assert kernel.sufficient_for(lengthscale), lengthscale
+
+    # it recovers the noise it was given, so the curve is not being absorbed into sigma
+    assert gp.posterior.summary("sigma").mean == pytest.approx(noise, rel=0.2)
+
+    grid = np.linspace(0.0, top, 81)
+    theta = {
+        p.name: float(gp.posterior.summary(p.name).mean)
+        for p in gp.surface.model.parameters
+        if p.name != "sigma"
+    }
+    predicted = np.ravel(np.asarray(forward(gp.surface, {"dose": grid}, theta)))
+    target = curve(grid) - curve(np.zeros(1))[0]
+    gp_rmse = float(np.sqrt(np.mean((predicted - target) ** 2)))
+
+    saturating = fit(
+        spec.model_copy(
+            update={"kernels": {"dose": HillKernel(reference_dose=12.0, amplitude_scale=10.0)}}
+        ),
+        panel,
+        backend="laplace",
+        draws=600,
+        chains=1,
+        seed=1,
+    )
+    assert isinstance(saturating.posterior, Posterior)
+    hill_theta = {
+        p.name: float(saturating.posterior.summary(p.name).mean)
+        for p in saturating.surface.model.parameters
+        if p.name != "sigma"
+    }
+    hill_rmse = float(
+        np.sqrt(
+            np.mean(
+                (
+                    np.ravel(np.asarray(forward(saturating.surface, {"dose": grid}, hill_theta)))
+                    - target
+                )
+                ** 2
+            )
+        )
+    )
+    # the misfit a saturating family cannot hold goes into its residual scale
+    assert saturating.posterior.summary("sigma").mean > 1.5 * gp.posterior.summary("sigma").mean
+    # the GP tracks the curve to a few per cent of its span, and better than the wrong family
+    span = float(target.max() - target.min())
+    assert gp_rmse < 0.1 * span, (gp_rmse, span)
+    assert gp_rmse < 0.75 * hill_rmse, (gp_rmse, hill_rmse)

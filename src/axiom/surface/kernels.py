@@ -48,6 +48,8 @@ from collections.abc import Mapping, Sequence
 from fractions import Fraction
 from typing import Annotated, Any, Literal, Protocol, Self, runtime_checkable
 
+import numpy as np
+import numpy.typing as npt
 from pydantic import Field, model_validator
 
 from axiom.core import (
@@ -72,7 +74,9 @@ __all__ = [
     "BASIS_PRIOR_FAMILIES",
     "KERNELS",
     "AnyKernel",
+    "CovarianceFamily",
     "ExponentialKernel",
+    "GaussianProcessKernel",
     "HillKernel",
     "KernelRole",
     "LinearKernel",
@@ -84,6 +88,8 @@ __all__ = [
     "SplineKernel",
     "kernel_from_name",
 ]
+
+Array = npt.NDArray[np.float64]
 
 KernelRole = Literal["scale", "shape", "amplitude"]
 """What a kernel parameter is: a dose-dimensioned scale, a dimensionless shape, or an amplitude."""
@@ -983,6 +989,317 @@ class PiecewiseLinearKernel(Spec):
         return _combine(betas, self.basis_derivative(dose))
 
 
+# -- Gaussian process --------------------------------------------------------------------
+
+CovarianceFamily = Literal["squared_exponential", "matern32", "matern52"]
+"""The stationary covariance a ``GaussianProcessKernel`` approximates."""
+
+
+def _spectral_density(family: CovarianceFamily, omega: float, lengthscale: Expr) -> Expr:
+    """``sqrt(S(omega))`` for the unit-amplitude 1-D spectral density, as a tree in ``ell``.
+
+    The square root is taken symbolically so the coefficient of each basis
+    function is ``beta · sqrt(S(w_j)) · z_j`` with ``z_j ~ N(0, 1)`` — the
+    non-centred parameterization, which is the one that samples.
+    """
+    w2 = _num(float(omega) ** 2)
+    if family == "squared_exponential":
+        # S(w) = sqrt(2 pi) l exp(-l^2 w^2 / 2), so
+        # sqrt(S) = (2 pi)^(1/4) l^(1/2) exp(-l^2 w^2 / 4)
+        decay = Apply(
+            fn="exp",
+            arg=Mul(
+                factors=(
+                    _num(-0.25),
+                    w2,
+                    Pow(base=lengthscale, exponent=Fraction(2)),
+                )
+            ),
+        )
+        return Mul(
+            factors=(
+                _num(float((2.0 * math.pi) ** 0.25)),
+                Pow(base=lengthscale, exponent=Fraction(1, 2)),
+                decay,
+            )
+        )
+    # Matern: S(w) = a(nu) l^-(2 nu) (b(nu)/l^2 + w^2)^-(nu + 1/2), and sqrt halves the exponent.
+    nu2, power = (3.0, Fraction(-1)) if family == "matern32" else (5.0, Fraction(-3, 2))
+    constant = (4.0 * 3.0**1.5 if family == "matern32" else (16.0 / 3.0) * 5.0**2.5) ** 0.5
+    inverse_sq = Pow(base=lengthscale, exponent=Fraction(-2))
+    inner = Add(terms=(Mul(factors=(_num(nu2), inverse_sq)), w2))
+    return Mul(
+        factors=(
+            _num(float(constant)),
+            Pow(
+                base=lengthscale,
+                exponent=Fraction(-3, 2) if family == "matern32" else Fraction(-5, 2),
+            ),
+            Pow(base=inner, exponent=power),
+        )
+    )
+
+
+class GaussianProcessKernel(Spec):
+    """A Gaussian process over the dose axis, as its Hilbert-space basis approximation.
+
+    The family for "I do not want to commit to a shape at all". Where
+    ``HillKernel`` assumes saturation and ``SplineKernel`` assumes a
+    particular knot set, this puts a **stationary GP prior** on the
+    dose-response and lets the smoothness be estimated: a lengthscale ``ell``
+    says how fast the curve may wiggle and an amplitude ``beta`` says how far
+    it may travel, and the data pick both.
+
+    **It is an approximation, and the docstring is where that is said.** The
+    exact GP would need a multivariate normal over the latent function, which
+    is not what ``core.Likelihood`` evaluates. Instead this is the
+    Hilbert-space reduced-rank construction (Solin & Särkkä 2020; Riutort-Mayol
+    et al. 2023): on a bounded interval the Laplacian eigenfunctions are a
+    fixed sine basis, and a stationary GP is recovered by giving basis ``j``
+    the prior standard deviation ``sqrt(S(w_j))``, where ``S`` is the
+    covariance's spectral density and ``w_j`` the ``j``-th eigenvalue's root::
+
+        f(u) = beta · Σ_j sqrt(S(w_j; ell)) · z_j · [ phi_j(u) − phi_j(0) ],
+        phi_j(u) = sin(w_j (u + L)) / sqrt(L),   w_j = pi j / (2 L),   z_j ~ N(0, 1)
+
+    written non-centred so it samples. Subtracting ``phi_j(0)`` is what keeps
+    ``response(0) = 0`` like every other family, so the surface's intercept
+    still means the response at zero dose rather than competing with the GP
+    for it.
+
+    **The two numbers that decide whether it is a GP at all** are ``n_basis``
+    (how many eigenfunctions) and ``boundary_factor`` (how far past the data
+    the domain is padded, ``L = boundary_factor / 2`` on the ``u`` scale). Too
+    few basis functions and short lengthscales cannot be represented; too
+    small a boundary and the sine basis's periodicity leaks into the fit.
+    :meth:`covariance_error` measures the approximation directly — it compares
+    the implied covariance against the exact one and returns the worst
+    absolute discrepancy — and :meth:`sufficient_for` turns that into a yes or
+    no for a lengthscale you have in mind.
+
+    The two are not interchangeable: ``boundary_factor`` sets the **long**
+    lengthscale limit and ``n_basis`` the **short** one, and raising the
+    boundary costs basis functions to hold the short end. The defaults
+    (``n_basis=24``, ``boundary_factor=3.0``) keep the covariance error under
+    0.02 for lengthscales from **0.10 to 0.70** on the ``u`` scale — a tenth
+    to seven tenths of ``reference_dose`` — which is the 90 % interval of the
+    default lengthscale prior. Outside that band the approximation, not the
+    data, is what limits the fit, and ``covariance_error`` says so rather than
+    leaving it to be inferred from a bad posterior.
+
+    Like the saturating families and unlike the basis families, this declares
+    exactly **one amplitude**: the sign of the response comes from the ``z``
+    coefficients, so ``beta`` is a positive GP marginal scale and
+    ``response == beta · saturation`` holds node for node.
+    """
+
+    name: Literal["gaussian_process"] = "gaussian_process"
+    reference_dose: float = Field(default=1.0, gt=0)
+    amplitude_scale: float = Field(default=1.0, gt=0)
+    amplitude_prior: Prior | None = None
+    n_basis: int = Field(default=24, ge=2, le=128)
+    boundary_factor: float = Field(default=3.0, gt=1.0)
+    covariance: CovarianceFamily = "squared_exponential"
+    lengthscale_median: float = Field(default=0.3, gt=0)
+    lengthscale_spread: float = Field(default=0.5, gt=0)
+
+    @model_validator(mode="after")
+    def _positive_amplitude_prior(self) -> Self:
+        _check_amplitude_prior(self.amplitude_prior)
+        return self
+
+    @property
+    def half_width(self) -> float:
+        """``S``: half the width of the ``u`` domain the basis is laid out on."""
+        return 0.5
+
+    @property
+    def boundary(self) -> float:
+        """``L = boundary_factor · S`` — the padded half-domain of the eigenbasis."""
+        return self.boundary_factor * self.half_width
+
+    @property
+    def frequencies(self) -> tuple[float, ...]:
+        """``w_j = pi j / (2 L)`` for ``j = 1 … n_basis``."""
+        return tuple(math.pi * j / (2.0 * self.boundary) for j in range(1, self.n_basis + 1))
+
+    @property
+    def stems(self) -> tuple[str, ...]:
+        return ("ell", *(f"z{j}" for j in range(1, self.n_basis + 1)), "beta")
+
+    @property
+    def roles(self) -> dict[str, KernelRole]:
+        out: dict[str, KernelRole] = {"ell": "shape"}
+        for j in range(1, self.n_basis + 1):
+            out[f"z{j}"] = "shape"
+        out["beta"] = "amplitude"
+        return out
+
+    @property
+    def saturating(self) -> bool:
+        return False
+
+    def parameters(
+        self, treatment: str, dose_dimension: Dimension, outcome_dimension: Dimension
+    ) -> tuple[Param, ...]:
+        lengthscale = Param(
+            name=f"ell_{treatment}",
+            dimension=dimensionless(),
+            prior=Prior(
+                family="lognormal",
+                hyper={
+                    "mu": math.log(self.lengthscale_median),
+                    "sigma": float(self.lengthscale_spread),
+                },
+            ),
+        )
+        weights = tuple(
+            Param(
+                name=f"z{j}_{treatment}",
+                dimension=dimensionless(),
+                prior=Prior(family="normal", hyper={"mu": 0.0, "sigma": 1.0}),
+            )
+            for j in range(1, self.n_basis + 1)
+        )
+        amplitude = _amplitude_param(
+            "beta", treatment, outcome_dimension, self.amplitude_scale, self.amplitude_prior
+        )
+        return (lengthscale, *weights, amplitude)
+
+    def _shifted(self, dose: Expr) -> Expr:
+        """``u − S``: the reduced dose recentred on the basis domain, so zero dose is ``−S``."""
+        return Add(terms=(_reduced(dose, self.reference_dose), _num(-self.half_width)))
+
+    def basis(self, dose: Expr) -> tuple[Expr, ...]:
+        """``phi_j(u) − phi_j(0)``, the centred eigenfunctions."""
+        centred = self._shifted(dose)
+        scale = _num(1.0 / math.sqrt(self.boundary))
+        out: list[Expr] = []
+        for omega in self.frequencies:
+            shifted = Mul(factors=(_num(omega), Add(terms=(centred, _num(self.boundary)))))
+            at_zero = math.sin(omega * (self.boundary - self.half_width)) / math.sqrt(self.boundary)
+            out.append(
+                Add(
+                    terms=(
+                        Mul(factors=(scale, Apply(fn="sin", arg=shifted))),
+                        _num(-at_zero),
+                    )
+                )
+            )
+        return tuple(out)
+
+    def basis_derivative(self, dose: Expr) -> tuple[Expr, ...]:
+        """``d phi_j / d dose = w_j cos(w_j (u − S + L)) / (sqrt(L) · reference_dose)``."""
+        centred = self._shifted(dose)
+        slope = _inverse_reference(dose, self.reference_dose)
+        out: list[Expr] = []
+        for omega in self.frequencies:
+            shifted = Mul(factors=(_num(omega), Add(terms=(centred, _num(self.boundary)))))
+            out.append(
+                Mul(
+                    factors=(
+                        _num(omega / math.sqrt(self.boundary)),
+                        Apply(fn="cos", arg=shifted),
+                        slope,
+                    )
+                )
+            )
+        return tuple(out)
+
+    def _weighted(self, treatment: str, basis: Sequence[Expr]) -> Expr:
+        """``Σ_j sqrt(S(w_j; ell)) · z_j · basis_j`` — dimensionless."""
+        lengthscale, *rest = self.parameters(treatment, dimensionless(), D.outcome)
+        weights = rest[: self.n_basis]
+        terms = tuple(
+            Mul(
+                factors=(
+                    _spectral_density(self.covariance, omega, lengthscale),
+                    z,
+                    b,
+                )
+            )
+            for omega, z, b in zip(self.frequencies, weights, basis, strict=True)
+        )
+        return Add(terms=terms) if len(terms) > 1 else terms[0]
+
+    def saturation(self, dose: Expr, treatment: str) -> Expr:
+        return self._weighted(treatment, self.basis(dose))
+
+    def saturation_derivative(self, dose: Expr, treatment: str) -> Expr:
+        return self._weighted(treatment, self.basis_derivative(dose))
+
+    def response(
+        self, dose: Expr, treatment: str, outcome_dimension: Dimension | None = None
+    ) -> Expr:
+        *_, beta = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
+        return _scaled(beta, self.saturation(dose, treatment))
+
+    def derivative(
+        self, dose: Expr, treatment: str, outcome_dimension: Dimension | None = None
+    ) -> Expr:
+        *_, beta = self.parameters(treatment, dimension(dose), _outcome(outcome_dimension))
+        return _scaled(beta, self.saturation_derivative(dose, treatment))
+
+    # -- how good is the approximation? ---------------------------------------------
+
+    def implied_covariance(self, lengthscale: float, u: Array) -> Array:
+        """``Σ_j S(w_j) phi_j(u) phi_j(u')`` — the covariance the basis actually implies."""
+        from axiom.core import value as _value
+
+        grid = np.asarray(u, dtype=np.float64) - self.half_width
+        omegas = np.asarray(self.frequencies, dtype=np.float64)
+        phi = np.sin(omegas[:, None] * (grid[None, :] + self.boundary)) / math.sqrt(self.boundary)
+        ell = Param(name="ell", dimension=dimensionless())
+        density = np.asarray(
+            [
+                float(
+                    _value(
+                        _spectral_density(self.covariance, float(w), ell),
+                        params={"ell": float(lengthscale)},
+                    )
+                )
+                ** 2
+                for w in omegas
+            ]
+        )
+        return np.asarray(phi.T @ (density[:, None] * phi), dtype=np.float64)
+
+    def exact_covariance(self, lengthscale: float, u: Array) -> Array:
+        """The stationary covariance the basis is approximating, on the same grid."""
+        grid = np.asarray(u, dtype=np.float64)
+        r = np.abs(grid[:, None] - grid[None, :])
+        if self.covariance == "squared_exponential":
+            return np.asarray(np.exp(-0.5 * (r / lengthscale) ** 2), dtype=np.float64)
+        if self.covariance == "matern32":
+            a = math.sqrt(3.0) * r / lengthscale
+            return np.asarray((1.0 + a) * np.exp(-a), dtype=np.float64)
+        a = math.sqrt(5.0) * r / lengthscale
+        return np.asarray((1.0 + a + a**2 / 3.0) * np.exp(-a), dtype=np.float64)
+
+    def covariance_error(self, lengthscale: float, *, n_grid: int = 41) -> float:
+        """Worst absolute gap between the implied and exact covariance, on ``u`` in ``[0, 1]``.
+
+        The honest measure of whether ``n_basis`` and ``boundary_factor`` are
+        large enough for a lengthscale: the covariance is on a unit scale, so
+        this reads as a fraction. Below about 0.02 the approximation is not
+        the thing limiting the fit.
+        """
+        if lengthscale <= 0.0:
+            raise ValueError(f"lengthscale must be positive, got {lengthscale}")
+        u = np.linspace(0.0, 1.0, int(n_grid))
+        return float(
+            np.max(
+                np.abs(
+                    self.implied_covariance(lengthscale, u) - self.exact_covariance(lengthscale, u)
+                )
+            )
+        )
+
+    def sufficient_for(self, lengthscale: float, *, tolerance: float = 0.02) -> bool:
+        """Is this basis big enough to represent a GP of that lengthscale?"""
+        return self.covariance_error(lengthscale) <= tolerance
+
+
 AnyKernel = Annotated[
     HillKernel
     | LogisticKernel
@@ -991,7 +1308,8 @@ AnyKernel = Annotated[
     | LinearKernel
     | PolynomialKernel
     | SplineKernel
-    | PiecewiseLinearKernel,
+    | PiecewiseLinearKernel
+    | GaussianProcessKernel,
     Field(discriminator="name"),
 ]
 """The shipped families as a discriminated union on ``name``, for embedding in other specs."""
@@ -1005,6 +1323,7 @@ KERNELS: dict[str, type[Spec]] = {
     "polynomial": PolynomialKernel,
     "spline": SplineKernel,
     "piecewise_linear": PiecewiseLinearKernel,
+    "gaussian_process": GaussianProcessKernel,
 }
 """Family name to kernel class. Every entry satisfies ``ResponseKernel``."""
 

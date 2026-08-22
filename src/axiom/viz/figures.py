@@ -37,8 +37,9 @@ from typing import Any
 import numpy as np
 import numpy.typing as npt
 
-from axiom.core import Intervention, TimeWindow, Unsupported, eti, hdi
+from axiom.core import TimeWindow, Unsupported
 from axiom.core.intervals import IntervalDefinition
+from axiom.surface.bands import ResponseBand, marginal_band, response_band
 
 __all__ = [
     "available",
@@ -107,9 +108,67 @@ def _band(
 # -- surface ----------------------------------------------------------------------------------
 
 
-def response_curve(
+def _band_figure(go: Any, band: Any, title: str) -> Any:
+    """One band object -> one figure. Every surface figure goes through here.
+
+    The band trace is added *first* and unconditionally: a surface curve without
+    its uncertainty is not a thing this module can draw, which is the point of
+    routing every one of them through a ``ResponseBand``.
+    """
+    x_title, y_title = band.axis_titles()
+    fig = go.Figure()
+    fig.add_trace(_band(go, list(band.doses), list(band.lower), list(band.upper), band.label()))
+    fig.add_trace(
+        go.Scatter(x=list(band.doses), y=list(band.mean), mode="lines", name="posterior mean")
+    )
+    fig.update_layout(title=title, xaxis_title=x_title, yaxis_title=y_title)
+    return fig
+
+
+def _curve(
     result: Any,
     treatment: str,
+    kind: str,
+    n_grid: int,
+    mass: float,
+    definition: IntervalDefinition,
+    window: TimeWindow | None,
+    seed: int | None,
+) -> Any | Unsupported:
+    go = _graph_objects()
+    if isinstance(go, Unsupported):
+        return go
+    if isinstance(result, ResponseBand):
+        return _band_figure(go, result, _title(result))
+    bad = _missing_attributes(
+        result, ("predict_under", "marginal_under", "surface", "data", "n_periods"), "result"
+    )
+    if bad is not None:
+        return bad
+    build = response_band if kind == "response" else marginal_band
+    band = build(
+        result,
+        treatment,
+        n_grid=n_grid,
+        mass=mass,
+        definition=definition,
+        window=window,
+        seed=seed,
+    )
+    if isinstance(band, Unsupported):
+        return band
+    return _band_figure(go, band, _title(band))
+
+
+def _title(band: Any) -> str:
+    if band.kind == "marginal":
+        return f"Marginal effect of {band.treatment} on {band.outcome}"
+    return f"Response of {band.outcome} to {band.treatment} dose"
+
+
+def response_curve(
+    result: Any,
+    treatment: str = "",
     *,
     n_grid: int = 25,
     mass: float = 0.9,
@@ -117,57 +176,35 @@ def response_curve(
     window: TimeWindow | None = None,
     seed: int | None = None,
 ) -> Any | Unsupported:
-    """Expected outcome against the dose of ``treatment``, with a posterior band.
+    """Expected outcome against the dose of ``treatment``, **with its posterior band**.
 
-    Each grid dose is evaluated through ``result.predict_under`` (one
-    forward per draw — the same ``forward`` the likelihood used) with the
-    other treatments at their observed doses; the curve is the mean over
-    units and the window's periods, and the band is the ``definition``
-    interval at ``mass`` over draws. The grid runs from zero to the largest
-    observed dose.
+    Takes either a fit — in which case ``surface.response_band`` evaluates the
+    grid through the draws — or a ``ResponseBand`` already built, so a report
+    that has computed the band once does not compute it again. The band is not
+    optional and there is no argument that turns it off: a response curve is a
+    posterior quantity, and a line through the posterior mean of the parameters
+    is not the curve the model believes.
     """
-    go = _graph_objects()
-    if isinstance(go, Unsupported):
-        return go
-    bad = _missing_attributes(result, ("predict_under", "surface", "data", "n_periods"), "result")
-    if bad is not None:
-        return bad
-    spec = result.surface.spec
-    if treatment not in spec.treatment_names:
-        raise ValueError(f"no treatment {treatment!r}; have {list(spec.treatment_names)}")
-    if n_grid < 2:
-        raise ValueError("n_grid must be at least 2")
-    observed = np.asarray(result.data[treatment], dtype=float)
-    top = float(np.nanmax(observed)) if observed.size else 1.0
-    grid = np.linspace(0.0, top if top > 0 else 1.0, n_grid)
-    win = window if window is not None else TimeWindow(start=0, stop=int(result.n_periods))
-    means: list[float] = []
-    lower: list[float] = []
-    upper: list[float] = []
-    for level in grid:
-        draws = result.predict_under(
-            Intervention(doses={treatment: float(level)}, mode="set"), window=win, seed=seed
-        )
-        if isinstance(draws, Unsupported):
-            return draws
-        values = np.asarray(draws.values, dtype=float)
-        per_draw = values.reshape(values.shape[0] * values.shape[1], -1).mean(axis=1)
-        iv = eti(per_draw, mass) if definition == "eti" else hdi(per_draw, mass)
-        means.append(float(per_draw.mean()))
-        lower.append(iv.lower)
-        upper.append(iv.upper)
-    entity = spec.treatment(treatment)
-    dose_unit = f" ({entity.unit})" if entity.unit else ""
-    out_unit = f" ({spec.outcome.unit})" if spec.outcome.unit else ""
-    fig = go.Figure()
-    fig.add_trace(_band(go, grid.tolist(), lower, upper, f"{definition} {mass:.0%}"))
-    fig.add_trace(go.Scatter(x=grid.tolist(), y=means, mode="lines", name="posterior mean"))
-    fig.update_layout(
-        title=f"Response of {spec.outcome.name} to {treatment} dose",
-        xaxis_title=f"{treatment} dose{dose_unit}",
-        yaxis_title=f"expected {spec.outcome.name}{out_unit}",
-    )
-    return fig
+    return _curve(result, treatment, "response", n_grid, mass, definition, window, seed)
+
+
+def marginal_curve(
+    result: Any,
+    treatment: str = "",
+    *,
+    n_grid: int = 25,
+    mass: float = 0.9,
+    definition: IntervalDefinition = "eti",
+    window: TimeWindow | None = None,
+    seed: int | None = None,
+) -> Any | Unsupported:
+    """``d outcome / d dose`` against dose, with its posterior band.
+
+    The figure a dose decision is read off. Where the band straddles zero the
+    model does not know whether the next unit of dose helps or hurts, which a
+    line through the posterior mean would hide.
+    """
+    return _curve(result, treatment, "marginal", n_grid, mass, definition, window, seed)
 
 
 # -- meta ------------------------------------------------------------------------------------

@@ -15,6 +15,7 @@ The executed series under `nbs/surface/`:
 - [03-designs.ipynb](../../nbs/surface/03-designs.ipynb)
 - [04-fit.ipynb](../../nbs/surface/04-fit.ipynb)
 - [05-ascent-and-optimize.ipynb](../../nbs/surface/05-ascent-and-optimize.ipynb)
+- [06-bands.ipynb](../../nbs/surface/06-bands.ipynb)
 
 ## Package
 
@@ -27,6 +28,9 @@ The executed series under `nbs/surface/`:
 
 ```{eval-rst}
 .. automodule:: axiom.surface.ascent
+   :members:
+
+.. automodule:: axiom.surface.bands
    :members:
 
 .. automodule:: axiom.surface.carryover
