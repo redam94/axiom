@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HYPER-3 — a trial that has to stop an arm · axiom</title>
+<meta name="description" content="A sequential dose-finding trial worked end to end: the causal graph, the sizing, the dose-response, the stopping rule, and the first safety review, where a stratum-level boundary fires that an arm-level one never would.">
+<meta property="og:title" content="HYPER-3 — a trial that has to stop an arm · axiom">
+<meta property="og:description" content="A sequential dose-finding trial worked end to end: the causal graph, the sizing, the dose-response, the stopping rule, and the first safety review, where a stratum-level boundary fires that an arm-level one never would.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="case-study">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx navx-on" href="case-study.html">Case study</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Case study · all five pillars</p>
+    <h1 style="max-width:18ch">HYPER-3: the trial that has to stop an arm</h1>
+    <p class="lede prose mt">Adults with elevated blood pressure are randomized to standard
+      care or to one of three daily doses of an investigational agent. Seated systolic
+      pressure is measured weekly for 24 weeks.
+      Everything below is computed with axiom against a synthetic world whose truth we know —
+      which is the only way to check that a method catches what it is supposed to catch.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The protocol</p>
+      <h2>400 patients, four arms, three age bands</h2>
+      <p>Randomization is stratified by age band in 2:1:1:1 blocks, so the shared control arm
+        is twice the size of each dose arm. Enrollment is staggered over
+        16 calendar weeks, which is what makes an
+        interim review a real event: at any given review some patients have months of
+        follow-up and some have weeks.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <p class="card-n">ARMS</p>
+        <h3>Four</h3>
+        <p>standard of care,
+          10 mg,
+          20 mg and
+          40 mg daily.</p>
+        <div class="card-f"><p class="card-stat">80
+          <small>patients in each dose arm; 160 on
+            standard care</small></p></div>
+      </div>
+      <div class="card">
+        <p class="card-n">STRATA</p>
+        <h3>Three age bands</h3>
+        <p>25-35,
+          36-50 and
+          51+, in shares
+          25% /
+          40% /
+          35%.</p>
+        <div class="card-f"><p class="card-stat">clearance
+          <small>is slowest in the oldest band — which is where the trouble is</small></p></div>
+      </div>
+      <div class="card">
+        <p class="card-n">REVIEWS</p>
+        <h3>6 safety looks</h3>
+        <p>At calendar weeks 12, 14, 16, 18, 20, 22, monitoring
+          12 contrasts — every dose arm, pooled and inside each
+          age band.</p>
+        <div class="card-f"><p class="card-stat">12 × 6
+          <small>chances to stop something early</small></p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The truth the trial is trying to find</p>
+      <h2>Benefit in the young cancels harm in the old</h2>
+      <p>The agent lowers blood pressure through a saturating dose–response. It also has a
+        <em>superlinear</em> pressor effect that is negligible below 20 mg and concentrated in
+        the oldest band, where clearance is slowest. Below is what that does to the net
+        benefit — and why looking only at the arm average is not a conservative choice.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="fig-head">
+        <p class="fig-t">Change in systolic pressure versus control at week
+          12</p>
+        <p class="fig-s">Below zero is a fall in blood pressure, which is the point of the
+          drug. Above zero is harm. This is the intention-to-treat contrast — the quantity
+          randomization actually licenses, averaged over how much medication people take.</p>
+      </div>
+      <div class="legend">
+        <span><i style="--k:var(--s2)"></i>25–35</span>
+        <span><i style="--k:var(--s3)"></i>36–50</span>
+        <span><i style="--k:var(--s4)"></i>51+</span>
+        <span><i style="--k:var(--ink-2)"></i>pooled over the trial population</span>
+      </div>
+      <div class="chart" data-chart="lines" data-file="casestudy"
+           data-opt='{"series":[
+             {"label":"25–35","x":"truth.doses","y":"truth.curves[0].itt","colour":"s2"},
+             {"label":"36–50","x":"truth.doses","y":"truth.curves[1].itt","colour":"s3"},
+             {"label":"51+","x":"truth.doses","y":"truth.curves[2].itt","colour":"s4"},
+             {"label":"pooled","x":"truth.doses","y":"truth.pooled_itt","colour":"ink2"}],
+             "hline":0,"hlineLabel":"same as control","direct":false,
+             "xLabel":"assigned daily dose (mg)",
+             "yLabel":"change vs control (mmHg)","height":330}'></div>
+      <p class="stamp"><b>hyper3.intent_to_treat_contrast</b>(dose, stratum, week=12)
+        — the data-generating process itself, integrated over the adherence distribution.
+        In a real trial this curve is exactly what you do not have.</p>
+    </figure>
+
+    <div class="note mt" style="max-width:var(--measure)">
+      <p class="note-t">Why the average is the dangerous statistic here</p>
+      <p class="small">Follow the grey line to 40 mg. Pooled over the whole trial population
+        the contrast is <strong>-0.64 mmHg</strong> —
+        which is to say the top dose looks
+        <em>indistinguishable from doing nothing</em>. Unremarkable, not alarming. A
+        monitoring rule watching that number has nothing to fire on.</p>
+      <p class="small" style="margin:0">Now split it. At the same dose the youngest band is at
+        <strong>-5.90</strong> — a substantial
+        benefit — while the oldest is at
+        <strong>+5.85</strong>, a substantial
+        <em>rise</em> in blood pressure. The average is near zero because the two are
+        cancelling. Averaging is not the conservative choice here; it is the choice that
+        destroys the only signal that matters.</p>
+    </div>
+
+    <p class="prose muted small mt">Worth noting what the dose is doing to the pooled curve
+      even so: at 20 mg the pooled contrast is
+      -4.30 mmHg, and going up to 40 mg moves it to
+      -0.64. The higher dose is worse on average — but
+      “worse than the middle dose” is not the same alarm as “harming a quarter of the
+      patients”, and only one of those triggers a stopping rule.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The rule, written before the data</p>
+      <h2>A boundary the statistic has to cross</h2>
+      <p>The protocol commits in advance: stop an arm when there is at least a
+        95% posterior probability that it is worse than
+        control by more than 2 mmHg. axiom turns that sentence
+        into a Z threshold at every scheduled review, accounting for how much information has
+        accumulated by then.</p>
+    </div>
+
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>the rule, for one contrast</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>information = <span class="f">information_fractions</span>(enrolled_by_look, n_total)
+schedule    = <span class="f">LookSchedule</span>(labels=..., information=information)
+
+rule = <span class="f">StoppingRule</span>(
+    name=<span class="s">"harm|age_51_plus|dose_40"</span>,
+    looks=schedule,
+    boundaries=(<span class="f">harm_boundary</span>(
+        <span class="n">0.95</span>,            <span class="c"># posterior probability that fires the rule</span>
+        information,
+        margin=<span class="n">2.0</span>,        <span class="c"># mmHg worse than control</span>
+        se_at_full_information=se,
+    ),),
+)
+
+path = <span class="f">monitor</span>(rule, observed_z, effects=effects, ses=ses)</pre>
+    </div>
+
+    <p class="prose muted small mt">Two things are worth noticing. The boundary is
+      <em>derived</em> from the protocol sentence rather than chosen from a table — change
+      the margin or the probability and the thresholds move accordingly. And the same
+      <code>StoppingRule</code> object is used both to check the realized data and to compute
+      the rule’s operating characteristics before the trial opens, so the thing being
+      evaluated is the thing that will actually run.</p>
+
+    <div class="tbl-wrap mt-lg">
+      <table class="t">
+        <caption>Operating characteristics of this rule, computed exactly rather than
+          simulated. Drift is the true standardized harm; 0 means the arm is genuinely no
+          worse than control.</caption>
+        <thead><tr><th>true drift</th><th>P(stop at some review)</th>
+          <th>expected reviews taken</th><th>expected information used</th></tr></thead>
+        <tbody>
+          <tr><td>+0.0 — no harm</td>
+            <td class="num-good">1.0%</td>
+            <td>5.96</td>
+            <td>0.995</td></tr>
+          <tr><td>-1.0</td>
+            <td>6.0%</td>
+            <td>5.78</td>
+            <td>0.972</td></tr>
+          <tr><td>-2.0</td>
+            <td>24.3%</td>
+            <td>5.18</td>
+            <td>0.897</td></tr>
+          <tr><td>-3.0</td>
+            <td>58.2%</td>
+            <td>3.98</td>
+            <td>0.748</td></tr>
+          <tr class="hi"><td>-4.0 — severe</td>
+            <td>87.4%</td>
+            <td>2.60</td>
+            <td>0.575</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted mt">Under no harm at all the rule fires
+      1.0% of the time — a low
+      false-stop rate is what buys the right to look six times. Under severe harm it fires
+      87% of the time and, on
+      average, after 2.6 reviews
+      rather than all 6.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The trial runs</p>
+      <h2>Pooled it is fine. Split by age it is not.</h2>
+      <p>All four panels below monitor the <em>same</em> 40 mg arm against the
+        <em>same</em> protocol rule, on the same vertical scale. The only difference is who is
+        counted.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="fig-head">
+        <p class="fig-t">Safety monitoring of the 40 mg arm, four ways</p>
+        <p class="fig-s">Shaded region is harm. Faint dotted continuations are reviews the
+          arm never reached, because it had already been stopped.</p>
+      </div>
+      <div class="legend">
+        <span><i class="dash" style="--k:var(--boundary)"></i>harm boundary</span>
+        <span><i style="--k:var(--ink-2)"></i>pooled</span>
+        <span><i style="--k:var(--s2)"></i>25–35</span>
+        <span><i style="--k:var(--s3)"></i>36–50</span>
+        <span><i style="--k:var(--s4)"></i>51+</span>
+      </div>
+      <div class="chart" data-chart="sequential" data-file="casestudy"
+           data-opt='{"panels":[0,1,2,3],"colour":"stratum","panelHeight":230,
+                      "showContinuation":true,"yDomain":[-5,3],"animate":true,
+                      "xLabel":"information fraction"}'></div>
+      <p class="stamp"><b>axiom.design.monitor</b>(rule, z, effects, ses) per contrast ·
+        effects from <b>axiom.identify.ols</b> with ANCOVA covariates at each look ·
+        seed 20260821</p>
+    </figure>
+
+    <div class="grid-2 mt-lg">
+      <div class="stack">
+        <div>
+          <p class="readout-l">The crossing, in the protocol’s own words</p>
+          <div class="readout">
+            <div class="readout-v is-boundary">0.988</div>
+            <p class="readout-d" style="margin-top:10px">P(40 mg is worse than control by more
+              than 2 mmHg | data) — against a rule that fires at
+              0.95</p>
+          </div>
+        </div>
+        <div class="ledger">
+          <div class="ledger-row">
+            <span class="ledger-f">decision</span>
+            <span class="ledger-s"><b>stop_harm</b> at review
+              1 of 6 — calendar week
+              12, the <em>first</em> scheduled look</span>
+            <span class="tag is-bad">stopped</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">effect</span>
+            <span class="ledger-s">+6.58 mmHg against control
+              (se 2.04, n = 33) — blood pressure
+              <em>higher</em> on treatment</span>
+            <span class="ledger-v">Z -3.221</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">threshold</span>
+            <span class="ledger-s">the boundary at this information fraction
+              (0.375)</span>
+            <span class="ledger-v">-2.527</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">pooled arm</span>
+            <span class="ledger-s">the same arm, all
+              400 patients: never below
+              <b>Z = +0.45</b> at any of the six
+              reviews</span>
+            <span class="tag is-good">never fires</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="note is-refusal">
+          <p class="note-t">Stopping early costs you something, and axiom records what</p>
+          <p class="small">The decision writes a ledger line:
+            “harm|age_51_plus|dose_40: harm boundary crossed at look 1 (week_12), Z = -3.221 against -2.527, at information fraction 0.375”</p>
+          <p class="small" style="margin:0">The assumption it carries is
+            <code>stopped_estimate_bias</code> —
+            an estimate reported at the look that stopped the study is biased away from the null; its naive interval does not have the nominal coverage It is challenged by:
+            a median-unbiased or stage-wise-ordered estimate computed for the same path</p>
+        </div>
+        <p class="small muted">This matters more than it sounds. An arm stopped at a boundary
+          crossing has a biased effect estimate <em>by construction</em>: you stopped
+          precisely because the reading was extreme, so the reading overstates the effect.
+          The right thing for a library to do is not to hide that, and not to silently
+          correct it either, but to record it as an assumption attached to the number so that
+          whoever writes the report knows a stage-wise-ordered estimate is owed.</p>
+      </div>
+    </div>
+
+    <div class="mt-lg">
+      <h3>Every monitored contrast</h3>
+      <p class="prose muted small">Twelve contrasts, six reviews each. Exactly one fired.</p>
+      <div class="tbl-wrap mt">
+        <table class="t">
+          <caption>Lowest Z reached by each contrast over the reviews it took. Lower is
+            worse; the boundary sits near −2.5 at the first look and tightens after.</caption>
+          <thead><tr><th>stratum</th><th>arm</th><th>reviews taken</th><th>lowest Z</th>
+            <th>decision</th><th>stopped at</th></tr></thead>
+          <tbody>
+            <tr><td>all units</td><td>10 mg</td>
+              <td>6</td><td>+1.91</td>
+              <td>completed</td><td>—</td></tr>
+            <tr><td>all units</td><td>20 mg</td>
+              <td>6</td><td>+1.55</td>
+              <td>completed</td><td>—</td></tr>
+            <tr><td>all units</td><td>40 mg</td>
+              <td>6</td><td>+0.45</td>
+              <td>completed</td><td>—</td></tr>
+            <tr><td>25-35</td><td>10 mg</td>
+              <td>6</td><td>+1.31</td>
+              <td>completed</td><td>—</td></tr>
+            <tr><td>25-35</td><td>20 mg</td>
+              <td>6</td><td>+1.12</td>
+              <td>completed</td><td>—</td></tr>
+            <tr><td>25-35</td><td>40 mg</td>
+              <td>6</td><td>+1.86</td>
+              <td>completed</td><td>—</td></tr>
+            <tr><td>36-50</td><td>10 mg</td>
+              <td>6</td><td>+1.29</td>
+              <td>completed</td><td>—</td></tr>
+            <tr><td>36-50</td><td>20 mg</td>
+              <td>6</td><td>+1.04</td>
+              <td>completed</td><td>—</td></tr>
+            <tr><td>36-50</td><td>40 mg</td>
+              <td>6</td><td>+1.08</td>
+              <td>completed</td><td>—</td></tr>
+            <tr><td>51+</td><td>10 mg</td>
+              <td>6</td><td>+0.33</td>
+              <td>completed</td><td>—</td></tr>
+            <tr><td>51+</td><td>20 mg</td>
+              <td>6</td><td>-0.13</td>
+              <td>completed</td><td>—</td></tr>
+            <tr class="bad"><td>51+</td><td>40 mg</td>
+              <td>1</td><td>-3.22</td>
+              <td>stop_harm</td>
+              <td>week 12</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What it took</p>
+      <h2>Every pillar showed up</h2>
+      <p>The stopping decision is one line of output. Getting to a trial where that line means
+        something used the whole toolkit.</p>
+    </div>
+
+    <div class="cards">
+      <a class="card" href="identify.html">
+        <p class="card-n">01 · IDENTIFY</p>
+        <h3>What randomization buys</h3>
+        <p>Randomization licenses the contrast, but the analysis still conditions on baseline
+          and stratum. axiom states which adjustment set the graph licenses and what
+          per-protocol versus intention-to-treat actually changes.</p>
+        <div class="card-f"><p class="card-go">See the pillar <span aria-hidden="true">→</span></p></div>
+      </a>
+      <a class="card" href="design.html">
+        <p class="card-n">02 · DESIGN</p>
+        <h3>Sizing and the boundary</h3>
+        <p>The 400-patient size, the information fractions at each
+          review, the boundary derived from the protocol sentence, and the operating
+          characteristics that justify looking six times.</p>
+        <div class="card-f"><p class="card-go">See the pillar <span aria-hidden="true">→</span></p></div>
+      </a>
+      <a class="card" href="surface.html">
+        <p class="card-n">04 · SURFACE</p>
+        <h3>The dose–response</h3>
+        <p>An Emax curve in dose with an exponential onset, which is what makes 20 mg and
+          40 mg nearly indistinguishable on benefit while their harm profiles diverge
+          sharply.</p>
+        <div class="card-f"><p class="card-go">See the pillar <span aria-hidden="true">→</span></p></div>
+      </a>
+    </div>
+
+    <div class="note mt-lg" style="max-width:var(--measure)">
+      <p class="note-t">The six notebooks</p>
+      <p class="small" style="margin:0">This page is a summary. The full case study lives in
+        the repository at <code>nbs/case-studies/hypertension/</code> — six executed
+        notebooks over one synthetic world, from the causal graph through sizing, the
+        dose–response, the sequential design, and the review that stops the arm. Its design
+        notes are in <code>docs/notes/0004-case-study-hypertension.md</code>.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

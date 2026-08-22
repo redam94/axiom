@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#0f1720"/>
+  <!-- a point with its interval: the atom of the library -->
+  <line x1="6" y1="16" x2="26" y2="16" stroke="#74808d" stroke-width="2"/>
+  <line x1="6" y1="11" x2="6" y2="21" stroke="#74808d" stroke-width="2"/>
+  <line x1="26" y1="11" x2="26" y2="21" stroke="#74808d" stroke-width="2"/>
+  <circle cx="17" cy="16" r="4.5" fill="#2a78d6"/>
+</svg>

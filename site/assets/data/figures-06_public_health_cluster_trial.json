@@ -1,0 +1,140 @@
+{
+ "deff": {
+  "m": [
+   5,
+   10,
+   20,
+   40,
+   80,
+   120,
+   160,
+   200
+  ],
+  "icc01": [
+   1.04,
+   1.09,
+   1.19,
+   1.39,
+   1.79,
+   2.19,
+   2.59,
+   2.99
+  ],
+  "icc03": [
+   1.12,
+   1.27,
+   1.57,
+   2.17,
+   3.37,
+   4.57,
+   5.77,
+   6.97
+  ],
+  "icc05": [
+   1.2,
+   1.45,
+   1.95,
+   2.95,
+   4.95,
+   6.95,
+   8.95,
+   10.95
+  ],
+  "icc10": [
+   1.4,
+   1.9,
+   2.9,
+   4.9,
+   8.9,
+   12.9,
+   16.9,
+   20.9
+  ]
+ },
+ "cost": {
+  "rows": [
+   {
+    "label": "if children were independent",
+    "value": 503.0,
+    "display": "503",
+    "colour": "ink-3",
+    "note": "what a calculator with no notion of villages returns"
+   },
+   {
+    "label": "children actually enrolled",
+    "value": 1120.0,
+    "display": "1,120",
+    "colour": "accent",
+    "note": "28 villages of 40"
+   },
+   {
+    "label": "independent children they are worth",
+    "value": 516.129032,
+    "display": "516",
+    "colour": "boundary",
+    "note": "the effective sample size"
+   }
+  ]
+ },
+ "shape": {
+  "rows": [
+   {
+    "label": "10 villages of 160",
+    "value": 0.548404,
+    "display": "0.55",
+    "colour": "boundary",
+    "note": "1,600 children, design effect 5.77"
+   },
+   {
+    "label": "20 villages of 80",
+    "value": 0.777481,
+    "display": "0.78",
+    "colour": "boundary",
+    "note": "1,600 children, design effect 3.37"
+   },
+   {
+    "label": "40 villages of 40",
+    "value": 0.924251,
+    "display": "0.92",
+    "colour": "accent",
+    "note": "1,600 children, design effect 2.17"
+   },
+   {
+    "label": "80 villages of 20",
+    "value": 0.978846,
+    "display": "0.98",
+    "colour": "accent",
+    "note": "1,600 children, design effect 1.57"
+   },
+   {
+    "label": "160 villages of 10",
+    "value": 0.993372,
+    "display": "0.99",
+    "colour": "accent",
+    "note": "1,600 children, design effect 1.27"
+   }
+  ]
+ },
+ "budget": {
+  "villages": [
+   10,
+   15,
+   20,
+   25,
+   30,
+   35,
+   40,
+   45
+  ],
+  "power": [
+   0.605149,
+   0.764646,
+   0.857663,
+   0.908442,
+   0.933222,
+   0.940022,
+   0.924251,
+   0.811097
+  ]
+ }
+}

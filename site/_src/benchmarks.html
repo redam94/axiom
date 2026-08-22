@@ -1,0 +1,173 @@
+<!--meta {
+  "title": "Benchmarks — checked against published results · axiom",
+  "description": "axiom run end to end on four real datasets collected by other people, and checked against results computed by R metafor, NIST certified values, Cinelli & Hazlett (2020), and Dehejia & Wahba (1999)."
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Benchmarks · {{benchmarks.n_checks}} published values</p>
+    <h1 style="max-width:17ch">Numbers other people published</h1>
+    <p class="lede prose mt">Every other test in this repository checks axiom against a
+      world axiom made up. That is the right way to ask whether an estimator recovers a
+      truth, and it is circular in one respect: the data-generating process and the
+      likelihood are the same code.</p>
+    <p class="lede prose">These close the loop from outside — four datasets collected by
+      other people, and {{benchmarks.n_checks}} results computed by other software before
+      this library existed. Largest relative disagreement anywhere:
+      <strong>{{benchmarks.worst_rel:.1e}}</strong>.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The four</p>
+      <h2>What is checked, and against whom</h2>
+      <p>Each one covers a different pillar and a different reference implementation. Two
+        are committed to the repository and run anywhere; two carry licences a proprietary
+        repository cannot satisfy by redistributing them, and are fetched on request.</p>
+    </div>
+
+    <div class="cards">
+      <a class="card" href="#bcg">
+        <p class="card-n">META · R METAFOR</p>
+        <h3>BCG vaccine, 13 trials</h3>
+        <p>Colditz et al. (1994), the standard worked example in meta-analysis. Pooled log
+          risk ratio, τ², Cochran's Q, I² and H².</p>
+        <div class="card-f"><p class="card-stat">8 of 8
+          <small>published quantities reproduced</small></p></div>
+      </a>
+      <a class="card" href="#misra1a">
+        <p class="card-n">SURFACE · NIST CERTIFIED</p>
+        <h3>Monomolecular adsorption</h3>
+        <p>A NIST Statistical Reference Dataset, whose parameters are certified to eleven
+          digits precisely so software can be checked against them.</p>
+        <div class="card-f"><p class="card-stat">1 in 10,000
+          <small>relative error on both certified parameters</small></p></div>
+      </a>
+      <a class="card" href="#darfur">
+        <p class="card-n">IDENTIFY · CINELLI &amp; HAZLETT</p>
+        <h3>Darfur, 1,276 refugees</h3>
+        <p>The running example of the modern sensitivity-analysis literature. Coefficient,
+          standard error, residual df, and the robustness values built on them.</p>
+        <div class="card-f"><p class="card-stat">df 783
+          <small>exactly, from 486 village fixed effects</small></p></div>
+      </a>
+      <a class="card" href="#lalonde_nsw">
+        <p class="card-n">IDENTIFY · DEHEJIA &amp; WAHBA</p>
+        <h3>A randomized training programme</h3>
+        <p>The canonical demonstration that a careful observational estimate can be
+          confidently wrong, with an experiment to prove it.</p>
+        <div class="card-f"><p class="card-stat">$1,794
+          <small>experimental benchmark, reproduced to the dollar</small></p></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What this found</p>
+      <h2>An 0.001 disagreement worth chasing</h2>
+      <p>The first BCG run disagreed with metafor on I² by 0.001 — small enough to look
+        like a rounding error, and the sort of thing a tolerance quietly absorbs.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="ledger">
+        <div class="ledger-row">
+          <span class="ledger-f">Q-based</span>
+          <span class="ledger-s"><code>(Q − df) / Q</code> — the original Higgins &amp;
+            Thompson definition, and what
+            <code>axiom.meta.heterogeneity</code> returns</span>
+          <span class="ledger-v">{{benchmarks.entries[0].i2_q_based:.4f}}</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">model-based</span>
+          <span class="ledger-s"><code>τ² / (τ² + s²)</code> with <code>s²</code> the
+            typical within-study variance — what metafor's <code>rma()</code> prints</span>
+          <span class="ledger-v">{{benchmarks.entries[0].i2_model_based:.4f}}</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">verdict</span>
+          <span class="ledger-s">Neither is wrong. They answer slightly different
+            questions, and reconstructing metafor's definition from axiom's outputs
+            reproduces its published value exactly.</span>
+          <span class="tag is-good">both pinned</span>
+        </div>
+      </div>
+      <div>
+        <div class="note">
+          <p class="note-t">The wrong fix</p>
+          <p class="small" style="margin:0">Widening the tolerance until the table went
+            green. It would have passed, it would have looked identical in CI, and it
+            would have thrown away the only interesting thing the benchmark had to say.
+            Both definitions are now asserted, so if either moves it is a deliberate
+            change rather than a silent one.</p>
+        </div>
+        <p class="small muted">This is what benchmarks against other people's software are
+          for. Self-consistency tests cannot find a definitional difference, because both
+          sides of the comparison share the definition.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Every check</p>
+      <h2>The comparisons in full</h2>
+      <p>Tolerances are set by the precision of the published value, not by what passes.
+        Expand any dataset to read the whole run.</p>
+    </div>
+    <div class="ex-list">
+      <!--BENCHMARKS-->
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Licensing</p>
+      <h2>Why half the data is not in the repository</h2>
+    </div>
+    <div class="grid-2">
+      <div>
+        <p class="small muted">axiom is proprietary. Two of these four datasets carry
+          licences that a proprietary repository cannot satisfy by redistributing them:
+          the Darfur survey ships inside a GPL-3 R package, and the NSW data is CC BY-NC —
+          attributable <em>non-commercial</em> use.</p>
+        <p class="small muted">So they are not vendored. A fetch script downloads them into
+          a git-ignored cache on request, prints the licence before doing it, and records
+          the sha256. The tests over them skip when the data is absent, so a fresh clone
+          runs ten passed and four skipped rather than failing.</p>
+        <p class="small muted">The two that are committed are safe by a wide margin: the
+          NIST dataset is a work of the US federal government and public domain, and the
+          BCG table is thirteen rows of event counts from a 1994 JAMA paper, reproduced in
+          dozens of textbooks and packages.</p>
+      </div>
+      <div>
+        <div class="code">
+          <div class="code-h"><span>shell</span>
+            <button class="copy" type="button">Copy</button></div>
+          <pre><span class="c"># what is here, and on what terms</span>
+python benchmarks/registry.py
+
+<span class="c"># download the restricted ones, licence shown first</span>
+python benchmarks/fetch.py
+python benchmarks/fetch.py --all
+
+<span class="c"># the assertions, and the case studies</span>
+pytest tests/benchmarks -q
+python benchmarks/run_all.py</pre>
+        </div>
+        <p class="small muted">Adding one: the bar is a dataset somebody else collected with
+          a result somebody else published. Without a published number to hit, it is an
+          <a href="examples.html">example</a>, not a benchmark.</p>
+      </div>
+    </div>
+  </div>
+</section>

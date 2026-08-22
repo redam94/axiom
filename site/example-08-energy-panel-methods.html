@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08 · Calibrate the method before you trust the method — Energy · axiom</title>
+<meta name="description" content="Energy: Which quasi-experimental method actually holds its size on this panel? A 5-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:title" content="08 · Calibrate the method before you trust the method — Energy · axiom">
+<meta property="og:description" content="Energy: Which quasi-experimental method actually holds its size on this panel? A 5-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="example">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">Case study</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Example 08 · Energy</p>
+    <h1 style="max-width:18ch">Calibrate the method before you trust the method</h1>
+    <p class="lede prose mt">Five defensible ways to estimate a heat-pump retrofit&#x27;s saving, each resting on different assumptions. Which of them actually holds its size on the panel this programme will really have?</p>
+    <div class="ex-meta"><a class="pkg" href="design.html">Design</a>
+      <span class="pkg">5 steps</span>
+      <span class="pkg">3 figures</span>
+      <span class="pkg">259 lines</span>
+      <span class="pkg">runs in 1.1s</span></div>
+    <div class="hero-cta">
+      <a class="btn btn-1" href="#step-1">Start the walkthrough</a>
+      <a class="btn btn-2" href="https://github.com/redam94/axiom/blob/main/examples/08_energy_panel_methods.py">The whole file on GitHub &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div class="prose wt-framing"><p>Energy — which quasi-experimental method should the retrofit programme use?</p><p class="wt-h">The question</p><p>A utility is rolling out a heat-pump retrofit across buildings and wants the energy saving. Randomizing is possible but expensive; there are also months of pre-period meter data, and buildings that will not be treated for a year.</p><p>Difference-in-differences, synthetic control, a time-based regression, a cluster regression, a switchback -- each is defensible, each rests on different assumptions, and the usual way to choose is by habit.</p><p class="wt-h">The move</p><p>Simulate the panel you will actually have, run every method in the registry on data with NO effect, and see which ones report an effect anyway. A method whose false-positive rate is off at your panel shape is not a method you should trust on this data, regardless of what it does in the literature.</p><p>Pillars: design (method calibration, simulated power)</p></div>
+      <div>
+        <p class="eyebrow">The route</p>
+        <nav class="wt-toc"><a class="wt-toc-i" href="#step-1"><span class="wt-toc-n">1</span>Describe the panel you will actually have, not a generic one</a><a class="wt-toc-i" href="#step-2"><span class="wt-toc-n">2</span>Read what each candidate asks you to believe</a><a class="wt-toc-i" href="#step-3"><span class="wt-toc-n">3</span>Drop one candidate by hand, and say why</a><a class="wt-toc-i" href="#step-4"><span class="wt-toc-n">4</span>Calibrate on panels with no effect at all</a><a class="wt-toc-i" href="#step-5"><span class="wt-toc-n">5</span>Only now look at power, and only for the survivors</a></nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Before the first step</p>
+      <h2>What this example imports, and why that list is short</h2>
+      <p>Everything below runs on the four core dependencies. No sampler, no extras.</p>
+    </div>
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>examples/08_energy_panel_methods.py</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>import math
+
+from _walkthrough import Walkthrough
+
+from axiom.design import METHODS, SimulationSpec, calibrate_registry, simulated_power
+
+w = Walkthrough(
+    field=&quot;Energy&quot;,
+    title=&quot;Calibrate the method before you trust the method&quot;,
+    question=&quot;&quot;&quot;Five defensible ways to estimate a heat-pump retrofit&#x27;s saving, each
+        resting on different assumptions. Which of them actually holds its size on
+        the panel this programme will really have?&quot;&quot;&quot;,
+)</pre>
+    </div>
+  </div>
+</section>
+
+<section class="wt-step" id="step-1">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 1 <span>of 5</span></p>
+      <h2>Describe the panel you will actually have, not a generic one</h2>
+      <div class="wt-why prose"><p>Every claim about a method&#x27;s behaviour is conditional on the data it runs on. 120 buildings, 24 months, a year of pre-period, half treated, buildings that differ a lot at baseline, weather that moves everyone together, and month-to-month autocorrelation of 0.6 — those are the features that decide whether a variance estimator is honest here, and none of them are in a textbook&#x27;s assumptions.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Choosing a method from what the literature reports. The literature reports behaviour on the panels the authors had. A method that holds its size on 500 units with no autocorrelation may not hold it on 120 with rho = 0.6, and nothing about the method&#x27;s name tells you which case you are in.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/08_energy_panel_methods.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>panel = SimulationSpec(
+    n_units=120,  # buildings
+    n_periods=24,  # months of meter data
+    n_pre=12,  # a year before anything is switched on
+    n_treated=60,
+    unit_sd=1.2,  # buildings differ a lot in baseline consumption
+    noise_sd=0.9,
+    period_sd=0.6,  # weather moves everyone together
+    rho=0.6,  # and consumption is autocorrelated month to month
+    n_simulations=120,
+    seed=0,
+)
+w.out(f&quot;buildings         : {panel.n_units} ({panel.n_treated} treated)&quot;)
+w.out(f&quot;months            : {panel.n_periods}, of which {panel.n_pre} pre-period&quot;)
+w.out(f&quot;baseline spread   : unit sd {panel.unit_sd}, noise sd {panel.noise_sd}&quot;)
+w.out(f&quot;common shocks     : period sd {panel.period_sd} (weather)&quot;)
+w.out(f&quot;autocorrelation   : rho {panel.rho}&quot;)
+w.out(f&quot;simulations each  : {panel.n_simulations}&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>buildings         : 120 (60 treated)
+months            : 24, of which 12 pre-period
+baseline spread   : unit sd 1.2, noise sd 0.9
+common shocks     : period sd 0.6 (weather)
+autocorrelation   : rho 0.6
+simulations each  : 120</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-2">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 2 <span>of 5</span></p>
+      <h2>Read what each candidate asks you to believe</h2>
+      <div class="wt-why prose"><p>The registry carries each method&#x27;s requirements and its named assumptions, so the comparison starts from what is being assumed rather than from what is familiar. Two methods that produce similar point estimates can rest on completely different claims, and the difference only shows up when one of those claims is false.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Comparing methods on their estimates. On real data they will differ and there is no way to tell which is right; on simulated data with a known truth they will mostly agree, which tells you nothing about the case where it matters.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/08_energy_panel_methods.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>w.table(
+    [&quot;method&quot;, &quot;needs&quot;, &quot;assumes&quot;],
+    [
+        [
+            name,
+            &quot;, &quot;.join(
+                n
+                for n, on in (
+                    (&quot;pre-period&quot;, spec.requires_pre_period),
+                    (&quot;controls&quot;, spec.requires_controls),
+                )
+                if on
+            )
+            or &quot;nothing but the assignment&quot;,
+            &quot;, &quot;.join(spec.assumption_names()),
+        ]
+        for name, spec in METHODS.items()
+    ],
+)</pre>
+</div>
+      <div class="tbl-wrap"><table class="t"><thead><tr><th>method</th><th>needs</th><th>assumes</th></tr></thead><tbody><tr><td>difference_in_differences</td><td>pre-period, controls</td><td>parallel_trends, no_anticipation, no_interference</td></tr><tr><td>synthetic_control</td><td>pre-period, controls</td><td>convex_hull, no_anticipation, no_interference</td></tr><tr><td>time_based_regression</td><td>pre-period, controls</td><td>stable_pre_relationship, no_anticipation, no_interference</td></tr><tr><td>cluster_based_regression</td><td>pre-period, controls</td><td>random_assignment, no_interference</td></tr><tr><td>switchback</td><td>nothing but the assignment</td><td>random_assignment, no_carryover, stationary_noise</td></tr><tr><td>ghost</td><td>controls</td><td>random_assignment, exposure_known, no_interference</td></tr></tbody></table></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-3">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 3 <span>of 5</span></p>
+      <h2>Drop one candidate by hand, and say why</h2>
+      <div class="wt-why prose"><p>Synthetic control builds a donor combination for a single treated unit. This programme treats half the estate at once, so the method is not wrong — it is answering a different shape of question, and its solver says so by failing rather than by returning a number. Choosing the candidate set is part of the design.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Looping over everything in the registry and taking whatever survives. That outsources a design decision to an exception handler, and on a different panel it would silently include a method whose question nobody checked.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/08_energy_panel_methods.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>CANDIDATES = {name: spec for name, spec in METHODS.items() if name != &quot;synthetic_control&quot;}
+w.out(f&quot;in the registry : {sorted(METHODS)}&quot;)
+w.out(f&quot;carried forward : {sorted(CANDIDATES)}&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>in the registry : [&#x27;cluster_based_regression&#x27;, &#x27;difference_in_differences&#x27;, &#x27;ghost&#x27;, &#x27;switchback&#x27;, &#x27;synthetic_control&#x27;, &#x27;time_based_regression&#x27;]
+carried forward : [&#x27;cluster_based_regression&#x27;, &#x27;difference_in_differences&#x27;, &#x27;ghost&#x27;, &#x27;switchback&#x27;, &#x27;time_based_regression&#x27;]</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-4">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 4 <span>of 5</span></p>
+      <h2>Calibrate on panels with no effect at all</h2>
+      <div class="wt-why prose"><p>Run each candidate many times on data generated with a true effect of exactly zero, and count how often it declares one. A nominal 5% test should reject about 5% of the time. If it rejects 15%, every interval it produces is too narrow, and every downstream number — the power calculation, the business case — inherits that.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Trusting the nominal level. It is nominal: it is what the test would deliver under assumptions this panel may not satisfy. Autocorrelation of 0.6 is exactly the kind of thing that breaks a variance estimator quietly.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/08_energy_panel_methods.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>calibrated, results = calibrate_registry(panel, CANDIDATES, alpha=0.05)
+rows = []
+for r in results:
+    rate = r.false_positive_count / r.n_evaluated
+    # a binomial interval on the observed rate, so &#x27;passed&#x27; can be read rather than
+    # taken on trust: does the interval reach the nominal 5%?
+    half = 1.96 * math.sqrt(max(rate * (1 - rate), 1e-9) / r.n_evaluated)
+    w.out(
+        f&quot;{r.method:&lt;28}{r.false_positive_count:&gt;3}/{r.n_evaluated:&lt;5} &quot;
+        f&quot;= {rate:&gt;5.1%}   acceptable [{r.region.lower}, {r.region.upper}]   &quot;
+        f&quot;{calibrated[r.method].status}&quot;
+    )
+    rows.append(
+        {
+            &quot;label&quot;: r.method,
+            &quot;estimate&quot;: rate,
+            &quot;lower&quot;: max(0.0, rate - half),
+            &quot;upper&quot;: rate + half,
+            &quot;note&quot;: f&quot;{r.false_positive_count} false positives in {r.n_evaluated} runs&quot;,
+            &quot;bad&quot;: not r.passed,
+        }
+    )
+w.figure(
+    &quot;size&quot;,
+    kind=&quot;intervals&quot;,
+    data={&quot;rows&quot;: rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: 0.05,
+        &quot;truthLabel&quot;: &quot;nominal 5%&quot;,
+        &quot;xLabel&quot;: &quot;false-positive rate on panels with no true effect&quot;,
+        &quot;labelWidth&quot;: 190,
+        &quot;rowHeight&quot;: 36,
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>difference_in_differences     5/120   =  4.2%   acceptable [0, 15]   stable
+time_based_regression         7/120   =  5.8%   acceptable [0, 15]   stable
+cluster_based_regression      4/120   =  3.3%   acceptable [0, 15]   stable
+switchback                   11/120   =  9.2%   acceptable [0, 15]   stable
+ghost                         4/120   =  3.3%   acceptable [0, 15]   stable</pre></div>
+<figure class="fig" id="08_energy_panel_methods-size">
+  <div class="fig-head"><p class="fig-t">Does a 5% test reject 5% of the time on this panel?</p><p class="fig-s">Each dot is the observed false-positive rate over the simulations, with a binomial interval. An interval that misses the dashed line is a method whose stated uncertainty is wrong here — and would be drawn in red.</p></div>
+  
+  <div class="chart" data-chart="intervals" data-file="figures-08_energy_panel_methods"
+       data-opt='{&quot;rows&quot;: &quot;size.rows&quot;, &quot;truth&quot;: 0.05, &quot;truthLabel&quot;: &quot;nominal 5%&quot;, &quot;xLabel&quot;: &quot;false-positive rate on panels with no true effect&quot;, &quot;labelWidth&quot;: 190, &quot;rowHeight&quot;: 36}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-5">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 5 <span>of 5</span></p>
+      <h2>Only now look at power, and only for the survivors</h2>
+      <div class="wt-why prose"><p>Calibration first, power second. The order is the point: a method that cannot hold its size will look powerful precisely because it rejects too often, so ranking on power first selects for the broken one. With size settled, power is a fair comparison and it separates the candidates hard.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Ranking every method by power and taking the top one. That is how a method that cannot hold its size ends up in a signed analysis plan, and by then the false-positive rate is somebody else&#x27;s problem.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/08_energy_panel_methods.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>EFFECT = 0.35
+with_effect = panel.model_copy(update={&quot;effect&quot;: EFFECT})
+usable = [r.method for r in results if r.passed]
+powers, coverages = [], []
+for name in usable:
+    sp = simulated_power(name, with_effect, registry=CANDIDATES)
+    w.out(
+        f&quot;{name:&lt;28}power {sp.power:&gt;6.3f}   bias {sp.bias:&gt;+7.3f}   &quot;
+        f&quot;coverage {sp.coverage:&gt;5.2f}&quot;
+    )
+    powers.append(
+        {
+            &quot;label&quot;: name,
+            &quot;value&quot;: float(sp.power),
+            &quot;display&quot;: f&quot;{sp.power:.2f}&quot;,
+            &quot;colour&quot;: &quot;accent&quot; if sp.power &gt;= 0.8 else &quot;boundary&quot;,
+            &quot;note&quot;: f&quot;bias {sp.bias:+.3f}, coverage {sp.coverage:.2f}&quot;,
+        }
+    )
+    coverages.append({&quot;label&quot;: name, &quot;a&quot;: 0.95, &quot;b&quot;: float(sp.coverage)})
+w.figure(
+    &quot;power&quot;,
+    kind=&quot;bars&quot;,
+    data={&quot;rows&quot;: powers},
+    opt={&quot;rows&quot;: &quot;@rows&quot;, &quot;xLabel&quot;: f&quot;power at a true saving of {EFFECT}&quot;, &quot;labelWidth&quot;: 190},
+    # title, note and legend: the caption shown with the chart
+)
+w.figure(
+    &quot;coverage&quot;,
+    kind=&quot;dumbbell&quot;,
+    data={&quot;rows&quot;: coverages},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: 0.95,
+        &quot;truthLabel&quot;: &quot;nominal&quot;,
+        &quot;xLabel&quot;: &quot;interval coverage under a true effect&quot;,
+        &quot;aLabel&quot;: &quot;nominal&quot;,
+        &quot;bLabel&quot;: &quot;achieved&quot;,
+        &quot;labelWidth&quot;: 190,
+        &quot;rowHeight&quot;: 38,
+    },
+    # title, note and legend: the caption shown with the chart
+)
+
+
+w.finding(f&quot;&quot;&quot;All {len(usable)} candidates calibrated: on a panel of this shape their
+    nominal 5% tests really do reject about 5% of the time, so their intervals mean
+    what they say. That is a result, and it is worth having explicitly rather than
+    assuming — a method whose size were off here would poison the power calculation
+    and the business case with it.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;With calibration settled, power separated them hard, and the separation is
+    interpretable rather than mysterious: the low-power method is estimating a
+    different quantity from a smaller effective sample, not failing at the same
+    one.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;Worth not skipping past: switchback&#x27;s coverage runs a little under nominal
+    even though its size test passed. The HAC variance is working against real
+    autocorrelation here, and the shortfall only shows up once there is an effect to
+    cover. A size check under the null is necessary and it is not sufficient.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;The order matters more than any individual number here. Calibrate first, then
+    choose on power. Choosing on power first systematically favours whichever method
+    is most willing to reject, which is the opposite of what a programme wants from
+    the estimate it will defend to a regulator.&quot;&quot;&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>difference_in_differences   power  1.000   bias  -0.004   coverage  0.96
+time_based_regression       power  0.967   bias  +0.001   coverage  0.94
+cluster_based_regression    power  1.000   bias  -0.003   coverage  0.97
+switchback                  power  1.000   bias  -0.005   coverage  0.91
+ghost                       power  0.192   bias  +0.005   coverage  0.97</pre></div>
+<figure class="fig" id="08_energy_panel_methods-power">
+  <div class="fig-head"><p class="fig-t">With size settled, power separates them</p><p class="fig-s">&#x27;ghost&#x27; is not broken. It estimates a different quantity — intent-to-treat among the exposed — from a much smaller effective sample, and pays for it in power. A ranking that had not calibrated first could not have told that apart from a method that simply rejects too often.</p></div>
+  <div class="legend"><span><i style="--k:var(--accent)"></i>reaches 80% power</span><span><i style="--k:var(--boundary)"></i>does not</span></div>
+  <div class="chart" data-chart="bars" data-file="figures-08_energy_panel_methods"
+       data-opt='{&quot;rows&quot;: &quot;power.rows&quot;, &quot;xLabel&quot;: &quot;power at a true saving of 0.35&quot;, &quot;labelWidth&quot;: 190}'></div>
+</figure>
+<figure class="fig" id="08_energy_panel_methods-coverage">
+  <div class="fig-head"><p class="fig-t">And coverage catches what the size test alone would miss</p><p class="fig-s">Size was checked under the null; this is coverage under a real effect. The bar of each dumbbell is the gap between what the method promises and what it delivers. Anything short of nominal is producing intervals that are too narrow when it matters — the kind of detail worth seeing before the analysis plan is signed rather than after.</p></div>
+  <div class="legend"><span><i style="--k:var(--ink-2)"></i>nominal 95%</span><span><i style="--k:var(--accent)"></i>achieved</span></div>
+  <div class="chart" data-chart="dumbbell" data-file="figures-08_energy_panel_methods"
+       data-opt='{&quot;rows&quot;: &quot;coverage.rows&quot;, &quot;truth&quot;: 0.95, &quot;truthLabel&quot;: &quot;nominal&quot;, &quot;xLabel&quot;: &quot;interval coverage under a true effect&quot;, &quot;aLabel&quot;: &quot;nominal&quot;, &quot;bLabel&quot;: &quot;achieved&quot;, &quot;labelWidth&quot;: 190, &quot;rowHeight&quot;: 38}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+
+<section class="wt-close">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The close</p>
+      <h2>What it actually showed</h2>
+      <p>Written after looking at the output, which is why it does not always agree
+        with the setup.</p>
+    </div>
+    <div class="prose wt-findings"><p>All 5 candidates calibrated: on a panel of this shape their nominal 5% tests really do reject about 5% of the time, so their intervals mean what they say. That is a result, and it is worth having explicitly rather than assuming — a method whose size were off here would poison the power calculation and the business case with it.</p><p>With calibration settled, power separated them hard, and the separation is interpretable rather than mysterious: the low-power method is estimating a different quantity from a smaller effective sample, not failing at the same one.</p><p>Worth not skipping past: switchback&#x27;s coverage runs a little under nominal even though its size test passed. The HAC variance is working against real autocorrelation here, and the shortfall only shows up once there is an effect to cover. A size check under the null is necessary and it is not sufficient.</p><p>The order matters more than any individual number here. Calibrate first, then choose on power. Choosing on power first systematically favours whichever method is most willing to reject, which is the opposite of what a programme wants from the estimate it will defend to a regulator.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <details class="ex-more">
+      <summary>The whole file, and everything this run printed</summary>
+      <div class="ex-body">
+        <div class="pair">
+          <div class="code">
+            <div class="code-h"><span>examples/08_energy_panel_methods.py</span>
+              <button class="copy" type="button">Copy</button></div>
+            <pre>import math
+
+from _walkthrough import Walkthrough
+
+from axiom.design import METHODS, SimulationSpec, calibrate_registry, simulated_power
+
+w = Walkthrough(
+    field=&quot;Energy&quot;,
+    title=&quot;Calibrate the method before you trust the method&quot;,
+    question=&quot;&quot;&quot;Five defensible ways to estimate a heat-pump retrofit&#x27;s saving, each
+        resting on different assumptions. Which of them actually holds its size on
+        the panel this programme will really have?&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Describe the panel you will actually have, not a generic one&quot;,
+    why=&quot;&quot;&quot;Every claim about a method&#x27;s behaviour is conditional on the data it runs
+        on. 120 buildings, 24 months, a year of pre-period, half treated, buildings
+        that differ a lot at baseline, weather that moves everyone together, and
+        month-to-month autocorrelation of 0.6 — those are the features that decide
+        whether a variance estimator is honest here, and none of them are in a
+        textbook&#x27;s assumptions.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Choosing a method from what the literature reports. The literature
+        reports behaviour on the panels the authors had. A method that holds its size
+        on 500 units with no autocorrelation may not hold it on 120 with rho = 0.6,
+        and nothing about the method&#x27;s name tells you which case you are in.&quot;&quot;&quot;,
+)
+panel = SimulationSpec(
+    n_units=120,  # buildings
+    n_periods=24,  # months of meter data
+    n_pre=12,  # a year before anything is switched on
+    n_treated=60,
+    unit_sd=1.2,  # buildings differ a lot in baseline consumption
+    noise_sd=0.9,
+    period_sd=0.6,  # weather moves everyone together
+    rho=0.6,  # and consumption is autocorrelated month to month
+    n_simulations=120,
+    seed=0,
+)
+w.out(f&quot;buildings         : {panel.n_units} ({panel.n_treated} treated)&quot;)
+w.out(f&quot;months            : {panel.n_periods}, of which {panel.n_pre} pre-period&quot;)
+w.out(f&quot;baseline spread   : unit sd {panel.unit_sd}, noise sd {panel.noise_sd}&quot;)
+w.out(f&quot;common shocks     : period sd {panel.period_sd} (weather)&quot;)
+w.out(f&quot;autocorrelation   : rho {panel.rho}&quot;)
+w.out(f&quot;simulations each  : {panel.n_simulations}&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Read what each candidate asks you to believe&quot;,
+    why=&quot;&quot;&quot;The registry carries each method&#x27;s requirements and its named assumptions,
+        so the comparison starts from what is being assumed rather than from what is
+        familiar. Two methods that produce similar point estimates can rest on
+        completely different claims, and the difference only shows up when one of
+        those claims is false.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Comparing methods on their estimates. On real data they will differ
+        and there is no way to tell which is right; on simulated data with a known
+        truth they will mostly agree, which tells you nothing about the case where it
+        matters.&quot;&quot;&quot;,
+)
+w.table(
+    [&quot;method&quot;, &quot;needs&quot;, &quot;assumes&quot;],
+    [
+        [
+            name,
+            &quot;, &quot;.join(
+                n
+                for n, on in (
+                    (&quot;pre-period&quot;, spec.requires_pre_period),
+                    (&quot;controls&quot;, spec.requires_controls),
+                )
+                if on
+            )
+            or &quot;nothing but the assignment&quot;,
+            &quot;, &quot;.join(spec.assumption_names()),
+        ]
+        for name, spec in METHODS.items()
+    ],
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Drop one candidate by hand, and say why&quot;,
+    why=&quot;&quot;&quot;Synthetic control builds a donor combination for a single treated unit.
+        This programme treats half the estate at once, so the method is not wrong —
+        it is answering a different shape of question, and its solver says so by
+        failing rather than by returning a number. Choosing the candidate set is part
+        of the design.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Looping over everything in the registry and taking whatever survives.
+        That outsources a design decision to an exception handler, and on a different
+        panel it would silently include a method whose question nobody checked.&quot;&quot;&quot;,
+)
+CANDIDATES = {name: spec for name, spec in METHODS.items() if name != &quot;synthetic_control&quot;}
+w.out(f&quot;in the registry : {sorted(METHODS)}&quot;)
+w.out(f&quot;carried forward : {sorted(CANDIDATES)}&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Calibrate on panels with no effect at all&quot;,
+    why=&quot;&quot;&quot;Run each candidate many times on data generated with a true effect of
+        exactly zero, and count how often it declares one. A nominal 5% test should
+        reject about 5% of the time. If it rejects 15%, every interval it produces is
+        too narrow, and every downstream number — the power calculation, the business
+        case — inherits that.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Trusting the nominal level. It is nominal: it is what the test would
+        deliver under assumptions this panel may not satisfy. Autocorrelation of 0.6
+        is exactly the kind of thing that breaks a variance estimator quietly.&quot;&quot;&quot;,
+)
+calibrated, results = calibrate_registry(panel, CANDIDATES, alpha=0.05)
+rows = []
+for r in results:
+    rate = r.false_positive_count / r.n_evaluated
+    # a binomial interval on the observed rate, so &#x27;passed&#x27; can be read rather than
+    # taken on trust: does the interval reach the nominal 5%?
+    half = 1.96 * math.sqrt(max(rate * (1 - rate), 1e-9) / r.n_evaluated)
+    w.out(
+        f&quot;{r.method:&lt;28}{r.false_positive_count:&gt;3}/{r.n_evaluated:&lt;5} &quot;
+        f&quot;= {rate:&gt;5.1%}   acceptable [{r.region.lower}, {r.region.upper}]   &quot;
+        f&quot;{calibrated[r.method].status}&quot;
+    )
+    rows.append(
+        {
+            &quot;label&quot;: r.method,
+            &quot;estimate&quot;: rate,
+            &quot;lower&quot;: max(0.0, rate - half),
+            &quot;upper&quot;: rate + half,
+            &quot;note&quot;: f&quot;{r.false_positive_count} false positives in {r.n_evaluated} runs&quot;,
+            &quot;bad&quot;: not r.passed,
+        }
+    )
+w.figure(
+    &quot;size&quot;,
+    kind=&quot;intervals&quot;,
+    data={&quot;rows&quot;: rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: 0.05,
+        &quot;truthLabel&quot;: &quot;nominal 5%&quot;,
+        &quot;xLabel&quot;: &quot;false-positive rate on panels with no true effect&quot;,
+        &quot;labelWidth&quot;: 190,
+        &quot;rowHeight&quot;: 36,
+    },
+    title=&quot;Does a 5% test reject 5% of the time on this panel?&quot;,
+    note=&quot;&quot;&quot;Each dot is the observed false-positive rate over the simulations, with a
+        binomial interval. An interval that misses the dashed line is a method whose
+        stated uncertainty is wrong here — and would be drawn in red.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Only now look at power, and only for the survivors&quot;,
+    why=&quot;&quot;&quot;Calibration first, power second. The order is the point: a method that
+        cannot hold its size will look powerful precisely because it rejects too
+        often, so ranking on power first selects for the broken one. With size
+        settled, power is a fair comparison and it separates the candidates
+        hard.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Ranking every method by power and taking the top one. That is how a
+        method that cannot hold its size ends up in a signed analysis plan, and by
+        then the false-positive rate is somebody else&#x27;s problem.&quot;&quot;&quot;,
+)
+EFFECT = 0.35
+with_effect = panel.model_copy(update={&quot;effect&quot;: EFFECT})
+usable = [r.method for r in results if r.passed]
+powers, coverages = [], []
+for name in usable:
+    sp = simulated_power(name, with_effect, registry=CANDIDATES)
+    w.out(
+        f&quot;{name:&lt;28}power {sp.power:&gt;6.3f}   bias {sp.bias:&gt;+7.3f}   &quot;
+        f&quot;coverage {sp.coverage:&gt;5.2f}&quot;
+    )
+    powers.append(
+        {
+            &quot;label&quot;: name,
+            &quot;value&quot;: float(sp.power),
+            &quot;display&quot;: f&quot;{sp.power:.2f}&quot;,
+            &quot;colour&quot;: &quot;accent&quot; if sp.power &gt;= 0.8 else &quot;boundary&quot;,
+            &quot;note&quot;: f&quot;bias {sp.bias:+.3f}, coverage {sp.coverage:.2f}&quot;,
+        }
+    )
+    coverages.append({&quot;label&quot;: name, &quot;a&quot;: 0.95, &quot;b&quot;: float(sp.coverage)})
+w.figure(
+    &quot;power&quot;,
+    kind=&quot;bars&quot;,
+    data={&quot;rows&quot;: powers},
+    opt={&quot;rows&quot;: &quot;@rows&quot;, &quot;xLabel&quot;: f&quot;power at a true saving of {EFFECT}&quot;, &quot;labelWidth&quot;: 190},
+    title=&quot;With size settled, power separates them&quot;,
+    note=&quot;&quot;&quot;&#x27;ghost&#x27; is not broken. It estimates a different quantity — intent-to-treat
+        among the exposed — from a much smaller effective sample, and pays for it in
+        power. A ranking that had not calibrated first could not have told that apart
+        from a method that simply rejects too often.&quot;&quot;&quot;,
+    legend=((&quot;accent&quot;, &quot;reaches 80% power&quot;), (&quot;boundary&quot;, &quot;does not&quot;)),
+)
+w.figure(
+    &quot;coverage&quot;,
+    kind=&quot;dumbbell&quot;,
+    data={&quot;rows&quot;: coverages},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: 0.95,
+        &quot;truthLabel&quot;: &quot;nominal&quot;,
+        &quot;xLabel&quot;: &quot;interval coverage under a true effect&quot;,
+        &quot;aLabel&quot;: &quot;nominal&quot;,
+        &quot;bLabel&quot;: &quot;achieved&quot;,
+        &quot;labelWidth&quot;: 190,
+        &quot;rowHeight&quot;: 38,
+    },
+    title=&quot;And coverage catches what the size test alone would miss&quot;,
+    note=&quot;&quot;&quot;Size was checked under the null; this is coverage under a real effect.
+        The bar of each dumbbell is the gap between what the method promises and what
+        it delivers. Anything short of nominal is producing intervals that are too
+        narrow when it matters — the kind of detail worth seeing before the analysis
+        plan is signed rather than after.&quot;&quot;&quot;,
+    legend=((&quot;ink-2&quot;, &quot;nominal 95%&quot;), (&quot;accent&quot;, &quot;achieved&quot;)),
+)
+
+# ----------------------------------------------------------------------------------
+
+w.finding(f&quot;&quot;&quot;All {len(usable)} candidates calibrated: on a panel of this shape their
+    nominal 5% tests really do reject about 5% of the time, so their intervals mean
+    what they say. That is a result, and it is worth having explicitly rather than
+    assuming — a method whose size were off here would poison the power calculation
+    and the business case with it.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;With calibration settled, power separated them hard, and the separation is
+    interpretable rather than mysterious: the low-power method is estimating a
+    different quantity from a smaller effective sample, not failing at the same
+    one.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;Worth not skipping past: switchback&#x27;s coverage runs a little under nominal
+    even though its size test passed. The HAC variance is working against real
+    autocorrelation here, and the shortfall only shows up once there is an effect to
+    cover. A size check under the null is necessary and it is not sufficient.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;The order matters more than any individual number here. Calibrate first, then
+    choose on power. Choosing on power first systematically favours whichever method
+    is most willing to reject, which is the opposite of what a programme wants from
+    the estimate it will defend to a regulator.&quot;&quot;&quot;)</pre>
+          </div>
+          <div class="out">
+            <div class="out-h">stdout, captured on this build</div>
+            <pre>========================================================================================
+ENERGY  ---  Calibrate the method before you trust the method
+========================================================================================
+  Five defensible ways to estimate a heat-pump retrofit&#x27;s saving, each resting on
+  different assumptions. Which of them actually holds its size on the panel this
+  programme will really have?
+
+----------------------------------------------------------------------------------------
+STEP 1  Describe the panel you will actually have, not a generic one
+----------------------------------------------------------------------------------------
+  Every claim about a method&#x27;s behaviour is conditional on the data it runs on. 120
+  buildings, 24 months, a year of pre-period, half treated, buildings that differ a lot
+  at baseline, weather that moves everyone together, and month-to-month autocorrelation
+  of 0.6 — those are the features that decide whether a variance estimator is honest
+  here, and none of them are in a textbook&#x27;s assumptions.
+
+  INSTEAD OF: Choosing a method from what the literature reports. The literature reports
+  behaviour on the panels the authors had. A method that holds its size on 500 units
+  with no autocorrelation may not hold it on 120 with rho = 0.6, and nothing about the
+  method&#x27;s name tells you which case you are in.
+
+  buildings         : 120 (60 treated)
+  months            : 24, of which 12 pre-period
+  baseline spread   : unit sd 1.2, noise sd 0.9
+  common shocks     : period sd 0.6 (weather)
+  autocorrelation   : rho 0.6
+  simulations each  : 120
+
+----------------------------------------------------------------------------------------
+STEP 2  Read what each candidate asks you to believe
+----------------------------------------------------------------------------------------
+  The registry carries each method&#x27;s requirements and its named assumptions, so the
+  comparison starts from what is being assumed rather than from what is familiar. Two
+  methods that produce similar point estimates can rest on completely different claims,
+  and the difference only shows up when one of those claims is false.
+
+  INSTEAD OF: Comparing methods on their estimates. On real data they will differ and
+  there is no way to tell which is right; on simulated data with a known truth they will
+  mostly agree, which tells you nothing about the case where it matters.
+
+  method                     needs                       assumes
+  -------------------------  --------------------------  ---------------------------------------------------------
+  difference_in_differences  pre-period, controls        parallel_trends, no_anticipation, no_interference
+  synthetic_control          pre-period, controls        convex_hull, no_anticipation, no_interference
+  time_based_regression      pre-period, controls        stable_pre_relationship, no_anticipation, no_interference
+  cluster_based_regression   pre-period, controls        random_assignment, no_interference
+  switchback                 nothing but the assignment  random_assignment, no_carryover, stationary_noise
+  ghost                      controls                    random_assignment, exposure_known, no_interference
+
+
+----------------------------------------------------------------------------------------
+STEP 3  Drop one candidate by hand, and say why
+----------------------------------------------------------------------------------------
+  Synthetic control builds a donor combination for a single treated unit. This programme
+  treats half the estate at once, so the method is not wrong — it is answering a
+  different shape of question, and its solver says so by failing rather than by
+  returning a number. Choosing the candidate set is part of the design.
+
+  INSTEAD OF: Looping over everything in the registry and taking whatever survives. That
+  outsources a design decision to an exception handler, and on a different panel it
+  would silently include a method whose question nobody checked.
+
+  in the registry : [&#x27;cluster_based_regression&#x27;, &#x27;difference_in_differences&#x27;, &#x27;ghost&#x27;, &#x27;switchback&#x27;, &#x27;synthetic_control&#x27;, &#x27;time_based_regression&#x27;]
+  carried forward : [&#x27;cluster_based_regression&#x27;, &#x27;difference_in_differences&#x27;, &#x27;ghost&#x27;, &#x27;switchback&#x27;, &#x27;time_based_regression&#x27;]
+
+----------------------------------------------------------------------------------------
+STEP 4  Calibrate on panels with no effect at all
+----------------------------------------------------------------------------------------
+  Run each candidate many times on data generated with a true effect of exactly zero,
+  and count how often it declares one. A nominal 5% test should reject about 5% of the
+  time. If it rejects 15%, every interval it produces is too narrow, and every
+  downstream number — the power calculation, the business case — inherits that.
+
+  INSTEAD OF: Trusting the nominal level. It is nominal: it is what the test would
+  deliver under assumptions this panel may not satisfy. Autocorrelation of 0.6 is
+  exactly the kind of thing that breaks a variance estimator quietly.
+
+  difference_in_differences     5/120   =  4.2%   acceptable [0, 15]   stable
+  time_based_regression         7/120   =  5.8%   acceptable [0, 15]   stable
+  cluster_based_regression      4/120   =  3.3%   acceptable [0, 15]   stable
+  switchback                   11/120   =  9.2%   acceptable [0, 15]   stable
+  ghost                         4/120   =  3.3%   acceptable [0, 15]   stable
+  [figure: Does a 5% test reject 5% of the time on this panel?]
+
+
+----------------------------------------------------------------------------------------
+STEP 5  Only now look at power, and only for the survivors
+----------------------------------------------------------------------------------------
+  Calibration first, power second. The order is the point: a method that cannot hold its
+  size will look powerful precisely because it rejects too often, so ranking on power
+  first selects for the broken one. With size settled, power is a fair comparison and it
+  separates the candidates hard.
+
+  INSTEAD OF: Ranking every method by power and taking the top one. That is how a method
+  that cannot hold its size ends up in a signed analysis plan, and by then the false-
+  positive rate is somebody else&#x27;s problem.
+
+  difference_in_differences   power  1.000   bias  -0.004   coverage  0.96
+  time_based_regression       power  0.967   bias  +0.001   coverage  0.94
+  cluster_based_regression    power  1.000   bias  -0.003   coverage  0.97
+  switchback                  power  1.000   bias  -0.005   coverage  0.91
+  ghost                       power  0.192   bias  +0.005   coverage  0.97
+  [figure: With size settled, power separates them]
+
+  [figure: And coverage catches what the size test alone would miss]
+
+
+========================================================================================
+WHAT IT ACTUALLY SHOWED
+========================================================================================
+  All 5 candidates calibrated: on a panel of this shape their nominal 5% tests really do
+  reject about 5% of the time, so their intervals mean what they say. That is a result,
+  and it is worth having explicitly rather than assuming — a method whose size were off
+  here would poison the power calculation and the business case with it.
+
+  With calibration settled, power separated them hard, and the separation is
+  interpretable rather than mysterious: the low-power method is estimating a different
+  quantity from a smaller effective sample, not failing at the same one.
+
+  Worth not skipping past: switchback&#x27;s coverage runs a little under nominal even though
+  its size test passed. The HAC variance is working against real autocorrelation here,
+  and the shortfall only shows up once there is an effect to cover. A size check under
+  the null is necessary and it is not sufficient.
+
+  The order matters more than any individual number here. Calibrate first, then choose
+  on power. Choosing on power first systematically favours whichever method is most
+  willing to reject, which is the opposite of what a programme wants from the estimate
+  it will defend to a regulator.</pre>
+          </div>
+        </div>
+      </div>
+    </details>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="example-07-clinical-rwe-calibration.html">&larr; 07 · Clinical research</a><a class="btn btn-2" href="examples.html">All twelve</a><a class="btn btn-2" href="example-09-manufacturing-steepest-ascent.html">09 · Process engineering &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>
