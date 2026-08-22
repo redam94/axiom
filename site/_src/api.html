@@ -1,0 +1,135 @@
+<!--meta {
+  "title": "API map — every public symbol · axiom",
+  "description": "All 724 public symbols across axiom's 16 subpackages, grouped by layer and searchable. Every one of them is demonstrated in an executed notebook."
+} -->
+
+<section class="hero" style="padding-bottom:24px">
+  <div class="wrap">
+    <p class="eyebrow">Reference</p>
+    <h1 style="max-width:16ch">Every public symbol</h1>
+    <p class="lede prose mt">{{overview.total_symbols}} of them, across
+      {{overview.n_packages}} subpackages. The list is generated from each subpackage’s
+      <code>__all__</code> at build time, so it cannot drift from the code. Gate 12 fails the
+      build if any symbol here lacks an executed notebook that uses it.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="api-search">
+      <input id="api-q" type="search" placeholder="Filter symbols — try “boundary”, “prior”, “transfer”…"
+             aria-label="Filter symbols" autocomplete="off" spellcheck="false">
+      <span class="api-count" id="api-count"></span>
+      <span class="api-count">press <kbd>/</kbd> to focus</span>
+    </div>
+
+    <!--API-->
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">How to read this</p>
+      <h2>Layers, and why they matter to you</h2>
+    </div>
+    <div class="grid-2">
+      <div class="stack">
+        <div>
+          <h4>foundation</h4>
+          <p class="small muted">core, data, io. Specs, dimensions, intervals, panels, and
+            the analysis round-trip. Pure numpy / scipy / pandas / pydantic. If you only ever
+            import these, axiom is a very small dependency.</p>
+        </div>
+        <div>
+          <h4>sampler seam</h4>
+          <p class="small muted">infer. The one place an optional dependency is allowed to
+            live. Laplace works with no extras; NumPyro and PyMC sit behind
+            <code>pip install "axiom[numpyro]"</code> and
+            <code>pip install "axiom[pymc]"</code>, and four NUTS samplers agree to within
+            0.12 posterior standard deviations over one shared log density.</p>
+        </div>
+        <div>
+          <h4>domain</h4>
+          <p class="small muted">identify, estimands, surface, sim. The causal and functional
+            vocabulary — graphs, nine-facet estimands, response kernels, and the synthetic
+            worlds that make every claim in the test suite checkable against a known truth.</p>
+        </div>
+      </div>
+      <div class="stack">
+        <div>
+          <h4>the pillars</h4>
+          <p class="small muted">design, calibrate, meta. Peers, with no cross-imports except
+            design ← surface and calibrate ← estimands. You can use any one of them without
+            dragging in the others.</p>
+        </div>
+        <div>
+          <h4>composition</h4>
+          <p class="small muted">diagnose, build, adapters, viz, report. Everything that
+            composes the layers below — model checking, fluent builders, the domain
+            adapters, plots, and templated HTML / PPTX / PDF reports.</p>
+        </div>
+        <div class="note">
+          <p class="note-t">Imports point down only</p>
+          <p class="small" style="margin:0">A contract test walks the import graph and fails
+            the build if an arrow ever points back up. That is what keeps the foundation
+            usable on its own and lets the pillars be adopted one at a time.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div>
+        <h3>Getting the full documentation</h3>
+        <p class="small muted">This page is a map, not a reference manual. The Sphinx
+          documentation — signatures, docstrings, and the notebook series for each subpackage
+          — builds from the repository with <code>make docs</code>, and every subpackage’s
+          API page links its own notebook series.</p>
+        <div class="code mt">
+          <div class="code-h"><span>shell</span>
+            <button class="copy" type="button">Copy</button></div>
+          <pre>git clone https://github.com/redam94/axiom
+<span class="k">cd</span> axiom
+uv sync --group dev
+
+make docs        <span class="c"># Sphinx, builds with zero warnings</span>
+make notebooks   <span class="c"># execute every notebook under nbs/</span>
+make gates       <span class="c"># the twelve contract tests</span></pre>
+        </div>
+      </div>
+      <div>
+        <h3>Where to start reading code</h3>
+        <div class="ledger mt">
+          <div class="ledger-row">
+            <span class="ledger-f">nbs/end-to-end</span>
+            <span class="ledger-s">Five notebooks, one per pillar. The shortest path from
+              nothing to a working analysis.</span>
+            <span class="ledger-v">5</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">nbs/case-studies</span>
+            <span class="ledger-s">The <a href="case-study.html">HYPER-3 trial</a>, worked
+              over one synthetic world.</span>
+            <span class="ledger-v">6</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">docs/plan</span>
+            <span class="ledger-s">The charter, architecture, porting ledger, roadmap, and
+              the contracts-and-testing rules the build enforces.</span>
+            <span class="ledger-v">6</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">docs/notes</span>
+            <span class="ledger-s">Numbered design decisions, written as the work happened —
+              including why a number deliberately changed from its parent.</span>
+            <span class="ledger-v">8</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

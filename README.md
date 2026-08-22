@@ -5,6 +5,10 @@ whether the data can tell you, design the experiment that would, fold the
 experiment's answer back into the model, map the response surface it implies,
 and pool the evidence across every study you have run.
 
+📊 **[See it working →](https://redam94.github.io/axiom/)** — a guided tour of all
+five pillars and the HYPER-3 case study, where every figure and every number was
+produced by actually running the library. Source in [`site/`](site/).
+
 Four pillars, one vocabulary:
 
 | Pillar | Question it answers | Package |

@@ -1,0 +1,207 @@
+{
+ "setup": {
+  "confounding_correlation": 0.963922,
+  "truth": {
+   "beta_a": 10.0,
+   "alpha": 5.0,
+   "k_a": 50.0,
+   "s_a": 2.0,
+   "lam_a": 0.5
+  },
+  "truth_experiment": 5.322245,
+  "truth_decision": 32.0,
+  "measurement": {
+   "estimate": 5.322311,
+   "se": 0.053222,
+   "lower": 5.217997,
+   "upper": 5.426625,
+   "method": "randomized_contrast",
+   "source": "rct-2026Q1",
+   "target_hash": "4760098b3929"
+  },
+  "n_units": 4,
+  "n_periods": 24,
+  "max_lag": 4
+ },
+ "routes": {
+  "rows": [
+   {
+    "label": "uncalibrated",
+    "moments": {
+     "beta_a": [
+      18.636956,
+      3.247322
+     ],
+     "k_a": [
+      60.969365,
+      15.081354
+     ],
+     "s_a": [
+      1.331542,
+      0.307702
+     ],
+     "lam_a": [
+      0.370296,
+      0.048781
+     ],
+     "alpha": [
+      1.36848,
+      0.88393
+     ]
+    },
+    "beta_a": 18.636956,
+    "beta_a_sd": 3.247322,
+    "sd_above_truth": 2.659717,
+    "realized": 9.781691,
+    "posterior_sd": 1.038889,
+    "z": -4.286829,
+    "verdict": "disagrees"
+   },
+   {
+    "label": "prior route",
+    "moments": {
+     "beta_a": [
+      9.953432,
+      0.099788
+     ],
+     "k_a": [
+      46.118825,
+      4.329911
+     ],
+     "s_a": [
+      2.96097,
+      0.404944
+     ],
+     "lam_a": [
+      0.351825,
+      0.049524
+     ],
+     "alpha": [
+      4.104453,
+      0.466506
+     ]
+    },
+    "beta_a": 9.953432,
+    "beta_a_sd": 0.099788,
+    "sd_above_truth": -0.466676,
+    "realized": 7.317681,
+    "posterior_sd": 0.706131,
+    "z": -2.817787,
+    "verdict": "disagrees"
+   },
+   {
+    "label": "likelihood route",
+    "moments": {
+     "beta_a": [
+      15.059276,
+      2.617591
+     ],
+     "k_a": [
+      75.00733,
+      14.005232
+     ],
+     "s_a": [
+      1.974767,
+      0.376119
+     ],
+     "lam_a": [
+      0.48223,
+      0.043756
+     ],
+     "alpha": [
+      4.106547,
+      0.469373
+     ]
+    },
+    "beta_a": 15.059276,
+    "beta_a_sd": 2.617591,
+    "sd_above_truth": 1.932798,
+    "realized": 5.467807,
+    "posterior_sd": 0.219301,
+    "z": -0.644739,
+    "verdict": "agrees"
+   }
+  ],
+  "truth": {
+   "beta_a": 10.0,
+   "alpha": 5.0,
+   "k_a": 50.0,
+   "s_a": 2.0,
+   "lam_a": 0.5
+  },
+  "design_factor": 0.536717,
+  "amplitude_mean": 9.916423,
+  "amplitude_sd": 0.099163,
+  "parameter": "beta_a",
+  "prior": "family='lognormal' hyper={'mu': 2.294142288527064, 'sigma': 0.009999627008943357}",
+  "prior_ledger": [
+   {
+    "kind": "evidence:combine",
+    "assumption": "independent_unbiased_studies",
+    "statement": "1 measurement(s) of 'first_period_lift' pooled by inverse variance"
+   },
+   {
+    "kind": "prior:design_factor",
+    "assumption": "amplitude_proportionality",
+    "statement": "pooled 'first_period_lift' mapped to amplitude 'beta_a' through design factor 0.5367167902930592 = mean(contribution / amplitude) over 4000 draws"
+   },
+   {
+    "kind": "prior:moment_match",
+    "assumption": "prior_family_adequate",
+    "statement": "amplitude 'beta_a' prior set to lognormal(mean 9.916423130937916, sd 0.09916301145226442), replacing halfnormal({'sigma': 10.0})"
+   }
+  ],
+  "route_provenance": "likelihood",
+  "constraint": "first_period_lift@rct-2026Q1"
+ },
+ "transfer": {
+  "plan_status": "downgraded",
+  "differing": [
+   "window",
+   "level"
+  ],
+  "source": "first_period_lift",
+  "target": "steady_state_lift",
+  "window_factor": 1.826917,
+  "window_counterfactual": 0.54737,
+  "lam_hat": 0.48223,
+  "level_se_factor": 0.53619,
+  "level_point_factor": "1.0",
+  "status": "downgraded",
+  "licensed": true,
+  "factor": 1.826917,
+  "se_scale": 0.53619,
+  "per_member": 9.723421,
+  "per_member_se": 0.052135,
+  "per_cluster": 38.893684,
+  "per_cluster_se": 0.208542,
+  "truth_decision": 32.0,
+  "model_read": 38.270088,
+  "model_lower": 34.138209,
+  "model_upper": 42.281389,
+  "ledger": [
+   {
+    "facet": "window",
+    "assumption": "carryover_contained",
+    "state": "unverified",
+    "counterfactual": "0.5473701838211292",
+    "value": "0.9999999999999999",
+    "correction": "carryover_window_factor"
+   },
+   {
+    "facet": "level",
+    "assumption": "linear_aggregation",
+    "state": "unverified",
+    "counterfactual": "1.0",
+    "value": "0.5361902647381804",
+    "correction": "aggregation_level"
+   }
+  ],
+  "ledger_summary": "ledger: 2 line(s)\n  1. facet:window             carryover_contained [unverified]: 0.54737 of the carryover mass lands within 1 period(s); scaled to the steady-state total by 1.82692  0.5473701838211292 -> 0.9999999999999999\n  2. facet:level              linear_aggregation [unverified]: individual read at cluster level: point factor 1 (additive effect), SE factor 0.53619  1.0 -> 0.5361902647381804",
+  "facets_covered": {
+   "level": 1,
+   "window": 1
+  },
+  "complete": "identified"
+ }
+}
