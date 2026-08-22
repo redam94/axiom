@@ -19,3 +19,6 @@ scratch/
 
 # Files written by the report notebook when it executes.
 nbs/report/readout.*
+
+# Claude Code worktrees.
+.claude/worktrees/
