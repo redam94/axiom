@@ -34,7 +34,7 @@ jobs:
 
       - name: Check the built pages are present
         run: |
-          for page in index identify design calibrate surface meta case-study api; do
+          for page in index identify design calibrate surface meta examples case-study api; do
             test -f "site/$page.html" || { echo "missing site/$page.html"; exit 1; }
           done
           test -d site/assets/data || { echo "missing site/assets/data"; exit 1; }

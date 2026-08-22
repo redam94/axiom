@@ -33,6 +33,7 @@ WORKFLOW = [
     ("meta", "Pool", "All the evidence"),
 ]
 EXTRA = [
+    ("examples", "Examples"),
     ("case-study", "Case study"),
     ("api", "API"),
 ]
@@ -114,11 +115,16 @@ def parse_meta(text: str, name: str) -> tuple[dict[str, Any], str]:
     start = text.index("<!--meta") + len("<!--meta")
     end = text.index("-->", start)
     meta = json.loads(text[start:end])
-    return meta, text[end + 3:]
+    return meta, text[end + 3 :]
 
 
-PILLAR_PAGE = {"identify": "identify.html", "design": "design.html",
-               "calibrate": "calibrate.html", "surface": "surface.html", "meta": "meta.html"}
+PILLAR_PAGE = {
+    "identify": "identify.html",
+    "design": "design.html",
+    "calibrate": "calibrate.html",
+    "surface": "surface.html",
+    "meta": "meta.html",
+}
 
 
 def api_html(data: dict[str, Any]) -> str:
@@ -127,7 +133,7 @@ def api_html(data: dict[str, Any]) -> str:
     for pkg in data["overview"]["packages"]:
         name = pkg["name"]
         page = PILLAR_PAGE.get(name)
-        walk = (f' · <a href="{page}">walkthrough</a>' if page else "")
+        walk = f' · <a href="{page}">walkthrough</a>' if page else ""
         syms = "".join(f'<span class="sym">{html.escape(s)}</span>' for s in pkg["symbols"])
         blocks.append(
             f'<div class="api-pkg" id="{name}" data-pkg="{name}">\n'
@@ -136,8 +142,75 @@ def api_html(data: dict[str, Any]) -> str:
             f'<span class="api-count">{pkg["n"]} symbols{walk}</span></div>\n'
             f'  <p>{html.escape(pkg["blurb"])}</p>\n'
             f'  <div class="api-syms">{syms}</div>\n'
-            f'</div>'
+            f"</div>"
         )
+    return "\n".join(blocks)
+
+
+PILLAR_LABEL = {
+    "identify": "Identify",
+    "design": "Design",
+    "calibrate": "Calibrate",
+    "surface": "Surface",
+    "meta": "Pool",
+    "diagnose": "Diagnose",
+    "adapters": "Adapters",
+}
+
+
+def examples_html(data: dict[str, Any]) -> str:
+    """One block per example: the framing, the code, and its real captured output."""
+    blocks = []
+    for e in data["examples"]["entries"]:
+        pillars = "".join(
+            (
+                f'<a class="pkg" href="{p}.html">{PILLAR_LABEL.get(p, p)}</a>'
+                if p in PILLAR_PAGE
+                else f'<span class="pkg">{PILLAR_LABEL.get(p, p)}</span>'
+            )
+            for p in e["pillars"]
+        )
+        # the docstring's first line is the title; the rest is the framing
+        lines = e["docstring"].split("\n")
+        title = lines[0].strip()
+        # the eyebrow already names the field, so drop a redundant "Field — " prefix
+        for dash in (" — ", " -- ", " - "):
+            head, sep, rest = title.partition(dash)
+            if sep and head.strip().lower() == e["field"].strip().lower():
+                title = rest.strip()
+                break
+        title = title[:1].upper() + title[1:]
+        framing = "\n".join(lines[1:]).strip()
+        framing_html = "".join(
+            f"<p>{html.escape(para.strip())}</p>" for para in framing.split("\n\n") if para.strip()
+        )
+        blocks.append(f"""<article class="ex" id="{e['stem']}">
+  <div class="ex-head">
+    <p class="ex-n">{e['number']} &middot; {html.escape(e['field']).upper()}</p>
+    <h3>{html.escape(title)}</h3>
+    <p class="ex-q">{html.escape(e['question'])}</p>
+    <div class="ex-meta">{pillars}
+      <span class="pkg">{e['lines']} lines</span>
+      <span class="pkg">runs in {e['seconds']}s</span></div>
+  </div>
+  <details class="ex-more">
+    <summary>Read the framing, the code, and what it printed</summary>
+    <div class="ex-body">
+      <div class="ex-framing">{framing_html}</div>
+      <div class="pair">
+        <div class="code">
+          <div class="code-h"><span>examples/{e['stem']}.py</span>
+            <button class="copy" type="button">Copy</button></div>
+          <pre>{html.escape(e['code'])}</pre>
+        </div>
+        <div class="out">
+          <div class="out-h">what it printed</div>
+          <pre>{html.escape(e['output'])}</pre>
+        </div>
+      </div>
+    </div>
+  </details>
+</article>""")
     return "\n".join(blocks)
 
 
@@ -228,6 +301,7 @@ def main() -> int:
     for frag in fragments:
         meta, body = parse_meta(frag.read_text(), frag.name)
         body = body.replace("<!--API-->", api_html(data))
+        body = body.replace("<!--EXAMPLES-->", examples_html(data))
         body = substitute(body, data, frag.name)
         page = frag.stem
         out = SHELL.format(

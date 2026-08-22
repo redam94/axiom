@@ -1,0 +1,141 @@
+<!--meta {
+  "title": "Examples — the same library, twelve fields · axiom",
+  "description": "Twelve runnable examples across agronomy, economics, education, epidemiology, ecology, public health, clinical research, energy, process engineering, marketing, behavioural science and product analytics — each with its real captured output."
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Examples · {{examples.n}} fields</p>
+    <h1 style="max-width:15ch">The same library, {{examples.n}} different fields</h1>
+    <p class="lede prose mt">A trial, a wheat field, a reactor, a nature reserve and a
+      checkout page are the same mathematics wearing different words. That is the whole
+      reason axiom's core has no domain in it — the nouns are treatment, dose, unit,
+      outcome and covariate, and marketing is one adapter rather than the subject.
+      These {{examples.n}} scripts are the argument for why that was worth doing.</p>
+    <p class="prose small muted">Every one runs against a synthetic world whose truth is
+      known, so the numbers can be checked rather than admired. The output shown below each
+      one was captured by running it, not transcribed. Together they are
+      {{examples.total_lines}} lines and take {{examples.total_seconds:.0f}} seconds.</p>
+    <div class="hero-cta">
+      <a class="btn btn-2" href="https://github.com/redam94/axiom/tree/main/examples">Browse
+        the source on GitHub →</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Run them</p>
+      <h2>Core install, no sampler, thirty seconds</h2>
+      <p>Nothing here needs an extra. All of it works on the four core dependencies.</p>
+    </div>
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>shell</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>pip install axiom
+
+python examples/run_all.py            <span class="c"># all {{examples.n}}, about {{examples.total_seconds:.0f}} seconds</span>
+python examples/run_all.py 07 12      <span class="c"># just those two</span>
+python examples/07_clinical_rwe_calibration.py</pre>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Worth skipping to</p>
+      <h2>Where the answer is not what the setup implied</h2>
+      <p>Several of these end somewhere other than where they appear to be heading. Those
+        are the ones worth reading rather than trusting a summary of.</p>
+    </div>
+
+    <div class="cards">
+      <a class="card" href="#06_public_health_cluster_trial">
+        <p class="card-n">06 · PUBLIC HEALTH</p>
+        <h3>Grouping beats counting</h3>
+        <p>The same 1,600 children give 55% power or 99% power depending only on how they
+          are grouped into villages. The design effect punishes cluster <em>size</em>, not
+          cluster count.</p>
+        <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
+      </a>
+      <a class="card" href="#12_software_experiment_value">
+        <p class="card-n">12 · PRODUCT ANALYTICS</p>
+        <h3>The worst-powered design wins</h3>
+        <p>A design with 0.65 power nets the most; the one with power 1.00 is
+          net-negative once you count the upside withheld from the holdout arm.</p>
+        <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
+      </a>
+      <a class="card" href="#09_manufacturing_steepest_ascent">
+        <p class="card-n">09 · PROCESS ENGINEERING</p>
+        <h3>The optimum is out of bounds</h3>
+        <p>The unconstrained peak sits outside what the plant can physically run, so the
+          answer is a corner of the operating window and a costed question for
+          engineering.</p>
+        <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
+      </a>
+      <a class="card" href="#07_clinical_rwe_calibration">
+        <p class="card-n">07 · CLINICAL RESEARCH</p>
+        <h3>Nearly right, still overconfident</h3>
+        <p>Calibration removes most of the confounding bias and the resulting model is
+          still too sure of itself — which is exactly what a recovery test against a known
+          truth exists to catch.</p>
+        <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
+      </a>
+      <a class="card" href="#10_marketing_saturation">
+        <p class="card-n">10 · MARKETING</p>
+        <h3>Which side of the bend?</h3>
+        <p>A Hill curve is S-shaped, not merely concave, so the next unit of spend can
+          return <em>more</em> than the average. A single headline ROAS cannot tell you
+          whether you are under- or over-invested.</p>
+        <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
+      </a>
+      <a class="card" href="#04_epidemiology_frontdoor">
+        <p class="card-n">04 · EPIDEMIOLOGY</p>
+        <h3>Recovering the unrecoverable</h3>
+        <p>No covariate adjustment could work — the confounder was never measured. A
+          structural claim about a mediator makes the effect identifiable anyway, and the
+          example then breaks that claim to show the route vanish.</p>
+        <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">All {{examples.n}}</p>
+      <h2>Every example, with what it printed</h2>
+      <p>Expand any one to read its framing, its full source, and the exact output it
+        produced on this build.</p>
+    </div>
+    <div class="ex-list">
+      <!--EXAMPLES-->
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div>
+        <h3>Writing another one</h3>
+        <p class="small muted">Keep the shape: a docstring that states the field's question
+          in that field's own terms, a synthetic world with a known truth, the axiom calls,
+          and a closing note saying what the numbers actually showed — including when that
+          is not what the setup implied. Then add it to the table in
+          <code>examples/README.md</code>.</p>
+      </div>
+      <div>
+        <h3>Going deeper</h3>
+        <p class="small muted">The <a href="identify.html">five-pillar tour</a> covers the
+          same ground with charts and more room to breathe, and the
+          <a href="case-study.html">HYPER-3 case study</a> works one clinical trial end to
+          end across all of them — from the causal graph to the safety review that stops an
+          arm.</p>
+      </div>
+    </div>
+  </div>
+</section>

@@ -9,6 +9,12 @@ and pool the evidence across every study you have run.
 five pillars and the HYPER-3 case study, where every figure and every number was
 produced by actually running the library. Source in [`site/`](site/).
 
+🧪 **[Twelve runnable examples →](examples/)** — the same library across agronomy,
+labour economics, education, epidemiology, conservation ecology, public health,
+clinical research, energy, process engineering, marketing, behavioural science and
+product analytics. `python examples/run_all.py` runs all of them in about thirty
+seconds on the core install.
+
 Four pillars, one vocabulary:
 
 | Pillar | Question it answers | Package |

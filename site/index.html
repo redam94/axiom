@@ -30,7 +30,7 @@
     <a class="brand brand-on" href="index.html">
       <span class="brand-mark" aria-hidden="true"></span>axiom</a>
     <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
-    <nav class="navx-wrap" aria-label="More"><a class="navx" href="case-study.html">Case study</a><a class="navx" href="api.html">API</a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx" href="examples.html">Examples</a><a class="navx" href="case-study.html">Case study</a><a class="navx" href="api.html">API</a></nav>
     <button class="theme" type="button" aria-label="Switch between light and dark">
       <span class="theme-ico" aria-hidden="true"></span>
     </button>
@@ -171,7 +171,7 @@
           executed notebook. A contract test fails the build if a symbol is exported without
           a notebook that uses it.</p>
         <div class="card-f">
-          <p class="card-stat">0.88s
+          <p class="card-stat">0.85s
             <small>to import all five pillars, pulling only
               numpy, pandas, pydantic, scipy</small></p>
           <p class="card-go">Browse the API <span aria-hidden="true">→</span></p>
@@ -349,7 +349,7 @@ hash      : 0ba29b126aa4df1a</pre>
             Samplers are extras, and a contract test fails the build if importing the library
             drags one in.</p>
           <p class="rule-proof">measured: <code>import axiom.identify, axiom.design, axiom.surface, axiom.meta, axiom.estimands</code> →
-            pulls numpy, pandas, pydantic, scipy in 0.88s.
+            pulls numpy, pandas, pydantic, scipy in 0.85s.
             Samplers pulled: none.</p>
         </div>
       </div>
@@ -495,6 +495,13 @@ pip install <span class="s">"axiom[pymc]"</span></pre>
         <h3>Where to go next</h3>
         <p class="small muted">Three ways in, depending on what you came for.</p>
         <div class="ledger mt">
+          <div class="ledger-row">
+            <span class="ledger-f">by field</span>
+            <span class="ledger-s"><a href="examples.html">12 runnable
+              examples</a> — agronomy, epidemiology, ecology, energy, process engineering
+              and more, each with its real output.</span>
+            <span class="ledger-v">12 scripts</span>
+          </div>
           <div class="ledger-row">
             <span class="ledger-f">narrative</span>
             <span class="ledger-s">The <a href="case-study.html">HYPER-3 case study</a> —

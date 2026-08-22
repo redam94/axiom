@@ -1,4 +1,4 @@
-.PHONY: install tests fast_tests format format_check lint types gates notebooks docs
+.PHONY: install tests fast_tests format format_check lint types gates notebooks docs examples
 
 install:
 	uv sync --group dev
@@ -35,3 +35,9 @@ notebooks:
 # warning-free. Output lands in docs/_build/html (git-ignored).
 docs:
 	uv run --group docs sphinx-build -W --keep-going -b html docs docs/_build/html
+
+# Every example under examples/, one per field. They run on the core install
+# with no extras, and the site's examples page is generated from their output —
+# so a broken example is a broken page.
+examples:
+	uv run python examples/run_all.py

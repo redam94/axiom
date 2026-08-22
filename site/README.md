@@ -13,8 +13,8 @@ the call that made it.
 
 ```
 site/
-  index.html  identify.html  design.html  calibrate.html
-  surface.html  meta.html  case-study.html  api.html   <- generated; committed
+  index.html  identify.html  design.html  calibrate.html  surface.html
+  meta.html  examples.html  case-study.html  api.html     <- generated; committed
   _src/*.html          content fragments (edit these)
   _gen/generate.py     runs axiom, writes assets/data/*.json
   _gen/build.py        wraps _src fragments in the shared shell
@@ -40,6 +40,11 @@ python site/_gen/build.py
 # 3. look at it
 python -m http.server 8000 --directory site
 ```
+
+The `examples` section of `generate.py` executes every script in `examples/` in a
+subprocess and stores its source alongside its captured stdout, so the examples
+page cannot drift from the scripts and a broken example fails the generate step
+rather than shipping stale prose.
 
 `build.py` substitutes `{{path.to.value:format}}` tokens in the fragments with
 values from `assets/data/*.json`, so a number in the prose is baked in at build
