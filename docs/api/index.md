@@ -17,6 +17,7 @@ estimands
 surface
 sim
 design
+discover
 calibrate
 meta
 diagnose

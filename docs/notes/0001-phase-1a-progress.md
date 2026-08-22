@@ -476,9 +476,13 @@ can estimate, profile likelihood from a simulated experiment, and what to measur
 
 **Landed**: the ID/IDC algorithm (sound and complete identification under latent confounding,
 returning an estimand or a hedge), sigma-separation for graphs with cycles, and SWIGs; note
-[0012](0012-beyond-dags.md). Still open from that survey: causal discovery (PAG/CPDAG),
-counterfactual identification (ID*), segregated graphs for interference, missingness graphs,
-and cluster-DAGs.
+[0012](0012-beyond-dags.md).
+
+**Landed**: `axiom.discover` — essential graphs, GES/GIES, and `orientation_gain`, which
+prices an experiment in the edges it would orient; and `identify.cluster` for cluster-DAGs;
+note [0013](0013-discovery-and-granularity.md). Still open: discovery under latent
+confounding (FCI/PAGs), counterfactual identification (ID*), segregated graphs for
+interference, missingness graphs, and structural refutation.
 
 Laplace calibration on Hill surfaces (SBC finding,
 Phase 8); block-bootstrap switchback SE; ridge verdict in

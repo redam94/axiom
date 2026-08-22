@@ -26,6 +26,7 @@ from axiom.identify.backdoor import (
     requires_unmeasured,
     roles,
 )
+from axiom.identify.cluster import ClusterDAG, compatible, identify_cluster_effect
 from axiom.identify.cyclic import MixedGraph, acyclify, sigma_separated
 from axiom.identify.dynamic import (
     SequentialPlan,
@@ -80,6 +81,7 @@ from axiom.identify.verdict import IdentificationVerdict, Route, identify
 
 __all__ = [
     "CausalGraph",
+    "ClusterDAG",
     "Density",
     "EndogeneityTest",
     "Formula",
@@ -106,6 +108,7 @@ __all__ = [
     "assign_roles",
     "backdoor_admissible",
     "canonical_adjustment_set",
+    "compatible",
     "conditional_instruments",
     "directly_transportable",
     "districts",
@@ -115,6 +118,7 @@ __all__ = [
     "frontdoor_sets",
     "hausman_iv_vs_ols",
     "identify",
+    "identify_cluster_effect",
     "identify_conditional_effect",
     "identify_effect",
     "instrument_admissible",

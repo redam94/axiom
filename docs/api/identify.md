@@ -27,6 +27,9 @@ The executed series under `nbs/identify/`:
 .. automodule:: axiom.identify.backdoor
    :members:
 
+.. automodule:: axiom.identify.cluster
+   :members:
+
 .. automodule:: axiom.identify.cyclic
    :members:
 

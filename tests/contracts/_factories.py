@@ -185,6 +185,9 @@ from axiom.diagnose import (
     robustness_value,
     tipping_point,
 )
+from axiom.discover import Dataset as DiscoveryDataset
+from axiom.discover import EssentialGraph, GaussianBIC
+from axiom.discover.search import DiscoveryResult, ges
 from axiom.dynamics import (
     Block,
     BlockOrder,
@@ -210,6 +213,7 @@ from axiom.identify import (
     identify,
     transport_verdict,
 )
+from axiom.identify.cluster import ClusterDAG
 from axiom.identify.cyclic import MixedGraph
 from axiom.identify.dynamic import SequentialPlan, sequential_plan
 from axiom.identify.formula import Density, Marginal, Product, Ratio
@@ -1185,7 +1189,40 @@ def _identified_effect() -> IdentifiedEffect:
     return identify_effect(CausalGraph.from_edges("Z -> X, Z -> Y, X -> Y"), "X", "Y")
 
 
+# -- discovery ---------------------------------------------------------------------------
+
+
+def _cluster_dag() -> ClusterDAG:
+    return ClusterDAG(
+        clusters={"demand": ("price", "quantity"), "cost": ("wage",)},
+        edges=(("cost", "demand"),),
+        name="a two-block market",
+    )
+
+
+def _essential_graph() -> EssentialGraph:
+    from axiom.discover import cpdag
+
+    return cpdag(CausalGraph.from_edges("a -> c, b -> c, c -> d"))
+
+
+def _discovery_dataset() -> DiscoveryDataset:
+    import numpy as np
+
+    rng = np.random.default_rng(0)
+    a = rng.normal(size=200)
+    b = 1.5 * a + rng.normal(size=200)
+    return DiscoveryDataset(np.column_stack([a, b]), ("a", "b"), (frozenset(),) * 200)
+
+
+def _discovery_result() -> DiscoveryResult:
+    return ges(GaussianBIC(_discovery_dataset()))
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
+    ClusterDAG: _cluster_dag,
+    EssentialGraph: _essential_graph,
+    DiscoveryResult: _discovery_result,
     MixedGraph: _mixed_graph,
     Density: _density,
     Product: _product,
