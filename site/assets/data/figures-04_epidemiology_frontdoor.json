@@ -1,0 +1,51 @@
+{
+ "estimates": {
+  "rows": [
+   {
+    "label": "naive (confounded)",
+    "estimate": 2.296475,
+    "lower": 2.266305,
+    "upper": 2.326644,
+    "note": "standard error 0.015",
+    "bad": true
+   },
+   {
+    "label": "front-door",
+    "estimate": 1.809704,
+    "lower": 1.76977,
+    "upper": 1.849637,
+    "note": "standard error 0.020",
+    "bad": false
+   }
+  ]
+ },
+ "leak": {
+  "leak": [
+   0.0,
+   0.1,
+   0.2,
+   0.35,
+   0.5,
+   0.75,
+   1.0
+  ],
+  "truth": [
+   1.8,
+   1.9,
+   2.0,
+   2.15,
+   2.3,
+   2.55,
+   2.8
+  ],
+  "estimate": [
+   1.809704,
+   1.809704,
+   1.809704,
+   1.809704,
+   1.809704,
+   1.809704,
+   1.809704
+  ]
+ }
+}

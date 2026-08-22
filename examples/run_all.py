@@ -3,9 +3,10 @@
     python examples/run_all.py           # all of them
     python examples/run_all.py 02 07     # just those
 
-Each example is a standalone script — nothing here is imported by them, and they
-import nothing from each other. This runner exists so the whole set can be checked
-in one command, and so CI can fail if an example stops working.
+Each numbered example is a standalone script — they import nothing from each other,
+and the only shared module is ``_walkthrough.py``, the stdlib-only narration layer
+they are all written against. This runner exists so the whole set can be checked in
+one command, and so CI can fail if an example stops working.
 """
 
 from __future__ import annotations
@@ -19,7 +20,8 @@ HERE = Path(__file__).resolve().parent
 
 
 def examples() -> list[Path]:
-    return sorted(p for p in HERE.glob("*.py") if p.name != Path(__file__).name)
+    """The numbered walkthroughs. Leading-underscore modules are support, not demos."""
+    return sorted(p for p in HERE.glob("[0-9]*.py"))
 
 
 def main() -> int:

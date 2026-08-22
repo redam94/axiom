@@ -1,0 +1,902 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>09 · The optimum is outside the operating window — Process engineering · axiom</title>
+<meta name="description" content="Process engineering: Climbing to a yield optimum, Box-Wilson style. A 5-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:title" content="09 · The optimum is outside the operating window — Process engineering · axiom">
+<meta property="og:description" content="Process engineering: Climbing to a yield optimum, Box-Wilson style. A 5-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="example">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">Case study</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Example 09 · Process engineering</p>
+    <h1 style="max-width:18ch">The optimum is outside the operating window</h1>
+    <p class="lede prose mt">A reactor is running somewhere on the slope. Where should the next batch of expensive experimental runs be placed, and once the climb stops, what kind of place have you arrived at?</p>
+    <div class="ex-meta"><a class="pkg" href="surface.html">Surface</a>
+      <span class="pkg">5 steps</span>
+      <span class="pkg">3 figures</span>
+      <span class="pkg">322 lines</span>
+      <span class="pkg">runs in 2.4s</span></div>
+    <div class="hero-cta">
+      <a class="btn btn-1" href="#step-1">Start the walkthrough</a>
+      <a class="btn btn-2" href="https://github.com/redam94/axiom/blob/main/examples/09_manufacturing_steepest_ascent.py">The whole file on GitHub &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div class="prose wt-framing"><p>Process engineering — climbing to a yield optimum, the Box-Wilson way.</p><p class="wt-h">The question</p><p>A reactor&#x27;s yield depends on temperature and residence time. Current settings are somewhere on the slope, not at the peak. Where should the next batch of experimental runs be placed?</p><p class="wt-h">The classical answer, which axiom implements directly</p><p>Response-surface methodology, as Box and Wilson set it out in 1951. Fit a cheap local design, follow the gradient uphill in steps until it stops paying, then run a second-order design at the new location and ask what kind of stationary point you have arrived at. A maximum is good news. A saddle or a rising ridge means the process has a direction along which you can keep improving for free, which is worth far more than the peak itself.</p><p>Pillars: surface (designs, steepest ascent, canonical analysis)</p></div>
+      <div>
+        <p class="eyebrow">The route</p>
+        <nav class="wt-toc"><a class="wt-toc-i" href="#step-1"><span class="wt-toc-n">1</span>Write down the operating window before anything else</a><a class="wt-toc-i" href="#step-2"><span class="wt-toc-n">2</span>Stage one: buy a direction, not a surface</a><a class="wt-toc-i" href="#step-3"><span class="wt-toc-n">3</span>Stage two: walk uphill in cheap steps</a><a class="wt-toc-i" href="#step-4"><span class="wt-toc-n">4</span>Stage three: ask what kind of place you have arrived at</a><a class="wt-toc-i" href="#step-5"><span class="wt-toc-n">5</span>Finally, price the whole exercise against the old setpoint</a></nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Before the first step</p>
+      <h2>What this example imports, and why that list is short</h2>
+      <p>Everything below runs on the four core dependencies. No sampler, no extras.</p>
+    </div>
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>examples/09_manufacturing_steepest_ascent.py</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>import numpy as np
+from _walkthrough import Walkthrough
+
+from axiom.sim import arms_world
+from axiom.surface import (
+    Bounds,
+    HillKernel,
+    canonical_analysis,
+    central_composite,
+    fit,
+    full_factorial,
+    steepest_ascent,
+)
+
+SEED = 0
+CURRENT = {&quot;temperature&quot;: 140.0, &quot;residence&quot;: 12.0}
+
+w = Walkthrough(
+    field=&quot;Process engineering&quot;,
+    title=&quot;The optimum is outside the operating window&quot;,
+    question=&quot;&quot;&quot;A reactor is running somewhere on the slope. Where should the next
+        batch of expensive experimental runs be placed, and once the climb stops,
+        what kind of place have you arrived at?&quot;&quot;&quot;,
+)</pre>
+    </div>
+  </div>
+</section>
+
+<section class="wt-step" id="step-1">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 1 <span>of 5</span></p>
+      <h2>Write down the operating window before anything else</h2>
+      <div class="wt-why prose"><p>120 to 200 degrees and 5 to 45 minutes are not modelling choices, they are what the plant can physically run. Encoding them as Bounds means the design, the ascent and the canonical analysis all obey the same constraint, and it means an optimizer&#x27;s answer is always something the plant could actually do.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Optimising unconstrained and checking feasibility at the end. On a saturating surface the unconstrained answer is frequently outside the window — as it turns out to be here — and discovering that after the fact loses the much more useful question of what the boundary is costing.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/09_manufacturing_steepest_ascent.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>window = Bounds(treatments=(&quot;temperature&quot;, &quot;residence&quot;), low=(120.0, 5.0), high=(200.0, 45.0))
+w.out(f&quot;temperature : {window.low[0]:.0f} to {window.high[0]:.0f} C&quot;)
+w.out(f&quot;residence   : {window.low[1]:.0f} to {window.high[1]:.0f} min&quot;)
+w.out(f&quot;running now : {CURRENT[&#x27;temperature&#x27;]:.0f} C, {CURRENT[&#x27;residence&#x27;]:.0f} min&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>temperature : 120 to 200 C
+residence   : 5 to 45 min
+running now : 140 C, 12 min</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-2">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 2 <span>of 5</span></p>
+      <h2>Stage one: buy a direction, not a surface</h2>
+      <div class="wt-why prose"><p>The first design only has to answer &#x27;which way is uphill&#x27;. A 3x3 factorial does that for nine runs. Curvature is not needed yet and estimating it here would be paying for information the next decision does not use.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Going straight to a central composite design at the current setpoint. It costs more runs and it characterises the neighbourhood of a point you are about to leave. Box and Wilson&#x27;s whole insight is that the expensive design belongs at the end of the climb, not at the start.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/09_manufacturing_steepest_ascent.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>screen = full_factorial(window, 3)
+w.out(f&quot;screening design : {screen.kind}, {screen.n} runs&quot;)
+truth = {
+    &quot;alpha&quot;: 40.0,
+    &quot;beta_temperature&quot;: 22.0,
+    &quot;k_temperature&quot;: 165.0,
+    &quot;s_temperature&quot;: 3.0,
+    &quot;beta_residence&quot;: 14.0,
+    &quot;k_residence&quot;: 26.0,
+    &quot;s_residence&quot;: 2.4,
+}
+reactor = arms_world(
+    n_units=screen.n,
+    treatments=(&quot;temperature&quot;, &quot;residence&quot;),
+    kernels={
+        &quot;temperature&quot;: HillKernel(reference_dose=165.0, amplitude_scale=20.0),
+        &quot;residence&quot;: HillKernel(reference_dose=26.0, amplitude_scale=20.0),
+    },
+    doses=screen.doses(),
+    truth=truth,
+    noise_sd=1.1,
+    seed=SEED,
+)
+screen_fit = fit(reactor.spec, reactor.panel, backend=&quot;laplace&quot;, draws=1500, seed=SEED)
+theta = {n: float(screen_fit.posterior.summary(n).mean) for n in screen_fit.posterior.names()}
+w.out(f&quot;converged        : {screen_fit.converged}&quot;)
+
+grid_t = np.linspace(120.0, 200.0, 30)
+grid_r = np.linspace(5.0, 45.0, 30)
+surface_z = [
+    [
+        float(
+            screen_fit.surface.forward(
+                {&quot;temperature&quot;: float(t), &quot;residence&quot;: float(r)}, theta
+            ).mean()
+        )
+        for t in grid_t
+    ]
+    for r in grid_r
+]</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>screening design : full_factorial, 9 runs
+converged        : True</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-3">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 3 <span>of 5</span></p>
+      <h2>Stage two: walk uphill in cheap steps</h2>
+      <div class="wt-why prose"><p>Steepest ascent is a sequence of small local decisions rather than a global search. When a run costs a shift of plant time and the surface is smooth — which describes most physical processes — it remains the right first move, and it stops on its own when the gradient stops paying or the window gets in the way.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Handing the fitted surface to a global optimizer. It would return the unconstrained peak, which is outside the window, in one call — and it would skip the information the path itself carries about how steep the climb was and where it flattened.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/09_manufacturing_steepest_ascent.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>path = steepest_ascent(screen_fit.surface, theta, CURRENT, step=6.0, n_steps=40, bounds=window)
+best = path.best()
+w.out(f&quot;steps taken : {path.n}&quot;)
+w.out(f&quot;stopped because : {path.stop}&quot;)
+w.out(&quot;best point on the path: &quot; + &quot;, &quot;.join(f&quot;{k} {v:.1f}&quot; for k, v in best.items()))
+w.out(f&quot;predicted yield there : {path.values[-1]:.3f}&quot;)
+
+points = [[float(v) for v in p] for p in path.points]
+w.table(
+    [&quot;step&quot;, &quot;temperature&quot;, &quot;residence&quot;, &quot;predicted yield&quot;],
+    [
+        [str(i), f&quot;{points[i][0]:.1f}&quot;, f&quot;{points[i][1]:.1f}&quot;, f&quot;{path.values[i]:.3f}&quot;]
+        for i in sorted({0, 1, 2, path.n // 3, 2 * path.n // 3, path.n - 1})
+        if 0 &lt;= i &lt; path.n
+    ],
+)
+w.figure(
+    &quot;climb&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;step&quot;: list(range(path.n)), &quot;yield&quot;: [float(v) for v in path.values]},
+    opt={
+        &quot;series&quot;: [{&quot;label&quot;: &quot;predicted yield&quot;, &quot;x&quot;: &quot;@step&quot;, &quot;y&quot;: &quot;@yield&quot;, &quot;colour&quot;: &quot;accent&quot;}],
+        &quot;xLabel&quot;: &quot;step along the ascent&quot;,
+        &quot;yLabel&quot;: &quot;predicted yield&quot;,
+        &quot;height&quot;: 260,
+        &quot;rightPad&quot;: 110,
+    },
+    # title, note and legend: the caption shown with the chart
+)
+w.figure(
+    &quot;surface&quot;,
+    kind=&quot;heatmap&quot;,
+    data={&quot;temperature&quot;: grid_t.tolist(), &quot;residence&quot;: grid_r.tolist(), &quot;z&quot;: surface_z},
+    opt={
+        &quot;key&quot;: &quot;@&quot;,
+        &quot;x&quot;: &quot;temperature&quot;,
+        &quot;y&quot;: &quot;residence&quot;,
+        &quot;z&quot;: &quot;z&quot;,
+        &quot;xLabel&quot;: &quot;temperature (C)&quot;,
+        &quot;yLabel&quot;: &quot;residence time (min)&quot;,
+        &quot;zLabel&quot;: &quot;predicted yield&quot;,
+        &quot;height&quot;: 340,
+        &quot;marks&quot;: [
+            {
+                &quot;x&quot;: CURRENT[&quot;temperature&quot;],
+                &quot;y&quot;: CURRENT[&quot;residence&quot;],
+                &quot;label&quot;: &quot;running today&quot;,
+            },
+            {
+                &quot;x&quot;: float(best[&quot;temperature&quot;]),
+                &quot;y&quot;: float(best[&quot;residence&quot;]),
+                &quot;label&quot;: &quot;ascent stopped here&quot;,
+            },
+        ],
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>steps taken : 26
+stopped because : boundary
+best point on the path: temperature 200.0, residence 45.0
+predicted yield there : 66.493</pre></div>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>step</th><th>temperature</th><th>residence</th><th>predicted yield</th></tr></thead><tbody><tr><td>0</td><td>140.0</td><td>12.0</td><td>51.776</td></tr><tr><td>1</td><td>142.4</td><td>17.5</td><td>53.836</td></tr><tr><td>2</td><td>144.8</td><td>23.0</td><td>56.004</td></tr><tr><td>8</td><td>159.2</td><td>45.0</td><td>63.421</td></tr><tr><td>17</td><td>180.9</td><td>45.0</td><td>65.247</td></tr><tr><td>25</td><td>200.0</td><td>45.0</td><td>66.493</td></tr></tbody></table></div>
+<figure class="fig" id="09_manufacturing_steepest_ascent-climb">
+  <div class="fig-head"><p class="fig-t">What each step of the climb bought</p><p class="fig-s">The curve flattens long before the path stops. That flattening is the signal to stop spending runs on the direction and start asking what kind of place this is — which is what stage three does.</p></div>
+  
+  <div class="chart" data-chart="lines" data-file="figures-09_manufacturing_steepest_ascent"
+       data-opt='{&quot;series&quot;: [{&quot;label&quot;: &quot;predicted yield&quot;, &quot;x&quot;: &quot;climb.step&quot;, &quot;y&quot;: &quot;climb.yield&quot;, &quot;colour&quot;: &quot;accent&quot;}], &quot;xLabel&quot;: &quot;step along the ascent&quot;, &quot;yLabel&quot;: &quot;predicted yield&quot;, &quot;height&quot;: 260, &quot;rightPad&quot;: 110}'></div>
+</figure>
+<figure class="fig" id="09_manufacturing_steepest_ascent-surface">
+  <div class="fig-head"><p class="fig-t">The fitted surface, and where the climb started and ended</p><p class="fig-s">The ascent ran into the corner of the window. That is not the algorithm failing — it is the plant&#x27;s limits being the binding constraint, which is a different and more actionable finding than &#x27;the optimum is here&#x27;.</p></div>
+  
+  <div class="chart" data-chart="heatmap" data-file="figures-09_manufacturing_steepest_ascent"
+       data-opt='{&quot;key&quot;: &quot;surface&quot;, &quot;x&quot;: &quot;temperature&quot;, &quot;y&quot;: &quot;residence&quot;, &quot;z&quot;: &quot;z&quot;, &quot;xLabel&quot;: &quot;temperature (C)&quot;, &quot;yLabel&quot;: &quot;residence time (min)&quot;, &quot;zLabel&quot;: &quot;predicted yield&quot;, &quot;height&quot;: 340, &quot;marks&quot;: [{&quot;x&quot;: 140.0, &quot;y&quot;: 12.0, &quot;label&quot;: &quot;running today&quot;}, {&quot;x&quot;: 200.0, &quot;y&quot;: 45.0, &quot;label&quot;: &quot;ascent stopped here&quot;}]}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-4">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 4 <span>of 5</span></p>
+      <h2>Stage three: ask what kind of place you have arrived at</h2>
+      <div class="wt-why prose"><p>A flat gradient is not one situation, it is three, and they imply completely different next moves. A maximum means confirm and stop. A rising ridge means keep walking along it, because there is free yield in that direction. A saddle means back off — you are between two better regions. The canonical analysis reads which one off the fitted quadratic&#x27;s eigenvalues.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Declaring victory at the end of the ascent. The path stopping tells you the gradient is small or the window is in the way; it says nothing about the shape of the neighbourhood, and the shape is what decides whether to spend the next batch of runs at all.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/09_manufacturing_steepest_ascent.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>confirm = central_composite(window, alpha=&quot;rotatable&quot;, center_points=4, inscribed=True)
+w.out(f&quot;confirmation design : {confirm.kind}, {confirm.n} runs&quot;)
+stationary = canonical_analysis(screen_fit.surface, theta, best)
+if hasattr(stationary, &quot;reason&quot;):
+    w.out(f&quot;canonical analysis declined: {stationary.reason}&quot;)
+    inside = False
+else:
+    w.out(f&quot;stationary point is a {stationary.kind}&quot;)
+    w.out(
+        &quot;at &quot;
+        + &quot;, &quot;.join(
+            f&quot;{name} {float(v):.1f}&quot;
+            for name, v in zip(window.treatments, stationary.point, strict=True)
+        )
+    )
+    w.out(f&quot;eigenvalues : {[round(float(e), 5) for e in stationary.eigenvalues]}&quot;)
+    inside = all(
+        lo &lt;= float(v) &lt;= hi
+        for v, lo, hi in zip(stationary.point, window.low, window.high, strict=True)
+    )
+    w.out(f&quot;inside the operating window? {inside}&quot;)
+    w.say(&quot;&quot;&quot;Both eigenvalues negative means a genuine maximum. Mixed signs would mean a
+        saddle, and the positive direction would be yield available for free along a
+        ridge — worth more than the peak itself, and invisible to anything that only
+        reports the location of the stationary point.&quot;&quot;&quot;)
+    if not inside:
+        w.say(&quot;&quot;&quot;And it is outside the window. The unconstrained peak sits where the
+            plant cannot run, which is why the ascent stopped on the boundary rather
+            than at the stationary point. The operating recommendation is the corner
+            of the window; the interesting question becomes what it would cost to
+            widen the window, and that is now a costed engineering question rather
+            than an open-ended one.&quot;&quot;&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>confirmation design : central_composite, 12 runs
+stationary point is a maximum
+at temperature 285.1, residence 74.4
+eigenvalues : [-0.0064, -0.00068]
+inside the operating window? False</pre></div>
+<div class="prose"><p>Both eigenvalues negative means a genuine maximum. Mixed signs would mean a saddle, and the positive direction would be yield available for free along a ridge — worth more than the peak itself, and invisible to anything that only reports the location of the stationary point.</p></div>
+<div class="prose"><p>And it is outside the window. The unconstrained peak sits where the plant cannot run, which is why the ascent stopped on the boundary rather than at the stationary point. The operating recommendation is the corner of the window; the interesting question becomes what it would cost to widen the window, and that is now a costed engineering question rather than an open-ended one.</p></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-5">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 5 <span>of 5</span></p>
+      <h2>Finally, price the whole exercise against the old setpoint</h2>
+      <div class="wt-why prose"><p>Everything above is on the fitted surface. This step goes back to the simulated reactor and evaluates the TRUE yield at the old setpoint and at the point the climb recommended, which is the only check that the recommendation was worth acting on rather than merely internally consistent.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Reporting the predicted improvement. The model&#x27;s prediction of its own recommendation is not evidence: it is the same surface evaluated twice, and it would look just as good if the fit were wrong.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/09_manufacturing_steepest_ascent.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>true_current = float(reactor.forward(CURRENT).mean())
+true_best = float(reactor.forward({k: float(v) for k, v in best.items()}).mean())
+w.out(f&quot;true yield at the old setpoint  : {true_current:.3f}&quot;)
+w.out(f&quot;true yield at the ascent&#x27;s best : {true_best:.3f}&quot;)
+w.out(f&quot;improvement                     : {true_best - true_current:+.3f}&quot;)
+
+
+def within_window(name: str, value: float) -&gt; float:
+    &quot;&quot;&quot;Where a setting sits in its own operating range, as a fraction.
+
+    Degrees and minutes do not belong on the same axis, and drawing them there
+    would be the chart lying about a comparison. Position within the window is a
+    quantity they genuinely share, and it is the one an operator cares about:
+    how much room is left.
+    &quot;&quot;&quot;
+    i = window.treatments.index(name)
+    return (value - window.low[i]) / (window.high[i] - window.low[i])
+
+
+w.figure(
+    &quot;gain&quot;,
+    kind=&quot;dumbbell&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: f&quot;temperature ({CURRENT[&#x27;temperature&#x27;]:.0f} to &quot;
+                f&quot;{float(best[&#x27;temperature&#x27;]):.0f} C)&quot;,
+                &quot;a&quot;: within_window(&quot;temperature&quot;, CURRENT[&quot;temperature&quot;]),
+                &quot;b&quot;: within_window(&quot;temperature&quot;, float(best[&quot;temperature&quot;])),
+            },
+            {
+                &quot;label&quot;: f&quot;residence ({CURRENT[&#x27;residence&#x27;]:.0f} to &quot;
+                f&quot;{float(best[&#x27;residence&#x27;]):.0f} min)&quot;,
+                &quot;a&quot;: within_window(&quot;residence&quot;, CURRENT[&quot;residence&quot;]),
+                &quot;b&quot;: within_window(&quot;residence&quot;, float(best[&quot;residence&quot;])),
+            },
+        ]
+    },
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;xLabel&quot;: &quot;position within the operating window (0 = lowest, 1 = the limit)&quot;,
+        &quot;aLabel&quot;: &quot;running today&quot;,
+        &quot;bLabel&quot;: &quot;recommended&quot;,
+        &quot;labelWidth&quot;: 190,
+    },
+    # title, note and legend: the caption shown with the chart
+)
+
+
+w.finding(f&quot;&quot;&quot;Nothing here needed a global optimizer or a large design. Nine screening runs
+    bought a direction, {path.n} cheap steps followed it, and the true yield went
+    from {true_current:.2f} to {true_best:.2f} — {true_best - true_current:+.2f}
+    verified against the simulation&#x27;s own truth rather than against the fit&#x27;s opinion
+    of itself.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;The part worth keeping is stage three. Arriving somewhere the gradient is flat
+    does not tell you what kind of place it is, and the three possibilities — confirm
+    and stop, keep walking along a ridge, back off a saddle — imply completely
+    different next batches of runs.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;Here the stationary point turned out to lie outside what the plant can run.
+    That reframes the whole exercise: the answer is a corner of the operating window,
+    and the next question is what widening the window would cost. An unconstrained
+    optimizer would have returned an infeasible setpoint and no question at all.&quot;&quot;&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>true yield at the old setpoint  : 50.236
+true yield at the ascent&#x27;s best : 65.129
+improvement                     : +14.894</pre></div>
+<figure class="fig" id="09_manufacturing_steepest_ascent-gain">
+  <div class="fig-head"><p class="fig-t">What the plant would actually change</p><p class="fig-s">Both settings end at 1.0 — hard against the limit, with no room left in either direction. That is the same finding as the canonical analysis, seen from the operator&#x27;s side, and it is worth +14.89 in true yield (50.2 to 65.1), verified against the simulation rather than against the fit.</p></div>
+  <div class="legend"><span><i style="--k:var(--ink-2)"></i>today</span><span><i style="--k:var(--accent)"></i>recommended</span></div>
+  <div class="chart" data-chart="dumbbell" data-file="figures-09_manufacturing_steepest_ascent"
+       data-opt='{&quot;rows&quot;: &quot;gain.rows&quot;, &quot;xLabel&quot;: &quot;position within the operating window (0 = lowest, 1 = the limit)&quot;, &quot;aLabel&quot;: &quot;running today&quot;, &quot;bLabel&quot;: &quot;recommended&quot;, &quot;labelWidth&quot;: 190}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+
+<section class="wt-close">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The close</p>
+      <h2>What it actually showed</h2>
+      <p>Written after looking at the output, which is why it does not always agree
+        with the setup.</p>
+    </div>
+    <div class="prose wt-findings"><p>Nothing here needed a global optimizer or a large design. Nine screening runs bought a direction, 26 cheap steps followed it, and the true yield went from 50.24 to 65.13 — +14.89 verified against the simulation&#x27;s own truth rather than against the fit&#x27;s opinion of itself.</p><p>The part worth keeping is stage three. Arriving somewhere the gradient is flat does not tell you what kind of place it is, and the three possibilities — confirm and stop, keep walking along a ridge, back off a saddle — imply completely different next batches of runs.</p><p>Here the stationary point turned out to lie outside what the plant can run. That reframes the whole exercise: the answer is a corner of the operating window, and the next question is what widening the window would cost. An unconstrained optimizer would have returned an infeasible setpoint and no question at all.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <details class="ex-more">
+      <summary>The whole file, and everything this run printed</summary>
+      <div class="ex-body">
+        <div class="pair">
+          <div class="code">
+            <div class="code-h"><span>examples/09_manufacturing_steepest_ascent.py</span>
+              <button class="copy" type="button">Copy</button></div>
+            <pre>import numpy as np
+from _walkthrough import Walkthrough
+
+from axiom.sim import arms_world
+from axiom.surface import (
+    Bounds,
+    HillKernel,
+    canonical_analysis,
+    central_composite,
+    fit,
+    full_factorial,
+    steepest_ascent,
+)
+
+SEED = 0
+CURRENT = {&quot;temperature&quot;: 140.0, &quot;residence&quot;: 12.0}
+
+w = Walkthrough(
+    field=&quot;Process engineering&quot;,
+    title=&quot;The optimum is outside the operating window&quot;,
+    question=&quot;&quot;&quot;A reactor is running somewhere on the slope. Where should the next
+        batch of expensive experimental runs be placed, and once the climb stops,
+        what kind of place have you arrived at?&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Write down the operating window before anything else&quot;,
+    why=&quot;&quot;&quot;120 to 200 degrees and 5 to 45 minutes are not modelling choices, they are
+        what the plant can physically run. Encoding them as Bounds means the design,
+        the ascent and the canonical analysis all obey the same constraint, and it
+        means an optimizer&#x27;s answer is always something the plant could actually
+        do.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Optimising unconstrained and checking feasibility at the end. On a
+        saturating surface the unconstrained answer is frequently outside the window
+        — as it turns out to be here — and discovering that after the fact loses the
+        much more useful question of what the boundary is costing.&quot;&quot;&quot;,
+)
+window = Bounds(treatments=(&quot;temperature&quot;, &quot;residence&quot;), low=(120.0, 5.0), high=(200.0, 45.0))
+w.out(f&quot;temperature : {window.low[0]:.0f} to {window.high[0]:.0f} C&quot;)
+w.out(f&quot;residence   : {window.low[1]:.0f} to {window.high[1]:.0f} min&quot;)
+w.out(f&quot;running now : {CURRENT[&#x27;temperature&#x27;]:.0f} C, {CURRENT[&#x27;residence&#x27;]:.0f} min&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Stage one: buy a direction, not a surface&quot;,
+    why=&quot;&quot;&quot;The first design only has to answer &#x27;which way is uphill&#x27;. A 3x3 factorial
+        does that for nine runs. Curvature is not needed yet and estimating it here
+        would be paying for information the next decision does not use.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Going straight to a central composite design at the current setpoint.
+        It costs more runs and it characterises the neighbourhood of a point you are
+        about to leave. Box and Wilson&#x27;s whole insight is that the expensive design
+        belongs at the end of the climb, not at the start.&quot;&quot;&quot;,
+)
+screen = full_factorial(window, 3)
+w.out(f&quot;screening design : {screen.kind}, {screen.n} runs&quot;)
+truth = {
+    &quot;alpha&quot;: 40.0,
+    &quot;beta_temperature&quot;: 22.0,
+    &quot;k_temperature&quot;: 165.0,
+    &quot;s_temperature&quot;: 3.0,
+    &quot;beta_residence&quot;: 14.0,
+    &quot;k_residence&quot;: 26.0,
+    &quot;s_residence&quot;: 2.4,
+}
+reactor = arms_world(
+    n_units=screen.n,
+    treatments=(&quot;temperature&quot;, &quot;residence&quot;),
+    kernels={
+        &quot;temperature&quot;: HillKernel(reference_dose=165.0, amplitude_scale=20.0),
+        &quot;residence&quot;: HillKernel(reference_dose=26.0, amplitude_scale=20.0),
+    },
+    doses=screen.doses(),
+    truth=truth,
+    noise_sd=1.1,
+    seed=SEED,
+)
+screen_fit = fit(reactor.spec, reactor.panel, backend=&quot;laplace&quot;, draws=1500, seed=SEED)
+theta = {n: float(screen_fit.posterior.summary(n).mean) for n in screen_fit.posterior.names()}
+w.out(f&quot;converged        : {screen_fit.converged}&quot;)
+
+grid_t = np.linspace(120.0, 200.0, 30)
+grid_r = np.linspace(5.0, 45.0, 30)
+surface_z = [
+    [
+        float(
+            screen_fit.surface.forward(
+                {&quot;temperature&quot;: float(t), &quot;residence&quot;: float(r)}, theta
+            ).mean()
+        )
+        for t in grid_t
+    ]
+    for r in grid_r
+]
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Stage two: walk uphill in cheap steps&quot;,
+    why=&quot;&quot;&quot;Steepest ascent is a sequence of small local decisions rather than a
+        global search. When a run costs a shift of plant time and the surface is
+        smooth — which describes most physical processes — it remains the right first
+        move, and it stops on its own when the gradient stops paying or the window
+        gets in the way.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Handing the fitted surface to a global optimizer. It would return the
+        unconstrained peak, which is outside the window, in one call — and it would
+        skip the information the path itself carries about how steep the climb was
+        and where it flattened.&quot;&quot;&quot;,
+)
+path = steepest_ascent(screen_fit.surface, theta, CURRENT, step=6.0, n_steps=40, bounds=window)
+best = path.best()
+w.out(f&quot;steps taken : {path.n}&quot;)
+w.out(f&quot;stopped because : {path.stop}&quot;)
+w.out(&quot;best point on the path: &quot; + &quot;, &quot;.join(f&quot;{k} {v:.1f}&quot; for k, v in best.items()))
+w.out(f&quot;predicted yield there : {path.values[-1]:.3f}&quot;)
+
+points = [[float(v) for v in p] for p in path.points]
+w.table(
+    [&quot;step&quot;, &quot;temperature&quot;, &quot;residence&quot;, &quot;predicted yield&quot;],
+    [
+        [str(i), f&quot;{points[i][0]:.1f}&quot;, f&quot;{points[i][1]:.1f}&quot;, f&quot;{path.values[i]:.3f}&quot;]
+        for i in sorted({0, 1, 2, path.n // 3, 2 * path.n // 3, path.n - 1})
+        if 0 &lt;= i &lt; path.n
+    ],
+)
+w.figure(
+    &quot;climb&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;step&quot;: list(range(path.n)), &quot;yield&quot;: [float(v) for v in path.values]},
+    opt={
+        &quot;series&quot;: [{&quot;label&quot;: &quot;predicted yield&quot;, &quot;x&quot;: &quot;@step&quot;, &quot;y&quot;: &quot;@yield&quot;, &quot;colour&quot;: &quot;accent&quot;}],
+        &quot;xLabel&quot;: &quot;step along the ascent&quot;,
+        &quot;yLabel&quot;: &quot;predicted yield&quot;,
+        &quot;height&quot;: 260,
+        &quot;rightPad&quot;: 110,
+    },
+    title=&quot;What each step of the climb bought&quot;,
+    note=&quot;&quot;&quot;The curve flattens long before the path stops. That flattening is the
+        signal to stop spending runs on the direction and start asking what kind of
+        place this is — which is what stage three does.&quot;&quot;&quot;,
+)
+w.figure(
+    &quot;surface&quot;,
+    kind=&quot;heatmap&quot;,
+    data={&quot;temperature&quot;: grid_t.tolist(), &quot;residence&quot;: grid_r.tolist(), &quot;z&quot;: surface_z},
+    opt={
+        &quot;key&quot;: &quot;@&quot;,
+        &quot;x&quot;: &quot;temperature&quot;,
+        &quot;y&quot;: &quot;residence&quot;,
+        &quot;z&quot;: &quot;z&quot;,
+        &quot;xLabel&quot;: &quot;temperature (C)&quot;,
+        &quot;yLabel&quot;: &quot;residence time (min)&quot;,
+        &quot;zLabel&quot;: &quot;predicted yield&quot;,
+        &quot;height&quot;: 340,
+        &quot;marks&quot;: [
+            {
+                &quot;x&quot;: CURRENT[&quot;temperature&quot;],
+                &quot;y&quot;: CURRENT[&quot;residence&quot;],
+                &quot;label&quot;: &quot;running today&quot;,
+            },
+            {
+                &quot;x&quot;: float(best[&quot;temperature&quot;]),
+                &quot;y&quot;: float(best[&quot;residence&quot;]),
+                &quot;label&quot;: &quot;ascent stopped here&quot;,
+            },
+        ],
+    },
+    title=&quot;The fitted surface, and where the climb started and ended&quot;,
+    note=&quot;&quot;&quot;The ascent ran into the corner of the window. That is not the algorithm
+        failing — it is the plant&#x27;s limits being the binding constraint, which is a
+        different and more actionable finding than &#x27;the optimum is here&#x27;.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Stage three: ask what kind of place you have arrived at&quot;,
+    why=&quot;&quot;&quot;A flat gradient is not one situation, it is three, and they imply
+        completely different next moves. A maximum means confirm and stop. A rising
+        ridge means keep walking along it, because there is free yield in that
+        direction. A saddle means back off — you are between two better regions.
+        The canonical analysis reads which one off the fitted quadratic&#x27;s
+        eigenvalues.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Declaring victory at the end of the ascent. The path stopping tells
+        you the gradient is small or the window is in the way; it says nothing about
+        the shape of the neighbourhood, and the shape is what decides whether to
+        spend the next batch of runs at all.&quot;&quot;&quot;,
+)
+confirm = central_composite(window, alpha=&quot;rotatable&quot;, center_points=4, inscribed=True)
+w.out(f&quot;confirmation design : {confirm.kind}, {confirm.n} runs&quot;)
+stationary = canonical_analysis(screen_fit.surface, theta, best)
+if hasattr(stationary, &quot;reason&quot;):
+    w.out(f&quot;canonical analysis declined: {stationary.reason}&quot;)
+    inside = False
+else:
+    w.out(f&quot;stationary point is a {stationary.kind}&quot;)
+    w.out(
+        &quot;at &quot;
+        + &quot;, &quot;.join(
+            f&quot;{name} {float(v):.1f}&quot;
+            for name, v in zip(window.treatments, stationary.point, strict=True)
+        )
+    )
+    w.out(f&quot;eigenvalues : {[round(float(e), 5) for e in stationary.eigenvalues]}&quot;)
+    inside = all(
+        lo &lt;= float(v) &lt;= hi
+        for v, lo, hi in zip(stationary.point, window.low, window.high, strict=True)
+    )
+    w.out(f&quot;inside the operating window? {inside}&quot;)
+    w.say(&quot;&quot;&quot;Both eigenvalues negative means a genuine maximum. Mixed signs would mean a
+        saddle, and the positive direction would be yield available for free along a
+        ridge — worth more than the peak itself, and invisible to anything that only
+        reports the location of the stationary point.&quot;&quot;&quot;)
+    if not inside:
+        w.say(&quot;&quot;&quot;And it is outside the window. The unconstrained peak sits where the
+            plant cannot run, which is why the ascent stopped on the boundary rather
+            than at the stationary point. The operating recommendation is the corner
+            of the window; the interesting question becomes what it would cost to
+            widen the window, and that is now a costed engineering question rather
+            than an open-ended one.&quot;&quot;&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Finally, price the whole exercise against the old setpoint&quot;,
+    why=&quot;&quot;&quot;Everything above is on the fitted surface. This step goes back to the
+        simulated reactor and evaluates the TRUE yield at the old setpoint and at the
+        point the climb recommended, which is the only check that the recommendation
+        was worth acting on rather than merely internally consistent.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Reporting the predicted improvement. The model&#x27;s prediction of its own
+        recommendation is not evidence: it is the same surface evaluated twice, and
+        it would look just as good if the fit were wrong.&quot;&quot;&quot;,
+)
+true_current = float(reactor.forward(CURRENT).mean())
+true_best = float(reactor.forward({k: float(v) for k, v in best.items()}).mean())
+w.out(f&quot;true yield at the old setpoint  : {true_current:.3f}&quot;)
+w.out(f&quot;true yield at the ascent&#x27;s best : {true_best:.3f}&quot;)
+w.out(f&quot;improvement                     : {true_best - true_current:+.3f}&quot;)
+
+
+def within_window(name: str, value: float) -&gt; float:
+    &quot;&quot;&quot;Where a setting sits in its own operating range, as a fraction.
+
+    Degrees and minutes do not belong on the same axis, and drawing them there
+    would be the chart lying about a comparison. Position within the window is a
+    quantity they genuinely share, and it is the one an operator cares about:
+    how much room is left.
+    &quot;&quot;&quot;
+    i = window.treatments.index(name)
+    return (value - window.low[i]) / (window.high[i] - window.low[i])
+
+
+w.figure(
+    &quot;gain&quot;,
+    kind=&quot;dumbbell&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: f&quot;temperature ({CURRENT[&#x27;temperature&#x27;]:.0f} to &quot;
+                f&quot;{float(best[&#x27;temperature&#x27;]):.0f} C)&quot;,
+                &quot;a&quot;: within_window(&quot;temperature&quot;, CURRENT[&quot;temperature&quot;]),
+                &quot;b&quot;: within_window(&quot;temperature&quot;, float(best[&quot;temperature&quot;])),
+            },
+            {
+                &quot;label&quot;: f&quot;residence ({CURRENT[&#x27;residence&#x27;]:.0f} to &quot;
+                f&quot;{float(best[&#x27;residence&#x27;]):.0f} min)&quot;,
+                &quot;a&quot;: within_window(&quot;residence&quot;, CURRENT[&quot;residence&quot;]),
+                &quot;b&quot;: within_window(&quot;residence&quot;, float(best[&quot;residence&quot;])),
+            },
+        ]
+    },
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;xLabel&quot;: &quot;position within the operating window (0 = lowest, 1 = the limit)&quot;,
+        &quot;aLabel&quot;: &quot;running today&quot;,
+        &quot;bLabel&quot;: &quot;recommended&quot;,
+        &quot;labelWidth&quot;: 190,
+    },
+    title=&quot;What the plant would actually change&quot;,
+    note=f&quot;&quot;&quot;Both settings end at 1.0 — hard against the limit, with no room left in
+        either direction. That is the same finding as the canonical analysis, seen
+        from the operator&#x27;s side, and it is worth {true_best - true_current:+.2f} in
+        true yield ({true_current:.1f} to {true_best:.1f}), verified against the
+        simulation rather than against the fit.&quot;&quot;&quot;,
+    legend=((&quot;ink-2&quot;, &quot;today&quot;), (&quot;accent&quot;, &quot;recommended&quot;)),
+)
+
+# ----------------------------------------------------------------------------------
+
+w.finding(f&quot;&quot;&quot;Nothing here needed a global optimizer or a large design. Nine screening runs
+    bought a direction, {path.n} cheap steps followed it, and the true yield went
+    from {true_current:.2f} to {true_best:.2f} — {true_best - true_current:+.2f}
+    verified against the simulation&#x27;s own truth rather than against the fit&#x27;s opinion
+    of itself.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;The part worth keeping is stage three. Arriving somewhere the gradient is flat
+    does not tell you what kind of place it is, and the three possibilities — confirm
+    and stop, keep walking along a ridge, back off a saddle — imply completely
+    different next batches of runs.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;Here the stationary point turned out to lie outside what the plant can run.
+    That reframes the whole exercise: the answer is a corner of the operating window,
+    and the next question is what widening the window would cost. An unconstrained
+    optimizer would have returned an infeasible setpoint and no question at all.&quot;&quot;&quot;)</pre>
+          </div>
+          <div class="out">
+            <div class="out-h">stdout, captured on this build</div>
+            <pre>========================================================================================
+PROCESS ENGINEERING  ---  The optimum is outside the operating window
+========================================================================================
+  A reactor is running somewhere on the slope. Where should the next batch of expensive
+  experimental runs be placed, and once the climb stops, what kind of place have you
+  arrived at?
+
+----------------------------------------------------------------------------------------
+STEP 1  Write down the operating window before anything else
+----------------------------------------------------------------------------------------
+  120 to 200 degrees and 5 to 45 minutes are not modelling choices, they are what the
+  plant can physically run. Encoding them as Bounds means the design, the ascent and the
+  canonical analysis all obey the same constraint, and it means an optimizer&#x27;s answer is
+  always something the plant could actually do.
+
+  INSTEAD OF: Optimising unconstrained and checking feasibility at the end. On a
+  saturating surface the unconstrained answer is frequently outside the window — as it
+  turns out to be here — and discovering that after the fact loses the much more useful
+  question of what the boundary is costing.
+
+  temperature : 120 to 200 C
+  residence   : 5 to 45 min
+  running now : 140 C, 12 min
+
+----------------------------------------------------------------------------------------
+STEP 2  Stage one: buy a direction, not a surface
+----------------------------------------------------------------------------------------
+  The first design only has to answer &#x27;which way is uphill&#x27;. A 3x3 factorial does that
+  for nine runs. Curvature is not needed yet and estimating it here would be paying for
+  information the next decision does not use.
+
+  INSTEAD OF: Going straight to a central composite design at the current setpoint. It
+  costs more runs and it characterises the neighbourhood of a point you are about to
+  leave. Box and Wilson&#x27;s whole insight is that the expensive design belongs at the end
+  of the climb, not at the start.
+
+  screening design : full_factorial, 9 runs
+  converged        : True
+
+----------------------------------------------------------------------------------------
+STEP 3  Stage two: walk uphill in cheap steps
+----------------------------------------------------------------------------------------
+  Steepest ascent is a sequence of small local decisions rather than a global search.
+  When a run costs a shift of plant time and the surface is smooth — which describes
+  most physical processes — it remains the right first move, and it stops on its own
+  when the gradient stops paying or the window gets in the way.
+
+  INSTEAD OF: Handing the fitted surface to a global optimizer. It would return the
+  unconstrained peak, which is outside the window, in one call — and it would skip the
+  information the path itself carries about how steep the climb was and where it
+  flattened.
+
+  steps taken : 26
+  stopped because : boundary
+  best point on the path: temperature 200.0, residence 45.0
+  predicted yield there : 66.493
+  step  temperature  residence  predicted yield
+  ----  -----------  ---------  ---------------
+  0     140.0        12.0       51.776
+  1     142.4        17.5       53.836
+  2     144.8        23.0       56.004
+  8     159.2        45.0       63.421
+  17    180.9        45.0       65.247
+  25    200.0        45.0       66.493
+
+  [figure: What each step of the climb bought]
+
+  [figure: The fitted surface, and where the climb started and ended]
+
+
+----------------------------------------------------------------------------------------
+STEP 4  Stage three: ask what kind of place you have arrived at
+----------------------------------------------------------------------------------------
+  A flat gradient is not one situation, it is three, and they imply completely different
+  next moves. A maximum means confirm and stop. A rising ridge means keep walking along
+  it, because there is free yield in that direction. A saddle means back off — you are
+  between two better regions. The canonical analysis reads which one off the fitted
+  quadratic&#x27;s eigenvalues.
+
+  INSTEAD OF: Declaring victory at the end of the ascent. The path stopping tells you
+  the gradient is small or the window is in the way; it says nothing about the shape of
+  the neighbourhood, and the shape is what decides whether to spend the next batch of
+  runs at all.
+
+  confirmation design : central_composite, 12 runs
+  stationary point is a maximum
+  at temperature 285.1, residence 74.4
+  eigenvalues : [-0.0064, -0.00068]
+  inside the operating window? False
+  Both eigenvalues negative means a genuine maximum. Mixed signs would mean a saddle,
+  and the positive direction would be yield available for free along a ridge — worth
+  more than the peak itself, and invisible to anything that only reports the location of
+  the stationary point.
+
+  And it is outside the window. The unconstrained peak sits where the plant cannot run,
+  which is why the ascent stopped on the boundary rather than at the stationary point.
+  The operating recommendation is the corner of the window; the interesting question
+  becomes what it would cost to widen the window, and that is now a costed engineering
+  question rather than an open-ended one.
+
+
+----------------------------------------------------------------------------------------
+STEP 5  Finally, price the whole exercise against the old setpoint
+----------------------------------------------------------------------------------------
+  Everything above is on the fitted surface. This step goes back to the simulated
+  reactor and evaluates the TRUE yield at the old setpoint and at the point the climb
+  recommended, which is the only check that the recommendation was worth acting on
+  rather than merely internally consistent.
+
+  INSTEAD OF: Reporting the predicted improvement. The model&#x27;s prediction of its own
+  recommendation is not evidence: it is the same surface evaluated twice, and it would
+  look just as good if the fit were wrong.
+
+  true yield at the old setpoint  : 50.236
+  true yield at the ascent&#x27;s best : 65.129
+  improvement                     : +14.894
+  [figure: What the plant would actually change]
+
+
+========================================================================================
+WHAT IT ACTUALLY SHOWED
+========================================================================================
+  Nothing here needed a global optimizer or a large design. Nine screening runs bought a
+  direction, 26 cheap steps followed it, and the true yield went from 50.24 to 65.13 —
+  +14.89 verified against the simulation&#x27;s own truth rather than against the fit&#x27;s
+  opinion of itself.
+
+  The part worth keeping is stage three. Arriving somewhere the gradient is flat does
+  not tell you what kind of place it is, and the three possibilities — confirm and stop,
+  keep walking along a ridge, back off a saddle — imply completely different next
+  batches of runs.
+
+  Here the stationary point turned out to lie outside what the plant can run. That
+  reframes the whole exercise: the answer is a corner of the operating window, and the
+  next question is what widening the window would cost. An unconstrained optimizer would
+  have returned an infeasible setpoint and no question at all.</pre>
+          </div>
+        </div>
+      </div>
+    </details>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="example-08-energy-panel-methods.html">&larr; 08 · Energy</a><a class="btn btn-2" href="examples.html">All twelve</a><a class="btn btn-2" href="example-10-marketing-saturation.html">10 · Marketing &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

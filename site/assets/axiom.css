@@ -632,6 +632,64 @@ a.pkg:hover { border-color: var(--accent); color: var(--ink); }
   .ex-body { padding: 4px 16px 18px; }
 }
 
+/* -- walkthroughs: one example, step by step ------------------------------- */
+
+/* A step is a two-column argument: the reasoning on the left, the code and what
+   it produced on the right. Below the breakpoint it becomes reasoning-then-
+   evidence, which is the order it should be read in anyway. */
+.wt-step { padding-block: clamp(40px, 5.5vw, 76px); scroll-margin-top: 72px; }
+.wt-step .wrap {
+  display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: clamp(24px, 3vw, 44px); align-items: start;
+}
+.wt-head { position: sticky; top: 76px; }
+.wt-n {
+  font-family: var(--f-mono); font-size: .72rem; color: var(--accent); font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; margin-bottom: 12px;
+}
+.wt-n span { color: var(--ink-3); font-weight: 400; }
+.wt-head h2 { font-size: clamp(1.5rem, 2.4vw, 2rem); margin-bottom: 16px; }
+.wt-why p { font-size: .97rem; color: var(--ink-2); margin-bottom: 16px; }
+.wt-body { display: grid; gap: 20px; min-width: 0; }
+.wt-body .fig, .wt-body .out, .wt-body .code, .wt-body .tbl-wrap { margin: 0; }
+/* A hundred-character line has to fit the narrower of the two columns, so the
+   mono size steps down a little here rather than every code block scrolling. */
+.wt-body .code pre, .wt-body .out pre {
+  max-height: 560px; overflow: auto; font-size: .74rem; line-height: 1.65;
+}
+.wt-body .prose p { font-size: .95rem; color: var(--ink-2); margin: 0; }
+
+/* The alternative that was rejected. Deliberately not the accent colour: it is
+   not the path taken, and colouring it like the argument would say it was. */
+.note.is-alt { border-left-color: var(--ink-3); background: var(--panel-2); }
+.note.is-alt .note-t { color: var(--ink-2); }
+.note.is-alt p { font-size: .92rem; color: var(--ink-2); }
+
+.wt-h {
+  font-family: var(--f-ui); font-weight: 600; font-size: .82rem; color: var(--accent-deep);
+  letter-spacing: .02em; margin-bottom: 4px;
+}
+.wt-framing p { font-size: .97rem; color: var(--ink-2); margin-bottom: 1em; }
+.wt-framing .wt-h + p { margin-bottom: 1.4em; }
+
+.wt-toc { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+  border-radius: 12px; overflow: hidden; margin-top: 14px; }
+.wt-toc-i {
+  background: var(--panel); padding: 13px 18px; display: flex; gap: 14px; align-items: baseline;
+  font-family: var(--f-ui); font-size: .92rem; color: var(--ink); text-decoration: none;
+}
+.wt-toc-i:hover { background: var(--panel-2); color: var(--accent-deep); }
+.wt-toc-n { font-family: var(--f-mono); font-size: .8rem; color: var(--accent); flex: none; }
+
+.wt-close { background: var(--panel); }
+.wt-findings p { font-size: 1.02rem; color: var(--ink-2); margin-bottom: 1.1em; }
+.wt-findings p:first-child { color: var(--ink); font-size: 1.08rem; }
+
+@media (max-width: 900px) {
+  .wt-step .wrap { grid-template-columns: 1fr; }
+  .wt-head { position: static; }
+}
+
 /* -- footer ---------------------------------------------------------------- */
 
 .foot { border-top: 1px solid var(--rule); background: var(--panel); margin-top: 40px; }

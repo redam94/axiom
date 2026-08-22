@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Recovering an effect nothing in the data can deconfound — Epidemiology · axiom</title>
+<meta name="description" content="Epidemiology: An exposure you cannot deconfound, recovered through a measured mediator. A 5-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:title" content="04 · Recovering an effect nothing in the data can deconfound — Epidemiology · axiom">
+<meta property="og:description" content="Epidemiology: An exposure you cannot deconfound, recovered through a measured mediator. A 5-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="example">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">Case study</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Example 04 · Epidemiology</p>
+    <h1 style="max-width:18ch">Recovering an effect nothing in the data can deconfound</h1>
+    <p class="lede prose mt">Lifestyle and genetics drive both the exposure and the disease, and nobody measured them. No covariate adjustment can work. Is the effect gone, or is there another way in?</p>
+    <div class="ex-meta"><a class="pkg" href="identify.html">Identify</a>
+      <span class="pkg">5 steps</span>
+      <span class="pkg">2 figures</span>
+      <span class="pkg">229 lines</span>
+      <span class="pkg">runs in 0.7s</span></div>
+    <div class="hero-cta">
+      <a class="btn btn-1" href="#step-1">Start the walkthrough</a>
+      <a class="btn btn-2" href="https://github.com/redam94/axiom/blob/main/examples/04_epidemiology_frontdoor.py">The whole file on GitHub &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div class="prose wt-framing"><p>Epidemiology — the effect of an exposure you cannot deconfound.</p><p class="wt-h">The question</p><p>Does an exposure raise disease risk? Lifestyle and genetics drive both the exposure and the outcome, and nobody measured them. There is no set of recorded covariates that closes the back door, so back-door adjustment is not available at any sample size.</p><p class="wt-h">The move</p><p>If the exposure acts entirely through a measured intermediate -- a biomarker, a deposited dose, a mediating physiological quantity -- the effect is still recoverable. The front-door route splits the problem in two: exposure to mediator (unconfounded, because the confounder does not touch the mediator directly), and mediator to outcome (deconfoundable by conditioning on the exposure). This is the structure behind the classic smoking-tar-cancer argument.</p><p>axiom reads the route off the graph and names the mediator, rather than requiring you to know which of the three routes applies before you start.</p><p>Pillars: identify (front-door)</p></div>
+      <div>
+        <p class="eyebrow">The route</p>
+        <nav class="wt-toc"><a class="wt-toc-i" href="#step-1"><span class="wt-toc-n">1</span>First establish that the obvious route is genuinely closed</a><a class="wt-toc-i" href="#step-2"><span class="wt-toc-n">2</span>Add the one structural claim that changes everything</a><a class="wt-toc-i" href="#step-3"><span class="wt-toc-n">3</span>Estimate it both ways on the same 8,000 people</a><a class="wt-toc-i" href="#step-4"><span class="wt-toc-n">4</span>Break the claim on purpose and watch the route disappear</a><a class="wt-toc-i" href="#step-5"><span class="wt-toc-n">5</span>And measure what believing it wrongly would cost</a></nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Before the first step</p>
+      <h2>What this example imports, and why that list is short</h2>
+      <p>Everything below runs on the four core dependencies. No sampler, no extras.</p>
+    </div>
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>examples/04_epidemiology_frontdoor.py</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>from _walkthrough import Walkthrough
+
+from axiom.identify import CausalGraph, frontdoor_linear, identify, ols
+from axiom.sim import LinearSCM, frontdoor_world
+
+N, SEED = 8_000, 0
+
+w = Walkthrough(
+    field=&quot;Epidemiology&quot;,
+    title=&quot;Recovering an effect nothing in the data can deconfound&quot;,
+    question=&quot;&quot;&quot;Lifestyle and genetics drive both the exposure and the disease, and
+        nobody measured them. No covariate adjustment can work. Is the effect gone,
+        or is there another way in?&quot;&quot;&quot;,
+)</pre>
+    </div>
+  </div>
+</section>
+
+<section class="wt-step" id="step-1">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 1 <span>of 5</span></p>
+      <h2>First establish that the obvious route is genuinely closed</h2>
+      <div class="wt-why prose"><p>Before reaching for anything clever it is worth confirming there is nothing to be had the ordinary way. On a graph with only the exposure, the outcome and an unmeasured common cause, identify() refuses — and the refusal is typed, with a reason, rather than being an empty result the caller has to interpret.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Assuming the problem is a missing covariate and going looking for proxies. Proxies for an unmeasured confounder do not close the back door unless they close it completely, and &#x27;we adjusted for a rich set of covariates&#x27; is the sentence that most often stands in for a route nobody checked.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/04_epidemiology_frontdoor.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>bare = CausalGraph.from_edges(&quot;X -&gt; Y, X &lt;-&gt; Y&quot;)
+bare_verdict = identify(bare, &quot;X&quot;, &quot;Y&quot;)
+w.out(f&quot;graph  : {bare.to_text()}&quot;)
+w.out(f&quot;status : {bare_verdict.status}&quot;)
+w.out(f&quot;reason : {bare_verdict.verdict.reason}&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>graph  : X -&gt; Y, X &lt;-&gt; Y
+status : blocked
+reason : no back-door, front-door, or instrumental route exists in the graph</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-2">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 2 <span>of 5</span></p>
+      <h2>Add the one structural claim that changes everything</h2>
+      <div class="wt-why prose"><p>The claim is that the exposure reaches the outcome only through a measured intermediate — a biomarker, a deposited dose. That is not an extra assumption axiom bolts on; it IS the graph, and the graph is hashed into the verdict, so a result can never later be quoted against a different one. With the mediator present the front-door route opens and the effect becomes recoverable despite the confounder still being invisible.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>An instrument. It would work too, but it requires finding something that moves the exposure and touches the outcome no other way — and in observational epidemiology that thing usually does not exist, while the mediator often has already been measured for other reasons.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/04_epidemiology_frontdoor.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>world = frontdoor_world()
+verdict = identify(world.graph, &quot;X&quot;, &quot;Y&quot;)
+w.out(f&quot;graph      : {world.graph.to_text()}&quot;)
+w.out(f&quot;measured   : {sorted(world.graph.measured)}&quot;)
+w.out(f&quot;status     : {verdict.status}&quot;)
+w.out(f&quot;route      : {verdict.route}&quot;)
+w.out(f&quot;mediators  : {sorted(verdict.mediators)}&quot;)
+w.out(f&quot;graph hash : {verdict.graph_hash[:16]}...&quot;)
+w.say(&quot;&quot;&quot;The route works by splitting the problem in two. Exposure to mediator is
+    unconfounded, because the hidden common cause does not touch the mediator
+    directly. Mediator to outcome is deconfoundable by conditioning on the exposure.
+    Neither half needs the confounder, so their product does not either — this is the
+    structure behind the smoking-tar-cancer argument.&quot;&quot;&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>graph      : M -&gt; Y, X -&gt; M, X &lt;-&gt; Y
+measured   : [&#x27;M&#x27;, &#x27;X&#x27;, &#x27;Y&#x27;]
+status     : identified
+route      : frontdoor
+mediators  : [&#x27;M&#x27;]
+graph hash : 816f14bebf6c0f74...</pre></div>
+<div class="prose"><p>The route works by splitting the problem in two. Exposure to mediator is unconfounded, because the hidden common cause does not touch the mediator directly. Mediator to outcome is deconfoundable by conditioning on the exposure. Neither half needs the confounder, so their product does not either — this is the structure behind the smoking-tar-cancer argument.</p></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-3">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 3 <span>of 5</span></p>
+      <h2>Estimate it both ways on the same 8,000 people</h2>
+      <div class="wt-why prose"><p>The naive regression is what a careful analyst would report from these columns if nobody had drawn the graph, and it is confidently wrong. The front-door estimate uses no additional data at all — same rows, same columns — only the structural claim.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Reporting the front-door number alone. The distance between the two is the size of the confounding, which is a quantity the study can now put a number on despite never having measured the confounder.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/04_epidemiology_frontdoor.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>frame = world.observed(world.simulate(N, seed=SEED))
+truth = world.total_effect(&quot;X&quot;, &quot;Y&quot;)
+naive = ols(frame, &quot;Y&quot;, &quot;X&quot;)
+front = frontdoor_linear(frame, &quot;Y&quot;, &quot;X&quot;, mediators=sorted(verdict.mediators))
+
+rows = []
+for label, est in ((&quot;naive (confounded)&quot;, naive), (&quot;front-door&quot;, front)):
+    ci = est.ci(0.95)
+    w.out(
+        f&quot;{label:20s} {est.estimate:6.3f} +/- {est.se:.3f}  &quot;
+        f&quot;[{ci.lower:6.3f}, {ci.upper:6.3f}]  error {est.estimate - truth:+.3f}&quot;
+    )
+    rows.append(
+        {
+            &quot;label&quot;: label,
+            &quot;estimate&quot;: est.estimate,
+            &quot;lower&quot;: ci.lower,
+            &quot;upper&quot;: ci.upper,
+            &quot;note&quot;: f&quot;standard error {est.se:.3f}&quot;,
+            &quot;bad&quot;: abs(est.estimate - truth) &gt; 2 * est.se,
+        }
+    )
+w.out(f&quot;{&#x27;truth&#x27;:20s} {truth:6.3f}&quot;)
+w.figure(
+    &quot;estimates&quot;,
+    kind=&quot;intervals&quot;,
+    data={&quot;rows&quot;: rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: truth,
+        &quot;truthLabel&quot;: &quot;the truth&quot;,
+        &quot;xLabel&quot;: &quot;effect of the exposure on disease risk&quot;,
+        &quot;labelWidth&quot;: 155,
+        &quot;rowHeight&quot;: 38,
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>naive (confounded)    2.296 +/- 0.015  [ 2.266,  2.327]  error +0.496
+front-door            1.810 +/- 0.020  [ 1.770,  1.850]  error +0.010
+truth                 1.800</pre></div>
+<figure class="fig" id="04_epidemiology_frontdoor-estimates">
+  <div class="fig-head"><p class="fig-t">Same rows, same columns, one structural claim apart</p><p class="fig-s">No covariate adjustment could have produced the lower interval, because the confounder is not in the data. What produced it was a claim about how the world is wired.</p></div>
+  
+  <div class="chart" data-chart="intervals" data-file="figures-04_epidemiology_frontdoor"
+       data-opt='{&quot;rows&quot;: &quot;estimates.rows&quot;, &quot;truth&quot;: 1.8, &quot;truthLabel&quot;: &quot;the truth&quot;, &quot;xLabel&quot;: &quot;effect of the exposure on disease risk&quot;, &quot;labelWidth&quot;: 155, &quot;rowHeight&quot;: 38}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-4">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 4 <span>of 5</span></p>
+      <h2>Break the claim on purpose and watch the route disappear</h2>
+      <div class="wt-why prose"><p>A load-bearing assumption should be shown bearing the load. Adding a direct exposure-to-outcome edge — a second pathway that skips the mediator — leaves a graph with no identifying route at all, and identify() says so rather than falling back on the front-door formula regardless.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Testing the assumption against the data. It cannot be tested against the data: both graphs imply the same joint distribution over the measured variables here. That is exactly why it has to be argued substantively and recorded explicitly.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/04_epidemiology_frontdoor.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>also_direct = CausalGraph.from_edges(&quot;X -&gt; M, M -&gt; Y, X -&gt; Y, X &lt;-&gt; Y&quot;)
+blocked = identify(also_direct, &quot;X&quot;, &quot;Y&quot;)
+w.out(f&quot;graph  : {also_direct.to_text()}&quot;)
+w.out(f&quot;status : {blocked.status}&quot;)
+w.out(f&quot;reason : {blocked.verdict.reason}&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>graph  : M -&gt; Y, X -&gt; M, X -&gt; Y, X &lt;-&gt; Y
+status : blocked
+reason : no back-door, front-door, or instrumental route exists in the graph</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-5">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 5 <span>of 5</span></p>
+      <h2>And measure what believing it wrongly would cost</h2>
+      <div class="wt-why prose"><p>Refusing on a graph is one thing; knowing the size of the mistake is another. Here the same analysis runs on a family of worlds that each have a small direct path the analyst does not know about, so the exclusion claim is false by a controlled amount. The front-door estimator keeps returning the mediated part and misses the direct part entirely.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Treating the assumption as binary — &#x27;it holds&#x27; or &#x27;the analysis is invalid&#x27;. Assumptions fail by degrees, and an estimator that degrades smoothly is usable under a claim that is nearly true, which is the only kind of claim epidemiology ever gets.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/04_epidemiology_frontdoor.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>leaks = [0.0, 0.1, 0.2, 0.35, 0.5, 0.75, 1.0]
+truths, estimates = [], []
+for leak in leaks:
+    leaky = LinearSCM.from_text(
+        f&quot;X -&gt; M: 1.2, M -&gt; Y: 1.5, X -&gt; Y: {leak}, X &lt;-&gt; Y: 1.0&quot;, name=&quot;leaky&quot;
+    )
+    leaky_frame = leaky.observed(leaky.simulate(N, seed=SEED))
+    truths.append(float(leaky.total_effect(&quot;X&quot;, &quot;Y&quot;)))
+    estimates.append(float(frontdoor_linear(leaky_frame, &quot;Y&quot;, &quot;X&quot;, mediators=[&quot;M&quot;]).estimate))
+w.table(
+    [&quot;hidden direct path&quot;, &quot;true total effect&quot;, &quot;front-door says&quot;, &quot;error&quot;],
+    [
+        [f&quot;{d:.2f}&quot;, f&quot;{t:.3f}&quot;, f&quot;{e:.3f}&quot;, f&quot;{e - t:+.3f}&quot;]
+        for d, t, e in zip(leaks, truths, estimates, strict=True)
+    ],
+)
+w.figure(
+    &quot;leak&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;leak&quot;: leaks, &quot;truth&quot;: truths, &quot;estimate&quot;: estimates},
+    opt={
+        &quot;series&quot;: [
+            {&quot;label&quot;: &quot;the truth&quot;, &quot;x&quot;: &quot;@leak&quot;, &quot;y&quot;: &quot;@truth&quot;, &quot;colour&quot;: &quot;ink-2&quot;},
+            {&quot;label&quot;: &quot;front-door&quot;, &quot;x&quot;: &quot;@leak&quot;, &quot;y&quot;: &quot;@estimate&quot;, &quot;colour&quot;: &quot;accent&quot;},
+        ],
+        &quot;xLabel&quot;: &quot;strength of the direct path the analyst assumed away&quot;,
+        &quot;yLabel&quot;: &quot;total effect&quot;,
+        &quot;height&quot;: 300,
+        &quot;rightPad&quot;: 90,
+    },
+    # title, note and legend: the caption shown with the chart
+)
+
+
+w.finding(f&quot;&quot;&quot;The naive estimate was {naive.estimate:.2f} against a truth of {truth:.2f};
+    the front-door estimate was {front.estimate:.2f}. Nothing was measured in between.
+    The gap of {naive.estimate - truth:+.2f} is the confounding, now quantified by a
+    study that never observed the confounder.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;What made it recoverable was a structural claim, not a better estimator. That
+    is the pattern worth taking away: when the answer is not identified from what you
+    measured, the fix is a defensible claim about the world or a new measurement.
+    A more elaborate fit is never the fix, because the problem is not in the
+    fitting.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;And the claim really is load-bearing. Add a direct edge and the graph offers
+    no route at all; leave the edge in the world but out of the analysis and the
+    error is the size of the edge — {estimates[-1] - truths[-1]:+.2f} when the direct
+    path is as strong as {leaks[-1]:.1f}. Both behaviours are what you want: refuse
+    when the structure is wrong, degrade proportionally when it is only slightly
+    wrong.&quot;&quot;&quot;)</pre>
+</div>
+      <div class="tbl-wrap"><table class="t"><thead><tr><th>hidden direct path</th><th>true total effect</th><th>front-door says</th><th>error</th></tr></thead><tbody><tr><td>0.00</td><td>1.800</td><td>1.810</td><td>+0.010</td></tr><tr><td>0.10</td><td>1.900</td><td>1.810</td><td>-0.090</td></tr><tr><td>0.20</td><td>2.000</td><td>1.810</td><td>-0.190</td></tr><tr><td>0.35</td><td>2.150</td><td>1.810</td><td>-0.340</td></tr><tr><td>0.50</td><td>2.300</td><td>1.810</td><td>-0.490</td></tr><tr><td>0.75</td><td>2.550</td><td>1.810</td><td>-0.740</td></tr><tr><td>1.00</td><td>2.800</td><td>1.810</td><td>-0.990</td></tr></tbody></table></div>
+<figure class="fig" id="04_epidemiology_frontdoor-leak">
+  <div class="fig-head"><p class="fig-t">How wrong the answer gets as the exclusion claim fails</p><p class="fig-s">The front-door line is flat: it recovers the mediated part correctly and is blind to everything else, so the error is exactly the size of the path that was assumed away. That is a good failure mode — it is bounded by something a subject expert can reason about.</p></div>
+  <div class="legend"><span><i style="--k:var(--ink-2)"></i>true total effect</span><span><i style="--k:var(--accent)"></i>what front-door returns</span></div>
+  <div class="chart" data-chart="lines" data-file="figures-04_epidemiology_frontdoor"
+       data-opt='{&quot;series&quot;: [{&quot;label&quot;: &quot;the truth&quot;, &quot;x&quot;: &quot;leak.leak&quot;, &quot;y&quot;: &quot;leak.truth&quot;, &quot;colour&quot;: &quot;ink-2&quot;}, {&quot;label&quot;: &quot;front-door&quot;, &quot;x&quot;: &quot;leak.leak&quot;, &quot;y&quot;: &quot;leak.estimate&quot;, &quot;colour&quot;: &quot;accent&quot;}], &quot;xLabel&quot;: &quot;strength of the direct path the analyst assumed away&quot;, &quot;yLabel&quot;: &quot;total effect&quot;, &quot;height&quot;: 300, &quot;rightPad&quot;: 90}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+
+<section class="wt-close">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The close</p>
+      <h2>What it actually showed</h2>
+      <p>Written after looking at the output, which is why it does not always agree
+        with the setup.</p>
+    </div>
+    <div class="prose wt-findings"><p>The naive estimate was 2.30 against a truth of 1.80; the front-door estimate was 1.81. Nothing was measured in between. The gap of +0.50 is the confounding, now quantified by a study that never observed the confounder.</p><p>What made it recoverable was a structural claim, not a better estimator. That is the pattern worth taking away: when the answer is not identified from what you measured, the fix is a defensible claim about the world or a new measurement. A more elaborate fit is never the fix, because the problem is not in the fitting.</p><p>And the claim really is load-bearing. Add a direct edge and the graph offers no route at all; leave the edge in the world but out of the analysis and the error is the size of the edge — -0.99 when the direct path is as strong as 1.0. Both behaviours are what you want: refuse when the structure is wrong, degrade proportionally when it is only slightly wrong.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <details class="ex-more">
+      <summary>The whole file, and everything this run printed</summary>
+      <div class="ex-body">
+        <div class="pair">
+          <div class="code">
+            <div class="code-h"><span>examples/04_epidemiology_frontdoor.py</span>
+              <button class="copy" type="button">Copy</button></div>
+            <pre>from _walkthrough import Walkthrough
+
+from axiom.identify import CausalGraph, frontdoor_linear, identify, ols
+from axiom.sim import LinearSCM, frontdoor_world
+
+N, SEED = 8_000, 0
+
+w = Walkthrough(
+    field=&quot;Epidemiology&quot;,
+    title=&quot;Recovering an effect nothing in the data can deconfound&quot;,
+    question=&quot;&quot;&quot;Lifestyle and genetics drive both the exposure and the disease, and
+        nobody measured them. No covariate adjustment can work. Is the effect gone,
+        or is there another way in?&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;First establish that the obvious route is genuinely closed&quot;,
+    why=&quot;&quot;&quot;Before reaching for anything clever it is worth confirming there is
+        nothing to be had the ordinary way. On a graph with only the exposure, the
+        outcome and an unmeasured common cause, identify() refuses — and the refusal
+        is typed, with a reason, rather than being an empty result the caller has to
+        interpret.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Assuming the problem is a missing covariate and going looking for
+        proxies. Proxies for an unmeasured confounder do not close the back door
+        unless they close it completely, and &#x27;we adjusted for a rich set of
+        covariates&#x27; is the sentence that most often stands in for a route nobody
+        checked.&quot;&quot;&quot;,
+)
+bare = CausalGraph.from_edges(&quot;X -&gt; Y, X &lt;-&gt; Y&quot;)
+bare_verdict = identify(bare, &quot;X&quot;, &quot;Y&quot;)
+w.out(f&quot;graph  : {bare.to_text()}&quot;)
+w.out(f&quot;status : {bare_verdict.status}&quot;)
+w.out(f&quot;reason : {bare_verdict.verdict.reason}&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Add the one structural claim that changes everything&quot;,
+    why=&quot;&quot;&quot;The claim is that the exposure reaches the outcome only through a measured
+        intermediate — a biomarker, a deposited dose. That is not an extra assumption
+        axiom bolts on; it IS the graph, and the graph is hashed into the verdict, so
+        a result can never later be quoted against a different one. With the mediator
+        present the front-door route opens and the effect becomes recoverable
+        despite the confounder still being invisible.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;An instrument. It would work too, but it requires finding something
+        that moves the exposure and touches the outcome no other way — and in
+        observational epidemiology that thing usually does not exist, while the
+        mediator often has already been measured for other reasons.&quot;&quot;&quot;,
+)
+world = frontdoor_world()
+verdict = identify(world.graph, &quot;X&quot;, &quot;Y&quot;)
+w.out(f&quot;graph      : {world.graph.to_text()}&quot;)
+w.out(f&quot;measured   : {sorted(world.graph.measured)}&quot;)
+w.out(f&quot;status     : {verdict.status}&quot;)
+w.out(f&quot;route      : {verdict.route}&quot;)
+w.out(f&quot;mediators  : {sorted(verdict.mediators)}&quot;)
+w.out(f&quot;graph hash : {verdict.graph_hash[:16]}...&quot;)
+w.say(&quot;&quot;&quot;The route works by splitting the problem in two. Exposure to mediator is
+    unconfounded, because the hidden common cause does not touch the mediator
+    directly. Mediator to outcome is deconfoundable by conditioning on the exposure.
+    Neither half needs the confounder, so their product does not either — this is the
+    structure behind the smoking-tar-cancer argument.&quot;&quot;&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Estimate it both ways on the same 8,000 people&quot;,
+    why=&quot;&quot;&quot;The naive regression is what a careful analyst would report from these
+        columns if nobody had drawn the graph, and it is confidently wrong. The
+        front-door estimate uses no additional data at all — same rows, same columns
+        — only the structural claim.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Reporting the front-door number alone. The distance between the two is
+        the size of the confounding, which is a quantity the study can now put a
+        number on despite never having measured the confounder.&quot;&quot;&quot;,
+)
+frame = world.observed(world.simulate(N, seed=SEED))
+truth = world.total_effect(&quot;X&quot;, &quot;Y&quot;)
+naive = ols(frame, &quot;Y&quot;, &quot;X&quot;)
+front = frontdoor_linear(frame, &quot;Y&quot;, &quot;X&quot;, mediators=sorted(verdict.mediators))
+
+rows = []
+for label, est in ((&quot;naive (confounded)&quot;, naive), (&quot;front-door&quot;, front)):
+    ci = est.ci(0.95)
+    w.out(
+        f&quot;{label:20s} {est.estimate:6.3f} +/- {est.se:.3f}  &quot;
+        f&quot;[{ci.lower:6.3f}, {ci.upper:6.3f}]  error {est.estimate - truth:+.3f}&quot;
+    )
+    rows.append(
+        {
+            &quot;label&quot;: label,
+            &quot;estimate&quot;: est.estimate,
+            &quot;lower&quot;: ci.lower,
+            &quot;upper&quot;: ci.upper,
+            &quot;note&quot;: f&quot;standard error {est.se:.3f}&quot;,
+            &quot;bad&quot;: abs(est.estimate - truth) &gt; 2 * est.se,
+        }
+    )
+w.out(f&quot;{&#x27;truth&#x27;:20s} {truth:6.3f}&quot;)
+w.figure(
+    &quot;estimates&quot;,
+    kind=&quot;intervals&quot;,
+    data={&quot;rows&quot;: rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: truth,
+        &quot;truthLabel&quot;: &quot;the truth&quot;,
+        &quot;xLabel&quot;: &quot;effect of the exposure on disease risk&quot;,
+        &quot;labelWidth&quot;: 155,
+        &quot;rowHeight&quot;: 38,
+    },
+    title=&quot;Same rows, same columns, one structural claim apart&quot;,
+    note=&quot;&quot;&quot;No covariate adjustment could have produced the lower interval, because
+        the confounder is not in the data. What produced it was a claim about how the
+        world is wired.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Break the claim on purpose and watch the route disappear&quot;,
+    why=&quot;&quot;&quot;A load-bearing assumption should be shown bearing the load. Adding a
+        direct exposure-to-outcome edge — a second pathway that skips the mediator —
+        leaves a graph with no identifying route at all, and identify() says so
+        rather than falling back on the front-door formula regardless.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Testing the assumption against the data. It cannot be tested against
+        the data: both graphs imply the same joint distribution over the measured
+        variables here. That is exactly why it has to be argued substantively and
+        recorded explicitly.&quot;&quot;&quot;,
+)
+also_direct = CausalGraph.from_edges(&quot;X -&gt; M, M -&gt; Y, X -&gt; Y, X &lt;-&gt; Y&quot;)
+blocked = identify(also_direct, &quot;X&quot;, &quot;Y&quot;)
+w.out(f&quot;graph  : {also_direct.to_text()}&quot;)
+w.out(f&quot;status : {blocked.status}&quot;)
+w.out(f&quot;reason : {blocked.verdict.reason}&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;And measure what believing it wrongly would cost&quot;,
+    why=&quot;&quot;&quot;Refusing on a graph is one thing; knowing the size of the mistake is
+        another. Here the same analysis runs on a family of worlds that each have a
+        small direct path the analyst does not know about, so the exclusion claim is
+        false by a controlled amount. The front-door estimator keeps returning the
+        mediated part and misses the direct part entirely.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Treating the assumption as binary — &#x27;it holds&#x27; or &#x27;the analysis is
+        invalid&#x27;. Assumptions fail by degrees, and an estimator that degrades
+        smoothly is usable under a claim that is nearly true, which is the only kind
+        of claim epidemiology ever gets.&quot;&quot;&quot;,
+)
+leaks = [0.0, 0.1, 0.2, 0.35, 0.5, 0.75, 1.0]
+truths, estimates = [], []
+for leak in leaks:
+    leaky = LinearSCM.from_text(
+        f&quot;X -&gt; M: 1.2, M -&gt; Y: 1.5, X -&gt; Y: {leak}, X &lt;-&gt; Y: 1.0&quot;, name=&quot;leaky&quot;
+    )
+    leaky_frame = leaky.observed(leaky.simulate(N, seed=SEED))
+    truths.append(float(leaky.total_effect(&quot;X&quot;, &quot;Y&quot;)))
+    estimates.append(float(frontdoor_linear(leaky_frame, &quot;Y&quot;, &quot;X&quot;, mediators=[&quot;M&quot;]).estimate))
+w.table(
+    [&quot;hidden direct path&quot;, &quot;true total effect&quot;, &quot;front-door says&quot;, &quot;error&quot;],
+    [
+        [f&quot;{d:.2f}&quot;, f&quot;{t:.3f}&quot;, f&quot;{e:.3f}&quot;, f&quot;{e - t:+.3f}&quot;]
+        for d, t, e in zip(leaks, truths, estimates, strict=True)
+    ],
+)
+w.figure(
+    &quot;leak&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;leak&quot;: leaks, &quot;truth&quot;: truths, &quot;estimate&quot;: estimates},
+    opt={
+        &quot;series&quot;: [
+            {&quot;label&quot;: &quot;the truth&quot;, &quot;x&quot;: &quot;@leak&quot;, &quot;y&quot;: &quot;@truth&quot;, &quot;colour&quot;: &quot;ink-2&quot;},
+            {&quot;label&quot;: &quot;front-door&quot;, &quot;x&quot;: &quot;@leak&quot;, &quot;y&quot;: &quot;@estimate&quot;, &quot;colour&quot;: &quot;accent&quot;},
+        ],
+        &quot;xLabel&quot;: &quot;strength of the direct path the analyst assumed away&quot;,
+        &quot;yLabel&quot;: &quot;total effect&quot;,
+        &quot;height&quot;: 300,
+        &quot;rightPad&quot;: 90,
+    },
+    title=&quot;How wrong the answer gets as the exclusion claim fails&quot;,
+    note=&quot;&quot;&quot;The front-door line is flat: it recovers the mediated part correctly and
+        is blind to everything else, so the error is exactly the size of the path
+        that was assumed away. That is a good failure mode — it is bounded by
+        something a subject expert can reason about.&quot;&quot;&quot;,
+    legend=((&quot;ink-2&quot;, &quot;true total effect&quot;), (&quot;accent&quot;, &quot;what front-door returns&quot;)),
+)
+
+# ----------------------------------------------------------------------------------
+
+w.finding(f&quot;&quot;&quot;The naive estimate was {naive.estimate:.2f} against a truth of {truth:.2f};
+    the front-door estimate was {front.estimate:.2f}. Nothing was measured in between.
+    The gap of {naive.estimate - truth:+.2f} is the confounding, now quantified by a
+    study that never observed the confounder.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;What made it recoverable was a structural claim, not a better estimator. That
+    is the pattern worth taking away: when the answer is not identified from what you
+    measured, the fix is a defensible claim about the world or a new measurement.
+    A more elaborate fit is never the fix, because the problem is not in the
+    fitting.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;And the claim really is load-bearing. Add a direct edge and the graph offers
+    no route at all; leave the edge in the world but out of the analysis and the
+    error is the size of the edge — {estimates[-1] - truths[-1]:+.2f} when the direct
+    path is as strong as {leaks[-1]:.1f}. Both behaviours are what you want: refuse
+    when the structure is wrong, degrade proportionally when it is only slightly
+    wrong.&quot;&quot;&quot;)</pre>
+          </div>
+          <div class="out">
+            <div class="out-h">stdout, captured on this build</div>
+            <pre>========================================================================================
+EPIDEMIOLOGY  ---  Recovering an effect nothing in the data can deconfound
+========================================================================================
+  Lifestyle and genetics drive both the exposure and the disease, and nobody measured
+  them. No covariate adjustment can work. Is the effect gone, or is there another way
+  in?
+
+----------------------------------------------------------------------------------------
+STEP 1  First establish that the obvious route is genuinely closed
+----------------------------------------------------------------------------------------
+  Before reaching for anything clever it is worth confirming there is nothing to be had
+  the ordinary way. On a graph with only the exposure, the outcome and an unmeasured
+  common cause, identify() refuses — and the refusal is typed, with a reason, rather
+  than being an empty result the caller has to interpret.
+
+  INSTEAD OF: Assuming the problem is a missing covariate and going looking for proxies.
+  Proxies for an unmeasured confounder do not close the back door unless they close it
+  completely, and &#x27;we adjusted for a rich set of covariates&#x27; is the sentence that most
+  often stands in for a route nobody checked.
+
+  graph  : X -&gt; Y, X &lt;-&gt; Y
+  status : blocked
+  reason : no back-door, front-door, or instrumental route exists in the graph
+
+----------------------------------------------------------------------------------------
+STEP 2  Add the one structural claim that changes everything
+----------------------------------------------------------------------------------------
+  The claim is that the exposure reaches the outcome only through a measured
+  intermediate — a biomarker, a deposited dose. That is not an extra assumption axiom
+  bolts on; it IS the graph, and the graph is hashed into the verdict, so a result can
+  never later be quoted against a different one. With the mediator present the front-
+  door route opens and the effect becomes recoverable despite the confounder still being
+  invisible.
+
+  INSTEAD OF: An instrument. It would work too, but it requires finding something that
+  moves the exposure and touches the outcome no other way — and in observational
+  epidemiology that thing usually does not exist, while the mediator often has already
+  been measured for other reasons.
+
+  graph      : M -&gt; Y, X -&gt; M, X &lt;-&gt; Y
+  measured   : [&#x27;M&#x27;, &#x27;X&#x27;, &#x27;Y&#x27;]
+  status     : identified
+  route      : frontdoor
+  mediators  : [&#x27;M&#x27;]
+  graph hash : 816f14bebf6c0f74...
+  The route works by splitting the problem in two. Exposure to mediator is unconfounded,
+  because the hidden common cause does not touch the mediator directly. Mediator to
+  outcome is deconfoundable by conditioning on the exposure. Neither half needs the
+  confounder, so their product does not either — this is the structure behind the
+  smoking-tar-cancer argument.
+
+
+----------------------------------------------------------------------------------------
+STEP 3  Estimate it both ways on the same 8,000 people
+----------------------------------------------------------------------------------------
+  The naive regression is what a careful analyst would report from these columns if
+  nobody had drawn the graph, and it is confidently wrong. The front-door estimate uses
+  no additional data at all — same rows, same columns — only the structural claim.
+
+  INSTEAD OF: Reporting the front-door number alone. The distance between the two is the
+  size of the confounding, which is a quantity the study can now put a number on despite
+  never having measured the confounder.
+
+  naive (confounded)    2.296 +/- 0.015  [ 2.266,  2.327]  error +0.496
+  front-door            1.810 +/- 0.020  [ 1.770,  1.850]  error +0.010
+  truth                 1.800
+  [figure: Same rows, same columns, one structural claim apart]
+
+
+----------------------------------------------------------------------------------------
+STEP 4  Break the claim on purpose and watch the route disappear
+----------------------------------------------------------------------------------------
+  A load-bearing assumption should be shown bearing the load. Adding a direct exposure-
+  to-outcome edge — a second pathway that skips the mediator — leaves a graph with no
+  identifying route at all, and identify() says so rather than falling back on the
+  front-door formula regardless.
+
+  INSTEAD OF: Testing the assumption against the data. It cannot be tested against the
+  data: both graphs imply the same joint distribution over the measured variables here.
+  That is exactly why it has to be argued substantively and recorded explicitly.
+
+  graph  : M -&gt; Y, X -&gt; M, X -&gt; Y, X &lt;-&gt; Y
+  status : blocked
+  reason : no back-door, front-door, or instrumental route exists in the graph
+
+----------------------------------------------------------------------------------------
+STEP 5  And measure what believing it wrongly would cost
+----------------------------------------------------------------------------------------
+  Refusing on a graph is one thing; knowing the size of the mistake is another. Here the
+  same analysis runs on a family of worlds that each have a small direct path the
+  analyst does not know about, so the exclusion claim is false by a controlled amount.
+  The front-door estimator keeps returning the mediated part and misses the direct part
+  entirely.
+
+  INSTEAD OF: Treating the assumption as binary — &#x27;it holds&#x27; or &#x27;the analysis is
+  invalid&#x27;. Assumptions fail by degrees, and an estimator that degrades smoothly is
+  usable under a claim that is nearly true, which is the only kind of claim epidemiology
+  ever gets.
+
+  hidden direct path  true total effect  front-door says  error
+  ------------------  -----------------  ---------------  ------
+  0.00                1.800              1.810            +0.010
+  0.10                1.900              1.810            -0.090
+  0.20                2.000              1.810            -0.190
+  0.35                2.150              1.810            -0.340
+  0.50                2.300              1.810            -0.490
+  0.75                2.550              1.810            -0.740
+  1.00                2.800              1.810            -0.990
+
+  [figure: How wrong the answer gets as the exclusion claim fails]
+
+
+========================================================================================
+WHAT IT ACTUALLY SHOWED
+========================================================================================
+  The naive estimate was 2.30 against a truth of 1.80; the front-door estimate was 1.81.
+  Nothing was measured in between. The gap of +0.50 is the confounding, now quantified
+  by a study that never observed the confounder.
+
+  What made it recoverable was a structural claim, not a better estimator. That is the
+  pattern worth taking away: when the answer is not identified from what you measured,
+  the fix is a defensible claim about the world or a new measurement. A more elaborate
+  fit is never the fix, because the problem is not in the fitting.
+
+  And the claim really is load-bearing. Add a direct edge and the graph offers no route
+  at all; leave the edge in the world but out of the analysis and the error is the size
+  of the edge — -0.99 when the direct path is as strong as 1.0. Both behaviours are what
+  you want: refuse when the structure is wrong, degrade proportionally when it is only
+  slightly wrong.</pre>
+          </div>
+        </div>
+      </div>
+    </details>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="example-03-education-selection-bias.html">&larr; 03 · Education</a><a class="btn btn-2" href="examples.html">All twelve</a><a class="btn btn-2" href="example-05-ecology-transport.html">05 · Conservation ecology &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

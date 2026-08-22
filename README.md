@@ -14,11 +14,14 @@ datasets, reproduced end to end: R `metafor` on the BCG vaccine trials, NIST
 certified values for a nonlinear fit, Cinelli & Hazlett (2020) on Darfur, and the
 LaLonde/Dehejia–Wahba experimental benchmark. Worst relative disagreement 6×10⁻³.
 
-🧪 **[Twelve runnable examples →](examples/)** — the same library across agronomy,
+🧪 **[Twelve worked examples →](examples/)** — the same library across agronomy,
 labour economics, education, epidemiology, conservation ecology, public health,
 clinical research, energy, process engineering, marketing, behavioural science and
-product analytics. `python examples/run_all.py` runs all of them in about thirty
-seconds on the core install.
+product analytics. Each is a narrated walkthrough rather than a listing: every step
+says why it is the necessary step and what was rejected to get there, and each ends
+with what the run actually showed — which is not always what the setup pointed at.
+`python examples/run_all.py` runs all of them in about a minute on the core
+install.
 
 Four pillars, one vocabulary:
 

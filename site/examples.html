@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Examples — the same library, twelve fields · axiom</title>
-<meta name="description" content="Twelve runnable examples across agronomy, economics, education, epidemiology, ecology, public health, clinical research, energy, process engineering, marketing, behavioural science and product analytics — each with its real captured output.">
+<meta name="description" content="Twelve worked examples across agronomy, economics, education, epidemiology, ecology, public health, clinical research, energy, process engineering, marketing, behavioural science and product analytics — each a step-by-step walkthrough with charts, the code for every step, and the reasoning behind it.">
 <meta property="og:title" content="Examples — the same library, twelve fields · axiom">
-<meta property="og:description" content="Twelve runnable examples across agronomy, economics, education, epidemiology, ecology, public health, clinical research, energy, process engineering, marketing, behavioural science and product analytics — each with its real captured output.">
+<meta property="og:description" content="Twelve worked examples across agronomy, economics, education, epidemiology, ecology, public health, clinical research, energy, process engineering, marketing, behavioural science and product analytics — each a step-by-step walkthrough with charts, the code for every step, and the reasoning behind it.">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,12 +47,17 @@
       checkout page are the same mathematics wearing different words. That is the whole
       reason axiom's core has no domain in it — the nouns are treatment, dose, unit,
       outcome and covariate, and marketing is one adapter rather than the subject.
-      These 12 scripts are the argument for why that was worth doing.</p>
-    <p class="prose small muted">Every one runs against a synthetic world whose truth is
-      known, so the numbers can be checked rather than admired. The output shown below each
-      one was captured by running it, not transcribed. Together they are
-      1417 lines and take 29 seconds.</p>
+      These 12 walkthroughs are the argument for why that was worth doing.</p>
+    <p class="prose small muted">Each one is a worked argument rather than a listing:
+      66 steps in total, every one saying why it is the necessary
+      step and what was rejected to get there, with 43 charts and
+      the exact code and output each step produced. Every one runs against a synthetic
+      world whose truth is known, so the numbers can be checked rather than admired.
+      Together they are 3904 lines and take
+      47 seconds.</p>
     <div class="hero-cta">
+      <a class="btn btn-1" href="example-01-agriculture-response-surface.html">Start with
+        agronomy</a>
       <a class="btn btn-2" href="https://github.com/redam94/axiom/tree/main/examples">Browse
         the source on GitHub →</a>
     </div>
@@ -63,15 +68,17 @@
   <div class="wrap">
     <div class="section-head">
       <p class="eyebrow">Run them</p>
-      <h2>Core install, no sampler, thirty seconds</h2>
-      <p>Nothing here needs an extra. All of it works on the four core dependencies.</p>
+      <h2>Core install, no sampler, one command</h2>
+      <p>Nothing here needs an extra. All of it works on the four core dependencies, and
+        each script narrates itself at the terminal exactly as it does on these pages —
+        the walkthrough is the program, not a write-up of it.</p>
     </div>
     <div class="code" style="max-width:var(--measure)">
       <div class="code-h"><span>shell</span>
         <button class="copy" type="button">Copy</button></div>
       <pre>pip install axiom
 
-python examples/run_all.py            <span class="c"># all 12, about 29 seconds</span>
+python examples/run_all.py            <span class="c"># all 12, about 47 seconds</span>
 python examples/run_all.py 07 12      <span class="c"># just those two</span>
 python examples/07_clinical_rwe_calibration.py</pre>
     </div>
@@ -88,7 +95,7 @@ python examples/07_clinical_rwe_calibration.py</pre>
     </div>
 
     <div class="cards">
-      <a class="card" href="#06_public_health_cluster_trial">
+      <a class="card" href="example-06-public-health-cluster-trial.html">
         <p class="card-n">06 · PUBLIC HEALTH</p>
         <h3>Grouping beats counting</h3>
         <p>The same 1,600 children give 55% power or 99% power depending only on how they
@@ -96,14 +103,14 @@ python examples/07_clinical_rwe_calibration.py</pre>
           cluster count.</p>
         <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
       </a>
-      <a class="card" href="#12_software_experiment_value">
+      <a class="card" href="example-12-software-experiment-value.html">
         <p class="card-n">12 · PRODUCT ANALYTICS</p>
         <h3>The worst-powered design wins</h3>
         <p>A design with 0.65 power nets the most; the one with power 1.00 is
           net-negative once you count the upside withheld from the holdout arm.</p>
         <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
       </a>
-      <a class="card" href="#09_manufacturing_steepest_ascent">
+      <a class="card" href="example-09-manufacturing-steepest-ascent.html">
         <p class="card-n">09 · PROCESS ENGINEERING</p>
         <h3>The optimum is out of bounds</h3>
         <p>The unconstrained peak sits outside what the plant can physically run, so the
@@ -111,7 +118,7 @@ python examples/07_clinical_rwe_calibration.py</pre>
           engineering.</p>
         <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
       </a>
-      <a class="card" href="#07_clinical_rwe_calibration">
+      <a class="card" href="example-07-clinical-rwe-calibration.html">
         <p class="card-n">07 · CLINICAL RESEARCH</p>
         <h3>Nearly right, still overconfident</h3>
         <p>Calibration removes most of the confounding bias and the resulting model is
@@ -119,7 +126,7 @@ python examples/07_clinical_rwe_calibration.py</pre>
           truth exists to catch.</p>
         <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
       </a>
-      <a class="card" href="#10_marketing_saturation">
+      <a class="card" href="example-10-marketing-saturation.html">
         <p class="card-n">10 · MARKETING</p>
         <h3>Which side of the bend?</h3>
         <p>A Hill curve is S-shaped, not merely concave, so the next unit of spend can
@@ -127,7 +134,7 @@ python examples/07_clinical_rwe_calibration.py</pre>
           whether you are under- or over-invested.</p>
         <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
       </a>
-      <a class="card" href="#04_epidemiology_frontdoor">
+      <a class="card" href="example-04-epidemiology-frontdoor.html">
         <p class="card-n">04 · EPIDEMIOLOGY</p>
         <h3>Recovering the unrecoverable</h3>
         <p>No covariate adjustment could work — the confounder was never measured. A
@@ -143,2110 +150,121 @@ python examples/07_clinical_rwe_calibration.py</pre>
   <div class="wrap">
     <div class="section-head">
       <p class="eyebrow">All 12</p>
-      <h2>Every example, with what it printed</h2>
-      <p>Expand any one to read its framing, its full source, and the exact output it
-        produced on this build.</p>
+      <h2>Every example, step by step</h2>
+      <p>Each opens on its own page: the framing, then one section per step with the
+        reasoning, the alternative that was rejected, the code that ran, the charts it
+        produced and the output it printed — ending with what the run actually showed,
+        which is not always what the setup pointed at.</p>
     </div>
-    <div class="ex-list">
-      <article class="ex" id="01_agriculture_response_surface">
-  <div class="ex-head">
-    <p class="ex-n">01 &middot; AGRONOMY</p>
-    <h3>Nitrogen and irrigation, and where the yield actually peaks.</h3>
-    <p class="ex-q">Where does yield peak in nitrogen and irrigation, and how should a rationed budget be split?</p>
-    <div class="ex-meta"><a class="pkg" href="surface.html">Surface</a>
-      <span class="pkg">100 lines</span>
-      <span class="pkg">runs in 3.4s</span></div>
+    <div class="cards"><a class="card" href="example-01-agriculture-response-surface.html">
+  <p class="card-n">01 · AGRONOMY</p>
+  <h3>Where the yield actually peaks</h3>
+  <p>Where does yield peak in nitrogen and irrigation, and how should a rationed budget be split?</p>
+  <div class="card-f">
+    <p class="card-go">7 steps, 6 figures
+      <span aria-hidden="true">→</span></p>
+    <p class="card-stat"><small>Surface</small></p>
   </div>
-  <details class="ex-more">
-    <summary>Read the framing, the code, and what it printed</summary>
-    <div class="ex-body">
-      <div class="ex-framing"><p>The question
-    A field trial varies nitrogen (kg/ha) and irrigation (mm) across plots. Yield
-    responds to both, and saturates in both. Where is the optimum, and if water is
-    rationed, how should the remaining budget be split?</p><p>Why a response surface and not a regression
-    Fitting a straight line to a saturating response puts the predicted optimum at
-    whichever corner of the design happens to be highest. The whole point of the
-    surface layer is to keep the curvature, so the optimizer is asked about the
-    shape the data actually support.</p><p>Pillars: surface (kernels, allocation, frontier)</p></div>
-      <div class="pair">
-        <div class="code">
-          <div class="code-h"><span>examples/01_agriculture_response_surface.py</span>
-            <button class="copy" type="button">Copy</button></div>
-          <pre>from axiom.sim import arms_world
-from axiom.surface import (
-    Bounds,
-    HillKernel,
-    allocate,
-    central_composite,
-    fit,
-    frontier,
-    response_band,
-)
-
-SEED = 0
-
-# The dose box: nitrogen 0-200 kg/ha, irrigation 0-120 mm.
-bounds = Bounds(treatments=(&quot;nitrogen&quot;, &quot;irrigation&quot;), low=(0.0, 0.0), high=(200.0, 120.0))
-
-# A rotatable central composite design spends its plots where curvature is
-# estimable, rather than spreading them evenly and learning the shape badly.
-design = central_composite(bounds, alpha=&quot;rotatable&quot;, center_points=4, inscribed=True)
-print(f&quot;design: {design.kind}, {design.n} plots&quot;)
-print(design.as_frame().round(1).to_string(index=False))
-
-# A synthetic field whose truth we know, so recovery is checkable.
-truth = {
-    &quot;alpha&quot;: 3.0,  # baseline yield, t/ha
-    &quot;beta_nitrogen&quot;: 4.2,
-    &quot;k_nitrogen&quot;: 90.0,
-    &quot;s_nitrogen&quot;: 2.0,
-    &quot;beta_irrigation&quot;: 2.6,
-    &quot;k_irrigation&quot;: 45.0,
-    &quot;s_irrigation&quot;: 1.6,
-}
-field = arms_world(
-    n_units=design.n,
-    treatments=(&quot;nitrogen&quot;, &quot;irrigation&quot;),
-    kernels={
-        &quot;nitrogen&quot;: HillKernel(reference_dose=90.0, amplitude_scale=5.0),
-        &quot;irrigation&quot;: HillKernel(reference_dose=45.0, amplitude_scale=5.0),
-    },
-    doses=design.doses(),
-    truth=truth,
-    noise_sd=0.35,
-    seed=SEED,
-)
-
-result = fit(field.spec, field.panel, backend=&quot;laplace&quot;, draws=2000, seed=SEED)
-print(f&quot;\nconverged: {result.converged}&quot;)
-
-posterior = result.posterior
-theta = {name: float(posterior.summary(name).mean) for name in posterior.names()}
-print(&quot;\nparameter recovery (90% HDI):&quot;)
-for name in (&quot;beta_nitrogen&quot;, &quot;k_nitrogen&quot;, &quot;beta_irrigation&quot;, &quot;k_irrigation&quot;):
-    s = posterior.summary(name, definition=&quot;hdi&quot;, mass=0.9)
-    inside = s.interval.lower &lt;= truth[name] &lt;= s.interval.upper
-    print(
-        f&quot;  {name:16s} truth {truth[name]:6.1f}   mean {s.mean:6.1f}   &quot;
-        f&quot;{s.interval}  {&#x27;ok&#x27; if inside else &#x27;MISSED&#x27;}&quot;
-    )
-
-# Where does the response flatten out? The band is every posterior draw pushed
-# through the same forward() the likelihood used.
-band = response_band(result, &quot;nitrogen&quot;, n_grid=9, mass=0.9, seed=SEED)
-print(&quot;\nyield against nitrogen (irrigation at its observed levels):&quot;)
-for dose, mean, lo, hi in zip(band.doses, band.mean, band.lower, band.upper, strict=True):
-    print(f&quot;  {dose:6.1f} kg/ha   {mean:5.2f} t/ha   [{lo:5.2f}, {hi:5.2f}]&quot;)
-
-# Irrigation is rationed. Split a fixed total across the two inputs.
-WATER_LIMITED = Bounds(treatments=(&quot;nitrogen&quot;, &quot;irrigation&quot;), low=(0.0, 0.0), high=(200.0, 60.0))
-plan = allocate(
-    result.surface, posterior, budget=180.0, bounds=WATER_LIMITED, objective=&quot;mean&quot;, seed=SEED
-)
-print(&quot;\nbest split of a 180-unit input budget under a 60 mm water cap:&quot;)
-print(&quot;  &quot; + &quot;, &quot;.join(f&quot;{k} {v:.1f}&quot; for k, v in plan.doses.items()))
-print(f&quot;  expected yield {plan.expected_outcome:.3f} t/ha  ({plan.status})&quot;)
-
-# What is the next unit of budget worth? The shadow price falls as the surface
-# saturates — which is the number a planner can actually act on.
-budgets = [60.0, 120.0, 180.0, 240.0, 300.0]
-front = frontier(result.surface, theta, budgets=budgets, bounds=WATER_LIMITED, seed=SEED)
-print(&quot;\nbudget frontier:&quot;)
-print(front.as_frame().round(3).to_string(index=False))
-print(&quot;\nshadow price of the next input unit, by budget:&quot;)
-for budget, price in zip(budgets, front.shadow_prices(), strict=True):
-    print(f&quot;  {budget:6.0f}  -&gt;  {price:+.4f} t/ha per unit&quot;)</pre>
-        </div>
-        <div class="out">
-          <div class="out-h">what it printed</div>
-          <pre>design: central_composite, 12 plots
- nitrogen  irrigation
-     29.3        17.6
-    170.7        17.6
-     29.3       102.4
-    170.7       102.4
-      0.0        60.0
-    200.0        60.0
-    100.0         0.0
-    100.0       120.0
-    100.0        60.0
-    100.0        60.0
-    100.0        60.0
-    100.0        60.0
-
-converged: True
-
-parameter recovery (90% HDI):
-  beta_nitrogen    truth    4.2   mean    5.1   [3.88431, 6.33936] (90% HDI)  ok
-  k_nitrogen       truth   90.0   mean  108.2   [75.6466, 137.354] (90% HDI)  ok
-  beta_irrigation  truth    2.6   mean    2.9   [1.58929, 4.09096] (90% HDI)  ok
-  k_irrigation     truth   45.0   mean   76.4   [43.6317, 106.172] (90% HDI)  ok
-
-yield against nitrogen (irrigation at its observed levels):
-     0.0 kg/ha    4.33 t/ha   [ 4.08,  4.58]
-    25.0 kg/ha    4.81 t/ha   [ 4.64,  5.02]
-    50.0 kg/ha    5.52 t/ha   [ 5.35,  5.74]
-    75.0 kg/ha    6.20 t/ha   [ 6.04,  6.39]
-   100.0 kg/ha    6.75 t/ha   [ 6.62,  6.93]
-   125.0 kg/ha    7.19 t/ha   [ 7.07,  7.35]
-   150.0 kg/ha    7.53 t/ha   [ 7.40,  7.69]
-   175.0 kg/ha    7.80 t/ha   [ 7.64,  7.97]
-   200.0 kg/ha    8.01 t/ha   [ 7.80,  8.22]
-
-best split of a 180-unit input budget under a 60 mm water cap:
-  nitrogen 120.0, irrigation 60.0
-  expected yield 7.184 t/ha  (converged)
-
-budget frontier:
- budget  expected_outcome  shadow_price  nitrogen  irrigation
-   60.0             4.654         0.022      60.0         0.0
-  120.0             6.002         0.020     120.0         0.0
-  180.0             7.079         0.016     120.0        60.0
-  240.0             7.862         0.008     180.0        60.0
-  300.0             8.041         0.003     200.0        60.0
-
-shadow price of the next input unit, by budget:
-      60  -&gt;  +0.0225 t/ha per unit
-     120  -&gt;  +0.0202 t/ha per unit
-     180  -&gt;  +0.0155 t/ha per unit
-     240  -&gt;  +0.0080 t/ha per unit
-     300  -&gt;  +0.0030 t/ha per unit</pre>
-        </div>
-      </div>
-    </div>
-  </details>
-</article>
-<article class="ex" id="02_economics_instrument">
-  <div class="ex-head">
-    <p class="ex-n">02 &middot; LABOUR ECONOMICS</p>
-    <h3>Does a training programme raise earnings?</h3>
-    <p class="ex-q">Does a training programme raise earnings, when enrolment is self-selected?</p>
-    <div class="ex-meta"><a class="pkg" href="identify.html">Identify</a>
-      <span class="pkg">73 lines</span>
-      <span class="pkg">runs in 0.8s</span></div>
+</a><a class="card" href="example-02-economics-instrument.html">
+  <p class="card-n">02 · LABOUR ECONOMICS</p>
+  <h3>An effect you can only see sideways</h3>
+  <p>Does a training programme raise earnings, when enrolment is self-selected?</p>
+  <div class="card-f">
+    <p class="card-go">5 steps, 3 figures
+      <span aria-hidden="true">→</span></p>
+    <p class="card-stat"><small>Identify</small></p>
   </div>
-  <details class="ex-more">
-    <summary>Read the framing, the code, and what it printed</summary>
-    <div class="ex-body">
-      <div class="ex-framing"><p>The question
-    Workers choose whether to enrol in a training programme. Enrolment is not
-    random: the same drive and circumstances that lead someone to enrol also raise
-    their earnings directly. Comparing enrolees to non-enrolees measures the
-    programme plus the selection.</p><p>The move
-    Find something that shifts enrolment without touching earnings except through
-    enrolment — distance to the nearest training centre, a lottery, an
-    administrative cutoff. axiom looks for such an instrument in the graph rather
-    than taking one on trust, and checks its relevance instead of assuming it.</p><p>What is not testable
-    Exclusion — that the instrument affects earnings only through enrolment — is an
-    assumption, not a finding. axiom records it as one, in the verdict, unverified,
-    which is where a referee should look first.</p><p>Pillars: identify (instrumental variables)</p></div>
-      <div class="pair">
-        <div class="code">
-          <div class="code-h"><span>examples/02_economics_instrument.py</span>
-            <button class="copy" type="button">Copy</button></div>
-          <pre>from axiom.identify import (
-    identify,
-    ols,
-    two_stage_least_squares,
-    weak_instrument_check,
-)
-from axiom.sim import iv_world
-
-N, SEED = 5_000, 1
-
-world = iv_world()
-print(&quot;graph:&quot;, world.graph.to_text())
-print(&quot;measured:&quot;, sorted(world.graph.measured))
-
-# Ask before estimating: is the effect recoverable, and by what route?
-verdict = identify(world.graph, &quot;X&quot;, &quot;Y&quot;)
-print(f&quot;\nstatus     : {verdict.status}&quot;)
-print(f&quot;route      : {verdict.route}&quot;)
-print(f&quot;instrument : {verdict.instrument}   (found in the graph, not nominated by hand)&quot;)
-for a in verdict.verdict.assumptions:
-    print(f&quot;assumption : {a.name}  [{a.state}]&quot;)
-    print(f&quot;             {a.statement}&quot;)
-    print(f&quot;             challenged by: {a.challenged_by}&quot;)
-
-frame = world.observed(world.simulate(N, seed=SEED))
-truth = world.total_effect(&quot;X&quot;, &quot;Y&quot;)
-
-naive = ols(frame, &quot;Y&quot;, &quot;X&quot;)
-iv = two_stage_least_squares(frame, &quot;Y&quot;, &quot;X&quot;, instruments=[verdict.instrument])
-
-print(f&quot;\ntruth                       {truth:6.3f}&quot;)
-for label, est in ((&quot;naive OLS&quot;, naive), (&quot;2SLS&quot;, iv)):
-    ci = est.ci(0.95)
-    print(
-        f&quot;{label:26s}  {est.estimate:6.3f} +/- {est.se:.3f}   &quot;
-        f&quot;[{ci.lower:6.3f}, {ci.upper:6.3f}]   error {est.estimate - truth:+.3f}&quot;
-    )
-
-# A weak instrument is its own source of bias, so relevance is checked rather
-# than assumed. The first-stage F is the diagnostic.
-relevance = weak_instrument_check(iv)
-print(f&quot;\nfirst-stage F = {iv.detail[&#x27;first_stage_f&#x27;]:.1f}&quot;)
-print(f&quot;relevance     : {relevance.name} -&gt; {relevance.state}&quot;)
-
-print(&quot;&quot;&quot;
-Reading it
-    OLS overstates the programme by the selection it cannot see, and no sample
-    size fixes that -- the bias does not shrink with n. 2SLS recovers the effect
-    because the instrument moves enrolment for reasons unrelated to earnings.
-    What you are buying with 2SLS is a much wider interval: the honest price of
-    only using the part of the variation you can defend.&quot;&quot;&quot;)</pre>
-        </div>
-        <div class="out">
-          <div class="out-h">what it printed</div>
-          <pre>graph: X -&gt; Y, Z -&gt; X, X &lt;-&gt; Y
-measured: [&#x27;X&#x27;, &#x27;Y&#x27;, &#x27;Z&#x27;]
-
-status     : downgraded
-route      : instrument
-instrument : Z   (found in the graph, not nominated by hand)
-assumption : exclusion  [satisfied]
-             Z affects Y only through X
-             challenged by: a direct or confounded path in the graph
-assumption : relevance  [unverified]
-             Z is associated with X (first-stage strength)
-             challenged by: first-stage F below 10
-assumption : effect_homogeneity_or_monotonicity  [unverified]
-             the IV estimand equals the average effect (homogeneous/linear effect) or is read as a LATE under monotonicity
-             challenged by: heterogeneous effects; defiers
-
-truth                        2.000
-naive OLS                    2.347 +/- 0.011   [ 2.326,  2.367]   error +0.347
-2SLS                         1.999 +/- 0.021   [ 1.958,  2.040]   error -0.001
-
-first-stage F = 2214.6
-relevance     : instrument_strength -&gt; satisfied
-
-Reading it
-    OLS overstates the programme by the selection it cannot see, and no sample
-    size fixes that -- the bias does not shrink with n. 2SLS recovers the effect
-    because the instrument moves enrolment for reasons unrelated to earnings.
-    What you are buying with 2SLS is a much wider interval: the honest price of
-    only using the part of the variation you can defend.</pre>
-        </div>
-      </div>
-    </div>
-  </details>
-</article>
-<article class="ex" id="03_education_selection_bias">
-  <div class="ex-head">
-    <p class="ex-n">03 &middot; EDUCATION</p>
-    <h3>How much tutoring would a confounder have to explain to erase it?</h3>
-    <p class="ex-q">How strong would an unmeasured confounder have to be to erase the tutoring effect?</p>
-    <div class="ex-meta"><a class="pkg" href="identify.html">Identify</a><span class="pkg">Diagnose</span>
-      <span class="pkg">96 lines</span>
-      <span class="pkg">runs in 0.8s</span></div>
+</a><a class="card" href="example-03-education-selection-bias.html">
+  <p class="card-n">03 · EDUCATION</p>
+  <h3>How strong would the thing you cannot see have to be?</h3>
+  <p>How strong would an unmeasured confounder have to be to erase the tutoring effect?</p>
+  <div class="card-f">
+    <p class="card-go">4 steps, 3 figures
+      <span aria-hidden="true">→</span></p>
+    <p class="card-stat"><small>Identify · Diagnose</small></p>
   </div>
-  <details class="ex-more">
-    <summary>Read the framing, the code, and what it printed</summary>
-    <div class="ex-body">
-      <div class="ex-framing"><p>The question
-    Students who take extra tutoring score higher. How much of that is the
-    tutoring? Prior attainment drives both who signs up and how they score, so the
-    raw gap is the programme plus the sorting.</p><p>Two cases, deliberately
-    First: prior attainment is recorded. axiom finds the back-door route, names the
-    set to condition on, and the adjusted estimate lands on the truth.</p><p>Second: it is not recorded -- which is the situation most school datasets are
-    actually in. There is no unbiased estimate to be had. Rather than return one
-    anyway, axiom downgrades the verdict, and the honest remaining move is to say
-    how strong an unmeasured confounder would have to be to overturn the finding,
-    and let a reader judge whether one that strong is plausible.</p><p>Pillars: identify (back-door), diagnose (sensitivity analysis)</p></div>
-      <div class="pair">
-        <div class="code">
-          <div class="code-h"><span>examples/03_education_selection_bias.py</span>
-            <button class="copy" type="button">Copy</button></div>
-          <pre>import numpy as np
-
-from axiom.diagnose import bias_bounds, robustness_value, tipping_point
-from axiom.identify import identify, minimal_adjustment_sets, ols
-from axiom.sim import confounded_world, hidden_confounder_world
-
-N, SEED = 5_000, 0
-
-# --- case one: the confounder is measured ------------------------------------
-world = confounded_world()
-truth = world.total_effect(&quot;X&quot;, &quot;Y&quot;)
-verdict = identify(world.graph, &quot;X&quot;, &quot;Y&quot;)
-
-print(&quot;CASE ONE - prior attainment is recorded&quot;)
-print(f&quot;  graph            : {world.graph.to_text()}&quot;)
-print(f&quot;  status           : {verdict.status} via {verdict.route}&quot;)
-print(f&quot;  condition on     : {sorted(verdict.adjustment_set)}&quot;)
-print(f&quot;  minimal sets     : {[sorted(s) for s in minimal_adjustment_sets(world.graph, &#x27;X&#x27;, &#x27;Y&#x27;)]}&quot;)
-
-frame = world.observed(world.simulate(N, seed=SEED))
-naive = ols(frame, &quot;Y&quot;, &quot;X&quot;)
-adjusted = ols(frame, &quot;Y&quot;, &quot;X&quot;, covariates=verdict.adjustment_set)
-print(f&quot;\n  truth                     {truth:6.3f}&quot;)
-for label, est in ((&quot;raw gap&quot;, naive), (&quot;back-door adjusted&quot;, adjusted)):
-    ci = est.ci(0.95)
-    print(
-        f&quot;  {label:24s}  {est.estimate:6.3f}   [{ci.lower:6.3f}, {ci.upper:6.3f}]   &quot;
-        f&quot;error {est.estimate - truth:+.3f}&quot;
-    )
-
-# --- case two: it is not ------------------------------------------------------
-hidden = hidden_confounder_world()
-hidden_verdict = identify(hidden.graph, &quot;X&quot;, &quot;Y&quot;)
-hidden_frame = hidden.observed(hidden.simulate(N, seed=SEED))
-biased = ols(hidden_frame, &quot;Y&quot;, &quot;X&quot;)
-
-print(&quot;\n\nCASE TWO - prior attainment was never recorded&quot;)
-print(f&quot;  columns you have : {hidden_frame.columns.tolist()}&quot;)
-print(f&quot;  status           : {hidden_verdict.status} ({hidden_verdict.route})&quot;)
-print(f&quot;  would need       : {sorted(hidden_verdict.unmeasured_required)}, which you do not have&quot;)
-print(
-    f&quot;  fitting anyway   : {biased.estimate:.3f} against a truth of {truth:.3f} &quot;
-    f&quot;({biased.estimate - truth:+.3f})&quot;
-)
-
-# How strong would the thing you cannot see have to be?
-df = biased.n - 2
-rv = robustness_value(estimate=biased.estimate, se=biased.se, df=df, q=1.0, alpha=0.05)
-print(f&quot;\n  robustness value : {rv.rv:.1%}&quot;)
-print(f&quot;    an unmeasured confounder would have to explain {rv.rv:.1%} of the residual&quot;)
-print(&quot;    variance in BOTH tutoring and scores to wipe the estimate out entirely.&quot;)
-
-print(&quot;\n  the estimate under a confounder of each strength:&quot;)
-print(f&quot;  {&#x27;benchmark&#x27;:&lt;26}{&#x27;R2 w/ treat&#x27;:&gt;12}{&#x27;R2 w/ outcome&#x27;:&gt;15}{&#x27;adjusted&#x27;:&gt;11}&quot;)
-for label, r2_treat, r2_out in (
-    (&quot;a tenth as strong&quot;, 0.039, 0.056),
-    (&quot;half as strong&quot;, 0.195, 0.281),
-    (&quot;as strong as attainment&quot;, 0.390, 0.562),
-):
-    b = bias_bounds(
-        estimate=biased.estimate, se=biased.se, df=df, r2_yz_dx=r2_out, r2_dz_x=r2_treat, mass=0.95
-    )
-    print(f&quot;  {label:&lt;26}{r2_treat:&gt;12.3f}{r2_out:&gt;15.3f}{b.adjusted_estimate:&gt;11.3f}&quot;)
-
-# And does any of it change the decision that is actually on the table?
-DECISION_THRESHOLD = 1.0
-rng = np.random.default_rng(SEED)
-draws = rng.normal(biased.estimate, biased.se, size=4000)
-tp = tipping_point(draws, DECISION_THRESHOLD, np.linspace(0.0, 2.5, 26), certainty=0.9)
-print(f&quot;\n  decision: fund the programme if the effect exceeds {DECISION_THRESHOLD:.1f}&quot;)
-print(f&quot;    at zero bias      : {tp.decision_at_zero} (P = {tp.probability_at_zero:.3f})&quot;)
-print(f&quot;    flips once bias   : {tp.bias:.1f}&quot;)
-print(f&quot;    real bias here    : {biased.estimate - truth:.3f}&quot;)
-print(&quot;    so on this decision, at this threshold, the confounding is not large&quot;)
-print(&quot;    enough to change the call -- which is a far more useful sentence than&quot;)
-print(&quot;    either &#x27;it is significant&#x27; or &#x27;we cannot know&#x27;.&quot;)</pre>
-        </div>
-        <div class="out">
-          <div class="out-h">what it printed</div>
-          <pre>CASE ONE - prior attainment is recorded
-  graph            : X -&gt; Y, Z -&gt; X, Z -&gt; Y
-  status           : identified via backdoor
-  condition on     : [&#x27;Z&#x27;]
-  minimal sets     : [[&#x27;Z&#x27;]]
-
-  truth                      2.000
-  raw gap                    2.726   [ 2.693,  2.758]   error +0.726
-  back-door adjusted         2.013   [ 1.985,  2.040]   error +0.013
-
-
-CASE TWO - prior attainment was never recorded
-  columns you have : [&#x27;X&#x27;, &#x27;Y&#x27;]
-  status           : downgraded (backdoor_unmeasured)
-  would need       : [&#x27;Z&#x27;], which you do not have
-  fitting anyway   : 2.726 against a truth of 2.000 (+0.726)
-
-  robustness value : 86.2%
-    an unmeasured confounder would have to explain 86.2% of the residual
-    variance in BOTH tutoring and scores to wipe the estimate out entirely.
-
-  the estimate under a confounder of each strength:
-  benchmark                  R2 w/ treat  R2 w/ outcome   adjusted
-  a tenth as strong                0.039          0.056      2.670
-  half as strong                   0.195          0.281      2.419
-  as strong as attainment          0.390          0.562      2.022
-
-  decision: fund the programme if the effect exceeds 1.0
-    at zero bias      : True (P = 1.000)
-    flips once bias   : 1.8
-    real bias here    : 0.726
-    so on this decision, at this threshold, the confounding is not large
-    enough to change the call -- which is a far more useful sentence than
-    either &#x27;it is significant&#x27; or &#x27;we cannot know&#x27;.</pre>
-        </div>
-      </div>
-    </div>
-  </details>
-</article>
-<article class="ex" id="04_epidemiology_frontdoor">
-  <div class="ex-head">
-    <p class="ex-n">04 &middot; EPIDEMIOLOGY</p>
-    <h3>The effect of an exposure you cannot deconfound.</h3>
-    <p class="ex-q">An exposure you cannot deconfound, recovered through a measured mediator.</p>
-    <div class="ex-meta"><a class="pkg" href="identify.html">Identify</a>
-      <span class="pkg">77 lines</span>
-      <span class="pkg">runs in 0.7s</span></div>
+</a><a class="card" href="example-04-epidemiology-frontdoor.html">
+  <p class="card-n">04 · EPIDEMIOLOGY</p>
+  <h3>Recovering an effect nothing in the data can deconfound</h3>
+  <p>An exposure you cannot deconfound, recovered through a measured mediator.</p>
+  <div class="card-f">
+    <p class="card-go">5 steps, 2 figures
+      <span aria-hidden="true">→</span></p>
+    <p class="card-stat"><small>Identify</small></p>
   </div>
-  <details class="ex-more">
-    <summary>Read the framing, the code, and what it printed</summary>
-    <div class="ex-body">
-      <div class="ex-framing"><p>The question
-    Does an exposure raise disease risk? Lifestyle and genetics drive both the
-    exposure and the outcome, and nobody measured them. There is no set of recorded
-    covariates that closes the back door, so back-door adjustment is not available
-    at any sample size.</p><p>The move
-    If the exposure acts entirely through a measured intermediate -- a biomarker,
-    a deposited dose, a mediating physiological quantity -- the effect is still
-    recoverable. The front-door route splits the problem in two: exposure to
-    mediator (unconfounded, because the confounder does not touch the mediator
-    directly), and mediator to outcome (deconfoundable by conditioning on the
-    exposure). This is the structure behind the classic smoking-tar-cancer
-    argument.</p><p>axiom reads the route off the graph and names the mediator, rather than
-    requiring you to know which of the three routes applies before you start.</p><p>Pillars: identify (front-door)</p></div>
-      <div class="pair">
-        <div class="code">
-          <div class="code-h"><span>examples/04_epidemiology_frontdoor.py</span>
-            <button class="copy" type="button">Copy</button></div>
-          <pre>from axiom.identify import CausalGraph, frontdoor_linear, identify, ols
-from axiom.sim import frontdoor_world
-
-N, SEED = 8_000, 0
-
-world = frontdoor_world()
-print(&quot;graph:&quot;, world.graph.to_text())
-print(&quot;measured:&quot;, sorted(world.graph.measured))
-print(&quot;  X &lt;-&gt; Y is an unmeasured common cause: lifestyle, genetics, everything&quot;)
-print(&quot;  nobody wrote down. It is not in the data and never will be.&quot;)
-
-verdict = identify(world.graph, &quot;X&quot;, &quot;Y&quot;)
-print(f&quot;\nstatus    : {verdict.status}&quot;)
-print(f&quot;route     : {verdict.route}&quot;)
-print(f&quot;mediators : {sorted(verdict.mediators)}&quot;)
-print(f&quot;graph hash: {verdict.graph_hash[:16]}...&quot;)
-print(&quot;  The structural claim -- that X reaches Y only through M -- is not a separate&quot;)
-print(&quot;  assumption axiom adds. It IS the graph you drew, and the graph is hashed into&quot;)
-print(&quot;  the verdict, so a result cannot later be quoted against a different one.&quot;)
-
-frame = world.observed(world.simulate(N, seed=SEED))
-truth = world.total_effect(&quot;X&quot;, &quot;Y&quot;)
-
-naive = ols(frame, &quot;Y&quot;, &quot;X&quot;)
-front = frontdoor_linear(frame, &quot;Y&quot;, &quot;X&quot;, mediators=sorted(verdict.mediators))
-
-print(f&quot;\ntruth                        {truth:6.3f}&quot;)
-for label, est in ((&quot;naive (confounded)&quot;, naive), (&quot;front-door&quot;, front)):
-    ci = est.ci(0.95)
-    print(
-        f&quot;{label:26s}   {est.estimate:6.3f} +/- {est.se:.3f}   &quot;
-        f&quot;[{ci.lower:6.3f}, {ci.upper:6.3f}]   error {est.estimate - truth:+.3f}&quot;
-    )
-
-# The structural claim is load-bearing, and you can watch it bear the load: add a
-# direct exposure-to-outcome edge and there is no route left in the graph at all.
-also_direct = CausalGraph.from_edges(&quot;X -&gt; M, M -&gt; Y, X -&gt; Y, X &lt;-&gt; Y&quot;)
-blocked = identify(also_direct, &quot;X&quot;, &quot;Y&quot;)
-print(&quot;\nthe same graph, plus a direct exposure-to-outcome edge:&quot;)
-print(f&quot;  status : {blocked.status}&quot;)
-print(f&quot;  reason : {blocked.verdict.reason}&quot;)
-
-print(&quot;&quot;&quot;
-Reading it
-    No amount of covariate adjustment could have produced the front-door number,
-    because the confounder is not in the data. What made it recoverable was a
-    structural claim -- that the exposure reaches the outcome only through the
-    measured mediator. That claim is the graph, it is a claim about the world
-    rather than about the data, and no fit can check it for you -- which is why
-    the script adds a direct edge above and watches the route disappear.
-
-    That is the pattern worth taking away: when the answer is not identified from
-    what you measured, the fix is a defensible structural assumption or a new
-    measurement, never a more elaborate estimator.&quot;&quot;&quot;)</pre>
-        </div>
-        <div class="out">
-          <div class="out-h">what it printed</div>
-          <pre>graph: M -&gt; Y, X -&gt; M, X &lt;-&gt; Y
-measured: [&#x27;M&#x27;, &#x27;X&#x27;, &#x27;Y&#x27;]
-  X &lt;-&gt; Y is an unmeasured common cause: lifestyle, genetics, everything
-  nobody wrote down. It is not in the data and never will be.
-
-status    : identified
-route     : frontdoor
-mediators : [&#x27;M&#x27;]
-graph hash: 816f14bebf6c0f74...
-  The structural claim -- that X reaches Y only through M -- is not a separate
-  assumption axiom adds. It IS the graph you drew, and the graph is hashed into
-  the verdict, so a result cannot later be quoted against a different one.
-
-truth                         1.800
-naive (confounded)            2.296 +/- 0.015   [ 2.266,  2.327]   error +0.496
-front-door                    1.810 +/- 0.020   [ 1.770,  1.850]   error +0.010
-
-the same graph, plus a direct exposure-to-outcome edge:
-  status : blocked
-  reason : no back-door, front-door, or instrumental route exists in the graph
-
-Reading it
-    No amount of covariate adjustment could have produced the front-door number,
-    because the confounder is not in the data. What made it recoverable was a
-    structural claim -- that the exposure reaches the outcome only through the
-    measured mediator. That claim is the graph, it is a claim about the world
-    rather than about the data, and no fit can check it for you -- which is why
-    the script adds a direct edge above and watches the route disappear.
-
-    That is the pattern worth taking away: when the answer is not identified from
-    what you measured, the fix is a defensible structural assumption or a new
-    measurement, never a more elaborate estimator.</pre>
-        </div>
-      </div>
-    </div>
-  </details>
-</article>
-<article class="ex" id="05_ecology_transport">
-  <div class="ex-head">
-    <p class="ex-n">05 &middot; CONSERVATION ECOLOGY</p>
-    <h3>Does a result from one reserve apply to another?</h3>
-    <p class="ex-q">Does a result from one reserve apply to another, and what must you measure there first?</p>
-    <div class="ex-meta"><a class="pkg" href="identify.html">Identify</a>
-      <span class="pkg">83 lines</span>
-      <span class="pkg">runs in 0.8s</span></div>
+</a><a class="card" href="example-05-ecology-transport.html">
+  <p class="card-n">05 · CONSERVATION ECOLOGY</p>
+  <h3>Borrowing an answer from a reserve you did not study</h3>
+  <p>Does a result from one reserve apply to another, and what must you measure there first?</p>
+  <div class="card-f">
+    <p class="card-go">5 steps, 3 figures
+      <span aria-hidden="true">→</span></p>
+    <p class="card-stat"><small>Identify</small></p>
   </div>
-  <details class="ex-more">
-    <summary>Read the framing, the code, and what it printed</summary>
-    <div class="ex-body">
-      <div class="ex-framing"><p>The question
-    A grazing-exclusion trial ran in one reserve and worked. A second reserve wants
-    to know what to expect. The two differ in rainfall, soil, and the composition of
-    the herbivore community. Is the first reserve&#x27;s number the second reserve&#x27;s
-    number, and if not, what would make it so?</p><p>Why this is not a statistics question
-    No amount of data from the source reserve tells you whether it transports. That
-    depends on *what differs* between the two populations and where those
-    differences sit relative to the causal path. axiom takes a selection diagram --
-    the graph, annotated with where the populations differ -- and reads off whether
-    the effect transports, and what you would have to measure in the target to
-    license it.</p><p>Pillars: identify (transportability)</p></div>
-      <div class="pair">
-        <div class="code">
-          <div class="code-h"><span>examples/05_ecology_transport.py</span>
-            <button class="copy" type="button">Copy</button></div>
-          <pre>from axiom.identify import (
-    directly_transportable,
-    identify,
-    ols,
-    s_admissible_sets,
-    selection_diagram,
-    transport_verdict,
-    trivially_transportable,
-)
-from axiom.sim import transport_pair
-
-N, SEED = 6_000, 0
-
-source, target = transport_pair()
-print(&quot;source reserve:&quot;, source.graph.to_text())
-print(&quot;target reserve:&quot;, target.graph.to_text())
-print(&quot;  the two populations differ in the distribution of Z, not in the mechanism&quot;)
-
-diagram = selection_diagram(source.graph)
-print(f&quot;\nselection diagram: {diagram.to_text()}&quot;)
-
-# Three increasingly demanding questions, all answerable from the diagram alone.
-print(f&quot;\ndirectly transportable  : {directly_transportable(source.graph, &#x27;X&#x27;, &#x27;Y&#x27;)}&quot;)
-print(&quot;   (would mean the source estimate is the target estimate, untouched)&quot;)
-print(f&quot;trivially transportable : {trivially_transportable(source.graph, &#x27;X&#x27;, &#x27;Y&#x27;)}&quot;)
-print(&quot;   (would mean you can get it from target data alone and ignore the source)&quot;)
-
-verdict = transport_verdict(source.graph, &quot;X&quot;, &quot;Y&quot;)
-print(f&quot;\ntransport verdict : {verdict.status}&quot;)
-for field in (&quot;route&quot;, &quot;reason&quot;):
-    value = getattr(verdict, field, None)
-    if value:
-        print(f&quot;  {field:15s}: {value}&quot;)
-
-sets = s_admissible_sets(source.graph, &quot;X&quot;, &quot;Y&quot;)
-print(f&quot;\nS-admissible sets : {[sorted(s) for s in sets]}&quot;)
-print(&quot;  measure these in the TARGET, and the source effect can be re-weighted&quot;)
-print(&quot;  onto the target population. This is the shopping list the second reserve&quot;)
-print(&quot;  needs before it can borrow the first reserve&#x27;s answer.&quot;)
-
-# What it costs to ignore all of this: take the source number at face value.
-source_frame = source.observed(source.simulate(N, seed=SEED))
-target_frame = target.observed(target.simulate(N, seed=SEED + 17))  # a different draw
-
-v = identify(source.graph, &quot;X&quot;, &quot;Y&quot;)
-source_est = ols(source_frame, &quot;Y&quot;, &quot;X&quot;, covariates=v.adjustment_set)
-target_est = ols(target_frame, &quot;Y&quot;, &quot;X&quot;, covariates=v.adjustment_set)
-target_truth = target.total_effect(&quot;X&quot;, &quot;Y&quot;)
-
-print(f&quot;\nsource reserve, adjusted   {source_est.estimate:6.3f} +/- {source_est.se:.3f}&quot;)
-print(f&quot;target reserve, adjusted   {target_est.estimate:6.3f} +/- {target_est.se:.3f}&quot;)
-print(f&quot;target truth               {target_truth:6.3f}&quot;)
-
-print(&quot;&quot;&quot;
-Reading it
-    In this pair the mechanism is shared and only Z&#x27;s distribution differs, so the
-    conditional effect carries across once you condition on the S-admissible set --
-    which is exactly what the verdict says and what the two adjusted estimates
-    show. Change the diagram so the populations differ in how X acts rather than
-    in who is in them, and the same call refuses instead.
-
-    The useful output is not the number. It is the shopping list: transport is a
-    claim about which covariates you collected in the new site, decided before
-    anyone flies out there.&quot;&quot;&quot;)</pre>
-        </div>
-        <div class="out">
-          <div class="out-h">what it printed</div>
-          <pre>source reserve: X -&gt; Y, Z -&gt; X, Z -&gt; Y
-target reserve: X -&gt; Y, Z -&gt; X, Z -&gt; Y
-  the two populations differ in the distribution of Z, not in the mechanism
-
-selection diagram: S[Z] -&gt; Z, X -&gt; Y, Z -&gt; X, Z -&gt; Y
-
-directly transportable  : False
-   (would mean the source estimate is the target estimate, untouched)
-trivially transportable : True
-   (would mean you can get it from target data alone and ignore the source)
-
-transport verdict : identified
-  route          : s_admissible_adjustment
-
-S-admissible sets : [[&#x27;Z&#x27;]]
-  measure these in the TARGET, and the source effect can be re-weighted
-  onto the target population. This is the shopping list the second reserve
-  needs before it can borrow the first reserve&#x27;s answer.
-
-source reserve, adjusted    2.004 +/- 0.013
-target reserve, adjusted    2.002 +/- 0.013
-target truth                2.000
-
-Reading it
-    In this pair the mechanism is shared and only Z&#x27;s distribution differs, so the
-    conditional effect carries across once you condition on the S-admissible set --
-    which is exactly what the verdict says and what the two adjusted estimates
-    show. Change the diagram so the populations differ in how X acts rather than
-    in who is in them, and the same call refuses instead.
-
-    The useful output is not the number. It is the shopping list: transport is a
-    claim about which covariates you collected in the new site, decided before
-    anyone flies out there.</pre>
-        </div>
-      </div>
-    </div>
-  </details>
-</article>
-<article class="ex" id="06_public_health_cluster_trial">
-  <div class="ex-head">
-    <p class="ex-n">06 &middot; PUBLIC HEALTH</p>
-    <h3>Sizing a cluster-randomized water and sanitation trial.</h3>
-    <p class="ex-q">Sizing a cluster-randomized trial, where the intra-cluster correlation eats the sample.</p>
-    <div class="ex-meta"><a class="pkg" href="design.html">Design</a>
-      <span class="pkg">86 lines</span>
-      <span class="pkg">runs in 0.8s</span></div>
+</a><a class="card" href="example-06-public-health-cluster-trial.html">
+  <p class="card-n">06 · PUBLIC HEALTH</p>
+  <h3>The same children, worth five times as much</h3>
+  <p>Sizing a cluster-randomized trial, where the intra-cluster correlation eats the sample.</p>
+  <div class="card-f">
+    <p class="card-go">6 steps, 4 figures
+      <span aria-hidden="true">→</span></p>
+    <p class="card-stat"><small>Design</small></p>
   </div>
-  <details class="ex-more">
-    <summary>Read the framing, the code, and what it printed</summary>
-    <div class="ex-body">
-      <div class="ex-framing"><p>The question
-    You cannot randomize a chlorination programme household by household: neighbours
-    share water, share pathogens, and would talk. So you randomize whole villages,
-    and measure children within them.</p><p>The trap
-    Outcomes within a village are correlated. Two hundred children in ten villages
-    are worth far fewer than two hundred independent children, and a trial sized as
-    though they were independent will be badly underpowered while looking fine on
-    paper. The correction is the design effect, and it is brutal: even a small
-    intra-cluster correlation costs you most of your sample when clusters are large.</p><p>Pillars: design (cluster randomization)</p></div>
-      <div class="pair">
-        <div class="code">
-          <div class="code-h"><span>examples/06_public_health_cluster_trial.py</span>
-            <button class="copy" type="button">Copy</button></div>
-          <pre>from axiom.core import Unit
-from axiom.design import (
-    ClusterDesign,
-    cluster_mde,
-    cluster_power,
-    clusters_needed,
-    design_effect,
-    effective_sample_size,
-    sample_size,
-)
-
-OUTCOME_SD = 1.0  # standardized: diarrhoea episodes per child-year
-TARGET_EFFECT = 0.25  # the reduction worth detecting
-ICC = 0.03  # small, and typical for village-level health outcomes
-CLUSTER_SIZE = 40  # children measured per village
-
-# The randomization unit is a village, and axiom wants that said out loud: a
-# ClusterDesign carries the Unit it randomizes, not just the arithmetic.
-VILLAGE = Unit(name=&quot;village&quot;, kind=&quot;cluster&quot;)
-
-# What the naive calculation says, ignoring clustering entirely.
-naive = sample_size(effect=TARGET_EFFECT, sd=OUTCOME_SD, power=0.8, alpha=0.05)
-print(&quot;if children were independent (they are not):&quot;)
-print(f&quot;  n = {naive.n} children ({naive.n_treated} treated / {naive.n_control} control)&quot;)
-print(f&quot;  power {naive.power:.3f}&quot;)
-
-# What clustering actually costs.
-de = design_effect(CLUSTER_SIZE, ICC)
-print(f&quot;\ndesign effect at m = {CLUSTER_SIZE}, ICC = {ICC}:  {de:.2f}x variance inflation&quot;)
-print(f&quot;  an ICC of only {ICC} inflates the variance by {de:.2f} because the clusters&quot;)
-print(&quot;  are large -- the penalty is (m - 1) * ICC, so cluster SIZE is what hurts.&quot;)
-
-need = clusters_needed(
-    effect=TARGET_EFFECT, sd=OUTCOME_SD, cluster_size=CLUSTER_SIZE, icc=ICC, power=0.8, alpha=0.05
-)
-print(
-    f&quot;\nclusters needed: {need.n} villages &quot;
-    f&quot;({need.n_treated} treated / {need.n_control} control)&quot;
-)
-print(f&quot;  that is {need.n * CLUSTER_SIZE:,} children to do the work of {naive.n}&quot;)
-
-ess = effective_sample_size(need.n, CLUSTER_SIZE, ICC)
-print(f&quot;  effective sample size: {ess:.0f} independent observations&quot;)
-
-# The design as an object, so power and MDE are read off the same thing.
-design = ClusterDesign(unit=VILLAGE, n_clusters=need.n, cluster_size=CLUSTER_SIZE, icc=ICC)
-power = cluster_power(design, effect=TARGET_EFFECT, sd=OUTCOME_SD)
-mde = cluster_mde(design, sd=OUTCOME_SD, power=0.8)
-print(f&quot;\nrealized design: {design.n_clusters} clusters of {design.cluster_size}&quot;)
-print(f&quot;  power for an effect of {TARGET_EFFECT}: {power.power:.3f}&quot;)
-print(f&quot;  smallest effect detectable at 80% power: {mde.effect:.3f}&quot;)
-
-# The real design question is not &quot;how many children&quot; but &quot;how to spend a fixed
-# field budget&quot;: more villages, or more children per village?
-print(&quot;\nfewer, larger clusters vs more, smaller ones (about 1,600 children either way):&quot;)
-print(f&quot;  {&#x27;villages&#x27;:&gt;9}{&#x27;per village&#x27;:&gt;13}{&#x27;design effect&#x27;:&gt;15}{&#x27;power&#x27;:&gt;9}&quot;)
-for n_clusters, size in ((10, 160), (20, 80), (40, 40), (80, 20), (160, 10)):
-    d = ClusterDesign(unit=VILLAGE, n_clusters=n_clusters, cluster_size=size, icc=ICC)
-    p = cluster_power(d, effect=TARGET_EFFECT, sd=OUTCOME_SD)
-    print(f&quot;  {n_clusters:&gt;9}{size:&gt;13}{design_effect(size, ICC):&gt;15.2f}{p.power:&gt;9.3f}&quot;)
-
-print(&quot;&quot;&quot;
-Reading it
-    The same number of children bought very different amounts of information. Ten
-    villages of 160 is nearly worthless; 160 villages of 10 is a real trial. Field
-    cost usually runs the other way -- villages are expensive to reach, children
-    within them are cheap -- so this is the trade-off the budget conversation is
-    actually about, and it is worth having before the protocol is written rather
-    than after the results come back inconclusive.&quot;&quot;&quot;)</pre>
-        </div>
-        <div class="out">
-          <div class="out-h">what it printed</div>
-          <pre>if children were independent (they are not):
-  n = 503 children (252 treated / 251 control)
-  power 0.801
-
-design effect at m = 40, ICC = 0.03:  2.17x variance inflation
-  an ICC of only 0.03 inflates the variance by 2.17 because the clusters
-  are large -- the penalty is (m - 1) * ICC, so cluster SIZE is what hurts.
-
-clusters needed: 28 villages (14 treated / 14 control)
-  that is 1,120 children to do the work of 503
-  effective sample size: 516 independent observations
-
-realized design: 28 clusters of 40
-  power for an effect of 0.25: 0.811
-  smallest effect detectable at 80% power: 0.247
-
-fewer, larger clusters vs more, smaller ones (about 1,600 children either way):
-   villages  per village  design effect    power
-         10          160           5.77    0.548
-         20           80           3.37    0.777
-         40           40           2.17    0.924
-         80           20           1.57    0.979
-        160           10           1.27    0.993
-
-Reading it
-    The same number of children bought very different amounts of information. Ten
-    villages of 160 is nearly worthless; 160 villages of 10 is a real trial. Field
-    cost usually runs the other way -- villages are expensive to reach, children
-    within them are cheap -- so this is the trade-off the budget conversation is
-    actually about, and it is worth having before the protocol is written rather
-    than after the results come back inconclusive.</pre>
-        </div>
-      </div>
-    </div>
-  </details>
-</article>
-<article class="ex" id="07_clinical_rwe_calibration">
-  <div class="ex-head">
-    <p class="ex-n">07 &middot; CLINICAL RESEARCH</p>
-    <h3>Using a trial to correct a registry.</h3>
-    <p class="ex-q">Using a small clean trial to correct a large confounded registry.</p>
-    <div class="ex-meta"><a class="pkg" href="calibrate.html">Calibrate</a>
-      <span class="pkg">153 lines</span>
-      <span class="pkg">runs in 5.3s</span></div>
+</a><a class="card" href="example-07-clinical-rwe-calibration.html">
+  <p class="card-n">07 · CLINICAL RESEARCH</p>
+  <h3>Nearly right, and still too sure of itself</h3>
+  <p>Using a small clean trial to correct a large confounded registry.</p>
+  <div class="card-f">
+    <p class="card-go">6 steps, 4 figures
+      <span aria-hidden="true">→</span></p>
+    <p class="card-stat"><small>Calibrate</small></p>
   </div>
-  <details class="ex-more">
-    <summary>Read the framing, the code, and what it printed</summary>
-    <div class="ex-body">
-      <div class="ex-framing"><p>The question
-    A disease registry has tens of thousands of patient-years and is confounded:
-    sicker patients get the aggressive therapy, so the raw association understates
-    the benefit. A randomized trial has a few hundred patients, is clean, and is far
-    too small and too short to answer the question the formulary actually asks.</p><p>You want both. The registry has the coverage; the trial has the identification.</p><p>The operation
-    Calibration folds the trial&#x27;s answer into the registry model. axiom offers two
-    routes -- through the prior, or through the likelihood -- and does not pretend
-    they are the same operation. It reports how each fit then agrees with the trial,
-    so the disagreement is visible rather than averaged away.</p><p>Pillars: calibrate (measurement, both routes, agreement)</p></div>
-      <div class="pair">
-        <div class="code">
-          <div class="code-h"><span>examples/07_clinical_rwe_calibration.py</span>
-            <button class="copy" type="button">Copy</button></div>
-          <pre>import numpy as np
-
-from axiom.calibrate import Measurement, agreement, derive_prior, fit_calibrated
-from axiom.core import Intervention, Population, TimeWindow
-from axiom.data import Panel
-from axiom.estimands import Estimand, Level, Quantity, realize
-from axiom.sim import DosePlan, surface_world
-from axiom.surface import GeometricCarryover, HillKernel, fit
-
-TRUTH = {&quot;beta_dose&quot;: 8.0, &quot;alpha&quot;: 4.0, &quot;k_dose&quot;: 50.0, &quot;s_dose&quot;: 2.0, &quot;lam_dose&quot;: 0.4}
-HIGH, NONE, MAX_LAG = 100.0, 0.0, 4
-
-# The registry: a panel of clinics over time, with a saturating dose-response and
-# carryover, and an unmeasured severity that drives both dosing and outcome.
-registry = surface_world(
-    n_units=6,
-    n_periods=24,
-    treatments=(&quot;dose&quot;,),
-    kernels=HillKernel(reference_dose=50.0, amplitude_scale=10.0),
-    carryover={&quot;dose&quot;: GeometricCarryover(max_lag=MAX_LAG)},
-    doses=DosePlan(scale=50.0, spread=0.8, zero_fraction=0.05),
-    intercept=&quot;shared&quot;,
-    truth=TRUTH,
-    noise_sd=2.0,
-    seed=0,
-)
-spec = registry.spec
-
-rng = np.random.default_rng(11)
-frame = registry.panel.frame
-dose = frame[&quot;dose&quot;].to_numpy(dtype=np.float64)
-z_dose = (dose - dose.mean()) / dose.std()
-# Confounding-by-indication of a realistic strength: sicker patients are dosed
-# harder, but severity is far from a deterministic function of dose.
-severity = 0.45 * z_dose + 0.9 * rng.standard_normal(dose.size)
-observed = Panel(frame.assign(y=frame[&quot;y&quot;] + 1.0 * severity), registry.panel.roles)
-print(f&quot;registry: {registry.n_units} clinics x {registry.n_periods} periods&quot;)
-print(
-    f&quot;  correlation(dose, unmeasured severity) = &quot; f&quot;{float(np.corrcoef(dose, severity)[0, 1]):.3f}&quot;
-)
-
-# The trial measured one specific thing: a first-period contrast, per patient.
-trial_estimand = Estimand(
-    name=&quot;first_period_response&quot;,
-    quantity=Quantity(kind=&quot;contrast&quot;),
-    treatment=spec.treatment(&quot;dose&quot;),
-    intervention=Intervention(doses={&quot;dose&quot;: HIGH}),
-    reference=Intervention(doses={&quot;dose&quot;: NONE}),
-    outcome=spec.outcome,
-    population=Population(name=&quot;trial_patients&quot;),
-    window=TimeWindow(start=0, stop=1, basis=&quot;cumulative&quot;),
-    level=Level(unit=&quot;individual&quot;),
-    dimension=spec.outcome_dimension,
-)
-
-diff = registry.forward({&quot;dose&quot;: HIGH}) - registry.forward({&quot;dose&quot;: NONE})
-trial_truth = float(np.mean(diff[:, 0]))
-se = 0.04 * trial_truth
-measurement = Measurement(
-    estimand=trial_estimand,
-    estimate=trial_truth + se * float(np.random.default_rng(3).standard_normal()),
-    se=se,
-    method=&quot;randomized_contrast&quot;,
-    n_units=280,
-    n_periods=1,
-    source=&quot;TRIAL-2026-A&quot;,
-)
-print(f&quot;\ntrial: {measurement.estimate:.3f} +/- {measurement.se:.3f}  &quot; f&quot;{measurement.interval}&quot;)
-print(f&quot;  it is an estimate OF a specific estimand, hashed: {measurement.target[:16]}...&quot;)
-
-
-def amplitude(result):
-    draws = result.posterior.flat(&quot;beta_dose&quot;)
-    return float(draws.mean()), float(draws.std(ddof=1))
-
-
-# Route zero: don&#x27;t calibrate at all.
-uncalibrated = fit(spec, observed, backend=&quot;laplace&quot;, draws=1000, seed=1)
-
-# Route one: convert the trial into a prior on the amplitude, then refit.
-realized = realize(trial_estimand, uncalibrated, assume_identified=True, keep_draws=True)
-calibrated = derive_prior(
-    [measurement],
-    spec,
-    &quot;dose&quot;,
-    beta_draws=uncalibrated.posterior.flat(&quot;beta_dose&quot;),
-    contribution_draws=np.asarray(realized.draws, dtype=np.float64).reshape(-1),
-)
-prior_route = fit(calibrated.spec, observed, backend=&quot;laplace&quot;, draws=1000, seed=1)
-
-# Route two: add the trial to the log density as a constraint, so it competes
-# with the registry data rather than preceding it.
-likelihood_route = fit_calibrated(
-    spec, observed, [measurement], backend=&quot;laplace&quot;, draws=1000, seed=1
-)
-
-print(f&quot;\n{&#x27;fit&#x27;:&lt;20}{&#x27;amplitude&#x27;:&gt;12}{&#x27;sd&#x27;:&gt;8}{&#x27;vs truth&#x27;:&gt;11}{&#x27;z vs trial&#x27;:&gt;13}  verdict&quot;)
-for label, result in (
-    (&quot;uncalibrated&quot;, uncalibrated),
-    (&quot;prior route&quot;, prior_route),
-    (&quot;likelihood route&quot;, likelihood_route),
-):
-    mean, sd = amplitude(result)
-    ag = agreement(result, measurement, seed=0)
-    drift = (mean - TRUTH[&quot;beta_dose&quot;]) / sd
-    print(f&quot;{label:&lt;20}{mean:&gt;12.3f}{sd:&gt;8.3f}{drift:&gt;+11.1f}{ag.z:&gt;+13.2f}  {ag.verdict}&quot;)
-
-print(f&quot;\ntrue amplitude: {TRUTH[&#x27;beta_dose&#x27;]:.1f}&quot;)
-print(f&quot;design factor used by the prior route: {calibrated.design_factor:.4f}&quot;)
-print(f&quot;new prior on {calibrated.parameter}: {calibrated.prior}&quot;)
-for line in calibrated.ledger_lines:
-    print(f&quot;  ledger: {line.kind}  [{line.assumption.name}]&quot;)
-
-print(&quot;&quot;&quot;
-Reading it
-    The uncalibrated registry is not merely uncertain, it is confidently wrong: the
-    truth sits nearly three posterior standard deviations from its mean, and it
-    openly disagrees with the trial. That combination -- tight and wrong -- is the
-    signature of confounding rather than noise, and it is what the agreement test
-    is for.
-
-    Both routes cut most of that bias and both then reconcile with the trial. They
-    do not agree with each other, and that is the useful part: constraining a
-    PARAMETER and constraining a PREDICTION are different requests. Which you want
-    depends on what the model is for, and axiom reports the gap rather than
-    choosing on your behalf.
-
-    Note the &#x27;vs truth&#x27; column is in posterior standard deviations. The prior route
-    lands CLOSEST in absolute terms and still scores worst on that column, because
-    the derived prior inherited the trial&#x27;s precision and left the posterior very
-    tight. A calibrated model can be nearly right and still overconfident, which is
-    exactly the failure a recovery test on a synthetic world is there to catch --
-    and the reason the design factor and the moment-matching both wrote themselves
-    into the ledger above rather than disappearing into the fit.&quot;&quot;&quot;)</pre>
-        </div>
-        <div class="out">
-          <div class="out-h">what it printed</div>
-          <pre>registry: 6 clinics x 24 periods
-  correlation(dose, unmeasured severity) = 0.481
-
-trial: 5.215 +/- 0.193  [4.83679, 5.59274] (95% WALD)
-  it is an estimate OF a specific estimand, hashed: 2949465ce0427194...
-
-fit                    amplitude      sd   vs truth   z vs trial  verdict
-uncalibrated              14.891   2.428       +2.8        -2.44  disagrees
-prior route                9.733   0.349       +5.0        -0.74  agrees
-likelihood route          11.892   1.900       +2.0        -0.55  agrees
-
-true amplitude: 8.0
-design factor used by the prior route: 0.5478
-new prior on beta_dose: family=&#x27;lognormal&#x27; hyper={&#x27;mu&#x27;: 2.2526030052579893, &#x27;sigma&#x27;: 0.03696835710791612}
-  ledger: evidence:combine  [independent_unbiased_studies]
-  ledger: prior:design_factor  [amplitude_proportionality]
-  ledger: prior:moment_match  [prior_family_adequate]
-
-Reading it
-    The uncalibrated registry is not merely uncertain, it is confidently wrong: the
-    truth sits nearly three posterior standard deviations from its mean, and it
-    openly disagrees with the trial. That combination -- tight and wrong -- is the
-    signature of confounding rather than noise, and it is what the agreement test
-    is for.
-
-    Both routes cut most of that bias and both then reconcile with the trial. They
-    do not agree with each other, and that is the useful part: constraining a
-    PARAMETER and constraining a PREDICTION are different requests. Which you want
-    depends on what the model is for, and axiom reports the gap rather than
-    choosing on your behalf.
-
-    Note the &#x27;vs truth&#x27; column is in posterior standard deviations. The prior route
-    lands CLOSEST in absolute terms and still scores worst on that column, because
-    the derived prior inherited the trial&#x27;s precision and left the posterior very
-    tight. A calibrated model can be nearly right and still overconfident, which is
-    exactly the failure a recovery test on a synthetic world is there to catch --
-    and the reason the design factor and the moment-matching both wrote themselves
-    into the ledger above rather than disappearing into the fit.</pre>
-        </div>
-      </div>
-    </div>
-  </details>
-</article>
-<article class="ex" id="08_energy_panel_methods">
-  <div class="ex-head">
-    <p class="ex-n">08 &middot; ENERGY</p>
-    <h3>Which quasi-experimental method should the retrofit programme use?</h3>
-    <p class="ex-q">Which quasi-experimental method actually holds its size on this panel?</p>
-    <div class="ex-meta"><a class="pkg" href="design.html">Design</a>
-      <span class="pkg">94 lines</span>
-      <span class="pkg">runs in 1.1s</span></div>
+</a><a class="card" href="example-08-energy-panel-methods.html">
+  <p class="card-n">08 · ENERGY</p>
+  <h3>Calibrate the method before you trust the method</h3>
+  <p>Which quasi-experimental method actually holds its size on this panel?</p>
+  <div class="card-f">
+    <p class="card-go">5 steps, 3 figures
+      <span aria-hidden="true">→</span></p>
+    <p class="card-stat"><small>Design</small></p>
   </div>
-  <details class="ex-more">
-    <summary>Read the framing, the code, and what it printed</summary>
-    <div class="ex-body">
-      <div class="ex-framing"><p>The question
-    A utility is rolling out a heat-pump retrofit across buildings and wants the
-    energy saving. Randomizing is possible but expensive; there are also months of
-    pre-period meter data, and buildings that will not be treated for a year.</p><p>Difference-in-differences, synthetic control, a time-based regression, a
-    cluster regression, a switchback -- each is defensible, each rests on different
-    assumptions, and the usual way to choose is by habit.</p><p>The move
-    Simulate the panel you will actually have, run every method in the registry on
-    data with NO effect, and see which ones report an effect anyway. A method whose
-    false-positive rate is off at your panel shape is not a method you should trust
-    on this data, regardless of what it does in the literature.</p><p>Pillars: design (method calibration, simulated power)</p></div>
-      <div class="pair">
-        <div class="code">
-          <div class="code-h"><span>examples/08_energy_panel_methods.py</span>
-            <button class="copy" type="button">Copy</button></div>
-          <pre>from axiom.design import METHODS, SimulationSpec, calibrate_registry, simulated_power
-
-# The panel the programme will actually have.
-panel = SimulationSpec(
-    n_units=120,  # buildings
-    n_periods=24,  # months of meter data
-    n_pre=12,  # a year before anything is switched on
-    n_treated=60,
-    unit_sd=1.2,  # buildings differ a lot in baseline consumption
-    noise_sd=0.9,
-    period_sd=0.6,  # weather moves everyone together
-    rho=0.6,  # and consumption is autocorrelated month to month
-    n_simulations=120,
-    seed=0,
-)
-
-print(&quot;methods in the registry, and what each one asks you to believe:&quot;)
-for name, spec in METHODS.items():
-    needs = []
-    if spec.requires_pre_period:
-        needs.append(&quot;pre-period&quot;)
-    if spec.requires_controls:
-        needs.append(&quot;controls&quot;)
-    print(f&quot;\n  {name}&quot;)
-    print(f&quot;    needs      : {&#x27;, &#x27;.join(needs) or &#x27;nothing but the assignment&#x27;}&quot;)
-    print(f&quot;    assumes    : {&#x27;, &#x27;.join(spec.assumption_names())}&quot;)
-
-# Synthetic control is deliberately left out. It builds a donor combination for a
-# single treated unit, and this programme treats half the estate at once -- the
-# method is not wrong, it is answering a different shape of question, and its
-# solver says so by failing rather than returning a number. Choosing the candidate
-# set is part of the design, not something to leave to a loop over everything.
-CANDIDATES = {name: spec for name, spec in METHODS.items() if name != &quot;synthetic_control&quot;}
-
-# Calibrate: run every candidate on panels with no effect at all, and check the
-# false-positive rate lands where a 5% test says it should.
-print(&quot;\n\ncalibrating on panels with NO true effect &quot; f&quot;({panel.n_simulations} simulations each):&quot;)
-calibrated, results = calibrate_registry(panel, CANDIDATES, alpha=0.05)
-print(f&quot;\n  {&#x27;method&#x27;:&lt;28}{&#x27;false positives&#x27;:&gt;17}{&#x27;acceptable region&#x27;:&gt;21}  status&quot;)
-for r in results:
-    fp = f&quot;{r.false_positive_count}/{r.n_evaluated}&quot;
-    region = f&quot;[{r.region.lower}, {r.region.upper}]&quot;
-    status = calibrated[r.method].status
-    flag = &quot;&quot; if r.passed else &quot;   &lt;-- not usable here&quot;
-    print(f&quot;  {r.method:&lt;28}{fp:&gt;17}{region:&gt;21}  {status}{flag}&quot;)
-
-# Now power, for the methods that survived, at an effect worth acting on.
-EFFECT = 0.35
-with_effect = panel.model_copy(update={&quot;effect&quot;: EFFECT})
-usable = [r.method for r in results if r.passed]
-
-print(f&quot;\n\npower at a true saving of {EFFECT}, for the methods that calibrated:&quot;)
-print(f&quot;  {&#x27;method&#x27;:&lt;28}{&#x27;power&#x27;:&gt;8}{&#x27;bias&#x27;:&gt;9}{&#x27;coverage&#x27;:&gt;10}&quot;)
-for name in usable:
-    sp = simulated_power(name, with_effect, registry=CANDIDATES)
-    print(f&quot;  {name:&lt;28}{sp.power:&gt;8.3f}{sp.bias:&gt;+9.3f}{sp.coverage:&gt;10.2f}&quot;)
-
-print(&quot;&quot;&quot;
-Reading it
-    All five candidates calibrated: on a panel of this shape their nominal 5% tests
-    really do reject about 5% of the time, so their intervals mean what they say.
-    That is the result, and it is worth having explicitly rather than assuming --
-    a method whose false-positive rate is off here would poison every downstream
-    number, the power calculation and the business case included.
-
-    With calibration settled, power separates them, and it separates them hard.
-    &#x27;ghost&#x27; is not broken; it estimates a different quantity from a much smaller
-    effective sample -- intent-to-treat among the exposed -- and pays for it. Note
-    also switchback&#x27;s coverage running a little under nominal: the HAC variance is
-    working against real autocorrelation here, and that is the kind of detail worth
-    seeing before the analysis plan is signed rather than after.
-
-    The order matters. Calibrate first, then choose on power. Choosing on power
-    first is how a method that cannot hold its size ends up in a protocol.&quot;&quot;&quot;)</pre>
-        </div>
-        <div class="out">
-          <div class="out-h">what it printed</div>
-          <pre>methods in the registry, and what each one asks you to believe:
-
-  difference_in_differences
-    needs      : pre-period, controls
-    assumes    : parallel_trends, no_anticipation, no_interference
-
-  synthetic_control
-    needs      : pre-period, controls
-    assumes    : convex_hull, no_anticipation, no_interference
-
-  time_based_regression
-    needs      : pre-period, controls
-    assumes    : stable_pre_relationship, no_anticipation, no_interference
-
-  cluster_based_regression
-    needs      : pre-period, controls
-    assumes    : random_assignment, no_interference
-
-  switchback
-    needs      : nothing but the assignment
-    assumes    : random_assignment, no_carryover, stationary_noise
-
-  ghost
-    needs      : controls
-    assumes    : random_assignment, exposure_known, no_interference
-
-
-calibrating on panels with NO true effect (120 simulations each):
-
-  method                        false positives    acceptable region  status
-  difference_in_differences               5/120              [0, 15]  stable
-  time_based_regression                   7/120              [0, 15]  stable
-  cluster_based_regression                4/120              [0, 15]  stable
-  switchback                             11/120              [0, 15]  stable
-  ghost                                   4/120              [0, 15]  stable
-
-
-power at a true saving of 0.35, for the methods that calibrated:
-  method                         power     bias  coverage
-  difference_in_differences      1.000   -0.004      0.96
-  time_based_regression          0.967   +0.001      0.94
-  cluster_based_regression       1.000   -0.003      0.97
-  switchback                     1.000   -0.005      0.91
-  ghost                          0.192   +0.005      0.97
-
-Reading it
-    All five candidates calibrated: on a panel of this shape their nominal 5% tests
-    really do reject about 5% of the time, so their intervals mean what they say.
-    That is the result, and it is worth having explicitly rather than assuming --
-    a method whose false-positive rate is off here would poison every downstream
-    number, the power calculation and the business case included.
-
-    With calibration settled, power separates them, and it separates them hard.
-    &#x27;ghost&#x27; is not broken; it estimates a different quantity from a much smaller
-    effective sample -- intent-to-treat among the exposed -- and pays for it. Note
-    also switchback&#x27;s coverage running a little under nominal: the HAC variance is
-    working against real autocorrelation here, and that is the kind of detail worth
-    seeing before the analysis plan is signed rather than after.
-
-    The order matters. Calibrate first, then choose on power. Choosing on power
-    first is how a method that cannot hold its size ends up in a protocol.</pre>
-        </div>
-      </div>
-    </div>
-  </details>
-</article>
-<article class="ex" id="09_manufacturing_steepest_ascent">
-  <div class="ex-head">
-    <p class="ex-n">09 &middot; PROCESS ENGINEERING</p>
-    <h3>Climbing to a yield optimum, the Box-Wilson way.</h3>
-    <p class="ex-q">Climbing to a yield optimum, Box-Wilson style.</p>
-    <div class="ex-meta"><a class="pkg" href="surface.html">Surface</a>
-      <span class="pkg">134 lines</span>
-      <span class="pkg">runs in 2.6s</span></div>
+</a><a class="card" href="example-09-manufacturing-steepest-ascent.html">
+  <p class="card-n">09 · PROCESS ENGINEERING</p>
+  <h3>The optimum is outside the operating window</h3>
+  <p>Climbing to a yield optimum, Box-Wilson style.</p>
+  <div class="card-f">
+    <p class="card-go">5 steps, 3 figures
+      <span aria-hidden="true">→</span></p>
+    <p class="card-stat"><small>Surface</small></p>
   </div>
-  <details class="ex-more">
-    <summary>Read the framing, the code, and what it printed</summary>
-    <div class="ex-body">
-      <div class="ex-framing"><p>The question
-    A reactor&#x27;s yield depends on temperature and residence time. Current settings
-    are somewhere on the slope, not at the peak. Where should the next batch of
-    experimental runs be placed?</p><p>The classical answer, which axiom implements directly
-    Response-surface methodology, as Box and Wilson set it out in 1951. Fit a cheap
-    local design, follow the gradient uphill in steps until it stops paying, then
-    run a second-order design at the new location and ask what kind of stationary
-    point you have arrived at. A maximum is good news. A saddle or a rising ridge
-    means the process has a direction along which you can keep improving for free,
-    which is worth far more than the peak itself.</p><p>Pillars: surface (designs, steepest ascent, canonical analysis)</p></div>
-      <div class="pair">
-        <div class="code">
-          <div class="code-h"><span>examples/09_manufacturing_steepest_ascent.py</span>
-            <button class="copy" type="button">Copy</button></div>
-          <pre>from axiom.sim import arms_world
-from axiom.surface import (
-    Bounds,
-    HillKernel,
-    canonical_analysis,
-    central_composite,
-    fit,
-    full_factorial,
-    steepest_ascent,
-)
-
-SEED = 0
-
-# The operating window: temperature 120-200 C, residence time 5-45 minutes.
-window = Bounds(treatments=(&quot;temperature&quot;, &quot;residence&quot;), low=(120.0, 5.0), high=(200.0, 45.0))
-
-# Stage one: a cheap screening design to find the uphill direction.
-screen = full_factorial(window, 3)
-print(f&quot;stage 1 - screening design: {screen.kind}, {screen.n} runs&quot;)
-
-truth = {
-    &quot;alpha&quot;: 40.0,
-    &quot;beta_temperature&quot;: 22.0,
-    &quot;k_temperature&quot;: 165.0,
-    &quot;s_temperature&quot;: 3.0,
-    &quot;beta_residence&quot;: 14.0,
-    &quot;k_residence&quot;: 26.0,
-    &quot;s_residence&quot;: 2.4,
-}
-reactor = arms_world(
-    n_units=screen.n,
-    treatments=(&quot;temperature&quot;, &quot;residence&quot;),
-    kernels={
-        &quot;temperature&quot;: HillKernel(reference_dose=165.0, amplitude_scale=20.0),
-        &quot;residence&quot;: HillKernel(reference_dose=26.0, amplitude_scale=20.0),
-    },
-    doses=screen.doses(),
-    truth=truth,
-    noise_sd=1.1,
-    seed=SEED,
-)
-screen_fit = fit(reactor.spec, reactor.panel, backend=&quot;laplace&quot;, draws=1500, seed=SEED)
-theta = {n: float(screen_fit.posterior.summary(n).mean) for n in screen_fit.posterior.names()}
-print(f&quot;  converged: {screen_fit.converged}&quot;)
-
-# Stage two: walk uphill from where the process is running today.
-current = {&quot;temperature&quot;: 140.0, &quot;residence&quot;: 12.0}
-print(
-    f&quot;\nstage 2 - steepest ascent from the current setpoint &quot;
-    f&quot;({current[&#x27;temperature&#x27;]:.0f} C, {current[&#x27;residence&#x27;]:.0f} min)&quot;
-)
-
-path = steepest_ascent(screen_fit.surface, theta, current, step=6.0, n_steps=40, bounds=window)
-print(f&quot;  took {path.n} steps, stopped because: {path.stop}&quot;)
-
-print(f&quot;\n  {&#x27;step&#x27;:&gt;5}{&#x27;temperature&#x27;:&gt;14}{&#x27;residence&#x27;:&gt;12}{&#x27;predicted yield&#x27;:&gt;18}&quot;)
-show = [0, 1, 2, max(0, path.n // 3), max(0, 2 * path.n // 3), path.n - 1]
-for i in sorted(set(s for s in show if 0 &lt;= s &lt; path.n)):
-    # points come back in the surface&#x27;s treatment order, as plain tuples
-    temperature, residence = (float(v) for v in path.points[i])
-    print(f&quot;  {i:&gt;5}{temperature:&gt;14.1f}{residence:&gt;12.1f}{path.values[i]:&gt;18.3f}&quot;)
-
-best = path.best()
-print(&quot;\n  best point on the path: &quot; + &quot;, &quot;.join(f&quot;{k} {v:.1f}&quot; for k, v in best.items()))
-print(f&quot;  predicted yield there: {path.values[-1]:.3f}&quot;)
-
-# Stage three: a second-order design at the new location, then ask what kind of
-# stationary point it is.
-print(&quot;\nstage 3 - characterising the neighbourhood&quot;)
-confirm = central_composite(window, alpha=&quot;rotatable&quot;, center_points=4, inscribed=True)
-print(f&quot;  confirmation design: {confirm.kind}, {confirm.n} runs&quot;)
-
-stationary = canonical_analysis(screen_fit.surface, theta, best)
-if hasattr(stationary, &quot;reason&quot;):
-    print(f&quot;  canonical analysis declined: {stationary.reason}&quot;)
-else:
-    print(f&quot;  stationary point is a {stationary.kind}&quot;)
-    at = &quot;, &quot;.join(
-        f&quot;{name} {float(v):.1f}&quot;
-        for name, v in zip(window.treatments, stationary.point, strict=True)
-    )
-    print(f&quot;  at {at}&quot;)
-    print(f&quot;  eigenvalues: {[round(float(e), 5) for e in stationary.eigenvalues]}&quot;)
-    print(&quot;    both negative -&gt; a genuine maximum; mixed signs -&gt; a saddle, and the&quot;)
-    print(&quot;    positive direction is free yield you have not taken yet.&quot;)
-
-    inside = all(
-        lo &lt;= float(v) &lt;= hi
-        for v, lo, hi in zip(stationary.point, window.low, window.high, strict=True)
-    )
-    print(f&quot;  inside the operating window? {inside}&quot;)
-    if not inside:
-        print(&quot;    The unconstrained peak sits outside what the plant can physically run,&quot;)
-        print(&quot;    which is why the ascent stopped on the boundary rather than at the&quot;)
-        print(&quot;    stationary point. The operating recommendation is the corner of the&quot;)
-        print(&quot;    window, and the interesting question becomes what it would cost to&quot;)
-        print(&quot;    widen the window -- an engineering question, now correctly posed.&quot;)
-
-# How much was left on the table by running at the old setpoint?
-true_at_current = float(reactor.forward(current).mean())
-true_at_best = float(reactor.forward({k: float(v) for k, v in best.items()}).mean())
-print(f&quot;\ntrue yield at the old setpoint : {true_at_current:.3f}&quot;)
-print(f&quot;true yield at the ascent&#x27;s best: {true_at_best:.3f}&quot;)
-print(f&quot;improvement                    : {true_at_best - true_at_current:+.3f}&quot;)
-
-print(&quot;&quot;&quot;
-Reading it
-    Nothing here needed a global optimizer or a large design. Steepest ascent is a
-    sequence of cheap local decisions, and it is still the right first move when
-    runs are expensive and the surface is smooth -- which describes most physical
-    processes.
-
-    The part worth keeping is stage three. Arriving somewhere the gradient is flat
-    does not tell you what kind of place it is, and the three possibilities imply
-    completely different next moves: confirm and stop, or keep walking along a
-    ridge, or back off because you are on a saddle between two better regions.&quot;&quot;&quot;)</pre>
-        </div>
-        <div class="out">
-          <div class="out-h">what it printed</div>
-          <pre>stage 1 - screening design: full_factorial, 9 runs
-  converged: True
-
-stage 2 - steepest ascent from the current setpoint (140 C, 12 min)
-  took 26 steps, stopped because: boundary
-
-   step   temperature   residence   predicted yield
-      0         140.0        12.0            51.776
-      1         142.4        17.5            53.836
-      2         144.8        23.0            56.004
-      8         159.2        45.0            63.421
-     17         180.9        45.0            65.247
-     25         200.0        45.0            66.493
-
-  best point on the path: temperature 200.0, residence 45.0
-  predicted yield there: 66.493
-
-stage 3 - characterising the neighbourhood
-  confirmation design: central_composite, 12 runs
-  stationary point is a maximum
-  at temperature 285.1, residence 74.4
-  eigenvalues: [-0.0064, -0.00068]
-    both negative -&gt; a genuine maximum; mixed signs -&gt; a saddle, and the
-    positive direction is free yield you have not taken yet.
-  inside the operating window? False
-    The unconstrained peak sits outside what the plant can physically run,
-    which is why the ascent stopped on the boundary rather than at the
-    stationary point. The operating recommendation is the corner of the
-    window, and the interesting question becomes what it would cost to
-    widen the window -- an engineering question, now correctly posed.
-
-true yield at the old setpoint : 50.236
-true yield at the ascent&#x27;s best: 65.129
-improvement                    : +14.894
-
-Reading it
-    Nothing here needed a global optimizer or a large design. Steepest ascent is a
-    sequence of cheap local decisions, and it is still the right first move when
-    runs are expensive and the surface is smooth -- which describes most physical
-    processes.
-
-    The part worth keeping is stage three. Arriving somewhere the gradient is flat
-    does not tell you what kind of place it is, and the three possibilities imply
-    completely different next moves: confirm and stop, or keep walking along a
-    ridge, or back off because you are on a saddle between two better regions.</pre>
-        </div>
-      </div>
-    </div>
-  </details>
-</article>
-<article class="ex" id="10_marketing_saturation">
-  <div class="ex-head">
-    <p class="ex-n">10 &middot; MARKETING</p>
-    <h3>Contribution and marginal return, with the vocabulary bolted on top.</h3>
-    <p class="ex-q">Contribution and marginal return, and proof the vocabulary is a thin adapter.</p>
-    <div class="ex-meta"><span class="pkg">Adapters</span><a class="pkg" href="surface.html">Surface</a>
-      <span class="pkg">162 lines</span>
-      <span class="pkg">runs in 2.4s</span></div>
+</a><a class="card" href="example-10-marketing-saturation.html">
+  <p class="card-n">10 · MARKETING</p>
+  <h3>Which side of the bend are you standing on?</h3>
+  <p>Contribution and marginal return, and proof the vocabulary is a thin adapter.</p>
+  <div class="card-f">
+    <p class="card-go">7 steps, 3 figures
+      <span aria-hidden="true">→</span></p>
+    <p class="card-stat"><small>Adapters · Surface</small></p>
   </div>
-  <details class="ex-more">
-    <summary>Read the framing, the code, and what it printed</summary>
-    <div class="ex-body">
-      <div class="ex-framing"><p>Why this file exists
-    axiom&#x27;s core has no idea what a channel is. Its nouns are Treatment, Dose, Unit,
-    Outcome, Covariate, and a contract test fails the build if the words &#x27;channel&#x27;,
-    &#x27;spend&#x27;, &#x27;geo&#x27; or &#x27;ROAS&#x27; appear outside axiom.adapters. Marketing is ONE adapter
-    over a domain-general core, not the thing the library is about.</p><p>This example is therefore doing double duty: it is a working marketing analysis,
-    and it is the proof that the vocabulary is a thin translation layer. Channel IS
-    Treatment. Geo IS Unit. KPI IS Outcome. The same objects, renamed at the edge.</p><p>The question
-    Given weekly spend by channel and geo, what did each channel contribute, and
-    what would the next unit of spend return? Those are different questions and the
-    second is the one budgets are set on.</p><p>Pillars: adapters (marketing), surface</p></div>
-      <div class="pair">
-        <div class="code">
-          <div class="code-h"><span>examples/10_marketing_saturation.py</span>
-            <button class="copy" type="button">Copy</button></div>
-          <pre>import numpy as np
-import pandas as pd
-
-from axiom.adapters import (
-    KPI,
-    Channel,
-    Geo,
-    MarketingRoles,
-    contribution,
-    marginal_roas,
-    marketing_spec,
-    panel_from_marketing_frame,
-    roas,
-    role_map,
-    spend,
-)
-from axiom.core import D, Outcome, Treatment, Unit
-from axiom.sim import DosePlan, surface_world
-from axiom.surface import HillKernel, fit, marginal_band
-
-# The adapter is aliases, not a parallel type system.
-print(&quot;Channel is Treatment :&quot;, Channel is Treatment)
-print(&quot;Geo     is Unit      :&quot;, Geo is Unit)
-print(&quot;KPI     is Outcome   :&quot;, KPI is Outcome)
-print(&quot;\nspend(&#x27;paid_search&#x27;) -&gt;&quot;, spend(&quot;paid_search&quot;))
-
-# --- a marketing frame, in the shape a planner would hand you -----------------
-rng = np.random.default_rng(4)
-rows = [
-    {
-        &quot;geo&quot;: geo,
-        &quot;week&quot;: week,
-        &quot;revenue&quot;: 0.0,  # filled by the simulation below
-        &quot;paid_search&quot;: float(abs(rng.normal(38, 9))),
-        &quot;social&quot;: float(abs(rng.normal(17, 6))),
-        &quot;holiday&quot;: float(week in (10, 11)),
-    }
-    for geo in (&quot;north&quot;, &quot;south&quot;, &quot;west&quot;)
-    for week in range(16)
-]
-frame = pd.DataFrame(rows)
-
-roles = MarketingRoles(
-    kpi=&quot;revenue&quot;,
-    channels=(&quot;paid_search&quot;, &quot;social&quot;),
-    geo=&quot;geo&quot;,
-    date=&quot;week&quot;,
-    controls=(&quot;holiday&quot;,),
-    kpi_dimension=&quot;currency&quot;,
-    currency=&quot;USD&quot;,
-)
-mapped = role_map(roles)
-print(
-    f&quot;\nrole map -&gt; unit {mapped.unit!r}, time {mapped.time!r}, &quot;
-    f&quot;outcome {mapped.outcome[1]!r}, treatments {list(mapped.treatments)}&quot;
-)
-
-panel = panel_from_marketing_frame(frame, roles)
-print(
-    f&quot;panel: {panel.units} geos x {len(panel.periods)} weeks, &quot;
-    f&quot;balanced={panel.completeness().balanced}&quot;
-)
-
-spec = marketing_spec(panel, seasonality=(4.0, 1), trend=True)
-print(
-    f&quot;\nmarketing_spec built: treatments {spec.treatment_names}, &quot; f&quot;intercept {spec.intercept!r}&quot;
-)
-print(f&quot;  kernels  : {({k: v.name for k, v in spec.kernels.items()})}&quot;)
-print(f&quot;  carryover: {({k: v.name for k, v in spec.carryover.items()})}&quot;)
-print(&quot;  saturating response and carryover are the defaults, because spend does&quot;)
-print(&quot;  neither of the two things a linear model assumes it does.&quot;)
-
-# --- fit a world where we know the truth, so the numbers are checkable --------
-revenue_world = surface_world(
-    n_units=3,
-    n_periods=16,
-    treatments=(&quot;paid_search&quot;,),
-    outcome=Outcome(name=&quot;revenue&quot;, dimension=D.currency, unit=&quot;USD&quot;),
-    # a genuinely saturating channel: a Hill curve with its half-saturation point
-    # inside the observed spend range, so the data actually sees the bend
-    kernels=HillKernel(reference_dose=38.0, amplitude_scale=3.0),
-    doses=DosePlan(scale=38.0, spread=0.9),
-    intercept=&quot;shared&quot;,
-    truth={&quot;beta_paid_search&quot;: 3.0, &quot;k_paid_search&quot;: 30.0, &quot;s_paid_search&quot;: 1.8, &quot;alpha&quot;: 1.5},
-    noise_sd=0.15,
-    seed=7,
-)
-result = fit(
-    revenue_world.spec, revenue_world.panel, backend=&quot;laplace&quot;, draws=1200, chains=1, seed=7
-)
-print(f&quot;\nfitted: converged={result.converged}&quot;)
-
-print(f&quot;\n{&#x27;quantity&#x27;:&lt;28}{&#x27;kind&#x27;:&lt;11}{&#x27;value&#x27;:&gt;10}   interval&quot;)
-for fn in (contribution, roas, marginal_roas):
-    out = fn(result, &quot;paid_search&quot;, mass=0.9, seed=0)
-    if hasattr(out, &quot;reason&quot;):
-        print(f&quot;{fn.__name__:&lt;28}refused: {out.reason}&quot;)
-        continue
-    print(
-        f&quot;{out.estimand_name:&lt;28}{out.kind:&lt;11}{out.summary.mean:&gt;10.3f}   &quot;
-        f&quot;{out.summary.interval}&quot;
-    )
-
-# Average and marginal return are different numbers, and a single headline ROAS
-# hides which side of the curve you are standing on.
-avg = roas(result, &quot;paid_search&quot;, mass=0.9, seed=0)
-marg = marginal_roas(result, &quot;paid_search&quot;, mass=0.9, seed=0)
-print(f&quot;\naverage return per unit spent  : {avg.summary.mean:.4f}&quot;)
-print(f&quot;return on the NEXT unit spent  : {marg.summary.mean:.4f}&quot;)
-print(f&quot;ratio                          : {marg.summary.mean / avg.summary.mean:.2f}&quot;)
-
-# The number that actually answers &quot;should we spend more?&quot; is the slope at the
-# spend level you are at -- so look at the whole curve, not one summary.
-band = marginal_band(
-    result, &quot;paid_search&quot;, doses=[8, 16, 24, 32, 40, 55, 75, 100], mass=0.9, seed=0
-)
-if hasattr(band, &quot;reason&quot;):
-    print(f&quot;\nmarginal curve refused: {band.reason}&quot;)
-else:
-    print(&quot;\nreturn on the next unit of spend, by spend level:&quot;)
-    for dose, mean, lo, hi in zip(band.doses, band.mean, band.lower, band.upper, strict=True):
-        print(f&quot;  spend {dose:6.1f}   marginal {mean:7.4f}   [{lo:7.4f}, {hi:7.4f}]&quot;)
-    peak = max(range(len(band.mean)), key=lambda i: band.mean[i])
-    print(f&quot;\n  the marginal peaks around spend {band.doses[peak]:.0f} and falls after.&quot;)
-    print(&quot;  A Hill curve is S-shaped, not merely concave: below the inflection an&quot;)
-    print(&quot;  extra unit returns MORE than the average, above it less. &#x27;Our ROAS is&quot;)
-    print(&quot;  0.04&#x27; does not say which side you are on; this curve does.&quot;)
-
-# A window restricts the question to part of the horizon.
-late = marginal_roas(result, &quot;paid_search&quot;, window=(8, 16), mass=0.9, seed=0)
-print(f&quot;\nmarginal over weeks 8-16 only  : {late.summary.mean:.4f}&quot;)
-
-print(&quot;&quot;&quot;
-Reading it
-    Everything above went through the same fit(), the same forward(), and the same
-    estimand machinery as the agriculture and clinical examples in this directory.
-    The only marketing-specific code is the translation at the top and the three
-    named quantities at the bottom.
-
-    That is the design commitment made concrete: the mathematics is about doses and
-    responses, and the moment a domain&#x27;s vocabulary leaks into it, the same code
-    stops being usable for trials, fields, reactors, or reserves.&quot;&quot;&quot;)</pre>
-        </div>
-        <div class="out">
-          <div class="out-h">what it printed</div>
-          <pre>Channel is Treatment : True
-Geo     is Unit      : True
-KPI     is Outcome   : True
-
-spend(&#x27;paid_search&#x27;) -&gt; name=&#x27;paid_search&#x27; dimension=Dimension($) unit=&#x27;USD&#x27; description=&#x27;&#x27; numeraire=&#x27;USD&#x27;
-
-role map -&gt; unit &#x27;geo&#x27;, time &#x27;week&#x27;, outcome Outcome(name=&#x27;revenue&#x27;, dimension=Dimension($), unit=&#x27;USD&#x27;, description=&#x27;&#x27;, aggregation=&#x27;sum&#x27;), treatments [&#x27;paid_search&#x27;, &#x27;social&#x27;]
-panel: (&#x27;north&#x27;, &#x27;south&#x27;, &#x27;west&#x27;) geos x 16 weeks, balanced=True
-
-marketing_spec built: treatments (&#x27;paid_search&#x27;, &#x27;social&#x27;), intercept &#x27;hierarchical&#x27;
-  kernels  : {&#x27;paid_search&#x27;: &#x27;hill&#x27;, &#x27;social&#x27;: &#x27;hill&#x27;}
-  carryover: {&#x27;paid_search&#x27;: &#x27;geometric&#x27;, &#x27;social&#x27;: &#x27;geometric&#x27;}
-  saturating response and carryover are the defaults, because spend does
-  neither of the two things a linear model assumes it does.
-
-fitted: converged=True
-
-quantity                    kind            value   interval
-contribution_paid_search    contrast       66.235   [58.4151, 73.1128] (90% HDI)
-roas_paid_search            ratio           0.038   [0.033114, 0.0414458] (90% HDI)
-marginal_roas_paid_search   marginal        0.038   [0.0361679, 0.0405086] (90% HDI)
-
-average return per unit spent  : 0.0375
-return on the NEXT unit spent  : 0.0385
-ratio                          : 1.02
-
-return on the next unit of spend, by spend level:
-  spend    8.0   marginal  0.0464   [ 0.0327,  0.0603]
-  spend   16.0   marginal  0.0600   [ 0.0543,  0.0651]
-  spend   24.0   marginal  0.0541   [ 0.0502,  0.0583]
-  spend   32.0   marginal  0.0425   [ 0.0392,  0.0458]
-  spend   40.0   marginal  0.0317   [ 0.0294,  0.0342]
-  spend   55.0   marginal  0.0181   [ 0.0160,  0.0198]
-  spend   75.0   marginal  0.0092   [ 0.0073,  0.0108]
-  spend  100.0   marginal  0.0046   [ 0.0032,  0.0058]
-
-  the marginal peaks around spend 16 and falls after.
-  A Hill curve is S-shaped, not merely concave: below the inflection an
-  extra unit returns MORE than the average, above it less. &#x27;Our ROAS is
-  0.04&#x27; does not say which side you are on; this curve does.
-
-marginal over weeks 8-16 only  : 0.0351
-
-Reading it
-    Everything above went through the same fit(), the same forward(), and the same
-    estimand machinery as the agriculture and clinical examples in this directory.
-    The only marketing-specific code is the translation at the top and the three
-    named quantities at the bottom.
-
-    That is the design commitment made concrete: the mathematics is about doses and
-    responses, and the moment a domain&#x27;s vocabulary leaks into it, the same code
-    stops being usable for trials, fields, reactors, or reserves.</pre>
-        </div>
-      </div>
-    </div>
-  </details>
-</article>
-<article class="ex" id="11_psychology_meta_analysis">
-  <div class="ex-head">
-    <p class="ex-n">11 &middot; BEHAVIOURAL SCIENCE</p>
-    <h3>Pooling a literature that disagrees with itself.</h3>
-    <p class="ex-q">Pooling a literature that disagrees with itself.</p>
-    <div class="ex-meta"><a class="pkg" href="meta.html">Pool</a>
-      <span class="pkg">157 lines</span>
-      <span class="pkg">runs in 0.8s</span></div>
+</a><a class="card" href="example-11-psychology-meta-analysis.html">
+  <p class="card-n">11 · BEHAVIOURAL SCIENCE</p>
+  <h3>What study twenty-one will actually find</h3>
+  <p>Pooling a literature that disagrees with itself.</p>
+  <div class="card-f">
+    <p class="card-go">6 steps, 5 figures
+      <span aria-hidden="true">→</span></p>
+    <p class="card-stat"><small>Pool</small></p>
   </div>
-  <details class="ex-more">
-    <summary>Read the framing, the code, and what it printed</summary>
-    <div class="ex-body">
-      <div class="ex-framing"><p>The question
-    Twenty published studies test the same behavioural nudge. The effects range from
-    trivial to large. What does the literature say, how much do the studies really
-    disagree, and what should you expect if you run study twenty-one?</p><p>Three things that get skipped
-    The pooled mean is the least interesting output. What a replication team
-    actually needs is the PREDICTION interval -- where a new study would land --
-    which is much wider than the interval on the mean and is the number that
-    predicts replication success.</p><p>Heterogeneity is not a nuisance to be averaged away; a high I-squared means the
-    single pooled number is answering a question nobody asked.</p><p>And small-study effects deserve a look before any of it is believed.</p><p>Pillars: meta (pooling, heterogeneity, small-study effects, influence)</p></div>
-      <div class="pair">
-        <div class="code">
-          <div class="code-h"><span>examples/11_psychology_meta_analysis.py</span>
-            <button class="copy" type="button">Copy</button></div>
-          <pre>from axiom.build import MetaBuilder
-from axiom.meta import (
-    baujat,
-    egger,
-    heterogeneity,
-    leave_one_out,
-    prediction_interval,
-    random_effects,
-)
-
-# Twenty nudge studies: effect size and standard error, as a review would collect
-# them. Larger studies are more precise, and the smaller ones scatter wider --
-# partly by sampling and partly, as the funnel below suggests, by what got
-# published at all.
-STUDIES = [
-    (&quot;s01&quot;, 0.09, 0.041, 1180),
-    (&quot;s02&quot;, 0.31, 0.152, 88),
-    (&quot;s03&quot;, 0.15, 0.033, 1840),
-    (&quot;s04&quot;, 0.22, 0.131, 118),
-    (&quot;s05&quot;, 0.19, 0.058, 602),
-    (&quot;s06&quot;, 0.48, 0.186, 61),
-    (&quot;s07&quot;, 0.13, 0.028, 2510),
-    (&quot;s08&quot;, 0.05, 0.104, 187),
-    (&quot;s09&quot;, 0.21, 0.049, 842),
-    (&quot;s10&quot;, 0.42, 0.168, 72),
-    (&quot;s11&quot;, 0.11, 0.031, 2080),
-    (&quot;s12&quot;, 0.34, 0.088, 258),
-    (&quot;s13&quot;, 0.17, 0.126, 128),
-    (&quot;s14&quot;, 0.24, 0.044, 1030),
-    (&quot;s15&quot;, 0.39, 0.147, 94),
-    (&quot;s16&quot;, 0.06, 0.030, 2240),
-    (&quot;s17&quot;, 0.28, 0.076, 344),
-    (&quot;s18&quot;, 0.51, 0.198, 54),
-    (&quot;s19&quot;, 0.16, 0.052, 742),
-    (&quot;s20&quot;, 0.12, 0.097, 214),
-]
-
-builder = MetaBuilder().name(&quot;nudge-replication&quot;).family(&quot;behavioural_nudge&quot;)
-for study, estimate, se, n in STUDIES:
-    builder = builder.study(
-        study,
-        estimate=estimate,
-        se=se,
-        read=&quot;experiment&quot;,
-        contributor=study,
-        quantity=&quot;standardized_contrast&quot;,
-        n=n,
-        source=f&quot;paper-{study}&quot;,
-    )
-# &#x27;standardized_contrast&#x27; is not free text: poolable quantities are a controlled
-# vocabulary, so two reviews cannot quietly pool things that are not the same kind
-# of number. Pass something outside it and the record refuses to be built.
-corpus = builder.build()
-y, se = corpus.arrays()
-print(f&quot;corpus: {corpus.name}, k = {len(corpus)} studies&quot;)
-print(f&quot;  quantity: {corpus.records[0].quantity}&quot;)
-print(f&quot;  raw effects run from {min(y):.2f} to {max(y):.2f}&quot;)
-
-# Three estimators of the between-study variance. They can disagree, and when they
-# do it is worth knowing before quoting one of them.
-print(f&quot;\n{&#x27;tau estimator&#x27;:&lt;22}{&#x27;pooled&#x27;:&gt;9}{&#x27;se&#x27;:&gt;8}{&#x27;tau^2&#x27;:&gt;9}   95% interval&quot;)
-for method, label in ((&quot;dl&quot;, &quot;DerSimonian-Laird&quot;), (&quot;pm&quot;, &quot;Paule-Mandel&quot;), (&quot;reml&quot;, &quot;REML&quot;)):
-    re = random_effects(y, se, tau_method=method)
-    print(
-        f&quot;{label:&lt;22}{re.estimate:&gt;9.4f}{re.se:&gt;8.4f}{re.tau2:&gt;9.5f}   &quot;
-        f&quot;[{re.interval.lower:.3f}, {re.interval.upper:.3f}]&quot;
-    )
-
-het = heterogeneity(y, se)
-print(
-    f&quot;\nheterogeneity: Q = {het.q:.1f} on {het.df} df (p = {het.p_value:.4f}), &quot;
-    f&quot;I2 = {het.i2:.0%}&quot;
-)
-print(f&quot;  I2 of {het.i2:.0%} means most of the variation between these studies is&quot;)
-print(&quot;  real disagreement rather than sampling noise. The pooled mean is a summary&quot;)
-print(&quot;  of a distribution, not an estimate of one shared number.&quot;)
-
-# The number a replication team actually wants.
-kh = random_effects(y, se, tau_method=&quot;reml&quot;, knapp_hartung=True)
-pi = prediction_interval(kh)
-print(
-    f&quot;\npooled mean            {kh.estimate:.4f}  &quot;
-    f&quot;[{kh.interval.lower:.3f}, {kh.interval.upper:.3f}]  (95%, Knapp-Hartung)&quot;
-)
-print(f&quot;NEXT study will land in [{pi.lower:.3f}, {pi.upper:.3f}]  (95% prediction)&quot;)
-ratio = (pi.upper - pi.lower) / (kh.interval.upper - kh.interval.lower)
-print(f&quot;  the prediction interval is {ratio:.1f}x&quot;)
-print(&quot;  wider than the interval on the mean. Powering a replication off the mean&quot;)
-print(&quot;  is how a study ends up underpowered for the effect it actually meets.&quot;)
-
-# Small-study effects: do the imprecise studies report systematically larger
-# effects than the precise ones?
-eg = egger(y, se)
-print(
-    f&quot;\nEgger&#x27;s test: intercept {eg.intercept:+.3f} +/- {eg.se:.3f}, &quot;
-    f&quot;t = {eg.t:+.2f} on {eg.df} df, p = {eg.p:.4f}&quot;
-)
-print(&quot;  a non-zero intercept means effect size is associated with precision --&quot;)
-print(&quot;  the signature of publication bias, though not proof of it: real&quot;)
-print(&quot;  heterogeneity correlated with study size looks identical.&quot;)
-
-# Which studies are carrying the answer?
-loo = leave_one_out(y, se, method=&quot;reml&quot;)
-influence = sorted(
-    zip((r.study for r in corpus.records), loo.influence, strict=True),
-    key=lambda t: abs(t[1]),
-    reverse=True,
-)
-print(&quot;\nmost influential studies (shift in pooled-se units when dropped):&quot;)
-for study, shift in influence[:5]:
-    est = dict((s, e) for s, e, _, _ in STUDIES)[study]
-    n = dict((s, n) for s, _, _, n in STUDIES)[study]
-    print(f&quot;  {study}  {shift:+.3f}   (effect {est:.2f}, n = {n})&quot;)
-
-bj = baujat(y, se)
-worst = max(range(len(bj.q_contribution)), key=lambda i: bj.q_contribution[i])
-print(
-    f&quot;\nlargest contributor to heterogeneity: &quot;
-    f&quot;{corpus.records[worst].study} (Q share {bj.q_contribution[worst]:.2f})&quot;
-)
-
-print(f&quot;&quot;&quot;
-Reading it
-    Reported as one number this literature says the nudge works: {kh.estimate:.2f}, interval
-    comfortably clear of zero. Reported honestly it says something more useful and
-    less quotable.
-
-    The studies genuinely disagree ({het.i2:.0%} of the variation is real, not sampling),
-    effect size tracks precision in a way consistent with publication bias
-    (p = {eg.p:.4f}), and study twenty-one could land anywhere in
-    [{pi.lower:.2f}, {pi.upper:.2f}] -- the bottom of which is about a quarter of the pooled
-    mean and small enough that a replication powered off {kh.estimate:.2f} would miss it.
-
-    None of that needed a different estimator. It needed the three quantities that
-    usually end up in an appendix: heterogeneity, the prediction interval, and a
-    small-study check.&quot;&quot;&quot;)</pre>
-        </div>
-        <div class="out">
-          <div class="out-h">what it printed</div>
-          <pre>corpus: nudge-replication, k = 20 studies
-  quantity: standardized_contrast
-  raw effects run from 0.05 to 0.51
-
-tau estimator            pooled      se    tau^2   95% interval
-DerSimonian-Laird        0.1731  0.0204  0.00338   [0.133, 0.213]
-Paule-Mandel             0.1784  0.0228  0.00488   [0.134, 0.223]
-REML                     0.1736  0.0206  0.00350   [0.133, 0.214]
-
-heterogeneity: Q = 41.1 on 19 df (p = 0.0023), I2 = 54%
-  I2 of 54% means most of the variation between these studies is
-  real disagreement rather than sampling noise. The pooled mean is a summary
-  of a distribution, not an estimate of one shared number.
-
-pooled mean            0.1736  [0.128, 0.219]  (95%, Knapp-Hartung)
-NEXT study will land in [0.041, 0.306]  (95% prediction)
-  the prediction interval is 2.9x
-  wider than the interval on the mean. Powering a replication off the mean
-  is how a study ends up underpowered for the effect it actually meets.
-
-Egger&#x27;s test: intercept +1.822 +/- 0.474, t = +3.84 on 18 df, p = 0.0012
-  a non-zero intercept means effect size is associated with precision --
-  the signature of publication bias, though not proof of it: real
-  heterogeneity correlated with study size looks identical.
-
-most influential studies (shift in pooled-se units when dropped):
-  s12  +0.477   (effect 0.34, n = 258)
-  s11  -0.402   (effect 0.11, n = 2080)
-  s01  -0.393   (effect 0.09, n = 1180)
-  s07  -0.367   (effect 0.13, n = 2510)
-  s14  +0.360   (effect 0.24, n = 1030)
-
-largest contributor to heterogeneity: s16 (Q share 8.21)
-
-Reading it
-    Reported as one number this literature says the nudge works: 0.17, interval
-    comfortably clear of zero. Reported honestly it says something more useful and
-    less quotable.
-
-    The studies genuinely disagree (54% of the variation is real, not sampling),
-    effect size tracks precision in a way consistent with publication bias
-    (p = 0.0012), and study twenty-one could land anywhere in
-    [0.04, 0.31] -- the bottom of which is about a quarter of the pooled
-    mean and small enough that a replication powered off 0.17 would miss it.
-
-    None of that needed a different estimator. It needed the three quantities that
-    usually end up in an appendix: heterogeneity, the prediction interval, and a
-    small-study check.</pre>
-        </div>
-      </div>
-    </div>
-  </details>
-</article>
-<article class="ex" id="12_software_experiment_value">
-  <div class="ex-head">
-    <p class="ex-n">12 &middot; PRODUCT ANALYTICS</p>
-    <h3>Is this A/B test worth running at all?</h3>
-    <p class="ex-q">Is this A/B test worth running at all?</p>
-    <div class="ex-meta"><a class="pkg" href="design.html">Design</a>
-      <span class="pkg">202 lines</span>
-      <span class="pkg">runs in 9.7s</span></div>
+</a><a class="card" href="example-12-software-experiment-value.html">
+  <p class="card-n">12 · PRODUCT ANALYTICS</p>
+  <h3>The worst-powered design is the one worth running</h3>
+  <p>Is this A/B test worth running at all?</p>
+  <div class="card-f">
+    <p class="card-go">5 steps, 4 figures
+      <span aria-hidden="true">→</span></p>
+    <p class="card-stat"><small>Design</small></p>
   </div>
-  <details class="ex-more">
-    <summary>Read the framing, the code, and what it printed</summary>
-    <div class="ex-body">
-      <div class="ex-framing"><p>The question
-    A team wants to test a checkout change. The usual conversation is about sample
-    size and how long it will take. The prior question, almost never asked, is
-    whether the test can change what anyone does.</p><p>If you would ship the change whatever the result, the test is theatre. If the
-    decision genuinely hangs in the balance, the test has value, and that value can
-    be put in the same units as its cost.</p><p>The move
-    Value of information. EVPI is the ceiling -- what you would pay to know the
-    truth outright. EVSI is what a test of a given precision is actually worth. Both
-    fall to nearly zero when the prior already settles the decision, which is the
-    quantitative version of &quot;we already know this&quot;.</p><p>Pillars: design (value of information, candidate scoring)</p></div>
-      <div class="pair">
-        <div class="code">
-          <div class="code-h"><span>examples/12_software_experiment_value.py</span>
-            <button class="copy" type="button">Copy</button></div>
-          <pre>from axiom.design import (
-    DecisionSpec,
-    DesignCandidate,
-    EconomicInputs,
-    ValuePerOutcome,
-    difference_se,
-    eig_gaussian,
-    evaluate_candidate,
-    evoi_gaussian,
-    pareto_front,
-    sample_size,
-)
-
-# The decision: roll the change out to the whole base if the lift clears the bar
-# that makes it worth the engineering and support cost.
-MONTHLY_USERS = 250_000
-VALUE_PER_CONVERSION = 12.0  # USD of margin
-THRESHOLD = 0.004  # +0.4pp conversion, the bar for rolling out
-HORIZON_MONTHS = 12  # a checkout change ships and stays shipped
-
-# The stake is the whole horizon, not one month. Getting this wrong is the most
-# common way a value-of-information calculation comes out saying &quot;never test&quot;:
-# the cost of the test is real and immediate, so the benefit has to be counted
-# over the life of the decision it informs.
-decision = DecisionSpec(
-    name=&quot;roll_out_checkout_change&quot;,
-    threshold=THRESHOLD,
-    value_per_outcome_unit=VALUE_PER_CONVERSION * MONTHLY_USERS * HORIZON_MONTHS,
-    numeraire=&quot;USD&quot;,
-)
-
-BASE_RATE = 0.052
-OUTCOME_SD = (BASE_RATE * (1 - BASE_RATE)) ** 0.5
-
-print(f&quot;decision : roll out if the lift beats {THRESHOLD:.1%}&quot;)
-print(
-    f&quot;stakes   : {decision.value_per_outcome_unit:,.0f} USD per unit of conversion &quot;
-    f&quot;rate over {HORIZON_MONTHS} months&quot;
-)
-print(
-    f&quot;           i.e. a {THRESHOLD:.1%} lift is worth &quot;
-    f&quot;{THRESHOLD * decision.value_per_outcome_unit:,.0f} USD&quot;
-)
-
-# Three states of belief about the same change, and what a test is worth in each.
-print(f&quot;\n{&#x27;prior belief&#x27;:&lt;34}{&#x27;EVPI&#x27;:&gt;12}{&#x27;EVSI&#x27;:&gt;12}{&#x27;EIG&#x27;:&gt;9}&quot;)
-BELIEFS = (
-    (&quot;already sure it works&quot;, 0.011, 0.0020),
-    (&quot;genuinely on the fence&quot;, 0.004, 0.0035),
-    (&quot;already sure it does not&quot;, -0.004, 0.0020),
-)
-n_pilot = 40_000
-se_pilot = difference_se(n_pilot, sd=OUTCOME_SD)
-for label, prior_mean, prior_sd in BELIEFS:
-    ev = evoi_gaussian(decision, prior_mean, prior_sd, se_pilot)
-    eig = eig_gaussian(prior_sd, se_pilot)
-    print(f&quot;{label:&lt;34}{ev.evpi:&gt;12,.0f}{ev.evsi:&gt;12,.0f}{eig:&gt;9.3f}&quot;)
-
-print(&quot;&quot;&quot;
-  The middle row is the only one where a test earns its keep. In the other two the
-  prior has already made the decision, so buying information about it returns
-  almost nothing -- however many users you throw at it, and however tight the
-  resulting confidence interval looks in the readout.&quot;&quot;&quot;)
-
-# Take the live case and size it properly.
-PRIOR_MEAN, PRIOR_SD = 0.004, 0.0035
-mde = 0.003
-sized = sample_size(effect=mde, sd=OUTCOME_SD, power=0.8, alpha=0.05)
-print(f&quot;\nfor the on-the-fence case, powering for a {mde:.1%} lift:&quot;)
-print(
-    f&quot;  n = {sized.n:,} users ({sized.n_treated:,} / {sized.n_control:,}), &quot;
-    f&quot;power {sized.power:.3f}&quot;
-)
-
-se_at_n = difference_se(sized.n, sd=OUTCOME_SD)
-ev = evoi_gaussian(decision, PRIOR_MEAN, PRIOR_SD, se_at_n)
-print(f&quot;  experiment se {se_at_n:.5f}&quot;)
-print(
-    f&quot;  EVPI {ev.evpi:,.0f} USD, EVSI {ev.evsi:,.0f} USD &quot;
-    f&quot;({ev.evsi / ev.evpi:.0%} of the ceiling)&quot;
-)
-print(
-    f&quot;  posterior sd after the test would be {ev.preposterior_sd:.5f}, &quot; f&quot;down from {PRIOR_SD:.5f}&quot;
-)
-
-# More precision costs more exposure. Where does it stop paying?
-print(f&quot;\n{&#x27;test size&#x27;:&gt;12}{&#x27;se&#x27;:&gt;10}{&#x27;EVSI&#x27;:&gt;12}{&#x27;% of EVPI&#x27;:&gt;12}&quot;)
-for n in (20_000, 40_000, 80_000, 160_000, 320_000, 640_000):
-    se_n = difference_se(n, sd=OUTCOME_SD)
-    e = evoi_gaussian(decision, PRIOR_MEAN, PRIOR_SD, se_n)
-    print(f&quot;{n:&gt;12,}{se_n:&gt;10.5f}{e.evsi:&gt;12,.0f}{e.evsi / ev.evpi:&gt;11.0%}&quot;)
-
-# Now the part a sample-size calculator cannot do: net of what the test costs.
-value = ValuePerOutcome(
-    value=VALUE_PER_CONVERSION,
-    outcome_unit=&quot;conversion&quot;,
-    numeraire=&quot;USD&quot;,
-    source=&quot;finance, margin per converted user, 2026 H1&quot;,
-)
-print(f&quot;\nthe price is on the record: {value.ledger_line().statement}&quot;)
-
-# The &quot;dose&quot; here is exposure to the new checkout, measured in users per period.
-# Showing someone a different page costs nothing to serve, so the cost per unit of
-# dose is zero -- but withholding it from the holdout arm forgoes the lift on those
-# users, and that is a real cost the power calculation never mentions.
-economics = EconomicInputs(
-    value_per_outcome=value,
-    dose_per_period=float(sized.n),
-    discount_rate=0.0,
-    dose_unit=&quot;exposure&quot;,
-    dose_cost_per_unit=0.0,
-    marginal_value_ratio=PRIOR_MEAN,
-)
-candidates = [
-    DesignCandidate(
-        name=&quot;two_week_50_50&quot;,
-        method=&quot;cluster_based_regression&quot;,
-        n_units=sized.n,
-        n_periods=2,
-        holdout_fraction=0.5,
-        experiment_se=se_at_n,
-        cost=18_000.0,
-        cooldown_periods=0,
-    ),
-    DesignCandidate(
-        name=&quot;one_week_90_10&quot;,
-        method=&quot;cluster_based_regression&quot;,
-        n_units=sized.n,
-        n_periods=1,
-        holdout_fraction=0.1,
-        experiment_se=se_at_n * 1.6,
-        cost=9_000.0,
-        cooldown_periods=0,
-    ),
-    DesignCandidate(
-        name=&quot;four_week_50_50&quot;,
-        method=&quot;cluster_based_regression&quot;,
-        n_units=sized.n * 2,
-        n_periods=4,
-        holdout_fraction=0.5,
-        experiment_se=se_at_n * 0.7,
-        cost=34_000.0,
-        cooldown_periods=1,
-    ),
-]
-scores = [
-    evaluate_candidate(c, decision, prior_mean=PRIOR_MEAN, prior_sd=PRIOR_SD, economics=economics)
-    for c in candidates
-]
-front = {s.name for s in pareto_front(scores, objectives=(&quot;net_value&quot;, &quot;-cost&quot;, &quot;eig&quot;))}
-
-print(
-    f&quot;\n{&#x27;design&#x27;:&lt;20}{&#x27;EVSI&#x27;:&gt;12}{&#x27;holdout cost&#x27;:&gt;15}{&#x27;run cost&#x27;:&gt;11}&quot;
-    f&quot;{&#x27;net&#x27;:&gt;12}{&#x27;power&#x27;:&gt;8}  front&quot;
-)
-for s in scores:
-    print(
-        f&quot;{s.name:&lt;20}{s.evsi:&gt;12,.0f}{s.opportunity_cost:&gt;15,.0f}{s.cost:&gt;11,.0f}&quot;
-        f&quot;{s.net_value:&gt;12,.0f}{s.power:&gt;8.3f}  {&#x27;yes&#x27; if s.name in front else &#x27;&#x27;}&quot;
-    )
-
-winner = max(scores, key=lambda s: s.net_value)
-print(f&quot;\nhighest net value: {winner.name}&quot;)
-
-by_name = {s.name: s for s in scores}
-low, high = by_name[&quot;one_week_90_10&quot;], by_name[&quot;four_week_50_50&quot;]
-print(f&quot;&quot;&quot;
-Reading it
-    The winner is the WORST-powered design on the list. &#x27;{low.name}&#x27; has power
-    {low.power:.2f} -- a number that would be rejected out of hand in a design review --
-    and nets {low.net_value:,.0f} USD. &#x27;{high.name}&#x27; has power {high.power:.2f}, near
-    certainty, and nets {high.net_value:,.0f}.
-
-    Nothing is wrong with the power calculation. It is answering a different
-    question. Holding half the traffic away from a change you mostly believe in
-    forgoes {high.opportunity_cost:,.0f} USD of upside, and running four weeks instead of
-    one costs more besides -- neither of which appears anywhere in a sample-size
-    formula. Once both are counted, the extra precision is being bought at a price
-    higher than the decision it improves is worth.
-
-    Precision is an input, not the objective. Past the point where more of it stops
-    changing what you would do, buying more is just spending.&quot;&quot;&quot;)</pre>
-        </div>
-        <div class="out">
-          <div class="out-h">what it printed</div>
-          <pre>decision : roll out if the lift beats 0.4%
-stakes   : 36,000,000 USD per unit of conversion rate over 12 months
-           i.e. a 0.4% lift is worth 144,000 USD
-
-prior belief                              EVPI        EVSI      EIG
-already sure it works                        4           0    0.297
-genuinely on the fence                  50,267      42,447    0.624
-already sure it does not                     1           0    0.297
-
-  The middle row is the only one where a test earns its keep. In the other two the
-  prior has already made the decision, so buying information about it returns
-  almost nothing -- however many users you throw at it, and however tight the
-  resulting confidence interval looks in the readout.
-
-for the on-the-fence case, powering for a 0.3% lift:
-  n = 171,964 users (85,982 / 85,982), power 0.800
-  experiment se 0.00107
-  EVPI 50,267 USD, EVSI 48,067 USD (96% of the ceiling)
-  posterior sd after the test would be 0.00335, down from 0.00350
-
-   test size        se        EVSI   % of EVPI
-      20,000   0.00314      37,416        74%
-      40,000   0.00222      42,447        84%
-      80,000   0.00157      45,864        91%
-     160,000   0.00111      47,914        95%
-     320,000   0.00078      49,048        98%
-     640,000   0.00056      49,646        99%
-
-the price is on the record: one conversion is worth 12 USD (finance, margin per converted user, 2026 H1)
-
-design                      EVSI   holdout cost   run cost         net   power  front
-two_week_50_50            48,067          8,254     18,000      21,813   0.962  yes
-one_week_90_10            45,148            825      9,000      35,322   0.646  yes
-four_week_50_50           49,152         16,509     34,000      -1,356   1.000  yes
-
-highest net value: one_week_90_10
-
-Reading it
-    The winner is the WORST-powered design on the list. &#x27;one_week_90_10&#x27; has power
-    0.65 -- a number that would be rejected out of hand in a design review --
-    and nets 35,322 USD. &#x27;four_week_50_50&#x27; has power 1.00, near
-    certainty, and nets -1,356.
-
-    Nothing is wrong with the power calculation. It is answering a different
-    question. Holding half the traffic away from a change you mostly believe in
-    forgoes 16,509 USD of upside, and running four weeks instead of
-    one costs more besides -- neither of which appears anywhere in a sample-size
-    formula. Once both are counted, the extra precision is being bought at a price
-    higher than the decision it improves is worth.
-
-    Precision is an input, not the objective. Past the point where more of it stops
-    changing what you would do, buying more is just spending.</pre>
-        </div>
-      </div>
-    </div>
-  </details>
-</article>
-    </div>
+</a></div>
   </div>
 </section>
 
@@ -2254,20 +272,26 @@ Reading it
   <div class="wrap">
     <div class="grid-2">
       <div>
-        <h3>Writing another one</h3>
-        <p class="small muted">Keep the shape: a docstring that states the field's question
-          in that field's own terms, a synthetic world with a known truth, the axiom calls,
-          and a closing note saying what the numbers actually showed — including when that
-          is not what the setup implied. Then add it to the table in
-          <code>examples/README.md</code>.</p>
+        <h3>How these pages are built</h3>
+        <p class="small muted">Nothing here is transcribed. Each script narrates itself
+          through <code>examples/_walkthrough.py</code>, and the site build runs it with
+          a capture flag set, so the steps, the tables, the readouts and every chart
+          series on these pages are the record of a real run. The code shown against a
+          step is sliced out of the source file by line number — the code that ran
+          between that step's heading and the next, with only each figure's caption
+          text elided, since the page shows it with the figure instead. Every page
+          carries the unedited file at the bottom. A broken example fails the build
+          rather than shipping stale prose.</p>
       </div>
       <div>
-        <h3>Going deeper</h3>
-        <p class="small muted">The <a href="identify.html">five-pillar tour</a> covers the
-          same ground with charts and more room to breathe, and the
-          <a href="case-study.html">HYPER-3 case study</a> works one clinical trial end to
-          end across all of them — from the causal graph to the safety review that stops an
-          arm.</p>
+        <h3>Writing another one</h3>
+        <p class="small muted">Keep the shape: a docstring that states the field's question
+          in that field's own terms, a synthetic world with a known truth, then
+          <code>w.step(title, why=…, instead=…)</code> for each move — the
+          <code>instead</code> is the part readers get nowhere else, so it has to be the
+          alternative a reasonable person would really have reached for. Close with
+          <code>w.finding(…)</code> saying what the numbers showed. Then add it to the
+          table in <code>examples/README.md</code>.</p>
       </div>
     </div>
   </div>

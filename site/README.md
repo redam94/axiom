@@ -1,8 +1,9 @@
 # site/ — the axiom marketing and demonstration site
 
-A static site, hostable on GitHub Pages with no build step at serve time. Eight
-pages: a landing page, one per pillar, the HYPER-3 case study, and a searchable
-API map.
+A static site, hostable on GitHub Pages with no build step at serve time. Ten
+authored pages -- a landing page, one per pillar, the examples index, the
+benchmarks, the HYPER-3 case study and a searchable API map -- plus one generated
+walkthrough page per example in `examples/`.
 
 The rule the site is built on is the library's own fourth rule — **every number
 carries its provenance.** Nothing here is typed by hand. Every figure and every
@@ -16,6 +17,8 @@ site/
   index.html  identify.html  design.html  calibrate.html  surface.html
   meta.html  examples.html  benchmarks.html              <- generated; committed
   case-study.html  api.html
+  example-01-....html ... example-12-....html            <- one per walkthrough,
+                                                            generated from data
   _src/*.html          content fragments (edit these)
   _gen/generate.py     runs axiom, writes assets/data/*.json
   _gen/build.py        wraps _src fragments in the shared shell
@@ -42,10 +45,35 @@ python site/_gen/build.py
 python -m http.server 8000 --directory site
 ```
 
-The `examples` section of `generate.py` executes every script in `examples/` in a
-subprocess and stores its source alongside its captured stdout, so the examples
-page cannot drift from the scripts and a broken example fails the generate step
-rather than shipping stale prose.
+## Where the walkthrough pages come from
+
+The `examples` section of `generate.py` runs every script in `examples/` in a
+subprocess with `AXIOM_WALKTHROUGH_JSON` set. Each script narrates itself through
+`examples/_walkthrough.py`, so that one run produces both the terminal walkthrough
+and a structured record: the steps, the reasoning behind each one, the alternative
+it rejected, the readouts, the tables and the payload for every chart.
+
+`build.py` renders one page per example from that record. The code shown against a
+step is sliced out of the source file by line number -- the code that ran between
+that step's heading and the next, with each figure's `title`, `note` and `legend`
+elided because the page renders them with the figure a few lines below. The
+elision is marked in the code and every page carries the unedited file at the
+bottom. So a page cannot describe a step the script no longer takes, and a broken
+example fails the generate step rather than shipping stale prose.
+
+Each example's figures are written to their own `assets/data/figures-<stem>.json`,
+so a walkthrough page fetches its own charts and not the other eleven examples'.
+An example writes its chart options with `@`-prefixed references into its own
+payload (`{"rows": "@rows"}`); `build.py` resolves those to real paths and fails the
+build if one does not resolve, so a mistyped reference can never reach a reader as
+an empty box.
+
+To iterate on one example without re-running the other eleven:
+
+```bash
+AXIOM_EXAMPLES_GLOB='07*.py' python site/_gen/generate.py examples
+python site/_gen/build.py
+```
 
 `build.py` substitutes `{{path.to.value:format}}` tokens in the fragments with
 values from `assets/data/*.json`, so a number in the prose is baked in at build
