@@ -1750,6 +1750,270 @@ def examples() -> Any:
     }
 
 
+# ----------------------------------------------------------------------------------
+# benchmarks: does axiom reproduce numbers other people published?
+# ----------------------------------------------------------------------------------
+
+
+@section
+def benchmarks() -> Any:
+    """Re-run the published-value comparisons and record every one.
+
+    The comparisons are recomputed here rather than scraped from the case-study
+    output, so the site's table is the same arithmetic the tests assert on.
+    """
+    import subprocess
+
+    sys.path.insert(0, str(ROOT / "benchmarks"))
+    import numpy as _np
+    import pandas as _pd
+    from registry import DATASETS, load, log_risk_ratios, model_based_i2
+
+    from axiom.core import BASES, D, Outcome, Treatment
+    from axiom.data import Panel, RoleMap
+    from axiom.diagnose import robustness_value
+    from axiom.identify import ols
+    from axiom.meta import heterogeneity, random_effects
+    from axiom.surface import ExponentialKernel, SurfaceSpec, fit
+
+    def row(label: str, ours: float, theirs: float, fmt: str = ".4f") -> dict[str, Any]:
+        delta = abs(float(ours) - float(theirs))
+        scale = max(abs(float(theirs)), 1e-12)
+        return {
+            "label": label,
+            "axiom": float(ours),
+            "published": float(theirs),
+            "delta": delta,
+            "rel": delta / scale,
+            "fmt": fmt,
+        }
+
+    entries: list[dict[str, Any]] = []
+
+    # --- BCG, against R's metafor --------------------------------------------
+    bcg_spec = DATASETS["bcg"]
+    pub = bcg_spec.published
+    frame = load("bcg")
+    y, se = log_risk_ratios(frame)
+    pooled = random_effects(y, se, tau_method="reml")
+    het = heterogeneity(y, se)
+    i2_model, h2_model = model_based_i2(pooled.tau2, se)
+    kh = random_effects(y, se, tau_method="reml", knapp_hartung=True)
+    from axiom.meta import prediction_interval
+
+    pi = prediction_interval(kh)
+
+    entries.append({
+        "name": "bcg",
+        "title": bcg_spec.title,
+        "field": bcg_spec.field,
+        "pillar": bcg_spec.pillar,
+        "reference": "R metafor",
+        "availability": bcg_spec.availability,
+        "citation": bcg_spec.citation,
+        "licence": bcg_spec.licence,
+        "source": bcg_spec.source,
+        "n_rows": len(frame),
+        "scale": f"{int((frame.tpos + frame.tneg + frame.cpos + frame.cneg).sum()):,} people",
+        "rows": [
+            row("pooled log risk ratio", pooled.estimate, pub["estimate"]),
+            row("standard error", pooled.se, pub["se"]),
+            row("95% interval, lower", pooled.interval.lower, pub["ci_lower"]),
+            row("95% interval, upper", pooled.interval.upper, pub["ci_upper"]),
+            row("tau^2 (REML)", pooled.tau2, pub["tau2_reml"]),
+            row("Cochran's Q", het.q, pub["q"], ".4f"),
+            row("I^2 (model-based)", i2_model, pub["i2_model_based"]),
+            row("H^2 (model-based)", h2_model, pub["h2_model_based"], ".3f"),
+        ],
+        # the forest of individual trials, for a chart
+        "forest": [
+            {
+                "label": f"{frame.author[i][:22]} {int(frame.year[i])}",
+                "estimate": float(y[i]),
+                "lower": float(y[i] - 1.96 * se[i]),
+                "upper": float(y[i] + 1.96 * se[i]),
+                "latitude": int(frame.ablat[i]),
+            }
+            for i in range(len(frame))
+        ],
+        "pooled": {
+            "estimate": pooled.estimate,
+            "lower": pooled.interval.lower,
+            "upper": pooled.interval.upper,
+        },
+        "i2_q_based": het.i2,
+        "i2_model_based": i2_model,
+        "prediction": [pi.lower, pi.upper],
+    })
+
+    # --- NIST Misra1a, against certified values ------------------------------
+    nist = DATASETS["misra1a"]
+    cert = nist.published
+    BASES.declare("volume", symbol="V")
+    BASES.declare("pressure", symbol="P")
+    volume = Outcome(name="volume", dimension=D.volume, unit="cc")
+    pressure = Treatment(name="pressure", dimension=D.pressure, unit="mmHg")
+    mf = load("misra1a")
+    tidy = _pd.DataFrame({
+        "unit": ["specimen"] * len(mf),
+        "t": _np.arange(len(mf)),
+        "pressure": mf["pressure"].to_numpy(float),
+        "volume": mf["volume"].to_numpy(float),
+    })
+    panel = Panel(
+        tidy,
+        RoleMap(unit="unit", time="t", outcome=("volume", volume),
+                treatments={"pressure": pressure}),
+    )
+    nist_fit = fit(
+        SurfaceSpec(
+            name="misra1a",
+            treatments=(pressure,),
+            outcome=volume,
+            kernels={"pressure": ExponentialKernel(reference_dose=1800.0, amplitude_scale=250.0)},
+            intercept="none",
+            unit_labels=("specimen",),
+        ),
+        panel, backend="laplace", draws=4000, seed=SEED,
+    )
+    post = nist_fit.posterior
+    beta = post.summary("beta_pressure", definition="hdi", mass=0.95)
+    kk = post.summary("k_pressure", definition="hdi", mass=0.95)
+    x = tidy["pressure"].to_numpy(float)
+    yy = tidy["volume"].to_numpy(float)
+    rss = float(_np.sum((yy - beta.mean * (1.0 - _np.exp(-x / kk.mean))) ** 2))
+
+    entries.append({
+        "name": "misra1a",
+        "title": nist.title,
+        "field": nist.field,
+        "pillar": nist.pillar,
+        "reference": "NIST certified values",
+        "availability": nist.availability,
+        "citation": nist.citation,
+        "licence": nist.licence,
+        "source": nist.source,
+        "n_rows": len(mf),
+        "scale": "14 observations, 2 parameters",
+        "rows": [
+            row("beta  (NIST b1)", beta.mean, cert["axiom_beta"], ".4f"),
+            row("k     (NIST 1/b2)", kk.mean, cert["axiom_k"], ".2f"),
+            row("implied b2", 1.0 / kk.mean, cert["b2"], ".3e"),
+            row("residual sum of squares", rss, cert["residual_sum_of_squares"], ".6f"),
+        ],
+        "hdi": {
+            "beta": [beta.interval.lower, beta.interval.upper],
+            "k": [kk.interval.lower, kk.interval.upper],
+            "beta_certified": cert["axiom_beta"],
+            "k_certified": cert["axiom_k"],
+        },
+        "rss_excess": rss - cert["residual_sum_of_squares"],
+        "observed": {"pressure": x.tolist(), "volume": yy.tolist()},
+    })
+
+    # --- Darfur and LaLonde: only if fetched ---------------------------------
+    covs = ["age", "farmer_dar", "herder_dar", "pastvoted", "hhsize_darfur", "female"]
+    if DATASETS["darfur"].available:
+        d = DATASETS["darfur"]
+        pub = d.published
+        df_frame = load("darfur")
+        dummies = _pd.get_dummies(df_frame["village"], prefix="v", drop_first=True, dtype=float)
+        design = _pd.concat([df_frame.drop(columns=["village"]), dummies], axis=1)
+        est = ols(design, "peacefactor", "directlyharmed",
+                  covariates=[*covs, *dummies.columns])
+        dof = int(est.detail["df_resid"])
+        rv = robustness_value(estimate=est.estimate, se=est.se, df=dof, q=1.0, alpha=0.05)
+        naive = ols(df_frame, "peacefactor", "directlyharmed")
+        no_village = ols(df_frame, "peacefactor", "directlyharmed", covariates=covs)
+        entries.append({
+            "name": "darfur",
+            "title": d.title,
+            "field": d.field,
+            "pillar": d.pillar,
+            "reference": "Cinelli & Hazlett (2020)",
+            "availability": d.availability,
+            "citation": d.citation,
+            "licence": d.licence,
+            "source": d.source,
+            "n_rows": len(df_frame),
+            "scale": f"{len(df_frame):,} respondents, {df_frame.village.nunique()} villages",
+            "rows": [
+                row("coefficient", est.estimate, pub["coefficient"]),
+                row("standard error", est.se, pub["se"]),
+                row("residual df", float(dof), float(pub["df"]), ".0f"),
+                row("robustness value", rv.rv, pub["robustness_value"], ".3f"),
+                row("RV at alpha = 0.05", rv.rv_alpha, pub["robustness_value_alpha"], ".3f"),
+                row("partial R^2", rv.r2_yd_x, pub["partial_r2"], ".3f"),
+            ],
+            "specifications": [
+                {"label": "no covariates", "estimate": naive.estimate, "se": naive.se},
+                {"label": "covariates only", "estimate": no_village.estimate, "se": no_village.se},
+                {"label": "published specification", "estimate": est.estimate, "se": est.se},
+            ],
+        })
+
+    if DATASETS["lalonde_nsw"].available and DATASETS["psid_controls"].available:
+        lal = DATASETS["lalonde_nsw"]
+        pub = lal.published
+        nsw = load("lalonde_nsw")
+        psid = load("psid_controls")
+        lcovs = ["age", "education", "black", "hispanic", "married", "nodegree", "re74", "re75"]
+        exp = ols(nsw, "re78", "treat")
+        obs = _pd.concat([nsw[nsw.treat == 1], psid], ignore_index=True)
+        obs_naive = ols(obs, "re78", "treat")
+        obs_adj = ols(obs, "re78", "treat", covariates=lcovs)
+        entries.append({
+            "name": "lalonde_nsw",
+            "title": lal.title,
+            "field": lal.field,
+            "pillar": lal.pillar,
+            "reference": "Dehejia & Wahba (1999)",
+            "availability": lal.availability,
+            "citation": lal.citation,
+            "licence": lal.licence,
+            "source": lal.source,
+            "n_rows": len(nsw),
+            "scale": f"{len(nsw)} randomized, {len(psid):,} PSID comparison",
+            "rows": [
+                row("experimental effect (USD)", exp.estimate, pub["experimental_ate"], ".0f"),
+                row("n", float(len(nsw)), float(pub["n"]), ".0f"),
+                row("n treated", float(int(nsw.treat.sum())), float(pub["n_treated"]), ".0f"),
+            ],
+            "specifications": [
+                {"label": "experimental benchmark", "estimate": exp.estimate, "se": exp.se},
+                {"label": "PSID controls, unadjusted", "estimate": obs_naive.estimate,
+                 "se": obs_naive.se},
+                {"label": "PSID controls, 8 covariates", "estimate": obs_adj.estimate,
+                 "se": obs_adj.se},
+            ],
+            "truth": exp.estimate,
+        })
+
+    # capture the full printed output of each case study, as with the examples
+    for entry in entries:
+        script = ROOT / "benchmarks" / f"case_{entry['name']}.py"
+        if entry["name"] == "lalonde_nsw":
+            script = ROOT / "benchmarks" / "case_lalonde.py"
+        proc = subprocess.run(
+            [sys.executable, str(script)], capture_output=True, text=True,
+            cwd=str(ROOT / "benchmarks"),
+        )
+        if proc.returncode != 0:
+            raise SystemExit(f"benchmark {entry['name']} failed:\n{proc.stderr[-1500:]}")
+        entry["output"] = proc.stdout.rstrip("\n")
+        entry["worst"] = max(r["delta"] for r in entry["rows"])
+        entry["worst_rel"] = max(r["rel"] for r in entry["rows"])
+        print(f"    {entry['name']}: {len(entry['rows'])} checks, "
+              f"worst relative error {entry['worst_rel']:.1e}")
+
+    return {
+        "entries": entries,
+        "n": len(entries),
+        "n_checks": sum(len(e["rows"]) for e in entries),
+        "worst_rel": max(e["worst_rel"] for e in entries),
+    }
+
+
 def main() -> int:
     wanted = sys.argv[1:] or list(SECTIONS)
     for name in wanted:

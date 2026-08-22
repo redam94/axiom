@@ -307,7 +307,10 @@
             series. A subpackage is not complete until its series runs in CI. Gate 12 fails
             the build on an uncovered symbol.</p>
           <p class="rule-proof">{{overview.total_symbols}} exported symbols,
-            {{overview.n_packages}} notebook series, all executed on every build.</p>
+            {{overview.n_packages}} notebook series, all executed on every build. And
+            because a library that only ever tests itself against its own simulator is
+            checking one thing twice, <a href="benchmarks.html">{{benchmarks.n_checks}}
+            published values</a> from four real datasets are reproduced too.</p>
         </div>
       </div>
     </div>
@@ -393,6 +396,13 @@ pip install <span class="s">"axiom[pymc]"</span></pre>
         <h3>Where to go next</h3>
         <p class="small muted">Three ways in, depending on what you came for.</p>
         <div class="ledger mt">
+          <div class="ledger-row">
+            <span class="ledger-f">is it right?</span>
+            <span class="ledger-s"><a href="benchmarks.html">{{benchmarks.n_checks}} published
+              values</a> reproduced from four real datasets — checked against R metafor,
+              NIST certified values, and two published papers.</span>
+            <span class="ledger-v">{{benchmarks.worst_rel:.0e}} worst</span>
+          </div>
           <div class="ledger-row">
             <span class="ledger-f">by field</span>
             <span class="ledger-s"><a href="examples.html">{{examples.n}} runnable

@@ -19,3 +19,8 @@ scratch/
 
 # Files written by the report notebook when it executes.
 nbs/report/readout.*
+
+# Benchmark datasets whose licence this repository cannot satisfy by
+# redistributing them. Fetched on request by `python benchmarks/fetch.py`,
+# under the upstream terms. See benchmarks/README.md.
+benchmarks/cache/
