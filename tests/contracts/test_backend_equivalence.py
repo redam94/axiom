@@ -1,4 +1,11 @@
-"""Phase 8 exit criterion 4: Laplace and NumPyro NUTS agree on the same Hill surface and data.
+"""Phase 8 exit criterion 4: the backends agree on the same Hill surface and data.
+
+Three routes reach a posterior — Laplace, NumPyro NUTS, and PyMC NUTS — and
+PyMC can itself dispatch NUTS to four samplers. All of them compile the *same*
+``ModelSpec``: ``core.value`` for Laplace, ``core.interpret.jax`` for NumPyro,
+``core.interpret.pytensor`` for PyMC. If any two disagree beyond Monte Carlo
+noise, one of those three interpreters has drifted from the tree, which is the
+failure this gate exists to catch.
 
 This is a **normal-approximation check**. The Laplace posterior is Gaussian
 in the unconstrained parameters by construction, so it can only agree with
@@ -14,8 +21,14 @@ scale or a bounded shape parameter carries, so its p-value is held to the
 lenient ``0.01`` and a KS failure on a parameter whose moments agree is
 reported as a normal-approximation caveat rather than as disagreement.
 
-Slow (NUTS with ``draws=1000, tune=1000, chains=2``); skipped without the
-``numpyro`` extra.
+The **MCMC routes** are held to a much tighter standard than Laplace, because
+they are sampling the same density rather than approximating it: their means
+must agree within ``0.15`` posterior sd. A PyMC sampler that is installed but
+does not work with the installed PyMC is skipped *by name* — ``samplers(probe=
+True)`` decides, so the gate never silently covers less than it appears to.
+
+Slow (NUTS with ``draws=1000, tune=1000, chains=2``); each part skips without
+its extra.
 """
 
 from __future__ import annotations
@@ -35,6 +48,9 @@ pytestmark = pytest.mark.slow
 MEAN_TOL_SD = 0.25
 SD_RATIO = (0.75, 1.25)
 KS_ALPHA = 0.01
+#: Two exact samplers of the same density may differ only by Monte Carlo noise.
+MCMC_TOL_SD = 0.15
+MCMC_SD_RATIO = (0.85, 1.18)
 
 
 @pytest.fixture(scope="module")
@@ -99,3 +115,102 @@ def test_laplace_and_numpyro_agree_on_a_well_identified_hill_world(world) -> Non
     structural = [n for n in names if n.startswith(("beta_", "k_"))]
     ks_failed = [c for c in caveats if c.split(":")[0] in structural]
     assert not ks_failed, "\n".join(ks_failed) + "\n" + report
+
+
+# -- the exact samplers, against each other -------------------------------------------------
+
+
+def _moments(posterior, names):  # type: ignore[no-untyped-def]
+    return {
+        n: (posterior.flat(n).ravel().mean(), posterior.flat(n).ravel().std(ddof=1)) for n in names
+    }
+
+
+def _compare(left, right, names, label, tol, ratio):  # type: ignore[no-untyped-def]
+    """Two posteriors of the same model, moment by moment. Returns (report, failures)."""
+    a, b = _moments(left, names), _moments(right, names)
+    rows, failures = [], []
+    for name in names:
+        gap = abs(a[name][0] - b[name][0]) / b[name][1]
+        sd_ratio = a[name][1] / b[name][1]
+        rows.append(
+            f"{name:>10s}: {a[name][0]:+.4f}+-{a[name][1]:.4f} vs "
+            f"{b[name][0]:+.4f}+-{b[name][1]:.4f}  gap/sd={gap:.3f} sd_ratio={sd_ratio:.3f}"
+        )
+        if gap >= tol:
+            failures.append(f"{label} {name}: mean gap {gap:.3f} sd >= {tol}")
+        if not ratio[0] <= sd_ratio <= ratio[1]:
+            failures.append(f"{label} {name}: sd ratio {sd_ratio:.3f} outside {ratio}")
+    return label + "\n" + "\n".join(rows), failures
+
+
+def _usable_pymc_samplers() -> list[str]:
+    """The PyMC samplers that actually run here, probed rather than assumed."""
+    pytest.importorskip("pymc")
+    from axiom.infer import samplers
+
+    return [name for name, status in samplers(probe=True).items() if status.usable]
+
+
+def test_pymc_and_numpyro_sample_the_same_posterior(world) -> None:  # type: ignore[no-untyped-def]
+    """The strong form: two exact samplers over two interpreters of one tree."""
+    pytest.importorskip("pymc")
+    pytest.importorskip("numpyro")
+    pm_fit = fit(world.spec, world.panel, backend="pymc", draws=1000, tune=1000, chains=2, seed=3)
+    np_fit = fit(
+        world.spec, world.panel, backend="numpyro", draws=1000, tune=1000, chains=2, seed=2
+    )
+    assert isinstance(pm_fit.posterior, Posterior), pm_fit.posterior
+    assert isinstance(np_fit.posterior, Posterior), np_fit.posterior
+    assert pm_fit.posterior.provenance["backend"] == "pymc"
+    assert pm_fit.posterior.provenance["nuts_sampler"] == "pymc"
+
+    names = sorted(pm_fit.posterior.names() & np_fit.posterior.names())
+    assert set(names) == {p.name for p in world.model.parameters}
+    report, failures = _compare(
+        pm_fit.posterior, np_fit.posterior, names, "pymc vs numpyro", MCMC_TOL_SD, MCMC_SD_RATIO
+    )
+    print("\n" + report)
+    assert not failures, "\n".join(failures) + "\n" + report
+
+
+def test_every_usable_pymc_sampler_gives_the_same_posterior(world) -> None:  # type: ignore[no-untyped-def]
+    """The claim the PyMC backend is *for*: the sampler is a speed choice, not a modelling one."""
+    usable = _usable_pymc_samplers()
+    assert "pymc" in usable, "PyMC's own NUTS must always work when pymc is installed"
+    if len(usable) == 1:
+        pytest.skip("only PyMC's own sampler is usable here; nothing to compare it against")
+
+    from axiom.infer import PymcBackend
+
+    # ``fit`` takes a Backend instance as well as a name, which is the seam for any
+    # backend-specific option; nothing PyMC-shaped leaks into ``fit``'s signature.
+    fits = {
+        name: fit(
+            world.spec,
+            world.panel,
+            backend=PymcBackend(nuts_sampler=name),
+            draws=1000,
+            tune=1000,
+            chains=2,
+            seed=3,
+        )
+        for name in usable
+    }
+    for name, result in fits.items():
+        assert isinstance(result.posterior, Posterior), (name, result.posterior)
+        assert result.posterior.provenance["nuts_sampler"] == name
+
+    reference = fits["pymc"].posterior
+    names = sorted({p.name for p in world.model.parameters})
+    reports, failures = [], []
+    for name in usable:
+        if name == "pymc":
+            continue
+        report, failed = _compare(
+            fits[name].posterior, reference, names, f"{name} vs pymc", MCMC_TOL_SD, MCMC_SD_RATIO
+        )
+        reports.append(report)
+        failures += failed
+    print("\n" + "\n".join(reports))
+    assert not failures, "\n".join(failures) + "\n" + "\n".join(reports)
