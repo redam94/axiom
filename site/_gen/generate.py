@@ -13,7 +13,9 @@ Usage::
 
 from __future__ import annotations
 
+import ast
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -1632,12 +1634,20 @@ def tour() -> Any:
 
 @section
 def examples() -> Any:
-    """Execute each example in a subprocess and keep its source and its output.
+    """Execute each example and keep its narration, its numbers and its figures.
 
     Running them rather than transcribing them means the site cannot drift from the
     scripts, and a broken example shows up as a failed build instead of stale prose.
+
+    Each example narrates itself through ``examples/_walkthrough.py``. With
+    ``AXIOM_WALKTHROUGH_JSON`` set, the same run that prints the walkthrough also
+    writes it as structured steps — narrative, decisions, readouts, tables and
+    chart payloads. The code shown against each step is sliced out of the source
+    file by line number, so a step's code is literally the code that ran between
+    that step's heading and the next one.
     """
     import subprocess
+    import tempfile
 
     # field / one-line question / pillars — the only editorial content here
     META = {
@@ -1649,17 +1659,17 @@ def examples() -> Any:
         ),
         "02_economics_instrument": (
             "Labour economics",
-            "Does a training programme raise earnings, when enrolment is " "self-selected?",
+            "Does a training programme raise earnings, when enrolment is self-selected?",
             ["identify"],
         ),
         "03_education_selection_bias": (
             "Education",
-            "How strong would an unmeasured confounder have to be to erase the " "tutoring effect?",
+            "How strong would an unmeasured confounder have to be to erase the tutoring effect?",
             ["identify", "diagnose"],
         ),
         "04_epidemiology_frontdoor": (
             "Epidemiology",
-            "An exposure you cannot deconfound, recovered through a measured " "mediator.",
+            "An exposure you cannot deconfound, recovered through a measured mediator.",
             ["identify"],
         ),
         "05_ecology_transport": (
@@ -1691,7 +1701,7 @@ def examples() -> Any:
         ),
         "10_marketing_saturation": (
             "Marketing",
-            "Contribution and marginal return, and proof the vocabulary is a thin " "adapter.",
+            "Contribution and marginal return, and proof the vocabulary is a thin adapter.",
             ["adapters", "surface"],
         ),
         "11_psychology_meta_analysis": (
@@ -1708,51 +1718,200 @@ def examples() -> Any:
 
     directory = ROOT / "examples"
     entries = []
-    for path in sorted(directory.glob("*.py")):
-        if path.name == "run_all.py":
-            continue
+    figures: dict[str, Any] = {}
+    tmp = Path(tempfile.mkdtemp(prefix="axiom-walkthrough-"))
+
+    # Narrow the set while iterating on one example; the site build always takes
+    # all of them, so a half-generated page can never be what ships.
+    pattern = os.environ.get("AXIOM_EXAMPLES_GLOB", "[0-9]*.py")
+
+    for path in sorted(directory.glob(pattern)):
         stem = path.stem
         if stem not in META:
             print(f"    WARNING: {stem} has no metadata; skipping")
             continue
         field, question, pillars = META[stem]
         source = path.read_text()
+
+        capture = tmp / f"{stem}.json"
+        env = {**os.environ, "AXIOM_WALKTHROUGH_JSON": str(capture)}
         t0 = time.perf_counter()
         proc = subprocess.run(
-            [sys.executable, str(path)], capture_output=True, text=True, cwd=str(ROOT)
+            [sys.executable, str(path)],
+            capture_output=True,
+            text=True,
+            cwd=str(ROOT),
+            env=env,
         )
         elapsed = time.perf_counter() - t0
         if proc.returncode != 0:
             raise SystemExit(f"example {stem} failed:\n{proc.stderr[-2000:]}")
+        if not capture.exists():
+            raise SystemExit(
+                f"example {stem} produced no walkthrough — it must narrate itself "
+                "through examples/_walkthrough.py"
+            )
+        walk = json.loads(capture.read_text())
+
+        setup_code, step_code = slice_steps(source)
+        if len(step_code) != len(walk["steps"]):
+            raise SystemExit(
+                f"example {stem}: {len(step_code)} w.step(...) calls in the source but "
+                f"{len(walk['steps'])} steps recorded — steps must be top-level statements"
+            )
+        for step, code in zip(walk["steps"], step_code, strict=True):
+            step["code"] = code
+            for block in step["blocks"]:
+                if block["type"] == "figure":
+                    # Which JSON file the browser fetches for this chart: one per
+                    # example, so a walkthrough page downloads its own figures and
+                    # not those of the other eleven.
+                    block["file"] = f"figures-{stem}"
+        figures[stem] = walk.pop("figures")
+
         # the module docstring is the framing; the code below it is the demo
         body = source.split('"""', 2)[2].lstrip("\n") if source.count('"""') >= 2 else source
         entries.append(
             {
                 "stem": stem,
+                "slug": "example-" + stem.replace("_", "-"),
                 "number": stem.split("_")[0],
                 "field": field,
                 "question": question,
                 "pillars": pillars,
                 "docstring": source.split('"""')[1].strip() if '"""' in source else "",
                 "code": body.rstrip(),
+                "setup_code": setup_code,
                 "output": proc.stdout.rstrip("\n"),
                 "lines": len(source.splitlines()),
                 "seconds": round(elapsed, 1),
+                "n_steps": len(walk["steps"]),
+                "n_figures": sum(
+                    1 for s in walk["steps"] for b in s["blocks"] if b["type"] == "figure"
+                ),
+                "walkthrough": walk,
             }
         )
-        print(f"    {stem}: {elapsed:.1f}s, " f"{len(proc.stdout.splitlines())} lines of output")
+        print(
+            f"    {stem}: {elapsed:.1f}s, {len(walk['steps'])} steps, "
+            f"{entries[-1]['n_figures']} figures"
+        )
+
+    for stem, payload in figures.items():
+        write(f"figures-{stem}", payload)
 
     return {
         "entries": entries,
         "n": len(entries),
         "total_seconds": round(sum(e["seconds"] for e in entries), 1),
         "total_lines": sum(e["lines"] for e in entries),
+        "total_steps": sum(e["n_steps"] for e in entries),
+        "total_figures": sum(e["n_figures"] for e in entries),
     }
 
 
-# ----------------------------------------------------------------------------------
-# benchmarks: does axiom reproduce numbers other people published?
-# ----------------------------------------------------------------------------------
+def slice_steps(source: str) -> tuple[str, list[str]]:
+    """Split an example's source at its ``w.step(...)`` calls.
+
+    Returns the setup block — everything after the module docstring and before the
+    first step — and then one code block per step, running from the end of that
+    step's call to the start of the next one. Slicing by line number rather than by
+    a marker comment means the page shows the code that actually ran, and cannot be
+    fooled by a stale annotation.
+
+    The one thing dropped is each figure's caption text — ``title``, ``note`` and
+    ``legend`` — which the page renders with the figure itself a few lines below.
+    Showing it twice buries the axiom calls the step is actually about. The
+    elision is marked in the code, and the unedited file is on every page under
+    "the whole file".
+    """
+    tree = ast.parse(source)
+    lines = source.splitlines()
+    captions = caption_lines(tree)
+
+    calls = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.Expr)
+        and isinstance(node.value, ast.Call)
+        and isinstance(node.value.func, ast.Attribute)
+        and node.value.func.attr == "step"
+        and isinstance(node.value.func.value, ast.Name)
+        and node.value.func.value.id == "w"
+    ]
+    if not calls:
+        return trim(lines, captions, 0), []
+
+    doc_end = 0
+    if (
+        tree.body
+        and isinstance(tree.body[0], ast.Expr)
+        and isinstance(tree.body[0].value, ast.Constant)
+    ):
+        doc_end = tree.body[0].end_lineno or 0
+
+    setup = trim(lines[doc_end : calls[0].lineno - 1], captions, doc_end)
+    blocks = []
+    for i, call in enumerate(calls):
+        start = call.end_lineno or call.lineno
+        stop = calls[i + 1].lineno - 1 if i + 1 < len(calls) else len(lines)
+        blocks.append(trim(lines[start:stop], captions, start))
+    return setup, blocks
+
+
+CAPTION_KWARGS = ("title", "note", "legend")
+
+
+def caption_lines(tree: ast.Module) -> dict[int, str | None]:
+    """Line numbers of every figure caption argument, as ``{lineno: replacement}``.
+
+    The first line of each elided run carries the marker comment; the rest map to
+    ``None`` and are dropped.
+    """
+    out: dict[int, str | None] = {}
+    for node in ast.walk(tree):
+        if not (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "figure"
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "w"
+        ):
+            continue
+        first = True
+        for kw in node.keywords:
+            if kw.arg not in CAPTION_KWARGS:
+                continue
+            end = kw.value.end_lineno or kw.value.lineno
+            for ln in range(kw.value.lineno, end + 1):
+                if first:
+                    out[ln] = "    # title, note and legend: the caption shown with the chart"
+                    first = False
+                else:
+                    out[ln] = None
+    return out
+
+
+def trim(lines: list[str], captions: dict[int, str | None], offset: int) -> str:
+    """Drop the rule comments between steps, the blanks around them, and captions.
+
+    ``offset`` is the 0-based index of ``lines[0]`` in the source file, so the
+    caption line numbers — which are 1-based and file-wide — line up.
+    """
+    kept = []
+    for i, ln in enumerate(lines):
+        if ln.startswith("# ---"):
+            continue
+        marker = captions.get(offset + i + 1, "keep")
+        if marker == "keep":
+            kept.append(ln)
+        elif marker is not None:
+            kept.append(marker)
+    while kept and not kept[0].strip():
+        kept.pop(0)
+    while kept and not kept[-1].strip():
+        kept.pop()
+    return "\n".join(kept)
 
 
 @section
@@ -1803,48 +1962,50 @@ def benchmarks() -> Any:
 
     pi = prediction_interval(kh)
 
-    entries.append({
-        "name": "bcg",
-        "title": bcg_spec.title,
-        "field": bcg_spec.field,
-        "pillar": bcg_spec.pillar,
-        "reference": "R metafor",
-        "availability": bcg_spec.availability,
-        "citation": bcg_spec.citation,
-        "licence": bcg_spec.licence,
-        "source": bcg_spec.source,
-        "n_rows": len(frame),
-        "scale": f"{int((frame.tpos + frame.tneg + frame.cpos + frame.cneg).sum()):,} people",
-        "rows": [
-            row("pooled log risk ratio", pooled.estimate, pub["estimate"]),
-            row("standard error", pooled.se, pub["se"]),
-            row("95% interval, lower", pooled.interval.lower, pub["ci_lower"]),
-            row("95% interval, upper", pooled.interval.upper, pub["ci_upper"]),
-            row("tau^2 (REML)", pooled.tau2, pub["tau2_reml"]),
-            row("Cochran's Q", het.q, pub["q"], ".4f"),
-            row("I^2 (model-based)", i2_model, pub["i2_model_based"]),
-            row("H^2 (model-based)", h2_model, pub["h2_model_based"], ".3f"),
-        ],
-        # the forest of individual trials, for a chart
-        "forest": [
-            {
-                "label": f"{frame.author[i][:22]} {int(frame.year[i])}",
-                "estimate": float(y[i]),
-                "lower": float(y[i] - 1.96 * se[i]),
-                "upper": float(y[i] + 1.96 * se[i]),
-                "latitude": int(frame.ablat[i]),
-            }
-            for i in range(len(frame))
-        ],
-        "pooled": {
-            "estimate": pooled.estimate,
-            "lower": pooled.interval.lower,
-            "upper": pooled.interval.upper,
-        },
-        "i2_q_based": het.i2,
-        "i2_model_based": i2_model,
-        "prediction": [pi.lower, pi.upper],
-    })
+    entries.append(
+        {
+            "name": "bcg",
+            "title": bcg_spec.title,
+            "field": bcg_spec.field,
+            "pillar": bcg_spec.pillar,
+            "reference": "R metafor",
+            "availability": bcg_spec.availability,
+            "citation": bcg_spec.citation,
+            "licence": bcg_spec.licence,
+            "source": bcg_spec.source,
+            "n_rows": len(frame),
+            "scale": f"{int((frame.tpos + frame.tneg + frame.cpos + frame.cneg).sum()):,} people",
+            "rows": [
+                row("pooled log risk ratio", pooled.estimate, pub["estimate"]),
+                row("standard error", pooled.se, pub["se"]),
+                row("95% interval, lower", pooled.interval.lower, pub["ci_lower"]),
+                row("95% interval, upper", pooled.interval.upper, pub["ci_upper"]),
+                row("tau^2 (REML)", pooled.tau2, pub["tau2_reml"]),
+                row("Cochran's Q", het.q, pub["q"], ".4f"),
+                row("I^2 (model-based)", i2_model, pub["i2_model_based"]),
+                row("H^2 (model-based)", h2_model, pub["h2_model_based"], ".3f"),
+            ],
+            # the forest of individual trials, for a chart
+            "forest": [
+                {
+                    "label": f"{frame.author[i][:22]} {int(frame.year[i])}",
+                    "estimate": float(y[i]),
+                    "lower": float(y[i] - 1.96 * se[i]),
+                    "upper": float(y[i] + 1.96 * se[i]),
+                    "latitude": int(frame.ablat[i]),
+                }
+                for i in range(len(frame))
+            ],
+            "pooled": {
+                "estimate": pooled.estimate,
+                "lower": pooled.interval.lower,
+                "upper": pooled.interval.upper,
+            },
+            "i2_q_based": het.i2,
+            "i2_model_based": i2_model,
+            "prediction": [pi.lower, pi.upper],
+        }
+    )
 
     # --- NIST Misra1a, against certified values ------------------------------
     nist = DATASETS["misra1a"]
@@ -1854,16 +2015,19 @@ def benchmarks() -> Any:
     volume = Outcome(name="volume", dimension=D.volume, unit="cc")
     pressure = Treatment(name="pressure", dimension=D.pressure, unit="mmHg")
     mf = load("misra1a")
-    tidy = _pd.DataFrame({
-        "unit": ["specimen"] * len(mf),
-        "t": _np.arange(len(mf)),
-        "pressure": mf["pressure"].to_numpy(float),
-        "volume": mf["volume"].to_numpy(float),
-    })
+    tidy = _pd.DataFrame(
+        {
+            "unit": ["specimen"] * len(mf),
+            "t": _np.arange(len(mf)),
+            "pressure": mf["pressure"].to_numpy(float),
+            "volume": mf["volume"].to_numpy(float),
+        }
+    )
     panel = Panel(
         tidy,
-        RoleMap(unit="unit", time="t", outcome=("volume", volume),
-                treatments={"pressure": pressure}),
+        RoleMap(
+            unit="unit", time="t", outcome=("volume", volume), treatments={"pressure": pressure}
+        ),
     )
     nist_fit = fit(
         SurfaceSpec(
@@ -1874,7 +2038,10 @@ def benchmarks() -> Any:
             intercept="none",
             unit_labels=("specimen",),
         ),
-        panel, backend="laplace", draws=4000, seed=SEED,
+        panel,
+        backend="laplace",
+        draws=4000,
+        seed=SEED,
     )
     post = nist_fit.posterior
     beta = post.summary("beta_pressure", definition="hdi", mass=0.95)
@@ -1883,33 +2050,35 @@ def benchmarks() -> Any:
     yy = tidy["volume"].to_numpy(float)
     rss = float(_np.sum((yy - beta.mean * (1.0 - _np.exp(-x / kk.mean))) ** 2))
 
-    entries.append({
-        "name": "misra1a",
-        "title": nist.title,
-        "field": nist.field,
-        "pillar": nist.pillar,
-        "reference": "NIST certified values",
-        "availability": nist.availability,
-        "citation": nist.citation,
-        "licence": nist.licence,
-        "source": nist.source,
-        "n_rows": len(mf),
-        "scale": "14 observations, 2 parameters",
-        "rows": [
-            row("beta  (NIST b1)", beta.mean, cert["axiom_beta"], ".4f"),
-            row("k     (NIST 1/b2)", kk.mean, cert["axiom_k"], ".2f"),
-            row("implied b2", 1.0 / kk.mean, cert["b2"], ".3e"),
-            row("residual sum of squares", rss, cert["residual_sum_of_squares"], ".6f"),
-        ],
-        "hdi": {
-            "beta": [beta.interval.lower, beta.interval.upper],
-            "k": [kk.interval.lower, kk.interval.upper],
-            "beta_certified": cert["axiom_beta"],
-            "k_certified": cert["axiom_k"],
-        },
-        "rss_excess": rss - cert["residual_sum_of_squares"],
-        "observed": {"pressure": x.tolist(), "volume": yy.tolist()},
-    })
+    entries.append(
+        {
+            "name": "misra1a",
+            "title": nist.title,
+            "field": nist.field,
+            "pillar": nist.pillar,
+            "reference": "NIST certified values",
+            "availability": nist.availability,
+            "citation": nist.citation,
+            "licence": nist.licence,
+            "source": nist.source,
+            "n_rows": len(mf),
+            "scale": "14 observations, 2 parameters",
+            "rows": [
+                row("beta  (NIST b1)", beta.mean, cert["axiom_beta"], ".4f"),
+                row("k     (NIST 1/b2)", kk.mean, cert["axiom_k"], ".2f"),
+                row("implied b2", 1.0 / kk.mean, cert["b2"], ".3e"),
+                row("residual sum of squares", rss, cert["residual_sum_of_squares"], ".6f"),
+            ],
+            "hdi": {
+                "beta": [beta.interval.lower, beta.interval.upper],
+                "k": [kk.interval.lower, kk.interval.upper],
+                "beta_certified": cert["axiom_beta"],
+                "k_certified": cert["axiom_k"],
+            },
+            "rss_excess": rss - cert["residual_sum_of_squares"],
+            "observed": {"pressure": x.tolist(), "volume": yy.tolist()},
+        }
+    )
 
     # --- Darfur and LaLonde: only if fetched ---------------------------------
     covs = ["age", "farmer_dar", "herder_dar", "pastvoted", "hhsize_darfur", "female"]
@@ -1919,38 +2088,43 @@ def benchmarks() -> Any:
         df_frame = load("darfur")
         dummies = _pd.get_dummies(df_frame["village"], prefix="v", drop_first=True, dtype=float)
         design = _pd.concat([df_frame.drop(columns=["village"]), dummies], axis=1)
-        est = ols(design, "peacefactor", "directlyharmed",
-                  covariates=[*covs, *dummies.columns])
+        est = ols(design, "peacefactor", "directlyharmed", covariates=[*covs, *dummies.columns])
         dof = int(est.detail["df_resid"])
         rv = robustness_value(estimate=est.estimate, se=est.se, df=dof, q=1.0, alpha=0.05)
         naive = ols(df_frame, "peacefactor", "directlyharmed")
         no_village = ols(df_frame, "peacefactor", "directlyharmed", covariates=covs)
-        entries.append({
-            "name": "darfur",
-            "title": d.title,
-            "field": d.field,
-            "pillar": d.pillar,
-            "reference": "Cinelli & Hazlett (2020)",
-            "availability": d.availability,
-            "citation": d.citation,
-            "licence": d.licence,
-            "source": d.source,
-            "n_rows": len(df_frame),
-            "scale": f"{len(df_frame):,} respondents, {df_frame.village.nunique()} villages",
-            "rows": [
-                row("coefficient", est.estimate, pub["coefficient"]),
-                row("standard error", est.se, pub["se"]),
-                row("residual df", float(dof), float(pub["df"]), ".0f"),
-                row("robustness value", rv.rv, pub["robustness_value"], ".3f"),
-                row("RV at alpha = 0.05", rv.rv_alpha, pub["robustness_value_alpha"], ".3f"),
-                row("partial R^2", rv.r2_yd_x, pub["partial_r2"], ".3f"),
-            ],
-            "specifications": [
-                {"label": "no covariates", "estimate": naive.estimate, "se": naive.se},
-                {"label": "covariates only", "estimate": no_village.estimate, "se": no_village.se},
-                {"label": "published specification", "estimate": est.estimate, "se": est.se},
-            ],
-        })
+        entries.append(
+            {
+                "name": "darfur",
+                "title": d.title,
+                "field": d.field,
+                "pillar": d.pillar,
+                "reference": "Cinelli & Hazlett (2020)",
+                "availability": d.availability,
+                "citation": d.citation,
+                "licence": d.licence,
+                "source": d.source,
+                "n_rows": len(df_frame),
+                "scale": f"{len(df_frame):,} respondents, {df_frame.village.nunique()} villages",
+                "rows": [
+                    row("coefficient", est.estimate, pub["coefficient"]),
+                    row("standard error", est.se, pub["se"]),
+                    row("residual df", float(dof), float(pub["df"]), ".0f"),
+                    row("robustness value", rv.rv, pub["robustness_value"], ".3f"),
+                    row("RV at alpha = 0.05", rv.rv_alpha, pub["robustness_value_alpha"], ".3f"),
+                    row("partial R^2", rv.r2_yd_x, pub["partial_r2"], ".3f"),
+                ],
+                "specifications": [
+                    {"label": "no covariates", "estimate": naive.estimate, "se": naive.se},
+                    {
+                        "label": "covariates only",
+                        "estimate": no_village.estimate,
+                        "se": no_village.se,
+                    },
+                    {"label": "published specification", "estimate": est.estimate, "se": est.se},
+                ],
+            }
+        )
 
     if DATASETS["lalonde_nsw"].available and DATASETS["psid_controls"].available:
         lal = DATASETS["lalonde_nsw"]
@@ -1962,32 +2136,40 @@ def benchmarks() -> Any:
         obs = _pd.concat([nsw[nsw.treat == 1], psid], ignore_index=True)
         obs_naive = ols(obs, "re78", "treat")
         obs_adj = ols(obs, "re78", "treat", covariates=lcovs)
-        entries.append({
-            "name": "lalonde_nsw",
-            "title": lal.title,
-            "field": lal.field,
-            "pillar": lal.pillar,
-            "reference": "Dehejia & Wahba (1999)",
-            "availability": lal.availability,
-            "citation": lal.citation,
-            "licence": lal.licence,
-            "source": lal.source,
-            "n_rows": len(nsw),
-            "scale": f"{len(nsw)} randomized, {len(psid):,} PSID comparison",
-            "rows": [
-                row("experimental effect (USD)", exp.estimate, pub["experimental_ate"], ".0f"),
-                row("n", float(len(nsw)), float(pub["n"]), ".0f"),
-                row("n treated", float(int(nsw.treat.sum())), float(pub["n_treated"]), ".0f"),
-            ],
-            "specifications": [
-                {"label": "experimental benchmark", "estimate": exp.estimate, "se": exp.se},
-                {"label": "PSID controls, unadjusted", "estimate": obs_naive.estimate,
-                 "se": obs_naive.se},
-                {"label": "PSID controls, 8 covariates", "estimate": obs_adj.estimate,
-                 "se": obs_adj.se},
-            ],
-            "truth": exp.estimate,
-        })
+        entries.append(
+            {
+                "name": "lalonde_nsw",
+                "title": lal.title,
+                "field": lal.field,
+                "pillar": lal.pillar,
+                "reference": "Dehejia & Wahba (1999)",
+                "availability": lal.availability,
+                "citation": lal.citation,
+                "licence": lal.licence,
+                "source": lal.source,
+                "n_rows": len(nsw),
+                "scale": f"{len(nsw)} randomized, {len(psid):,} PSID comparison",
+                "rows": [
+                    row("experimental effect (USD)", exp.estimate, pub["experimental_ate"], ".0f"),
+                    row("n", float(len(nsw)), float(pub["n"]), ".0f"),
+                    row("n treated", float(int(nsw.treat.sum())), float(pub["n_treated"]), ".0f"),
+                ],
+                "specifications": [
+                    {"label": "experimental benchmark", "estimate": exp.estimate, "se": exp.se},
+                    {
+                        "label": "PSID controls, unadjusted",
+                        "estimate": obs_naive.estimate,
+                        "se": obs_naive.se,
+                    },
+                    {
+                        "label": "PSID controls, 8 covariates",
+                        "estimate": obs_adj.estimate,
+                        "se": obs_adj.se,
+                    },
+                ],
+                "truth": exp.estimate,
+            }
+        )
 
     # capture the full printed output of each case study, as with the examples
     for entry in entries:
@@ -1995,7 +2177,9 @@ def benchmarks() -> Any:
         if entry["name"] == "lalonde_nsw":
             script = ROOT / "benchmarks" / "case_lalonde.py"
         proc = subprocess.run(
-            [sys.executable, str(script)], capture_output=True, text=True,
+            [sys.executable, str(script)],
+            capture_output=True,
+            text=True,
             cwd=str(ROOT / "benchmarks"),
         )
         if proc.returncode != 0:
@@ -2003,8 +2187,10 @@ def benchmarks() -> Any:
         entry["output"] = proc.stdout.rstrip("\n")
         entry["worst"] = max(r["delta"] for r in entry["rows"])
         entry["worst_rel"] = max(r["rel"] for r in entry["rows"])
-        print(f"    {entry['name']}: {len(entry['rows'])} checks, "
-              f"worst relative error {entry['worst_rel']:.1e}")
+        print(
+            f"    {entry['name']}: {len(entry['rows'])} checks, "
+            f"worst relative error {entry['worst_rel']:.1e}"
+        )
 
     return {
         "entries": entries,

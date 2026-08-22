@@ -1,0 +1,73 @@
+{
+ "estimates": {
+  "rows": [
+   {
+    "label": "naive OLS",
+    "estimate": 2.346623,
+    "lower": 2.325963,
+    "upper": 2.367283,
+    "note": "standard error 0.011",
+    "bad": true
+   },
+   {
+    "label": "2SLS",
+    "estimate": 1.998886,
+    "lower": 1.957742,
+    "upper": 2.04003,
+    "note": "standard error 0.021",
+    "bad": false
+   }
+  ]
+ },
+ "convergence": {
+  "n": [
+   250,
+   500,
+   1000,
+   2000,
+   4000,
+   8000,
+   16000,
+   32000
+  ],
+  "naive": [
+   2.292431,
+   2.291401,
+   2.318452,
+   2.315843,
+   2.343191,
+   2.333534,
+   2.330594,
+   2.318534
+  ],
+  "iv": [
+   2.116935,
+   2.046283,
+   2.014241,
+   1.961413,
+   1.984718,
+   2.034716,
+   2.001108,
+   1.98047
+  ]
+ },
+ "relevance": {
+  "rows": [
+   {
+    "label": "strong instrument",
+    "estimate": 1.998886,
+    "lower": 1.957742,
+    "upper": 2.04003,
+    "note": "first-stage F = 2215"
+   },
+   {
+    "label": "weak instrument",
+    "estimate": 1.810174,
+    "lower": -5.967798,
+    "upper": 9.588146,
+    "note": "first-stage F = 0.1",
+    "bad": true
+   }
+  ]
+ }
+}

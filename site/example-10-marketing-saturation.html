@@ -1,0 +1,999 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10 · Which side of the bend are you standing on? — Marketing · axiom</title>
+<meta name="description" content="Marketing: Contribution and marginal return, and proof the vocabulary is a thin adapter. A 7-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:title" content="10 · Which side of the bend are you standing on? — Marketing · axiom">
+<meta property="og:description" content="Marketing: Contribution and marginal return, and proof the vocabulary is a thin adapter. A 7-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="example">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">Case study</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Example 10 · Marketing</p>
+    <h1 style="max-width:18ch">Which side of the bend are you standing on?</h1>
+    <p class="lede prose mt">What did each channel contribute, and what would the next unit of spend return? Those are different questions, the second is the one budgets are set on, and a single headline ROAS cannot tell them apart.</p>
+    <div class="ex-meta"><span class="pkg">Adapters</span><a class="pkg" href="surface.html">Surface</a>
+      <span class="pkg">7 steps</span>
+      <span class="pkg">3 figures</span>
+      <span class="pkg">353 lines</span>
+      <span class="pkg">runs in 5.1s</span></div>
+    <div class="hero-cta">
+      <a class="btn btn-1" href="#step-1">Start the walkthrough</a>
+      <a class="btn btn-2" href="https://github.com/redam94/axiom/blob/main/examples/10_marketing_saturation.py">The whole file on GitHub &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div class="prose wt-framing"><p>Marketing — contribution and marginal return, with the vocabulary bolted on top.</p><p class="wt-h">Why this file exists</p><p>axiom&#x27;s core has no idea what a channel is. Its nouns are Treatment, Dose, Unit, Outcome, Covariate, and a contract test fails the build if the words &#x27;channel&#x27;, &#x27;spend&#x27;, &#x27;geo&#x27; or &#x27;ROAS&#x27; appear outside axiom.adapters. Marketing is ONE adapter over a domain-general core, not the thing the library is about.</p><p>This example is therefore doing double duty: it is a working marketing analysis, and it is the proof that the vocabulary is a thin translation layer. Channel IS Treatment. Geo IS Unit. KPI IS Outcome. The same objects, renamed at the edge.</p><p class="wt-h">The question</p><p>Given weekly spend by channel and geo, what did each channel contribute, and what would the next unit of spend return? Those are different questions and the second is the one budgets are set on.</p><p>Pillars: adapters (marketing), surface</p></div>
+      <div>
+        <p class="eyebrow">The route</p>
+        <nav class="wt-toc"><a class="wt-toc-i" href="#step-1"><span class="wt-toc-n">1</span>Check that the adapter is aliases and not a parallel type system</a><a class="wt-toc-i" href="#step-2"><span class="wt-toc-n">2</span>Take the frame in the shape a planner actually hands you</a><a class="wt-toc-i" href="#step-3"><span class="wt-toc-n">3</span>Let the spec default to saturation and carryover</a><a class="wt-toc-i" href="#step-4"><span class="wt-toc-n">4</span>Fit a world whose truth is known, so the numbers are checkable</a><a class="wt-toc-i" href="#step-5"><span class="wt-toc-n">5</span>Ask for the three named quantities</a><a class="wt-toc-i" href="#step-6"><span class="wt-toc-n">6</span>Then look at the whole marginal curve, not one summary of it</a><a class="wt-toc-i" href="#step-7"><span class="wt-toc-n">7</span>Narrow the window, because the question usually has one</a></nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Before the first step</p>
+      <h2>What this example imports, and why that list is short</h2>
+      <p>Everything below runs on the four core dependencies. No sampler, no extras.</p>
+    </div>
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>examples/10_marketing_saturation.py</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>import numpy as np
+import pandas as pd
+from _walkthrough import Walkthrough
+
+from axiom.adapters import (
+    KPI,
+    Channel,
+    Geo,
+    MarketingRoles,
+    contribution,
+    marginal_roas,
+    marketing_spec,
+    panel_from_marketing_frame,
+    roas,
+    role_map,
+    spend,
+)
+from axiom.core import D, Intervention, Outcome, Treatment, Unit
+from axiom.sim import DosePlan, surface_world
+from axiom.surface import HillKernel, counterfactual_doses, fit, marginal_band, response_band
+
+w = Walkthrough(
+    field=&quot;Marketing&quot;,
+    title=&quot;Which side of the bend are you standing on?&quot;,
+    question=&quot;&quot;&quot;What did each channel contribute, and what would the next unit of
+        spend return? Those are different questions, the second is the one budgets
+        are set on, and a single headline ROAS cannot tell them apart.&quot;&quot;&quot;,
+)</pre>
+    </div>
+  </div>
+</section>
+
+<section class="wt-step" id="step-1">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 1 <span>of 7</span></p>
+      <h2>Check that the adapter is aliases and not a parallel type system</h2>
+      <div class="wt-why prose"><p>This is the load-bearing claim of the whole design, so it is worth checking with `is` rather than asserting in prose. Channel IS Treatment. Geo IS Unit. KPI IS Outcome — the same objects, renamed at the edge. If these were separate classes, every function downstream would need a marketing variant, and the core would slowly acquire a domain.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>A MarketingTreatment class that wraps a Treatment. It reads more explicitly and it is the beginning of a fork: two type hierarchies that must be kept in step by hand, and a core that gradually learns what a channel is.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/10_marketing_saturation.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>w.out(f&quot;Channel is Treatment : {Channel is Treatment}&quot;)
+w.out(f&quot;Geo     is Unit      : {Geo is Unit}&quot;)
+w.out(f&quot;KPI     is Outcome   : {KPI is Outcome}&quot;)
+w.out(f&quot;spend(&#x27;paid_search&#x27;) -&gt; {spend(&#x27;paid_search&#x27;)}&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>Channel is Treatment : True
+Geo     is Unit      : True
+KPI     is Outcome   : True
+spend(&#x27;paid_search&#x27;) -&gt; name=&#x27;paid_search&#x27; dimension=Dimension($) unit=&#x27;USD&#x27; description=&#x27;&#x27; numeraire=&#x27;USD&#x27;</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-2">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 2 <span>of 7</span></p>
+      <h2>Take the frame in the shape a planner actually hands you</h2>
+      <div class="wt-why prose"><p>Weekly rows, one column per channel, a geo and a date. Nobody in marketing holds data in axiom&#x27;s internal shape, so the adapter&#x27;s real job is the translation, and role_map makes that translation inspectable rather than buried in a reshape.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Asking the planner to reshape into long format first. That moves the error-prone step outside the library, where it is done differently by every analyst and reviewed by nobody.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/10_marketing_saturation.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>rng = np.random.default_rng(4)
+frame = pd.DataFrame(
+    [
+        {
+            &quot;geo&quot;: geo,
+            &quot;week&quot;: week,
+            &quot;revenue&quot;: 0.0,  # filled by the simulation below
+            &quot;paid_search&quot;: float(abs(rng.normal(38, 9))),
+            &quot;social&quot;: float(abs(rng.normal(17, 6))),
+            &quot;holiday&quot;: float(week in (10, 11)),
+        }
+        for geo in (&quot;north&quot;, &quot;south&quot;, &quot;west&quot;)
+        for week in range(16)
+    ]
+)
+roles = MarketingRoles(
+    kpi=&quot;revenue&quot;,
+    channels=(&quot;paid_search&quot;, &quot;social&quot;),
+    geo=&quot;geo&quot;,
+    date=&quot;week&quot;,
+    controls=(&quot;holiday&quot;,),
+    kpi_dimension=&quot;currency&quot;,
+    currency=&quot;USD&quot;,
+)
+mapped = role_map(roles)
+panel = panel_from_marketing_frame(frame, roles)
+w.out(f&quot;role map    : unit {mapped.unit!r}, time {mapped.time!r}, outcome {mapped.outcome[1]!r}&quot;)
+w.out(f&quot;treatments  : {list(mapped.treatments)}&quot;)
+w.out(f&quot;panel       : {panel.units} geos x {len(panel.periods)} weeks&quot;)
+w.out(f&quot;balanced    : {panel.completeness().balanced}&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>role map    : unit &#x27;geo&#x27;, time &#x27;week&#x27;, outcome Outcome(name=&#x27;revenue&#x27;, dimension=Dimension($), unit=&#x27;USD&#x27;, description=&#x27;&#x27;, aggregation=&#x27;sum&#x27;)
+treatments  : [&#x27;paid_search&#x27;, &#x27;social&#x27;]
+panel       : (&#x27;north&#x27;, &#x27;south&#x27;, &#x27;west&#x27;) geos x 16 weeks
+balanced    : True</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-3">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 3 <span>of 7</span></p>
+      <h2>Let the spec default to saturation and carryover</h2>
+      <div class="wt-why prose"><p>marketing_spec puts a Hill kernel and a carryover on every channel by default, because spend does neither of the two things a linear model assumes it does: it does not return proportionally forever, and it does not stop working at midnight on Sunday. Making these the defaults rather than options means the wrong model has to be chosen deliberately.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>A linear regression on spend with adstock bolted on afterwards. It fits, it reports a coefficient, and that coefficient is the average return over whatever spend range happened to occur — which is not the number any budget decision needs.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/10_marketing_saturation.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>spec = marketing_spec(panel, seasonality=(4.0, 1), trend=True)
+w.out(f&quot;treatments : {spec.treatment_names}&quot;)
+w.out(f&quot;intercept  : {spec.intercept!r}&quot;)
+w.out(f&quot;kernels    : {({k: v.name for k, v in spec.kernels.items()})}&quot;)
+w.out(f&quot;carryover  : {({k: v.name for k, v in spec.carryover.items()})}&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>treatments : (&#x27;paid_search&#x27;, &#x27;social&#x27;)
+intercept  : &#x27;hierarchical&#x27;
+kernels    : {&#x27;paid_search&#x27;: &#x27;hill&#x27;, &#x27;social&#x27;: &#x27;hill&#x27;}
+carryover  : {&#x27;paid_search&#x27;: &#x27;geometric&#x27;, &#x27;social&#x27;: &#x27;geometric&#x27;}</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-4">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 4 <span>of 7</span></p>
+      <h2>Fit a world whose truth is known, so the numbers are checkable</h2>
+      <div class="wt-why prose"><p>The point of this example is not to be persuasive about marketing, it is to show that the marketing quantities come out of the same fit() as the agriculture and clinical examples. A simulated channel with a known Hill curve — its half-saturation point deliberately inside the observed spend range, so the data actually sees the bend — makes every number below gradeable.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Fitting the frame built above. It has no signal in it: the revenue column is zeros. A demonstration that fits noise and reports confident quantities is worse than no demonstration.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/10_marketing_saturation.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>revenue_world = surface_world(
+    n_units=3,
+    n_periods=16,
+    treatments=(&quot;paid_search&quot;,),
+    outcome=Outcome(name=&quot;revenue&quot;, dimension=D.currency, unit=&quot;USD&quot;),
+    kernels=HillKernel(reference_dose=38.0, amplitude_scale=3.0),
+    doses=DosePlan(scale=38.0, spread=0.9),
+    intercept=&quot;shared&quot;,
+    truth={&quot;beta_paid_search&quot;: 3.0, &quot;k_paid_search&quot;: 30.0, &quot;s_paid_search&quot;: 1.8, &quot;alpha&quot;: 1.5},
+    noise_sd=0.15,
+    seed=7,
+)
+result = fit(
+    revenue_world.spec, revenue_world.panel, backend=&quot;laplace&quot;, draws=1200, chains=1, seed=7
+)
+w.out(f&quot;converged      : {result.converged}&quot;)
+w.out(&quot;true half-saturation spend : 30.0, inside the observed range&quot;)
+
+
+def truth_at(dose: float) -&gt; float:
+    data = counterfactual_doses(
+        revenue_world.surface, revenue_world.data, Intervention(doses={&quot;paid_search&quot;: dose})
+    )
+    return float(revenue_world.surface.forward(data, revenue_world.theta).mean())
+
+
+doses = np.linspace(0.0, 100.0, 30)
+band = response_band(result, &quot;paid_search&quot;, doses=doses.tolist(), mass=0.9, seed=0)
+w.figure(
+    &quot;response&quot;,
+    kind=&quot;band&quot;,
+    data={
+        &quot;treatment&quot;: &quot;paid_search&quot;,
+        &quot;doses&quot;: doses.tolist(),
+        &quot;mean&quot;: list(band.mean),
+        &quot;lower&quot;: list(band.lower),
+        &quot;upper&quot;: list(band.upper),
+        &quot;truth&quot;: [truth_at(float(d)) for d in doses],
+        &quot;mass&quot;: 0.9,
+    },
+    opt={&quot;key&quot;: &quot;@&quot;, &quot;xLabel&quot;: &quot;weekly spend&quot;, &quot;yLabel&quot;: &quot;revenue&quot;, &quot;height&quot;: 300},
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>converged      : True
+true half-saturation spend : 30.0, inside the observed range</pre></div>
+<figure class="fig" id="10_marketing_saturation-response">
+  <div class="fig-head"><p class="fig-t">The response curve the fit recovered</p><p class="fig-s">S-shaped, not merely concave. There is a stretch at low spend where the curve is getting steeper, and everything surprising below follows from that.</p></div>
+  <div class="legend"><span><i style="--k:var(--accent)"></i>posterior mean</span><span><i style="--k:var(--accent-wash)"></i>90% interval</span><span><i class="dash" style="--k:var(--ink-2)"></i>the truth</span></div>
+  <div class="chart" data-chart="band" data-file="figures-10_marketing_saturation"
+       data-opt='{&quot;key&quot;: &quot;response&quot;, &quot;xLabel&quot;: &quot;weekly spend&quot;, &quot;yLabel&quot;: &quot;revenue&quot;, &quot;height&quot;: 300}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-5">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 5 <span>of 7</span></p>
+      <h2>Ask for the three named quantities</h2>
+      <div class="wt-why prose"><p>Contribution, ROAS and marginal ROAS are three different questions and each is an estimand with its own definition, interval and provenance. Reporting them together makes the difference visible: the first is a total, the second is an average, the third is a derivative.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Reporting ROAS alone, which is what a marketing dashboard does. It is an average over the whole observed spend range, so it answers &#x27;was this channel worth running&#x27; and is routinely used to answer &#x27;should we spend more&#x27; — a question it cannot address.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/10_marketing_saturation.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>rows = []
+for fn in (contribution, roas, marginal_roas):
+    out = fn(result, &quot;paid_search&quot;, mass=0.9, seed=0)
+    if hasattr(out, &quot;reason&quot;):
+        w.out(f&quot;{fn.__name__:&lt;18} refused: {out.reason}&quot;)
+        continue
+    w.out(
+        f&quot;{out.estimand_name:&lt;26}{out.kind:&lt;11}{out.summary.mean:&gt;10.4f}   {out.summary.interval}&quot;
+    )
+    rows.append([out.estimand_name, out.kind, f&quot;{out.summary.mean:.4f}&quot;, str(out.summary.interval)])
+w.table([&quot;estimand&quot;, &quot;kind&quot;, &quot;mean&quot;, &quot;90% interval&quot;], rows)
+
+avg = roas(result, &quot;paid_search&quot;, mass=0.9, seed=0)
+marg = marginal_roas(result, &quot;paid_search&quot;, mass=0.9, seed=0)
+w.out(&quot;&quot;)
+w.out(f&quot;average return per unit spent : {avg.summary.mean:.4f}&quot;)
+w.out(f&quot;return on the NEXT unit spent : {marg.summary.mean:.4f}&quot;)
+w.out(f&quot;ratio                         : {marg.summary.mean / avg.summary.mean:.2f}&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>contribution_paid_search  contrast      66.2346   [58.4151, 73.1128] (90% HDI)
+roas_paid_search          ratio          0.0375   [0.033114, 0.0414458] (90% HDI)
+marginal_roas_paid_search marginal       0.0385   [0.0361679, 0.0405086] (90% HDI)</pre></div>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>estimand</th><th>kind</th><th>mean</th><th>90% interval</th></tr></thead><tbody><tr><td>contribution_paid_search</td><td>contrast</td><td>66.2346</td><td>[58.4151, 73.1128] (90% HDI)</td></tr><tr><td>roas_paid_search</td><td>ratio</td><td>0.0375</td><td>[0.033114, 0.0414458] (90% HDI)</td></tr><tr><td>marginal_roas_paid_search</td><td>marginal</td><td>0.0385</td><td>[0.0361679, 0.0405086] (90% HDI)</td></tr></tbody></table></div>
+<div class="out"><div class="out-h">what it printed</div><pre>
+average return per unit spent : 0.0375
+return on the NEXT unit spent : 0.0385
+ratio                         : 1.02</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-6">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 6 <span>of 7</span></p>
+      <h2>Then look at the whole marginal curve, not one summary of it</h2>
+      <div class="wt-why prose"><p>The number that answers &#x27;should we spend more&#x27; is the slope at the spend level you are actually at. marginal_band gives that at every level with its uncertainty, and on a Hill curve it is not monotone: below the inflection an extra unit returns MORE than the average, above it less.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Comparing the single marginal ROAS to the single average ROAS and concluding &#x27;we are past saturation&#x27;. One ratio at one implicit spend level cannot locate the bend, and the bend is the whole decision.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/10_marketing_saturation.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>grid = [4, 8, 16, 24, 32, 40, 55, 75, 100]
+marginal = marginal_band(result, &quot;paid_search&quot;, doses=grid, mass=0.9, seed=0)
+if hasattr(marginal, &quot;reason&quot;):
+    w.out(f&quot;marginal curve refused: {marginal.reason}&quot;)
+else:
+    w.table(
+        [&quot;weekly spend&quot;, &quot;return on the next unit&quot;, &quot;90% interval&quot;],
+        [
+            [f&quot;{d:.0f}&quot;, f&quot;{m:.4f}&quot;, f&quot;[{lo:.4f}, {hi:.4f}]&quot;]
+            for d, m, lo, hi in zip(
+                marginal.doses, marginal.mean, marginal.lower, marginal.upper, strict=True
+            )
+        ],
+    )
+    peak = max(range(len(marginal.mean)), key=lambda i: marginal.mean[i])
+    w.out(f&quot;the marginal peaks around spend {marginal.doses[peak]:.0f} and falls after.&quot;)
+    w.figure(
+        &quot;marginal&quot;,
+        kind=&quot;band&quot;,
+        data={
+            &quot;treatment&quot;: &quot;paid_search&quot;,
+            &quot;doses&quot;: list(marginal.doses),
+            &quot;mean&quot;: list(marginal.mean),
+            &quot;lower&quot;: list(marginal.lower),
+            &quot;upper&quot;: list(marginal.upper),
+            &quot;mass&quot;: 0.9,
+        },
+        opt={
+            &quot;key&quot;: &quot;@&quot;,
+            &quot;xLabel&quot;: &quot;weekly spend&quot;,
+            &quot;yLabel&quot;: &quot;revenue from the next unit of spend&quot;,
+            &quot;height&quot;: 300,
+        },
+    # title, note and legend: the caption shown with the chart
+    )
+
+    base = float(band.mean[0])
+    fine = np.linspace(4.0, 100.0, 25)
+    fine_band = response_band(result, &quot;paid_search&quot;, doses=fine.tolist(), mass=0.9, seed=0)
+    average_curve = [(float(fine_band.mean[i]) - base) / float(fine[i]) for i in range(len(fine))]
+    marginal_fine = marginal_band(result, &quot;paid_search&quot;, doses=fine.tolist(), mass=0.9, seed=0)
+    w.figure(
+        &quot;crossing&quot;,
+        kind=&quot;lines&quot;,
+        data={
+            &quot;spend&quot;: fine.tolist(),
+            &quot;average&quot;: average_curve,
+            &quot;marginal&quot;: list(marginal_fine.mean),
+        },
+        opt={
+            &quot;series&quot;: [
+                {&quot;label&quot;: &quot;average&quot;, &quot;x&quot;: &quot;@spend&quot;, &quot;y&quot;: &quot;@average&quot;, &quot;colour&quot;: &quot;ink-2&quot;},
+                {&quot;label&quot;: &quot;marginal&quot;, &quot;x&quot;: &quot;@spend&quot;, &quot;y&quot;: &quot;@marginal&quot;, &quot;colour&quot;: &quot;accent&quot;},
+            ],
+            &quot;xLabel&quot;: &quot;weekly spend&quot;,
+            &quot;yLabel&quot;: &quot;revenue per unit of spend&quot;,
+            &quot;height&quot;: 300,
+            &quot;rightPad&quot;: 90,
+        },
+    # title, note and legend: the caption shown with the chart
+    )</pre>
+</div>
+      <div class="tbl-wrap"><table class="t"><thead><tr><th>weekly spend</th><th>return on the next unit</th><th>90% interval</th></tr></thead><tbody><tr><td>4</td><td>0.0284</td><td>[0.0150, 0.0452]</td></tr><tr><td>8</td><td>0.0464</td><td>[0.0327, 0.0603]</td></tr><tr><td>16</td><td>0.0600</td><td>[0.0543, 0.0651]</td></tr><tr><td>24</td><td>0.0541</td><td>[0.0502, 0.0583]</td></tr><tr><td>32</td><td>0.0425</td><td>[0.0392, 0.0458]</td></tr><tr><td>40</td><td>0.0317</td><td>[0.0294, 0.0342]</td></tr><tr><td>55</td><td>0.0181</td><td>[0.0160, 0.0198]</td></tr><tr><td>75</td><td>0.0092</td><td>[0.0073, 0.0108]</td></tr><tr><td>100</td><td>0.0046</td><td>[0.0032, 0.0058]</td></tr></tbody></table></div>
+<div class="out"><div class="out-h">what it printed</div><pre>the marginal peaks around spend 16 and falls after.</pre></div>
+<figure class="fig" id="10_marketing_saturation-marginal">
+  <div class="fig-head"><p class="fig-t">Return on the next unit, at every spend level</p><p class="fig-s">It rises, peaks near 16, and falls. Left of the peak, more spend is worth more than the last unit was. Right of it, less. A headline ROAS reports one number for this entire curve.</p></div>
+  <div class="legend"><span><i style="--k:var(--accent)"></i>marginal return</span><span><i style="--k:var(--accent-wash)"></i>90% interval</span></div>
+  <div class="chart" data-chart="band" data-file="figures-10_marketing_saturation"
+       data-opt='{&quot;key&quot;: &quot;marginal&quot;, &quot;xLabel&quot;: &quot;weekly spend&quot;, &quot;yLabel&quot;: &quot;revenue from the next unit of spend&quot;, &quot;height&quot;: 300}'></div>
+</figure>
+<figure class="fig" id="10_marketing_saturation-crossing">
+  <div class="fig-head"><p class="fig-t">Average and marginal return, on the same axis</p><p class="fig-s">They cross. Where marginal is above average, the average is still rising and the channel is under-invested; where it falls below, every further unit drags the average down. The crossing point is the number a budget conversation is looking for, and neither summary statistic on its own can locate it.</p></div>
+  <div class="legend"><span><i style="--k:var(--ink-2)"></i>average return</span><span><i style="--k:var(--accent)"></i>return on the next unit</span></div>
+  <div class="chart" data-chart="lines" data-file="figures-10_marketing_saturation"
+       data-opt='{&quot;series&quot;: [{&quot;label&quot;: &quot;average&quot;, &quot;x&quot;: &quot;crossing.spend&quot;, &quot;y&quot;: &quot;crossing.average&quot;, &quot;colour&quot;: &quot;ink-2&quot;}, {&quot;label&quot;: &quot;marginal&quot;, &quot;x&quot;: &quot;crossing.spend&quot;, &quot;y&quot;: &quot;crossing.marginal&quot;, &quot;colour&quot;: &quot;accent&quot;}], &quot;xLabel&quot;: &quot;weekly spend&quot;, &quot;yLabel&quot;: &quot;revenue per unit of spend&quot;, &quot;height&quot;: 300, &quot;rightPad&quot;: 90}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-7">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 7 <span>of 7</span></p>
+      <h2>Narrow the window, because the question usually has one</h2>
+      <div class="wt-why prose"><p>&#x27;What is the marginal return&#x27; almost always means &#x27;over the period I am planning for&#x27;. A window restricts the estimand to part of the horizon, and because it is part of the estimand rather than a filter applied afterwards, the resulting number carries which window it belongs to.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Slicing the data and refitting. That changes the model as well as the question, and the two effects become impossible to separate — a smaller window means less data, and less data means a different fitted curve.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/10_marketing_saturation.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>late = marginal_roas(result, &quot;paid_search&quot;, window=(8, 16), mass=0.9, seed=0)
+w.out(f&quot;marginal over the whole horizon : {marg.summary.mean:.4f}&quot;)
+w.out(f&quot;marginal over weeks 8-16 only   : {late.summary.mean:.4f}&quot;)
+
+
+w.finding(&quot;&quot;&quot;Everything above went through the same fit(), the same forward() and the same
+    estimand machinery as the agriculture and clinical examples in this directory.
+    The only marketing-specific code is the translation at the top and the three
+    named quantities in the middle.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;The headline numbers barely differ — marginal {marg.summary.mean:.4f} against
+    average {avg.summary.mean:.4f}, a ratio of
+    {marg.summary.mean / avg.summary.mean:.2f} — and that near-equality is itself
+    misleading. The marginal curve behind those summaries runs from
+    {marginal.mean[0]:.4f} at a spend of {marginal.doses[0]:.0f}, up to
+    {max(marginal.mean):.4f} at {marginal.doses[peak]:.0f}, and down to
+    {marginal.mean[-1]:.4f} at {marginal.doses[-1]:.0f}. It rises before it falls,
+    because a Hill curve is S-shaped rather than merely concave — so the next unit of
+    spend can be worth more than the last one was.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;That is a factor of {max(marginal.mean) / marginal.mean[-1]:.0f} between the
+    best and worst place to put the next unit, hidden inside a pair of summary
+    statistics that agree with each other to two decimal places. &#x27;Our ROAS is
+    {avg.summary.mean:.3f}&#x27; does not say which side of the bend the budget is
+    standing on, and it is the sentence most budgets are set with.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;That is the design commitment made concrete. The mathematics is about doses and
+    responses; the moment a domain&#x27;s vocabulary leaks into it, the same code stops
+    being usable for trials, fields, reactors and reserves — and the marketing
+    analysis is not made any better by the leak.&quot;&quot;&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>marginal over the whole horizon : 0.0385
+marginal over weeks 8-16 only   : 0.0351</pre></div>
+    </div>
+  </div>
+</section>
+
+<section class="wt-close">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The close</p>
+      <h2>What it actually showed</h2>
+      <p>Written after looking at the output, which is why it does not always agree
+        with the setup.</p>
+    </div>
+    <div class="prose wt-findings"><p>Everything above went through the same fit(), the same forward() and the same estimand machinery as the agriculture and clinical examples in this directory. The only marketing-specific code is the translation at the top and the three named quantities in the middle.</p><p>The headline numbers barely differ — marginal 0.0385 against average 0.0375, a ratio of 1.02 — and that near-equality is itself misleading. The marginal curve behind those summaries runs from 0.0284 at a spend of 4, up to 0.0600 at 16, and down to 0.0046 at 100. It rises before it falls, because a Hill curve is S-shaped rather than merely concave — so the next unit of spend can be worth more than the last one was.</p><p>That is a factor of 13 between the best and worst place to put the next unit, hidden inside a pair of summary statistics that agree with each other to two decimal places. &#x27;Our ROAS is 0.038&#x27; does not say which side of the bend the budget is standing on, and it is the sentence most budgets are set with.</p><p>That is the design commitment made concrete. The mathematics is about doses and responses; the moment a domain&#x27;s vocabulary leaks into it, the same code stops being usable for trials, fields, reactors and reserves — and the marketing analysis is not made any better by the leak.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <details class="ex-more">
+      <summary>The whole file, and everything this run printed</summary>
+      <div class="ex-body">
+        <div class="pair">
+          <div class="code">
+            <div class="code-h"><span>examples/10_marketing_saturation.py</span>
+              <button class="copy" type="button">Copy</button></div>
+            <pre>import numpy as np
+import pandas as pd
+from _walkthrough import Walkthrough
+
+from axiom.adapters import (
+    KPI,
+    Channel,
+    Geo,
+    MarketingRoles,
+    contribution,
+    marginal_roas,
+    marketing_spec,
+    panel_from_marketing_frame,
+    roas,
+    role_map,
+    spend,
+)
+from axiom.core import D, Intervention, Outcome, Treatment, Unit
+from axiom.sim import DosePlan, surface_world
+from axiom.surface import HillKernel, counterfactual_doses, fit, marginal_band, response_band
+
+w = Walkthrough(
+    field=&quot;Marketing&quot;,
+    title=&quot;Which side of the bend are you standing on?&quot;,
+    question=&quot;&quot;&quot;What did each channel contribute, and what would the next unit of
+        spend return? Those are different questions, the second is the one budgets
+        are set on, and a single headline ROAS cannot tell them apart.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Check that the adapter is aliases and not a parallel type system&quot;,
+    why=&quot;&quot;&quot;This is the load-bearing claim of the whole design, so it is worth
+        checking with `is` rather than asserting in prose. Channel IS Treatment. Geo
+        IS Unit. KPI IS Outcome — the same objects, renamed at the edge. If these
+        were separate classes, every function downstream would need a marketing
+        variant, and the core would slowly acquire a domain.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;A MarketingTreatment class that wraps a Treatment. It reads more
+        explicitly and it is the beginning of a fork: two type hierarchies that must
+        be kept in step by hand, and a core that gradually learns what a channel
+        is.&quot;&quot;&quot;,
+)
+w.out(f&quot;Channel is Treatment : {Channel is Treatment}&quot;)
+w.out(f&quot;Geo     is Unit      : {Geo is Unit}&quot;)
+w.out(f&quot;KPI     is Outcome   : {KPI is Outcome}&quot;)
+w.out(f&quot;spend(&#x27;paid_search&#x27;) -&gt; {spend(&#x27;paid_search&#x27;)}&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Take the frame in the shape a planner actually hands you&quot;,
+    why=&quot;&quot;&quot;Weekly rows, one column per channel, a geo and a date. Nobody in marketing
+        holds data in axiom&#x27;s internal shape, so the adapter&#x27;s real job is the
+        translation, and role_map makes that translation inspectable rather than
+        buried in a reshape.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Asking the planner to reshape into long format first. That moves the
+        error-prone step outside the library, where it is done differently by every
+        analyst and reviewed by nobody.&quot;&quot;&quot;,
+)
+rng = np.random.default_rng(4)
+frame = pd.DataFrame(
+    [
+        {
+            &quot;geo&quot;: geo,
+            &quot;week&quot;: week,
+            &quot;revenue&quot;: 0.0,  # filled by the simulation below
+            &quot;paid_search&quot;: float(abs(rng.normal(38, 9))),
+            &quot;social&quot;: float(abs(rng.normal(17, 6))),
+            &quot;holiday&quot;: float(week in (10, 11)),
+        }
+        for geo in (&quot;north&quot;, &quot;south&quot;, &quot;west&quot;)
+        for week in range(16)
+    ]
+)
+roles = MarketingRoles(
+    kpi=&quot;revenue&quot;,
+    channels=(&quot;paid_search&quot;, &quot;social&quot;),
+    geo=&quot;geo&quot;,
+    date=&quot;week&quot;,
+    controls=(&quot;holiday&quot;,),
+    kpi_dimension=&quot;currency&quot;,
+    currency=&quot;USD&quot;,
+)
+mapped = role_map(roles)
+panel = panel_from_marketing_frame(frame, roles)
+w.out(f&quot;role map    : unit {mapped.unit!r}, time {mapped.time!r}, outcome {mapped.outcome[1]!r}&quot;)
+w.out(f&quot;treatments  : {list(mapped.treatments)}&quot;)
+w.out(f&quot;panel       : {panel.units} geos x {len(panel.periods)} weeks&quot;)
+w.out(f&quot;balanced    : {panel.completeness().balanced}&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Let the spec default to saturation and carryover&quot;,
+    why=&quot;&quot;&quot;marketing_spec puts a Hill kernel and a carryover on every channel by
+        default, because spend does neither of the two things a linear model assumes
+        it does: it does not return proportionally forever, and it does not stop
+        working at midnight on Sunday. Making these the defaults rather than options
+        means the wrong model has to be chosen deliberately.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;A linear regression on spend with adstock bolted on afterwards. It
+        fits, it reports a coefficient, and that coefficient is the average return
+        over whatever spend range happened to occur — which is not the number any
+        budget decision needs.&quot;&quot;&quot;,
+)
+spec = marketing_spec(panel, seasonality=(4.0, 1), trend=True)
+w.out(f&quot;treatments : {spec.treatment_names}&quot;)
+w.out(f&quot;intercept  : {spec.intercept!r}&quot;)
+w.out(f&quot;kernels    : {({k: v.name for k, v in spec.kernels.items()})}&quot;)
+w.out(f&quot;carryover  : {({k: v.name for k, v in spec.carryover.items()})}&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Fit a world whose truth is known, so the numbers are checkable&quot;,
+    why=&quot;&quot;&quot;The point of this example is not to be persuasive about marketing, it is to
+        show that the marketing quantities come out of the same fit() as the
+        agriculture and clinical examples. A simulated channel with a known Hill
+        curve — its half-saturation point deliberately inside the observed spend
+        range, so the data actually sees the bend — makes every number below
+        gradeable.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Fitting the frame built above. It has no signal in it: the revenue
+        column is zeros. A demonstration that fits noise and reports confident
+        quantities is worse than no demonstration.&quot;&quot;&quot;,
+)
+revenue_world = surface_world(
+    n_units=3,
+    n_periods=16,
+    treatments=(&quot;paid_search&quot;,),
+    outcome=Outcome(name=&quot;revenue&quot;, dimension=D.currency, unit=&quot;USD&quot;),
+    kernels=HillKernel(reference_dose=38.0, amplitude_scale=3.0),
+    doses=DosePlan(scale=38.0, spread=0.9),
+    intercept=&quot;shared&quot;,
+    truth={&quot;beta_paid_search&quot;: 3.0, &quot;k_paid_search&quot;: 30.0, &quot;s_paid_search&quot;: 1.8, &quot;alpha&quot;: 1.5},
+    noise_sd=0.15,
+    seed=7,
+)
+result = fit(
+    revenue_world.spec, revenue_world.panel, backend=&quot;laplace&quot;, draws=1200, chains=1, seed=7
+)
+w.out(f&quot;converged      : {result.converged}&quot;)
+w.out(&quot;true half-saturation spend : 30.0, inside the observed range&quot;)
+
+
+def truth_at(dose: float) -&gt; float:
+    data = counterfactual_doses(
+        revenue_world.surface, revenue_world.data, Intervention(doses={&quot;paid_search&quot;: dose})
+    )
+    return float(revenue_world.surface.forward(data, revenue_world.theta).mean())
+
+
+doses = np.linspace(0.0, 100.0, 30)
+band = response_band(result, &quot;paid_search&quot;, doses=doses.tolist(), mass=0.9, seed=0)
+w.figure(
+    &quot;response&quot;,
+    kind=&quot;band&quot;,
+    data={
+        &quot;treatment&quot;: &quot;paid_search&quot;,
+        &quot;doses&quot;: doses.tolist(),
+        &quot;mean&quot;: list(band.mean),
+        &quot;lower&quot;: list(band.lower),
+        &quot;upper&quot;: list(band.upper),
+        &quot;truth&quot;: [truth_at(float(d)) for d in doses],
+        &quot;mass&quot;: 0.9,
+    },
+    opt={&quot;key&quot;: &quot;@&quot;, &quot;xLabel&quot;: &quot;weekly spend&quot;, &quot;yLabel&quot;: &quot;revenue&quot;, &quot;height&quot;: 300},
+    title=&quot;The response curve the fit recovered&quot;,
+    note=&quot;&quot;&quot;S-shaped, not merely concave. There is a stretch at low spend where the
+        curve is getting steeper, and everything surprising below follows from
+        that.&quot;&quot;&quot;,
+    legend=(
+        (&quot;accent&quot;, &quot;posterior mean&quot;),
+        (&quot;accent-wash&quot;, &quot;90% interval&quot;),
+        (&quot;ink-2:dash&quot;, &quot;the truth&quot;),
+    ),
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Ask for the three named quantities&quot;,
+    why=&quot;&quot;&quot;Contribution, ROAS and marginal ROAS are three different questions and
+        each is an estimand with its own definition, interval and provenance.
+        Reporting them together makes the difference visible: the first is a total,
+        the second is an average, the third is a derivative.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Reporting ROAS alone, which is what a marketing dashboard does. It is
+        an average over the whole observed spend range, so it answers &#x27;was this
+        channel worth running&#x27; and is routinely used to answer &#x27;should we spend
+        more&#x27; — a question it cannot address.&quot;&quot;&quot;,
+)
+rows = []
+for fn in (contribution, roas, marginal_roas):
+    out = fn(result, &quot;paid_search&quot;, mass=0.9, seed=0)
+    if hasattr(out, &quot;reason&quot;):
+        w.out(f&quot;{fn.__name__:&lt;18} refused: {out.reason}&quot;)
+        continue
+    w.out(
+        f&quot;{out.estimand_name:&lt;26}{out.kind:&lt;11}{out.summary.mean:&gt;10.4f}   {out.summary.interval}&quot;
+    )
+    rows.append([out.estimand_name, out.kind, f&quot;{out.summary.mean:.4f}&quot;, str(out.summary.interval)])
+w.table([&quot;estimand&quot;, &quot;kind&quot;, &quot;mean&quot;, &quot;90% interval&quot;], rows)
+
+avg = roas(result, &quot;paid_search&quot;, mass=0.9, seed=0)
+marg = marginal_roas(result, &quot;paid_search&quot;, mass=0.9, seed=0)
+w.out(&quot;&quot;)
+w.out(f&quot;average return per unit spent : {avg.summary.mean:.4f}&quot;)
+w.out(f&quot;return on the NEXT unit spent : {marg.summary.mean:.4f}&quot;)
+w.out(f&quot;ratio                         : {marg.summary.mean / avg.summary.mean:.2f}&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Then look at the whole marginal curve, not one summary of it&quot;,
+    why=&quot;&quot;&quot;The number that answers &#x27;should we spend more&#x27; is the slope at the spend
+        level you are actually at. marginal_band gives that at every level with its
+        uncertainty, and on a Hill curve it is not monotone: below the inflection an
+        extra unit returns MORE than the average, above it less.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Comparing the single marginal ROAS to the single average ROAS and
+        concluding &#x27;we are past saturation&#x27;. One ratio at one implicit spend level
+        cannot locate the bend, and the bend is the whole decision.&quot;&quot;&quot;,
+)
+grid = [4, 8, 16, 24, 32, 40, 55, 75, 100]
+marginal = marginal_band(result, &quot;paid_search&quot;, doses=grid, mass=0.9, seed=0)
+if hasattr(marginal, &quot;reason&quot;):
+    w.out(f&quot;marginal curve refused: {marginal.reason}&quot;)
+else:
+    w.table(
+        [&quot;weekly spend&quot;, &quot;return on the next unit&quot;, &quot;90% interval&quot;],
+        [
+            [f&quot;{d:.0f}&quot;, f&quot;{m:.4f}&quot;, f&quot;[{lo:.4f}, {hi:.4f}]&quot;]
+            for d, m, lo, hi in zip(
+                marginal.doses, marginal.mean, marginal.lower, marginal.upper, strict=True
+            )
+        ],
+    )
+    peak = max(range(len(marginal.mean)), key=lambda i: marginal.mean[i])
+    w.out(f&quot;the marginal peaks around spend {marginal.doses[peak]:.0f} and falls after.&quot;)
+    w.figure(
+        &quot;marginal&quot;,
+        kind=&quot;band&quot;,
+        data={
+            &quot;treatment&quot;: &quot;paid_search&quot;,
+            &quot;doses&quot;: list(marginal.doses),
+            &quot;mean&quot;: list(marginal.mean),
+            &quot;lower&quot;: list(marginal.lower),
+            &quot;upper&quot;: list(marginal.upper),
+            &quot;mass&quot;: 0.9,
+        },
+        opt={
+            &quot;key&quot;: &quot;@&quot;,
+            &quot;xLabel&quot;: &quot;weekly spend&quot;,
+            &quot;yLabel&quot;: &quot;revenue from the next unit of spend&quot;,
+            &quot;height&quot;: 300,
+        },
+        title=&quot;Return on the next unit, at every spend level&quot;,
+        note=f&quot;&quot;&quot;It rises, peaks near {marginal.doses[peak]:.0f}, and falls. Left of
+            the peak, more spend is worth more than the last unit was. Right of it,
+            less. A headline ROAS reports one number for this entire curve.&quot;&quot;&quot;,
+        legend=((&quot;accent&quot;, &quot;marginal return&quot;), (&quot;accent-wash&quot;, &quot;90% interval&quot;)),
+    )
+
+    base = float(band.mean[0])
+    fine = np.linspace(4.0, 100.0, 25)
+    fine_band = response_band(result, &quot;paid_search&quot;, doses=fine.tolist(), mass=0.9, seed=0)
+    average_curve = [(float(fine_band.mean[i]) - base) / float(fine[i]) for i in range(len(fine))]
+    marginal_fine = marginal_band(result, &quot;paid_search&quot;, doses=fine.tolist(), mass=0.9, seed=0)
+    w.figure(
+        &quot;crossing&quot;,
+        kind=&quot;lines&quot;,
+        data={
+            &quot;spend&quot;: fine.tolist(),
+            &quot;average&quot;: average_curve,
+            &quot;marginal&quot;: list(marginal_fine.mean),
+        },
+        opt={
+            &quot;series&quot;: [
+                {&quot;label&quot;: &quot;average&quot;, &quot;x&quot;: &quot;@spend&quot;, &quot;y&quot;: &quot;@average&quot;, &quot;colour&quot;: &quot;ink-2&quot;},
+                {&quot;label&quot;: &quot;marginal&quot;, &quot;x&quot;: &quot;@spend&quot;, &quot;y&quot;: &quot;@marginal&quot;, &quot;colour&quot;: &quot;accent&quot;},
+            ],
+            &quot;xLabel&quot;: &quot;weekly spend&quot;,
+            &quot;yLabel&quot;: &quot;revenue per unit of spend&quot;,
+            &quot;height&quot;: 300,
+            &quot;rightPad&quot;: 90,
+        },
+        title=&quot;Average and marginal return, on the same axis&quot;,
+        note=&quot;&quot;&quot;They cross. Where marginal is above average, the average is still
+            rising and the channel is under-invested; where it falls below, every
+            further unit drags the average down. The crossing point is the number a
+            budget conversation is looking for, and neither summary statistic on its
+            own can locate it.&quot;&quot;&quot;,
+        legend=((&quot;ink-2&quot;, &quot;average return&quot;), (&quot;accent&quot;, &quot;return on the next unit&quot;)),
+    )
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Narrow the window, because the question usually has one&quot;,
+    why=&quot;&quot;&quot;&#x27;What is the marginal return&#x27; almost always means &#x27;over the period I am
+        planning for&#x27;. A window restricts the estimand to part of the horizon, and
+        because it is part of the estimand rather than a filter applied afterwards,
+        the resulting number carries which window it belongs to.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Slicing the data and refitting. That changes the model as well as the
+        question, and the two effects become impossible to separate — a smaller
+        window means less data, and less data means a different fitted curve.&quot;&quot;&quot;,
+)
+late = marginal_roas(result, &quot;paid_search&quot;, window=(8, 16), mass=0.9, seed=0)
+w.out(f&quot;marginal over the whole horizon : {marg.summary.mean:.4f}&quot;)
+w.out(f&quot;marginal over weeks 8-16 only   : {late.summary.mean:.4f}&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.finding(&quot;&quot;&quot;Everything above went through the same fit(), the same forward() and the same
+    estimand machinery as the agriculture and clinical examples in this directory.
+    The only marketing-specific code is the translation at the top and the three
+    named quantities in the middle.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;The headline numbers barely differ — marginal {marg.summary.mean:.4f} against
+    average {avg.summary.mean:.4f}, a ratio of
+    {marg.summary.mean / avg.summary.mean:.2f} — and that near-equality is itself
+    misleading. The marginal curve behind those summaries runs from
+    {marginal.mean[0]:.4f} at a spend of {marginal.doses[0]:.0f}, up to
+    {max(marginal.mean):.4f} at {marginal.doses[peak]:.0f}, and down to
+    {marginal.mean[-1]:.4f} at {marginal.doses[-1]:.0f}. It rises before it falls,
+    because a Hill curve is S-shaped rather than merely concave — so the next unit of
+    spend can be worth more than the last one was.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;That is a factor of {max(marginal.mean) / marginal.mean[-1]:.0f} between the
+    best and worst place to put the next unit, hidden inside a pair of summary
+    statistics that agree with each other to two decimal places. &#x27;Our ROAS is
+    {avg.summary.mean:.3f}&#x27; does not say which side of the bend the budget is
+    standing on, and it is the sentence most budgets are set with.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;That is the design commitment made concrete. The mathematics is about doses and
+    responses; the moment a domain&#x27;s vocabulary leaks into it, the same code stops
+    being usable for trials, fields, reactors and reserves — and the marketing
+    analysis is not made any better by the leak.&quot;&quot;&quot;)</pre>
+          </div>
+          <div class="out">
+            <div class="out-h">stdout, captured on this build</div>
+            <pre>========================================================================================
+MARKETING  ---  Which side of the bend are you standing on?
+========================================================================================
+  What did each channel contribute, and what would the next unit of spend return? Those
+  are different questions, the second is the one budgets are set on, and a single
+  headline ROAS cannot tell them apart.
+
+----------------------------------------------------------------------------------------
+STEP 1  Check that the adapter is aliases and not a parallel type system
+----------------------------------------------------------------------------------------
+  This is the load-bearing claim of the whole design, so it is worth checking with `is`
+  rather than asserting in prose. Channel IS Treatment. Geo IS Unit. KPI IS Outcome —
+  the same objects, renamed at the edge. If these were separate classes, every function
+  downstream would need a marketing variant, and the core would slowly acquire a domain.
+
+  INSTEAD OF: A MarketingTreatment class that wraps a Treatment. It reads more
+  explicitly and it is the beginning of a fork: two type hierarchies that must be kept
+  in step by hand, and a core that gradually learns what a channel is.
+
+  Channel is Treatment : True
+  Geo     is Unit      : True
+  KPI     is Outcome   : True
+  spend(&#x27;paid_search&#x27;) -&gt; name=&#x27;paid_search&#x27; dimension=Dimension($) unit=&#x27;USD&#x27; description=&#x27;&#x27; numeraire=&#x27;USD&#x27;
+
+----------------------------------------------------------------------------------------
+STEP 2  Take the frame in the shape a planner actually hands you
+----------------------------------------------------------------------------------------
+  Weekly rows, one column per channel, a geo and a date. Nobody in marketing holds data
+  in axiom&#x27;s internal shape, so the adapter&#x27;s real job is the translation, and role_map
+  makes that translation inspectable rather than buried in a reshape.
+
+  INSTEAD OF: Asking the planner to reshape into long format first. That moves the
+  error-prone step outside the library, where it is done differently by every analyst
+  and reviewed by nobody.
+
+  role map    : unit &#x27;geo&#x27;, time &#x27;week&#x27;, outcome Outcome(name=&#x27;revenue&#x27;, dimension=Dimension($), unit=&#x27;USD&#x27;, description=&#x27;&#x27;, aggregation=&#x27;sum&#x27;)
+  treatments  : [&#x27;paid_search&#x27;, &#x27;social&#x27;]
+  panel       : (&#x27;north&#x27;, &#x27;south&#x27;, &#x27;west&#x27;) geos x 16 weeks
+  balanced    : True
+
+----------------------------------------------------------------------------------------
+STEP 3  Let the spec default to saturation and carryover
+----------------------------------------------------------------------------------------
+  marketing_spec puts a Hill kernel and a carryover on every channel by default, because
+  spend does neither of the two things a linear model assumes it does: it does not
+  return proportionally forever, and it does not stop working at midnight on Sunday.
+  Making these the defaults rather than options means the wrong model has to be chosen
+  deliberately.
+
+  INSTEAD OF: A linear regression on spend with adstock bolted on afterwards. It fits,
+  it reports a coefficient, and that coefficient is the average return over whatever
+  spend range happened to occur — which is not the number any budget decision needs.
+
+  treatments : (&#x27;paid_search&#x27;, &#x27;social&#x27;)
+  intercept  : &#x27;hierarchical&#x27;
+  kernels    : {&#x27;paid_search&#x27;: &#x27;hill&#x27;, &#x27;social&#x27;: &#x27;hill&#x27;}
+  carryover  : {&#x27;paid_search&#x27;: &#x27;geometric&#x27;, &#x27;social&#x27;: &#x27;geometric&#x27;}
+
+----------------------------------------------------------------------------------------
+STEP 4  Fit a world whose truth is known, so the numbers are checkable
+----------------------------------------------------------------------------------------
+  The point of this example is not to be persuasive about marketing, it is to show that
+  the marketing quantities come out of the same fit() as the agriculture and clinical
+  examples. A simulated channel with a known Hill curve — its half-saturation point
+  deliberately inside the observed spend range, so the data actually sees the bend —
+  makes every number below gradeable.
+
+  INSTEAD OF: Fitting the frame built above. It has no signal in it: the revenue column
+  is zeros. A demonstration that fits noise and reports confident quantities is worse
+  than no demonstration.
+
+  converged      : True
+  true half-saturation spend : 30.0, inside the observed range
+  [figure: The response curve the fit recovered]
+
+
+----------------------------------------------------------------------------------------
+STEP 5  Ask for the three named quantities
+----------------------------------------------------------------------------------------
+  Contribution, ROAS and marginal ROAS are three different questions and each is an
+  estimand with its own definition, interval and provenance. Reporting them together
+  makes the difference visible: the first is a total, the second is an average, the
+  third is a derivative.
+
+  INSTEAD OF: Reporting ROAS alone, which is what a marketing dashboard does. It is an
+  average over the whole observed spend range, so it answers &#x27;was this channel worth
+  running&#x27; and is routinely used to answer &#x27;should we spend more&#x27; — a question it cannot
+  address.
+
+  contribution_paid_search  contrast      66.2346   [58.4151, 73.1128] (90% HDI)
+  roas_paid_search          ratio          0.0375   [0.033114, 0.0414458] (90% HDI)
+  marginal_roas_paid_search marginal       0.0385   [0.0361679, 0.0405086] (90% HDI)
+  estimand                   kind      mean     90% interval
+  -------------------------  --------  -------  --------------------------------
+  contribution_paid_search   contrast  66.2346  [58.4151, 73.1128] (90% HDI)
+  roas_paid_search           ratio     0.0375   [0.033114, 0.0414458] (90% HDI)
+  marginal_roas_paid_search  marginal  0.0385   [0.0361679, 0.0405086] (90% HDI)
+
+
+  average return per unit spent : 0.0375
+  return on the NEXT unit spent : 0.0385
+  ratio                         : 1.02
+
+----------------------------------------------------------------------------------------
+STEP 6  Then look at the whole marginal curve, not one summary of it
+----------------------------------------------------------------------------------------
+  The number that answers &#x27;should we spend more&#x27; is the slope at the spend level you are
+  actually at. marginal_band gives that at every level with its uncertainty, and on a
+  Hill curve it is not monotone: below the inflection an extra unit returns MORE than
+  the average, above it less.
+
+  INSTEAD OF: Comparing the single marginal ROAS to the single average ROAS and
+  concluding &#x27;we are past saturation&#x27;. One ratio at one implicit spend level cannot
+  locate the bend, and the bend is the whole decision.
+
+  weekly spend  return on the next unit  90% interval
+  ------------  -----------------------  ----------------
+  4             0.0284                   [0.0150, 0.0452]
+  8             0.0464                   [0.0327, 0.0603]
+  16            0.0600                   [0.0543, 0.0651]
+  24            0.0541                   [0.0502, 0.0583]
+  32            0.0425                   [0.0392, 0.0458]
+  40            0.0317                   [0.0294, 0.0342]
+  55            0.0181                   [0.0160, 0.0198]
+  75            0.0092                   [0.0073, 0.0108]
+  100           0.0046                   [0.0032, 0.0058]
+
+  the marginal peaks around spend 16 and falls after.
+  [figure: Return on the next unit, at every spend level]
+
+  [figure: Average and marginal return, on the same axis]
+
+
+----------------------------------------------------------------------------------------
+STEP 7  Narrow the window, because the question usually has one
+----------------------------------------------------------------------------------------
+  &#x27;What is the marginal return&#x27; almost always means &#x27;over the period I am planning for&#x27;.
+  A window restricts the estimand to part of the horizon, and because it is part of the
+  estimand rather than a filter applied afterwards, the resulting number carries which
+  window it belongs to.
+
+  INSTEAD OF: Slicing the data and refitting. That changes the model as well as the
+  question, and the two effects become impossible to separate — a smaller window means
+  less data, and less data means a different fitted curve.
+
+  marginal over the whole horizon : 0.0385
+  marginal over weeks 8-16 only   : 0.0351
+
+========================================================================================
+WHAT IT ACTUALLY SHOWED
+========================================================================================
+  Everything above went through the same fit(), the same forward() and the same estimand
+  machinery as the agriculture and clinical examples in this directory. The only
+  marketing-specific code is the translation at the top and the three named quantities
+  in the middle.
+
+  The headline numbers barely differ — marginal 0.0385 against average 0.0375, a ratio
+  of 1.02 — and that near-equality is itself misleading. The marginal curve behind those
+  summaries runs from 0.0284 at a spend of 4, up to 0.0600 at 16, and down to 0.0046 at
+  100. It rises before it falls, because a Hill curve is S-shaped rather than merely
+  concave — so the next unit of spend can be worth more than the last one was.
+
+  That is a factor of 13 between the best and worst place to put the next unit, hidden
+  inside a pair of summary statistics that agree with each other to two decimal places.
+  &#x27;Our ROAS is 0.038&#x27; does not say which side of the bend the budget is standing on, and
+  it is the sentence most budgets are set with.
+
+  That is the design commitment made concrete. The mathematics is about doses and
+  responses; the moment a domain&#x27;s vocabulary leaks into it, the same code stops being
+  usable for trials, fields, reactors and reserves — and the marketing analysis is not
+  made any better by the leak.</pre>
+          </div>
+        </div>
+      </div>
+    </details>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="example-09-manufacturing-steepest-ascent.html">&larr; 09 · Process engineering</a><a class="btn btn-2" href="examples.html">All twelve</a><a class="btn btn-2" href="example-11-psychology-meta-analysis.html">11 · Behavioural science &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

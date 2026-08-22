@@ -1,6 +1,6 @@
 <!--meta {
   "title": "Examples — the same library, twelve fields · axiom",
-  "description": "Twelve runnable examples across agronomy, economics, education, epidemiology, ecology, public health, clinical research, energy, process engineering, marketing, behavioural science and product analytics — each with its real captured output."
+  "description": "Twelve worked examples across agronomy, economics, education, epidemiology, ecology, public health, clinical research, energy, process engineering, marketing, behavioural science and product analytics — each a step-by-step walkthrough with charts, the code for every step, and the reasoning behind it."
 } -->
 
 <section class="hero">
@@ -11,12 +11,17 @@
       checkout page are the same mathematics wearing different words. That is the whole
       reason axiom's core has no domain in it — the nouns are treatment, dose, unit,
       outcome and covariate, and marketing is one adapter rather than the subject.
-      These {{examples.n}} scripts are the argument for why that was worth doing.</p>
-    <p class="prose small muted">Every one runs against a synthetic world whose truth is
-      known, so the numbers can be checked rather than admired. The output shown below each
-      one was captured by running it, not transcribed. Together they are
-      {{examples.total_lines}} lines and take {{examples.total_seconds:.0f}} seconds.</p>
+      These {{examples.n}} walkthroughs are the argument for why that was worth doing.</p>
+    <p class="prose small muted">Each one is a worked argument rather than a listing:
+      {{examples.total_steps}} steps in total, every one saying why it is the necessary
+      step and what was rejected to get there, with {{examples.total_figures}} charts and
+      the exact code and output each step produced. Every one runs against a synthetic
+      world whose truth is known, so the numbers can be checked rather than admired.
+      Together they are {{examples.total_lines}} lines and take
+      {{examples.total_seconds:.0f}} seconds.</p>
     <div class="hero-cta">
+      <a class="btn btn-1" href="example-01-agriculture-response-surface.html">Start with
+        agronomy</a>
       <a class="btn btn-2" href="https://github.com/redam94/axiom/tree/main/examples">Browse
         the source on GitHub →</a>
     </div>
@@ -27,8 +32,10 @@
   <div class="wrap">
     <div class="section-head">
       <p class="eyebrow">Run them</p>
-      <h2>Core install, no sampler, thirty seconds</h2>
-      <p>Nothing here needs an extra. All of it works on the four core dependencies.</p>
+      <h2>Core install, no sampler, one command</h2>
+      <p>Nothing here needs an extra. All of it works on the four core dependencies, and
+        each script narrates itself at the terminal exactly as it does on these pages —
+        the walkthrough is the program, not a write-up of it.</p>
     </div>
     <div class="code" style="max-width:var(--measure)">
       <div class="code-h"><span>shell</span>
@@ -52,7 +59,7 @@ python examples/07_clinical_rwe_calibration.py</pre>
     </div>
 
     <div class="cards">
-      <a class="card" href="#06_public_health_cluster_trial">
+      <a class="card" href="example-06-public-health-cluster-trial.html">
         <p class="card-n">06 · PUBLIC HEALTH</p>
         <h3>Grouping beats counting</h3>
         <p>The same 1,600 children give 55% power or 99% power depending only on how they
@@ -60,14 +67,14 @@ python examples/07_clinical_rwe_calibration.py</pre>
           cluster count.</p>
         <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
       </a>
-      <a class="card" href="#12_software_experiment_value">
+      <a class="card" href="example-12-software-experiment-value.html">
         <p class="card-n">12 · PRODUCT ANALYTICS</p>
         <h3>The worst-powered design wins</h3>
         <p>A design with 0.65 power nets the most; the one with power 1.00 is
           net-negative once you count the upside withheld from the holdout arm.</p>
         <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
       </a>
-      <a class="card" href="#09_manufacturing_steepest_ascent">
+      <a class="card" href="example-09-manufacturing-steepest-ascent.html">
         <p class="card-n">09 · PROCESS ENGINEERING</p>
         <h3>The optimum is out of bounds</h3>
         <p>The unconstrained peak sits outside what the plant can physically run, so the
@@ -75,7 +82,7 @@ python examples/07_clinical_rwe_calibration.py</pre>
           engineering.</p>
         <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
       </a>
-      <a class="card" href="#07_clinical_rwe_calibration">
+      <a class="card" href="example-07-clinical-rwe-calibration.html">
         <p class="card-n">07 · CLINICAL RESEARCH</p>
         <h3>Nearly right, still overconfident</h3>
         <p>Calibration removes most of the confounding bias and the resulting model is
@@ -83,7 +90,7 @@ python examples/07_clinical_rwe_calibration.py</pre>
           truth exists to catch.</p>
         <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
       </a>
-      <a class="card" href="#10_marketing_saturation">
+      <a class="card" href="example-10-marketing-saturation.html">
         <p class="card-n">10 · MARKETING</p>
         <h3>Which side of the bend?</h3>
         <p>A Hill curve is S-shaped, not merely concave, so the next unit of spend can
@@ -91,7 +98,7 @@ python examples/07_clinical_rwe_calibration.py</pre>
           whether you are under- or over-invested.</p>
         <div class="card-f"><p class="card-go">See it <span aria-hidden="true">→</span></p></div>
       </a>
-      <a class="card" href="#04_epidemiology_frontdoor">
+      <a class="card" href="example-04-epidemiology-frontdoor.html">
         <p class="card-n">04 · EPIDEMIOLOGY</p>
         <h3>Recovering the unrecoverable</h3>
         <p>No covariate adjustment could work — the confounder was never measured. A
@@ -107,13 +114,13 @@ python examples/07_clinical_rwe_calibration.py</pre>
   <div class="wrap">
     <div class="section-head">
       <p class="eyebrow">All {{examples.n}}</p>
-      <h2>Every example, with what it printed</h2>
-      <p>Expand any one to read its framing, its full source, and the exact output it
-        produced on this build.</p>
+      <h2>Every example, step by step</h2>
+      <p>Each opens on its own page: the framing, then one section per step with the
+        reasoning, the alternative that was rejected, the code that ran, the charts it
+        produced and the output it printed — ending with what the run actually showed,
+        which is not always what the setup pointed at.</p>
     </div>
-    <div class="ex-list">
-      <!--EXAMPLES-->
-    </div>
+    <!--EXAMPLES-->
   </div>
 </section>
 
@@ -121,20 +128,26 @@ python examples/07_clinical_rwe_calibration.py</pre>
   <div class="wrap">
     <div class="grid-2">
       <div>
-        <h3>Writing another one</h3>
-        <p class="small muted">Keep the shape: a docstring that states the field's question
-          in that field's own terms, a synthetic world with a known truth, the axiom calls,
-          and a closing note saying what the numbers actually showed — including when that
-          is not what the setup implied. Then add it to the table in
-          <code>examples/README.md</code>.</p>
+        <h3>How these pages are built</h3>
+        <p class="small muted">Nothing here is transcribed. Each script narrates itself
+          through <code>examples/_walkthrough.py</code>, and the site build runs it with
+          a capture flag set, so the steps, the tables, the readouts and every chart
+          series on these pages are the record of a real run. The code shown against a
+          step is sliced out of the source file by line number — the code that ran
+          between that step's heading and the next, with only each figure's caption
+          text elided, since the page shows it with the figure instead. Every page
+          carries the unedited file at the bottom. A broken example fails the build
+          rather than shipping stale prose.</p>
       </div>
       <div>
-        <h3>Going deeper</h3>
-        <p class="small muted">The <a href="identify.html">five-pillar tour</a> covers the
-          same ground with charts and more room to breathe, and the
-          <a href="case-study.html">HYPER-3 case study</a> works one clinical trial end to
-          end across all of them — from the causal graph to the safety review that stops an
-          arm.</p>
+        <h3>Writing another one</h3>
+        <p class="small muted">Keep the shape: a docstring that states the field's question
+          in that field's own terms, a synthetic world with a known truth, then
+          <code>w.step(title, why=…, instead=…)</code> for each move — the
+          <code>instead</code> is the part readers get nowhere else, so it has to be the
+          alternative a reasonable person would really have reached for. Close with
+          <code>w.finding(…)</code> saying what the numbers showed. Then add it to the
+          table in <code>examples/README.md</code>.</p>
       </div>
     </div>
   </div>

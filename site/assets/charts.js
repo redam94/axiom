@@ -413,7 +413,8 @@
 
   /* A response curve with its posterior band, optionally against the truth. */
   registry.band = function (root, d, o, p) {
-    var b = d[o.key];
+    /* a dotted path, so a page can keep many bands in one data file */
+    var b = lookup(d, o.key);
     var w = root.clientWidth, h = o.height || 300;
     var tip = tipFor(root);
     var ys = [b.lower, b.upper];

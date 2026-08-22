@@ -38,6 +38,9 @@ jobs:
             test -f "site/$page.html" || { echo "missing site/$page.html"; exit 1; }
           done
           test -d site/assets/data || { echo "missing site/assets/data"; exit 1; }
+          walkthroughs=$(ls site/example-*.html 2>/dev/null | wc -l)
+          test "$walkthroughs" -eq 12 || {
+            echo "expected 12 example walkthroughs, found $walkthroughs"; exit 1; }
           echo "$(ls site/assets/data/*.json | wc -l) data files, $(ls site/*.html | wc -l) pages"
 
       - uses: actions/configure-pages@v5
