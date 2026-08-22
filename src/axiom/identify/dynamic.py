@@ -10,11 +10,15 @@ the ordinary graphical questions of the ordinary DAG that comes out.
 Two things become sayable that the summary graph cannot say.
 
 **Simultaneity becomes a reduced form.** A contemporaneous cycle is not a
-DAG and never will be. Its *reduced form* is: solve the block and every
-member depends on the block's parents and on nothing inside the block.
-``unrolled_graph`` emits that, so a simultaneous system has a causal graph —
-just not one with arrows between the simultaneous variables, which is
-exactly the claim that no ordering of them is causal within the period.
+DAG and never will be. Its *reduced form* is: solve the block, and every
+member depends on everything feeding the block and shares whatever disturbs
+it. ``unrolled_graph`` emits that — the block's parents point at every
+member, and the members are joined by bidirected edges rather than by arrows
+between them, which is exactly the claim that no ordering of them is causal
+within the period. That object is the **acyclification** of the graph as
+written (``identify.cyclic``), so d-separation on it answers
+sigma-separation on the cyclic original; ``unrolled_mixed_graph`` returns the
+cyclic original when you want to look at it.
 
 **Time-varying confounding becomes visible.** With ``dose@1 -> outcome@2 ->
 dose@3 -> outcome@4``, ``outcome@2`` is a confounder of the later dose *and*
@@ -47,35 +51,26 @@ from pydantic import Field, model_validator
 
 from axiom.core import Assumption, NonEmptyStr, Spec, Verdict
 from axiom.dynamics import DynamicSystem, time_ref, unrolled_edges
-from axiom.identify.graph import CausalGraph, GraphError
+from axiom.identify.cyclic import MixedGraph, acyclify
+from axiom.identify.graph import CausalGraph
 
 __all__ = [
     "SequentialPlan",
     "sequential_backdoor_admissible",
     "sequential_plan",
     "unrolled_graph",
+    "unrolled_mixed_graph",
 ]
 
 
-def unrolled_graph(
-    system: DynamicSystem,
-    periods: int,
-    *,
-    reduced: bool = True,
-    name: str = "",
-) -> CausalGraph:
-    """The time-indexed causal graph of a dynamic system, over ``periods`` periods.
+def unrolled_mixed_graph(system: DynamicSystem, periods: int, *, name: str = "") -> MixedGraph:
+    """The time-indexed graph exactly as the equations were written, cycles included.
 
     Nodes are ``"variable.t0" ... "variable.t{periods-1}"`` for every declared
-    variable; a variable declared ``observed=False`` is marked unmeasured at
-    every period, so an adjustment set that needs it is a downgrade rather
-    than a silent lie.
-
-    ``reduced=True`` emits the reduced form of each simultaneous block, which
-    is acyclic. ``reduced=False`` emits the structural edges as written; if
-    the system has a contemporaneous cycle that is not a DAG and
-    construction raises ``GraphError`` naming the cycle — the honest outcome,
-    since no DAG algorithm can answer a question about it.
+    variable; a variable declared ``observed=False`` is unmeasured at every
+    period. A contemporaneous cycle stays a cycle here — which is why this
+    returns a ``MixedGraph``, where separation is sigma-separation, rather than
+    a ``CausalGraph``, where it would be d-separation and unsound.
     """
     if periods < 1:
         raise ValueError(f"periods must be at least 1, got {periods}")
@@ -83,19 +78,30 @@ def unrolled_graph(
     unmeasured = tuple(
         time_ref(v.name, t) for v in system.variables if not v.observed for t in range(periods)
     )
-    edges = unrolled_edges(system, periods, reduced=reduced)
-    try:
-        return CausalGraph(
-            nodes=nodes,
-            edges=edges,
-            unmeasured=unmeasured,
-            name=name or (f"{system.name}@{periods}" if system.name else f"unrolled@{periods}"),
-        )
-    except GraphError as e:
-        raise GraphError(
-            f"the structural graph of {system.name or 'the system'} is cyclic ({e}); "
-            "call unrolled_graph(..., reduced=True) for the reduced form, which is a DAG"
-        ) from e
+    return MixedGraph(
+        nodes=nodes,
+        edges=unrolled_edges(system, periods, reduced=False),
+        unmeasured=unmeasured,
+        name=name or (f"{system.name}@{periods}" if system.name else f"unrolled@{periods}"),
+    )
+
+
+def unrolled_graph(system: DynamicSystem, periods: int, *, name: str = "") -> CausalGraph:
+    """The acyclification of the time-indexed graph: an acyclic graph, honestly obtained.
+
+    This is the system's **reduced form** read as a graph. Solve a
+    simultaneous block and every member depends on everything feeding the
+    block and shares whatever disturbs it, so the members get the block's
+    parents and a *bidirected edge* to each other — they are determined
+    together, and no arrow between them would be causal.
+
+    That construction is exactly the acyclification of ``unrolled_mixed_graph``
+    (``identify.cyclic``), and Mooij & Claassen's Proposition 2 says
+    d-separation here answers sigma-separation there. So every existing
+    algorithm in ``axiom.identify`` — back-door, front-door, IV, transport —
+    applies to a system with feedback and simultaneity without knowing it.
+    """
+    return acyclify(unrolled_mixed_graph(system, periods, name=name))
 
 
 def _mutilated(graph: CausalGraph, treatments: Sequence[str]) -> CausalGraph:

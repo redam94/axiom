@@ -474,6 +474,12 @@ have time structure, compiled into ordinary `core.expr` trees; `identify.unrolle
 can estimate, profile likelihood from a simulated experiment, and what to measure next; note
 [0011](0011-identifiability-of-combinations.md).
 
+**Landed**: the ID/IDC algorithm (sound and complete identification under latent confounding,
+returning an estimand or a hedge), sigma-separation for graphs with cycles, and SWIGs; note
+[0012](0012-beyond-dags.md). Still open from that survey: causal discovery (PAG/CPDAG),
+counterfactual identification (ID*), segregated graphs for interference, missingness graphs,
+and cluster-DAGs.
+
 Laplace calibration on Hill surfaces (SBC finding,
 Phase 8); block-bootstrap switchback SE; ridge verdict in
 `canonical_analysis`; `df` on `LinearEstimate`; drop the nominal

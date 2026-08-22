@@ -210,7 +210,10 @@ from axiom.identify import (
     identify,
     transport_verdict,
 )
+from axiom.identify.cyclic import MixedGraph
 from axiom.identify.dynamic import SequentialPlan, sequential_plan
+from axiom.identify.formula import Density, Marginal, Product, Ratio
+from axiom.identify.id_algorithm import Hedge, IdentifiedEffect, identify_effect
 from axiom.identify.transport import TransportVerdict
 from axiom.identify.verdict import IdentificationVerdict
 from axiom.infer import (
@@ -1151,7 +1154,45 @@ def _prescription() -> Prescription:
     )
 
 
+# -- graphs with cycles, and identification formulas -------------------------------------
+
+
+def _mixed_graph() -> MixedGraph:
+    return MixedGraph.from_edges("x -> a, a -> b, b -> a, b -> y", name="a market at equilibrium")
+
+
+def _density() -> Density:
+    return Density(outcomes=("Y",), given=("X", "Z"))
+
+
+def _product() -> Product:
+    return Product(factors=(_density(), Density(outcomes=("Z",))))
+
+
+def _marginal() -> Marginal:
+    return Marginal(over=("Z",), term=_product())
+
+
+def _ratio() -> Ratio:
+    return Ratio(numerator=Density(outcomes=("X", "Y")), denominator=Density(outcomes=("X",)))
+
+
+def _hedge() -> Hedge:
+    return Hedge(root=("X", "Y"), subset=("Y",), variables=("X", "Y"))
+
+
+def _identified_effect() -> IdentifiedEffect:
+    return identify_effect(CausalGraph.from_edges("Z -> X, Z -> Y, X -> Y"), "X", "Y")
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
+    MixedGraph: _mixed_graph,
+    Density: _density,
+    Product: _product,
+    Marginal: _marginal,
+    Ratio: _ratio,
+    Hedge: _hedge,
+    IdentifiedEffect: _identified_effect,
     Variable: lambda: _dynamic_variables()[0],
     DynamicEquation: _dynamic_equation,
     DynamicSystem: _dynamic_system,
