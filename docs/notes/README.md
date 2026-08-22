@@ -21,3 +21,4 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0005 | [Basis response families: polynomial, spline, piecewise linear](0005-basis-response-families.md) | decision |
 | 0006 | [Gaussian-process surfaces, and the recovery world that was never identified](0006-gaussian-process-surfaces.md) | decision + deviation |
 | 0007 | [A surface never travels without its uncertainty, and the reports that carry it](0007-uncertainty-and-reports.md) | decision |
+| 0008 | [PyMC as a third backend, and the PyTensor interpreter under it](0008-pymc-backend.md) | decision |

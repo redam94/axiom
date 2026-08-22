@@ -461,7 +461,11 @@ Two things the verification runs turned up that are not about this work:
 
 ## Next (1.1)
 
-PyMC backend (D2); Laplace calibration on Hill surfaces (SBC finding,
+**Landed**: PyMC backend (D2) — a third interpreter (`core.interpret.pytensor`) under a
+backend that dispatches NUTS to its own sampler, nutpie, numpyro or blackjax over the one
+compiled log density; note [0008](0008-pymc-backend.md).
+
+Laplace calibration on Hill surfaces (SBC finding,
 Phase 8); block-bootstrap switchback SE; ridge verdict in
 `canonical_analysis`; `df` on `LinearEstimate`; drop the nominal
 `[privacy]` extra; NUTS path for centered pools; conditional estimands

@@ -1,8 +1,9 @@
 # infer — the sampler seam
 
-infer: the sampler seam — Backend protocol, Laplace, NumPyro NUTS, and diagnostics.
+infer: the sampler seam — Backend protocol, Laplace, NumPyro NUTS, PyMC NUTS
+(over its own sampler, nutpie, numpyro or blackjax), and diagnostics.
 
-Importing this package never pulls jax, numpyro, or arviz into
+Importing this package never pulls jax, numpyro, pymc, pytensor or arviz into
 `sys.modules`; backends import them lazily and `get_backend` returns a
 typed `Unsupported` when an extra is missing.
 
@@ -34,5 +35,8 @@ The executed series under `nbs/infer/`:
    :members:
 
 .. automodule:: axiom.infer.numpyro_backend
+   :members:
+
+.. automodule:: axiom.infer.pymc_backend
    :members:
 ```
