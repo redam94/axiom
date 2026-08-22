@@ -1,0 +1,335 @@
+<!--meta {
+  "title": "Pool — what does all the evidence say? · axiom",
+  "description": "Pool a corpus of studies, estimate how much they really disagree, carry a bias term for reads you trust less, release under a privacy budget, and hand the result forward as a prior."
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Pillar 05 · axiom.meta</p>
+    <h1 style="max-width:15ch">What does all the evidence say?</h1>
+    <p class="lede prose mt">One study is an anecdote with a standard error. A programme
+      accumulates dozens, from different teams, on different scales, some of them randomized
+      and some of them model-based reads that everyone quietly trusts less. Pooling that is
+      not averaging. It is deciding what is comparable, how much the studies really disagree,
+      and whether one kind of evidence runs systematically high.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Before any arithmetic</p>
+      <h2>Refusing to pool what is not comparable</h2>
+      <p>Eleven studies report a dimensionless standardized contrast. A twelfth reports the
+        same quantity <em>per acre</em>. Averaging the twelve is a category error, and axiom
+        will not do it silently.</p>
+    </div>
+
+    <div class="note is-refusal" style="max-width:var(--measure)">
+      <p class="note-t">Unsupported — the corpus is refused, with the reason</p>
+      <p class="small" style="margin:0">“{{meta.refusal.reason}}”</p>
+    </div>
+
+    <p class="prose muted small mt">The way through is not a flag that turns the check off.
+      It is to supply a <code>TransferPlan</code> — the same object the
+      <a href="calibrate.html">calibration</a> layer uses — which states how the per-acre
+      reading maps onto the dimensionless one and carries that claim as a hashed record.
+      Once the plan is attached, the study is admitted with its provenance intact, and
+      the pool runs over {{meta.classical.k}} studies.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The corpus</p>
+      <h2>Twelve studies, two kinds of evidence</h2>
+      <p>Of the twelve, {{meta.classical.n_experiment}} are experiments and
+        {{meta.classical.n_model}} are model-based reads. The forest plot below is coloured
+        by which — because that distinction turns out to be the whole story.</p>
+    </div>
+
+    <div class="grid-2">
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">Every study, with the pooled estimate</p>
+          <p class="fig-s">Marker size is the study’s weight in the pool.</p>
+        </div>
+        <div class="legend">
+          <span><i class="dot" style="--k:var(--s1)"></i>experiment</span>
+          <span><i class="dot" style="--k:var(--s2)"></i>model read</span>
+        </div>
+        <div class="chart" data-chart="intervals" data-file="meta"
+             data-opt='{"rows":"classical.forest.rows","label_key":"label",
+                        "pooled":"classical.forest.pooled",
+                        "pooledLabel":"pooled (REML)",
+                        "colourBy":"read","colourKeys":["experiment","model"],
+                        "weightBy":"weight","labelWidth":100,"rowHeight":26,
+                        "xLabel":"standardized contrast","mass":95}'></div>
+        <p class="stamp"><b>axiom.meta.forest_data</b>(corpus, None, pooled, mass=0.95) ·
+          pooled by <b>random_effects</b>(y, se, tau_method="reml", knapp_hartung=True)</p>
+      </figure>
+
+      <div class="stack">
+        <div>
+          <p class="readout-l">Pooled, treating all twelve alike</p>
+          <div class="readout">
+            <div class="readout-v">{{meta.classical.knapp_hartung.estimate:.4f}}</div>
+            <div class="readout-bar" style="--pos:{{@ meta.classical.knapp_hartung.estimate meta.classical.knapp_hartung.lower meta.classical.knapp_hartung.upper }}"><i></i><i></i></div>
+            <div class="readout-e"><span>{{meta.classical.knapp_hartung.lower:.3f}}</span>
+              <span>{{meta.classical.knapp_hartung.upper:.3f}}</span></div>
+            <p class="readout-d">95% · REML with the Knapp–Hartung adjustment ·
+              se {{meta.classical.knapp_hartung.se:.4f}}</p>
+          </div>
+        </div>
+        <div class="ledger">
+          <div class="ledger-row">
+            <span class="ledger-f">heterogeneity</span>
+            <span class="ledger-s">Q = {{meta.classical.heterogeneity.q:.2f}} on
+              {{meta.classical.heterogeneity.df}} df (p =
+              {{meta.classical.heterogeneity.p:.3f}}), I² =
+              <b>{{meta.classical.heterogeneity.i2:.0%}}</b></span>
+            <span class="tag">moderate</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">prediction</span>
+            <span class="ledger-s">where a <em>new</em> study would land — much wider than
+              the interval on the mean, and the number people usually want</span>
+            <span class="ledger-v">[{{meta.classical.prediction_interval[0]:.3f}},
+              {{meta.classical.prediction_interval[1]:.3f}}]</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">τ estimator</span>
+            <span class="ledger-s">DerSimonian–Laird, Paule–Mandel and REML all agree here to
+              three decimals — worth checking rather than assuming</span>
+            <span class="ledger-v">{{meta.classical.methods[2].tau2:.5f}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tbl-wrap mt-lg">
+      <table class="t">
+        <caption>The same pool under three τ² estimators.</caption>
+        <thead><tr><th>method</th><th>pooled mean</th><th>se</th><th>τ²</th>
+          <th>95% interval</th></tr></thead>
+        <tbody>
+          <tr><td>DerSimonian–Laird</td><td>{{meta.classical.methods[0].estimate:.4f}}</td>
+            <td>{{meta.classical.methods[0].se:.4f}}</td>
+            <td>{{meta.classical.methods[0].tau2:.5f}}</td>
+            <td>[{{meta.classical.methods[0].lower:.3f}}, {{meta.classical.methods[0].upper:.3f}}]</td></tr>
+          <tr><td>Paule–Mandel</td><td>{{meta.classical.methods[1].estimate:.4f}}</td>
+            <td>{{meta.classical.methods[1].se:.4f}}</td>
+            <td>{{meta.classical.methods[1].tau2:.5f}}</td>
+            <td>[{{meta.classical.methods[1].lower:.3f}}, {{meta.classical.methods[1].upper:.3f}}]</td></tr>
+          <tr class="hi"><td>REML</td><td>{{meta.classical.methods[2].estimate:.4f}}</td>
+            <td>{{meta.classical.methods[2].se:.4f}}</td>
+            <td>{{meta.classical.methods[2].tau2:.5f}}</td>
+            <td>[{{meta.classical.methods[2].lower:.3f}}, {{meta.classical.methods[2].upper:.3f}}]</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The finding</p>
+      <h2>Model reads run high, and pooling naively buries it</h2>
+      <p>The classical pool has no way to express “these four studies are a different
+        <em>kind</em> of evidence”. axiom’s Bayesian pool carries an explicit bias term for
+        the model-based reads, and first checks whether that term is identified at all — it
+        is only identified because two contributors reported <em>both</em> kinds, which is
+        what pins the two scales together.</p>
+    </div>
+
+    <div class="grid-2">
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">Funnel plot, coloured by kind of read</p>
+          <p class="fig-s">Precise studies sit at the top. The separation by colour, not the
+            asymmetry, is what matters here.</p>
+        </div>
+        <div class="legend">
+          <span><i class="dot" style="--k:var(--s1)"></i>experiment</span>
+          <span><i class="dot" style="--k:var(--s2)"></i>model read</span>
+          <span><i class="dash" style="--k:var(--accent)"></i>pooled</span>
+        </div>
+        <div class="chart" data-chart="funnel" data-file="meta"
+             data-opt='{"key":"classical.funnel","xLabel":"standardized contrast",
+                        "colourKeys":["experiment","model"],"height":330}'></div>
+        <p class="stamp"><b>axiom.meta.funnel_data</b>(y, se, pooled) with 90/95/99%
+          contours · Egger intercept {{meta.classical.egger.intercept:+.3f}},
+          p = {{meta.classical.egger.p:.3f}}</p>
+      </figure>
+
+      <div class="stack">
+        <div>
+          <p class="readout-l">Experiment-scale mean, with the bias term carried</p>
+          <div class="readout">
+            <div class="readout-v">{{meta.pooled.mu.mean:.4f}}</div>
+            <div class="readout-bar" style="--pos:{{@ meta.pooled.mu.mean meta.pooled.mu.lower meta.pooled.mu.upper }}"><i></i><i></i></div>
+            <div class="readout-e"><span>{{meta.pooled.mu.lower:.3f}}</span>
+              <span>{{meta.pooled.mu.upper:.3f}}</span></div>
+            <p class="readout-d">90% equal-tailed · versus
+              {{meta.pooled.reml_without_bias:.4f}} from the classical pool that treats every
+              read alike</p>
+          </div>
+        </div>
+        <div>
+          <p class="readout-l">How far model reads sit above experiments</p>
+          <div class="readout">
+            <div class="readout-v">{{meta.pooled.delta.mean:+.4f}}</div>
+            <p class="readout-d" style="margin-top:8px">± {{meta.pooled.delta.sd:.4f}} —
+              identified: <strong>{{meta.pooled.delta.identified}}</strong>, via
+              {{meta.pooled.dual_read_contributors}}, the contributors who reported both
+              kinds</p>
+          </div>
+        </div>
+        <div class="note">
+          <p class="note-t">The difference is not cosmetic</p>
+          <p class="small" style="margin:0">Pooling everything together gives
+            <strong>{{meta.pooled.reml_without_bias:.3f}}</strong>. Separating the two kinds
+            of read gives an experiment-scale mean of
+            <strong>{{meta.pooled.mu.mean:.3f}}</strong>. If the number is going to be used
+            to set a prior for the next study, the second is the one you want — and the gap
+            between them is roughly the size of the effect people would be arguing about.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Diagnostics</p>
+      <h2>Which studies are driving the answer</h2>
+      <p>Two views of influence, because “drop it and see” and “how much heterogeneity does
+        it contribute” are different questions and can disagree.</p>
+    </div>
+
+    <div class="grid-2">
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">Baujat: heterogeneity contributed against influence on the pool</p>
+          <p class="fig-s">Top-right is a study that both disagrees with the others and moves
+            the answer. Labels are shown for the studies that matter.</p>
+        </div>
+        <div class="chart" data-chart="scatter" data-file="meta"
+             data-opt='{"key":"classical.baujat","x":"q_contribution","y":"influence",
+                        "labels":"labels","xLabel":"contribution to Q",
+                        "yLabel":"influence on the pooled estimate","height":320}'></div>
+        <p class="stamp"><b>axiom.meta.baujat</b>(y, se) under fixed-effect pooling</p>
+      </figure>
+
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">Leave-one-out influence</p>
+          <p class="fig-s">How far the pooled estimate shifts, in pooled-standard-error units,
+            when each study is removed. Every model read pulls the pool up; every
+            experiment pulls it down.</p>
+        </div>
+        <div class="chart" data-chart="bars" data-file="meta"
+             data-opt='{"rows":[
+               {"label":"s02 (model)","value":{{meta.classical.leave_one_out[1].influence:.4f}},"colour":"s2"},
+               {"label":"s07 (model)","value":{{meta.classical.leave_one_out[6].influence:.4f}},"colour":"s2"},
+               {"label":"s09 (model)","value":{{meta.classical.leave_one_out[8].influence:.4f}},"colour":"s2"},
+               {"label":"s04 (model)","value":{{meta.classical.leave_one_out[3].influence:.4f}},"colour":"s2"},
+               {"label":"s01","value":{{meta.classical.leave_one_out[0].influence:.4f}},"colour":"s1"},
+               {"label":"s06","value":{{meta.classical.leave_one_out[5].influence:.4f}},"colour":"s1"},
+               {"label":"s03","value":{{meta.classical.leave_one_out[2].influence:.4f}},"colour":"s1"}],
+               "xLabel":"shift in pooled-se units","labelWidth":70,"rowHeight":34}'></div>
+        <p class="stamp"><b>axiom.meta.leave_one_out</b>(y, se, method="reml") ·
+          orange bars are model reads, blue are experiments</p>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Two ways out</p>
+      <h2>Hand it forward, or publish it safely</h2>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <h3>As a prior for the next study</h3>
+        <p class="small muted">The pooled result is not a full stop. It converts into a prior
+          on the amplitude of the next dose–response fit, carrying a handoff ledger line so
+          the eventual model records where its prior came from.</p>
+        <div class="ledger mt">
+          <div class="ledger-row">
+            <span class="ledger-f">prior</span>
+            <span class="ledger-s">lognormal on the predictive, moment-matched — mean
+              {{meta.handoff.prior_mean:.3f}}</span>
+            <span class="ledger-v">μ={{meta.handoff.hyper.mu:.3f}}</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">handoff</span>
+            <span class="ledger-s">“{{meta.handoff.statement}}”</span>
+            <span class="tag">{{meta.handoff.kind}}</span>
+          </div>
+        </div>
+        <p class="small muted mt">That is the loop closing: the
+          <a href="surface.html">surface</a> that produced each study’s estimate is the same
+          object that now receives the pooled prior.</p>
+      </div>
+
+      <div>
+        <h3>As a published figure, under a privacy budget</h3>
+        <p class="small muted">When the corpus spans contributors who will not share raw
+          results, axiom checks a release policy — minimum contributor count, no single
+          contributor dominating — then adds calibrated noise and charges the privacy budget.</p>
+        <div class="ledger mt">
+          <div class="ledger-row">
+            <span class="ledger-f">policy</span>
+            <span class="ledger-s">k ≥ {{meta.privacy.policy.k}} contributors, no dominance —
+              checked across {{meta.privacy.gate.contributors}} contributors</span>
+            <span class="tag is-good">{{meta.privacy.gate.status}}</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">released</span>
+            <span class="ledger-s">{{meta.privacy.mechanism}} mechanism at scale
+              {{meta.privacy.noise_scale:.4f}}, against a clipped mean of
+              {{meta.privacy.clipped_mean:.4f}}</span>
+            <span class="ledger-v">{{meta.privacy.released:.4f}}</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">budget</span>
+            <span class="ledger-s">ε = {{meta.privacy.epsilon}} spent of
+              {{meta.privacy.policy.epsilon_total}} — the ledger tracks what remains, so a
+              second release cannot quietly overspend</span>
+            <span class="ledger-v">{{meta.privacy.remaining}} left</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div>
+        <h3>What is in <code>axiom.meta</code></h3>
+        <p class="small muted">{{overview.packages[10].n}} public symbols. Corpus
+          construction and normalization, three τ estimators, Knapp–Hartung and prediction
+          intervals, Egger and Baujat and leave-one-out, the Bayesian pool with its bias
+          term, moderator designs, prior handoff, and the privacy release path with its
+          epsilon ledger.</p>
+        <p class="small"><a href="api.html#meta">Browse every symbol →</a></p>
+      </div>
+      <div>
+        <h3>See all five together</h3>
+        <p class="small muted">The case study runs one trial from the causal graph through
+          sizing, the dose–response, the sequential design, and the review that stops an arm
+          — using every pillar on this tour.</p>
+        <p class="small"><a href="case-study.html">Read the case study →</a></p>
+      </div>
+    </div>
+  </div>
+</section>

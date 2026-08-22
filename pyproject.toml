@@ -1,6 +1,6 @@
 [project]
 name = "axiom"
-version = "0.0.0"
+version = "1.0.0"
 description = "Bayesian causal decision science: identification, experimental design and calibration, response-surface methodology, and evidence meta-analysis"
 readme = "README.md"
 license = "LicenseRef-Proprietary"
@@ -42,8 +42,18 @@ numpyro = [
 ]
 # Alternative backend for models NumPyro serves badly (discrete latents without
 # enumeration, some hierarchies). Optional on purpose -- see the note above.
+#
+# PyMC is the one backend that dispatches NUTS to a *choice* of sampler over the
+# same compiled log density: its own, nutpie (Rust, usually the fastest here),
+# numpyro (needs axiom[numpyro] as well) and blackjax (likewise, via jax).
+# nutpie is in this extra because it is small and is the sampler we default to
+# recommending; the other two ride along with the extras that already carry jax.
+# `infer.samplers(probe=True)` reports which are actually usable against the
+# installed PyMC -- an external sampler can import cleanly and still be out of
+# step with it, which is not the same thing as installed.
 pymc = [
     "pymc>=6.0.1",
+    "nutpie>=0.16",
     "arviz-base>=1.2",
     "arviz-stats>=1.2",
 ]
@@ -57,7 +67,14 @@ convex = ["cvxpy>=1.5"]
 privacy = ["scipy>=1.16"]
 # Figures. Never imported by core.
 viz = ["plotly>=6.5"]
-all = ["axiom[numpyro,netcdf,convex,privacy,viz]"]
+# Static report output: slides and paged PDF. HTML needs none of this -- it keeps
+# plotly figures live and only wants the viz extra. kaleido ships a browser engine
+# to turn a figure into a PNG, which is exactly why it is not a core dependency.
+report = ["axiom[viz]", "python-pptx>=1.0", "reportlab>=4.0", "kaleido>=1.0"]
+# Everything. Heavy on purpose: this is what `uv sync --group dev` installs so
+# that CI can run the backend-equivalence gate and the infer notebooks, both of
+# which compare all three backends against each other.
+all = ["axiom[numpyro,pymc,netcdf,convex,privacy,viz,report]"]
 
 [dependency-groups]
 dev = [
@@ -69,6 +86,9 @@ dev = [
     "pytest-xdist>=3.8",
     "pytest-cov>=7.0",
     "ipykernel>=7.1",
+    "nbmake>=1.5",
+    "pandas-stubs>=3.0.5.260730",
+    "scipy-stubs>=1.18.0.1",
 ]
 docs = ["sphinx>=8.0", "furo>=2024.8", "myst-parser>=4.0"]
 
@@ -104,3 +124,10 @@ markers = [
 python_version = "3.12"
 strict = true
 files = ["src/axiom"]
+
+# Optional report backends that ship no type information. They are reached only
+# from axiom.report.render.*, always behind a try/ImportError that returns a typed
+# Unsupported, so nothing in axiom's own surface loses a type to this.
+[[tool.mypy.overrides]]
+module = ["pptx.*", "reportlab.*", "kaleido.*"]
+ignore_missing_imports = true

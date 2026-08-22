@@ -1,6 +1,32 @@
-"""viz: Optional plotly figures. Never imported by core.
+"""viz: optional plotly figures behind the ``[viz]`` extra.
 
-STATUS: not implemented. See docs/plan/03-roadmap.md.
+Importing this package never imports plotly; each figure function returns
+``Unsupported(reason="plotly not installed", missing=("viz",))`` when it is
+absent. See ``nbs/viz/``.
 """
 
-__all__: list[str] = []
+from __future__ import annotations
+
+from axiom.viz.figures import (
+    available,
+    backtest_plot,
+    coverage_plot,
+    forest,
+    funnel,
+    marginal_curve,
+    response_curve,
+    sbc_ranks,
+    spec_curve_plot,
+)
+
+__all__ = [
+    "available",
+    "backtest_plot",
+    "coverage_plot",
+    "forest",
+    "funnel",
+    "marginal_curve",
+    "response_curve",
+    "sbc_ranks",
+    "spec_curve_plot",
+]

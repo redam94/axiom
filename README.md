@@ -5,6 +5,16 @@ whether the data can tell you, design the experiment that would, fold the
 experiment's answer back into the model, map the response surface it implies,
 and pool the evidence across every study you have run.
 
+📊 **[See it working →](https://redam94.github.io/axiom/)** — a guided tour of all
+five pillars and the HYPER-3 case study, where every figure and every number was
+produced by actually running the library. Source in [`site/`](site/).
+
+🧪 **[Twelve runnable examples →](examples/)** — the same library across agronomy,
+labour economics, education, epidemiology, conservation ecology, public health,
+clinical research, energy, process engineering, marketing, behavioural science and
+product analytics. `python examples/run_all.py` runs all of them in about thirty
+seconds on the core install.
+
 Four pillars, one vocabulary:
 
 | Pillar | Question it answers | Package |
@@ -17,9 +27,16 @@ Four pillars, one vocabulary:
 
 ## Status
 
-**Pre-implementation.** This repository currently holds the architecture and
-the implementation plan. No algorithms are implemented yet. Start at
-[`docs/plan/00-charter.md`](docs/plan/00-charter.md).
+**1.0.** All fifteen subpackages are implemented, every public symbol is
+demonstrated in an executed notebook under `nbs/`, and the twelve contract
+gates plus the recovery suites are green. Start with the **case study** in
+`nbs/case-studies/hypertension/` — a sequential dose-finding trial that has to
+stop a dose arm early if it is harming people, worked end to end in six
+notebooks — then the end-to-end notebooks in `nbs/end-to-end/` and the
+subpackage series. The plan that produced the code is in `docs/plan/`, the
+decisions taken along the way in `docs/notes/`. Deferred to 1.1: a PyMC backend,
+block-bootstrap switchback SEs, non-parametric surfaces, and stage-wise-ordered
+estimates for a stopped sequential trial.
 
 ## Design commitments
 

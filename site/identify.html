@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Identify — can the data answer the question? · axiom</title>
+<meta name="description" content="Causal graphs, back-door and front-door routes, instruments, and sensitivity analysis. axiom answers whether an effect is recoverable before you fit anything, and names what a confounder would have to look like to overturn the answer.">
+<meta property="og:title" content="Identify — can the data answer the question? · axiom">
+<meta property="og:description" content="Causal graphs, back-door and front-door routes, instruments, and sensitivity analysis. axiom answers whether an effect is recoverable before you fit anything, and names what a confounder would have to look like to overturn the answer.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="identify">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step step-on" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx" href="examples.html">Examples</a><a class="navx" href="case-study.html">Case study</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Pillar 01 · axiom.identify · axiom.diagnose</p>
+    <h1 style="max-width:16ch">Can the data answer&nbsp;it?</h1>
+    <p class="lede prose mt">Every estimator returns a number. The question that decides
+      whether the number means anything comes first: given how the world is wired, is this
+      effect recoverable from what you measured? axiom answers that from the graph, before
+      any data is touched — and when the answer is no, it says which variable is missing
+      rather than returning a number anyway.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The good case</p>
+      <h2>A route exists, so take it</h2>
+      <p>A treatment <code>X</code>, an outcome <code>Y</code>, and a common cause
+        <code>Z</code> that drives both. The graph is
+        <code>X -&gt; Y, Z -&gt; X, Z -&gt; Y</code>, and everything in it is measured. axiom
+        searches for a licensed route and finds the back door.</p>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <figure class="fig">
+          <div class="fig-head">
+            <p class="fig-t">Three estimates of the same effect</p>
+            <p class="fig-s">Same data, same 5,000 rows. The only difference is whether the
+              confounder was conditioned on.</p>
+          </div>
+          <div class="chart" data-chart="intervals" data-file="identify"
+               data-opt='{"rows":"backdoor.estimates","label_key":"label",
+                          "truth":2.0,"truthLabel":"truth = 2.0","labelWidth":168,
+                          "rowHeight":46,"xLabel":"estimated effect of X on Y","mass":95}'></div>
+          <p class="stamp"><b>axiom.identify.ols</b>(frame, "Y", "X", covariates=…) ·
+            n = 5,000 · 95% Wald · seed 0</p>
+        </figure>
+      </div>
+      <div class="stack">
+        <div>
+          <p class="readout-l">Naive estimate, ignoring <code>Z</code></p>
+          <div class="readout">
+            <div class="readout-v">2.726</div>
+            <div class="readout-bar" style="--pos:50.0%"><i></i><i></i></div>
+            <div class="readout-e"><span>2.693</span>
+              <span>2.758</span></div>
+            <p class="readout-d">95% Wald · off by
+              +0.726 — and the interval does not
+              contain the truth</p>
+          </div>
+        </div>
+        <div>
+          <p class="readout-l">Back-door adjusted, conditioning on
+            <code>Z</code></p>
+          <div class="readout">
+            <div class="readout-v">2.013</div>
+            <div class="readout-bar" style="--pos:50.0%"><i></i><i></i></div>
+            <div class="readout-e"><span>1.985</span>
+              <span>2.040</span></div>
+            <p class="readout-d">95% Wald · off by
+              +0.013 against a truth of
+              2.0</p>
+          </div>
+        </div>
+        <div class="note">
+          <p class="note-t">The bias does not shrink with n</p>
+          <p class="small" style="margin:0">Collecting ten times the data would tighten the
+            naive interval around
+            <strong>2.73</strong>, not move it
+            toward <strong>2.0</strong>. Confounding is not
+            noise, and no sample size fixes it.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-lg">
+      <h3>What the verdict carries</h3>
+      <p class="prose muted small">A verdict is not a boolean. It names the route, the set to
+        condition on, and every assumption that route rests on — each one with a state, so
+        you can see what has actually been checked and what is merely being assumed.</p>
+      <div class="ledger mt">
+        <div class="ledger-row">
+          <span class="ledger-f">status</span>
+          <span class="ledger-s">identified via the
+            <b>backdoor</b> route</span>
+          <span class="tag is-good">licensed</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">adjust for</span>
+          <span class="ledger-s">Z — the minimal sufficient
+            set. axiom also enumerates the alternatives:
+            ['Z']</span>
+          <span class="ledger-v">1 set</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">assumptions</span>
+          <span class="ledger-s">none beyond the graph. With every node measured and a
+            back door available, there is nothing further to assume — so axiom lists
+            <b>nothing</b> rather than padding the verdict. The graph itself is still your
+            claim to defend, and it is hashed into the verdict.</span>
+          <span class="ledger-v">0 lines</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The honest case</p>
+      <h2>No route exists, and axiom says so</h2>
+      <p>Now the same structure with <code>Z</code> never measured — the observed columns are
+        X, Y. There is nothing to condition on. A
+        library that hands back a coefficient here is not lying about the arithmetic; it is
+        answering a different question than the one you asked.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="ledger">
+        <div class="ledger-row">
+          <span class="ledger-f">status</span>
+          <span class="ledger-s"><b>downgraded</b> —
+            route backdoor_unmeasured</span>
+          <span class="tag is-bad">not licensed</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">needs</span>
+          <span class="ledger-s">Z, which is
+            not in your data</span>
+          <span class="ledger-v">unmeasured</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">if you fit anyway</span>
+          <span class="ledger-s">the regression returns
+            <b>2.726</b> against a truth of
+            2.0</span>
+          <span class="ledger-v">+0.726</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">no route at all</span>
+          <span class="ledger-s">for <code>X -&gt; Y, X &lt;-&gt; Y</code>
+            the verdict is <b>blocked</b>:
+            “no back-door, front-door, or instrumental route exists in the graph”</span>
+          <span class="tag is-bad">blocked</span>
+        </div>
+      </div>
+      <div>
+        <h3>Being told no is the feature</h3>
+        <p class="small muted">Three outcomes, three different things to do next.
+          <strong>Identified</strong> means adjust and proceed. <strong>Downgraded</strong>
+          means the route exists on paper but a variable it needs is missing — so either go
+          and measure it, find an instrument, or bound the damage with a sensitivity
+          analysis. <strong>Blocked</strong> means no observational route exists in this
+          graph at all, and the only way forward is to intervene: run the experiment.</p>
+        <p class="small muted">That last branch is the bridge to the next pillar. When
+          identification fails, the answer is not a cleverer estimator — it is a
+          <a href="design.html">design</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The rescue</p>
+      <h2>An instrument puts it back in reach</h2>
+      <p>If something shifts the treatment without touching the outcome except through it,
+        the effect becomes recoverable again. axiom finds the instrument in the graph, runs
+        two-stage least squares, and checks the relevance condition rather than assuming it.</p>
+    </div>
+    <div class="grid-2">
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">OLS versus 2SLS on a confounded treatment</p>
+          <p class="fig-s">The instrument is <code>Z</code>,
+            found by axiom from the graph — not nominated by hand.</p>
+        </div>
+        <div class="chart" data-chart="intervals" data-file="identify"
+             data-opt='{"rows":"instrument.estimates","label_key":"label",
+                        "truth":2.0000,"truthLabel":"truth",
+                        "labelWidth":90,"rowHeight":48,
+                        "xLabel":"estimated effect of X on Y","mass":95}'></div>
+        <p class="stamp"><b>axiom.identify.two_stage_least_squares</b>(frame, "Y", "X",
+          instruments=[Z]) · n = 5,000 · seed 1</p>
+      </figure>
+      <div class="stack">
+        <div class="ledger">
+          <div class="ledger-row">
+            <span class="ledger-f">route</span>
+            <span class="ledger-s">axiom picked <b>instrument</b> from the
+              graph structure</span>
+            <span class="tag is-good">downgraded</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">relevance</span>
+            <span class="ledger-s">first-stage F of
+              <b>2,215</b> — checked, not assumed.
+              A weak instrument is its own bias.</span>
+            <span class="tag is-good">satisfied</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">recovery</span>
+            <span class="ledger-s">2SLS lands
+              <b>-0.001</b> from the truth where OLS
+              is off by +0.347</span>
+            <span class="ledger-v">1.999</span>
+          </div>
+        </div>
+        <p class="small muted">Exclusion — the assumption that the instrument affects the
+          outcome only through the treatment — is not testable from data, and axiom does not
+          pretend otherwise. It goes into the verdict as an unverified assumption, which is
+          where a reviewer can find it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">When you cannot fix it</p>
+      <h2>How strong would the confounder have to be?</h2>
+      <p>Sometimes there is no instrument and no way to measure the missing variable. The
+        remaining honest move is to say how bad the problem would have to be to change your
+        mind — and then let a reader judge whether a confounder that strong is plausible in
+        their setting.</p>
+    </div>
+
+    <div class="grid-2">
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">The estimate under every strength of confounder</p>
+          <p class="fig-s">Both axes are partial R², the share of variance an unobserved
+            confounder would explain. Darker is a larger surviving estimate.</p>
+        </div>
+        <div class="chart" data-chart="heatmap" data-file="identify"
+             data-opt='{"key":"sensitivity","x":"grid","y":"grid","z":"contour","pct":true,
+                        "xLabel":"confounder → treatment","yLabel":"confounder → outcome",
+                        "zLabel":"adjusted estimate","height":330}'></div>
+        <p class="stamp"><b>axiom.diagnose.bias_bounds</b>(estimate, se, df, r2_yz_dx,
+          r2_dz_x, mass=0.95) — Cinelli–Hazlett bounds over a 21×21 grid</p>
+      </figure>
+
+      <div class="stack">
+        <div>
+          <p class="readout-l">Robustness value</p>
+          <div class="readout">
+            <div class="readout-v">86.2%</div>
+            <p class="readout-d" style="margin-top:10px">A confounder would have to explain
+              86.2% of the residual variance in
+              <em>both</em> the treatment and the outcome to wipe the effect out entirely.
+              That is an enormous confounder — which is the point of quoting the number.</p>
+          </div>
+        </div>
+        <div>
+          <p class="readout-l">To produce the bias that is actually there</p>
+          <div class="readout">
+            <div class="readout-v">45.6%</div>
+            <p class="readout-d" style="margin-top:10px">The real confounding in this
+              simulation moves the estimate by
+              +0.726. A confounder explaining
+              45.6% of the residual variance in each would do
+              that much damage.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-lg">
+      <h3>Bounding the damage at a stated confounder strength</h3>
+      <p class="prose muted small">Pick a benchmark — “no worse than the confounder I already
+        measured”, say — and axiom returns the adjusted estimate and interval under exactly
+        that assumption. Here the benchmark is the confounder the simulation really has, and
+        two weaker versions of it.</p>
+      <div class="tbl-wrap mt">
+        <table class="t">
+          <caption>Adjusted estimate under a hypothetical confounder of each strength.
+            Truth is 2.0; the unadjusted estimate is
+            2.726.</caption>
+          <thead>
+            <tr><th>benchmark</th><th>R² with treatment</th><th>R² with outcome</th>
+              <th>bias</th><th>adjusted</th><th>95% interval</th></tr>
+          </thead>
+          <tbody>
+            <tr class="hi">
+              <td>the confounder that is actually there</td>
+              <td>0.390</td>
+              <td>0.578</td>
+              <td>0.715</td>
+              <td>2.011</td>
+              <td>[1.984,
+                2.038]</td>
+            </tr>
+            <tr>
+              <td>half as strong</td>
+              <td>0.195</td>
+              <td>0.289</td>
+              <td>0.311</td>
+              <td>2.415</td>
+              <td>[2.384,
+                2.445]</td>
+            </tr>
+            <tr>
+              <td>a quarter as strong</td>
+              <td>0.098</td>
+              <td>0.145</td>
+              <td>0.147</td>
+              <td>2.579</td>
+              <td>[2.547,
+                2.610]</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted mt">The first row lands on
+        2.011 against a truth of
+        2.0 — the benchmark recovers the right answer, because
+        in a simulation we know exactly what the confounder is. In real work you do not, which
+        is why the output is a curve over strengths rather than a single corrected number.</p>
+    </div>
+
+    <div class="note mt-lg" style="max-width:var(--measure)">
+      <p class="note-t">Tipping point</p>
+      <p class="small" style="margin:0">Given a decision threshold of
+        1.0, axiom also reports where the decision
+        flips. At zero bias the call is
+        <strong>True</strong> with probability
+        1.00; it only reverses once
+        bias reaches <strong>1.8</strong>. The
+        confounding actually present moves it by
+        0.726 — so on this decision, at this threshold,
+        the confounder is not large enough to matter.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div>
+        <h3>What is in <code>axiom.identify</code></h3>
+        <p class="small muted">39 public symbols. Graph construction
+          and parsing, role assignment, all three route families, adjustment-set enumeration,
+          transport verdicts across populations, and the linear estimators that go with each
+          route.</p>
+        <p class="small"><a href="api.html#identify">Browse every symbol →</a></p>
+      </div>
+      <div>
+        <h3>Next: what to measure</h3>
+        <p class="small muted">Identification tells you whether the data you have can answer
+          the question. When it cannot — or when the interval is too wide to act on — the
+          next question is what experiment would fix that, at what size, and whether it is
+          worth running at all.</p>
+        <p class="small"><a href="design.html">Go to Design →</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

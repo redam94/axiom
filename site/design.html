@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design — what is worth measuring next? · axiom</title>
+<meta name="description" content="Power and minimum detectable effect, value of information in money, the opportunity cost of withholding treatment, and a leaderboard that picks the design once you subtract both.">
+<meta property="og:title" content="Design — what is worth measuring next? · axiom">
+<meta property="og:description" content="Power and minimum detectable effect, value of information in money, the opportunity cost of withholding treatment, and a leaderboard that picks the design once you subtract both.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="design">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step step-on" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx" href="examples.html">Examples</a><a class="navx" href="case-study.html">Case study</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Pillar 02 · axiom.design</p>
+    <h1 style="max-width:15ch">What should I measure&nbsp;next?</h1>
+    <p class="lede prose mt">Sample-size calculators answer a narrow question: how many units
+      to detect an effect of a size you nominated. axiom asks the wider one. What do you
+      already believe? What would the experiment actually change your mind about? What is
+      that worth, what does withholding treatment cost, and after both — is this experiment
+      worth running at all?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Step one</p>
+      <h2>Start from what you already believe</h2>
+      <p>A pilot has been run and fitted. Before choosing a size, axiom looks at the posterior
+        for the contrast you care about and asks whether the conventional threshold is even
+        in question.</p>
+    </div>
+
+    <div class="grid-2">
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">Posterior for the contrast, before the new experiment</p>
+          <p class="fig-s">Shaded bars are draws above the conventional minimum detectable
+            effect of 2.0.</p>
+        </div>
+        <div class="chart" data-chart="hist" data-file="design"
+             data-opt='{"counts":"prior.draws_hist","edges":"prior.draws_edges",
+                        "threshold":2.0,
+                        "thresholdLabel":"conventional MDE",
+                        "xLabel":"contrast at dose 60 vs 0","height":230}'></div>
+        <p class="stamp"><b>axiom.estimands.realize</b>(estimand, fit, keep_draws=True) over a
+          Laplace posterior · 2,000 draws · seed 0</p>
+      </figure>
+
+      <div class="stack">
+        <div>
+          <p class="readout-l">What the pilot already says</p>
+          <div class="readout">
+            <div class="readout-v">5.59</div>
+            <div class="readout-bar" style="--pos:50.4%"><i></i><i></i></div>
+            <div class="readout-e"><span>3.73</span>
+              <span>7.43</span></div>
+            <p class="readout-d">90% equal-tailed · posterior sd
+              1.15 · the simulation’s truth is
+              3.54</p>
+          </div>
+        </div>
+        <div class="note">
+          <p class="note-t">Powering for the conventional threshold would waste the study</p>
+          <p class="small" style="margin:0">The pilot already puts
+            <strong>99.9%</strong> of posterior mass
+            above 2.0. Designing a study to detect
+            2.0 would spend money confirming something you
+            are already sure of. axiom anchors instead to the
+            <strong>4.19</strong> at the sceptical end of
+            what you believe — the effect that is genuinely still in play.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Step two</p>
+      <h2>Then size it</h2>
+      <p>With the effect to power for settled at
+        4.19 and an outcome sd of
+        4.55, the arithmetic is ordinary — and axiom will also tell you
+        what a size someone has already proposed actually buys.</p>
+    </div>
+
+    <div class="grid-2">
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">Power against effect size, at four sample sizes</p>
+          <p class="fig-s">Two-arm difference in means, equal allocation, α = 0.05.</p>
+        </div>
+        <div class="legend">
+          <span><i style="--k:var(--s1)"></i>n = 20</span>
+          <span><i style="--k:var(--s2)"></i>n = 38 (powered)</span>
+          <span><i style="--k:var(--s3)"></i>n = 80 (proposed)</span>
+          <span><i style="--k:var(--s4)"></i>n = 200</span>
+        </div>
+        <div class="chart" data-chart="lines" data-file="design"
+             data-opt='{"series":[
+                        {"label":"n = 20","x":"sizing.curves[0].effects","y":"sizing.curves[0].power"},
+                        {"label":"n = 38","x":"sizing.curves[1].effects","y":"sizing.curves[1].power"},
+                        {"label":"n = 80","x":"sizing.curves[2].effects","y":"sizing.curves[2].power"},
+                        {"label":"n = 200","x":"sizing.curves[3].effects","y":"sizing.curves[3].power"}],
+                        "hline":0.8,"hlineLabel":"80% power","yPct":true,"direct":false,
+                        "yDomain":[0,1.02],
+                        "xLabel":"true effect","yLabel":"power","height":300}'></div>
+        <p class="stamp"><b>axiom.design.power_curve</b>(n, sd=4.55,
+          effects=…) · α = 0.05, two-sided</p>
+      </figure>
+
+      <div class="stack">
+        <div class="ledger">
+          <div class="ledger-row">
+            <span class="ledger-f">powered n</span>
+            <span class="ledger-s">to reach 80% power for an effect of
+              4.19 you need
+              <b>38 units</b> — 19 treated,
+              19 control</span>
+            <span class="ledger-v">81.0%</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">proposed n</span>
+            <span class="ledger-s">someone proposed 80. That
+              detects <b>2.85</b> at 80% power, and reaches
+              98.5% power for the effect in question</span>
+            <span class="ledger-v">over-powered</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">precision</span>
+            <span class="ledger-s">standard error of the difference at the powered size —
+              this is the number every value calculation below runs on</span>
+            <span class="ledger-v">1.478</span>
+          </div>
+        </div>
+        <p class="small muted">Over-powering is not free. Every extra unit in the control arm
+          is a unit not receiving a treatment you mostly believe works, and that cost shows
+          up explicitly in the next section rather than being left as a footnote.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Step three</p>
+      <h2>What is the answer worth?</h2>
+      <p>An experiment is only worth running if it can change a decision. Here the programme
+        scales up if the contrast clears 6.0, each outcome unit is
+        worth 400 USD, and the programme covers
+        500 units. The prior sits just under the threshold with
+        real spread — which is exactly when information has value.</p>
+    </div>
+
+    <div class="grid-2">
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">What a more precise experiment is worth</p>
+          <p class="fig-s">Expected value of sample information as the experiment’s standard
+            error falls, against the ceiling set by knowing the truth outright.</p>
+        </div>
+        <div class="chart" data-chart="lines" data-file="design"
+             data-opt='{"series":[{"label":"EVSI","x":"value.se_grid","y":"value.evsi_grid"}],
+                        "hline":56502.0,"hlineLabel":"EVPI ceiling",
+                        "direct":false,"xLabel":"experiment standard error",
+                        "yLabel":"USD","height":300}'></div>
+        <p class="stamp"><b>axiom.design.evoi_gaussian</b>(decision, prior_mean, prior_sd,
+          experiment_se) over a grid of 40 precisions</p>
+      </figure>
+
+      <div class="stack">
+        <div class="grid-2" style="gap:16px">
+          <div>
+            <p class="readout-l">Value of perfect information</p>
+            <div class="readout">
+              <div class="readout-v">56,502</div>
+              <p class="readout-d" style="margin-top:8px">USD · the most any study on this
+                decision could ever be worth</p>
+            </div>
+          </div>
+          <div>
+            <p class="readout-l">Value of this study</p>
+            <div class="readout">
+              <div class="readout-v">24,530</div>
+              <p class="readout-d" style="margin-top:8px">USD · at se
+                1.478, capturing
+                0.24 nats</p>
+            </div>
+          </div>
+        </div>
+        <div class="note">
+          <p class="note-t">Where the value comes from</p>
+          <p class="small" style="margin:0">The curve is steep at the right and flat at the
+            left: buying precision is worth a great deal until the decision stops being in
+            doubt, and almost nothing after. Had the threshold been
+            1.0 instead — comfortably below the
+            prior — the whole curve would sit near zero, and the correct recommendation would
+            be to run no experiment and act now.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Step four</p>
+      <h2>Subtract what it costs to find out</h2>
+      <p>Three candidate designs, scored on the same decision. Net value is the information
+        they buy minus the treatment withheld from the control arm minus the fixed cost of
+        running them.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="fig-head">
+        <p class="fig-t">Net value of each design</p>
+        <p class="fig-s">All three clear zero, so all three are worth running — the question
+          is only which is best. Hover for the breakdown.</p>
+      </div>
+      <div class="chart" data-chart="bars" data-file="design"
+           data-opt='{"rows":[
+             {"label":"proposed holdout","value":22336.7,
+              "colour":"accent","display":"22,337 USD",
+              "note":"EVSI 35,265 − opportunity 12,378 − cost 550<br>power 1.000 · EIG 0.409 nats"},
+             {"label":"switchback","value":14489.6,
+              "colour":"ink-3","display":"14,490 USD",
+              "note":"EVSI 31,096 − opportunity 16,186 − cost 420<br>power 0.997 · EIG 0.331 nats"},
+             {"label":"powered holdout","value":11852.3,
+              "colour":"ink-3","display":"11,852 USD",
+              "note":"EVSI 24,530 − opportunity 12,378 − cost 300<br>power 0.966 · EIG 0.235 nats"}],
+             "xLabel":"net value (USD)","xFmt":"money","labelWidth":150,"rowHeight":50}'></div>
+      <p class="stamp"><b>axiom.design.evaluate_candidate</b>(candidate, decision,
+        prior_mean, prior_sd, economics) · winner by net value:
+        <b>proposed_holdout</b></p>
+    </figure>
+
+    <div class="tbl-wrap mt">
+      <table class="t">
+        <caption>The full leaderboard. Every design here sits on the Pareto front over
+          (net value, −cost, expected information gain), so none is dominated outright.</caption>
+        <thead>
+          <tr><th>design</th><th>EIG (nats)</th><th>EVSI</th><th>opportunity cost</th>
+            <th>fixed cost</th><th>net value</th><th>power</th><th>Pareto</th></tr>
+        </thead>
+        <tbody>
+          <tr class="hi">
+            <td>proposed_holdout</td>
+            <td>0.409</td>
+            <td>35,265</td>
+            <td>12,378</td>
+            <td>550</td>
+            <td>22,337</td>
+            <td>1.000</td>
+            <td>on front</td>
+          </tr>
+          <tr>
+            <td>switchback</td>
+            <td>0.331</td>
+            <td>31,096</td>
+            <td>16,186</td>
+            <td>420</td>
+            <td>14,490</td>
+            <td>0.997</td>
+            <td>on front</td>
+          </tr>
+          <tr>
+            <td>powered_holdout</td>
+            <td>0.235</td>
+            <td>24,530</td>
+            <td>12,378</td>
+            <td>300</td>
+            <td>11,852</td>
+            <td>0.966</td>
+            <td>on front</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-2 mt-lg">
+      <div class="note">
+        <p class="note-t">The recommendation is stable</p>
+        <p class="small" style="margin:0">axiom re-runs the whole comparison over a grid of
+          each economic input. Scaling the value per outcome across
+          0.25, 0.5, 1.0, 2.0, 4.0× leaves the winner unchanged, and so does scaling
+          the experiment’s standard error across 0.5, 0.75, 1.0, 1.5, 2.0×. No tipping
+          points were found in either sweep — the answer does not hinge on a number someone
+          guessed.</p>
+      </div>
+      <div class="note">
+        <p class="note-t">The price is on the record</p>
+        <p class="small" style="margin:0">The value per outcome is not a hard-coded constant.
+          It is a stated input that writes its own ledger line:
+          “one unit is worth 400 USD (stated by the decision owner, 2026)” — so a reader six months later can see who
+          claimed it and challenge that rather than the arithmetic.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div>
+        <h3>What is in <code>axiom.design</code></h3>
+        <p class="small muted">151 public symbols — the largest
+          subpackage. Power and MDE, cluster and panel designs, Fisher information and
+          D-optimal probes, method calibration and leaderboards, economic inputs and value of
+          information, alpha-spending and sequential boundaries, and the monitoring machinery
+          the case study runs on.</p>
+        <p class="small"><a href="api.html#design">Browse every symbol →</a></p>
+      </div>
+      <div>
+        <h3>Next: fold the answer back in</h3>
+        <p class="small muted">Once the experiment has run, its result should change the
+          observational model you already had — and the record should say exactly what that
+          transfer assumed.</p>
+        <p class="small"><a href="calibrate.html">Go to Calibrate →</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

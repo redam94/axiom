@@ -9,10 +9,11 @@
 | `tests/golden/` | `golden` | Does the port still reproduce `mmm-framework`? | always |
 | `tests/recovery/` | `recovery` | Does the estimator recover known truth? | always; heavy cases `slow` |
 | — | `slow` | Anything that samples for more than ~20 s | nightly + pre-release |
+| `nbs/` | — | Can a user see every public API being used, and does it still run? | always, `make notebooks` |
 
 ## The gates
 
-Nine contract tests. Each one exists because a specific decision in this plan
+Twelve contract tests. Each one exists because a specific decision in this plan
 would otherwise erode silently.
 
 ### 1. `test_import_weight.py`
@@ -55,9 +56,10 @@ AST-inspects `axiom.io` and asserts no import of `pickle`, `cloudpickle`, or
 off the parent's documented cross-environment cloudpickle failures.
 
 ### 6. `test_interval_provenance.py`
-Every function returning an interval returns a type carrying
-`interval_definition` and `hdi_prob`. Checked by walking return annotations and
-by a runtime pass over the estimand registry.
+Every function returning an interval returns `core.Interval`, whose
+`definition` and `mass` fields are required with no defaults — an interval
+without provenance cannot be constructed (review C8). A runtime pass over the
+estimand registry (Phase 4) asserts every result carries one.
 
 *Protects:* design commitment #4. The parent shipped `contribution_roi` in two
 places at two masses and two interval definitions before it noticed.
@@ -86,6 +88,88 @@ Asserts `design/structural.py` and `surface/model.py` both reach
 *Protects:* the specific drift the parent documents in
 `planning/identification.py`, where a numpy re-implementation "byte-mirrors" the
 model and must be kept in sync by hand.
+
+### 10. `test_dimensional_soundness.py`
+Three assertions over everything shipped in `src/axiom/`. Every declared
+`Estimand`'s expression tree derives to its declared dimension. Every nonlinear
+node — `Apply`, `Link`, and every kernel's saturation argument — receives a
+dimensionless argument. Every `Equation` in every shipped `System` and
+`ODESystem` balances. Parametrized over the kernel registry, so a new kernel
+taking a dimensioned argument fails on arrival rather than at the point someone
+tries to pool its parameters.
+
+*Protects:* the scale/shape split, which is what `meta` pools on, and the
+per-period-versus-cumulative bug class in carryover.
+
+### 11. `test_estimand_completeness.py`
+Every `Estimand` populates all eight facets — none left `None`. Then, for each
+facet, construct a pair of estimands differing only in that facet and assert
+`transfer_to` returns a plan naming that facet's licensing assumption, or
+`status="blocked"` with a non-empty reason. The test is parametrized over the
+facet set itself.
+
+*Protects:* the charter's central claim. Adding a ninth facet without a
+licensing assumption fails CI, which is the only way a checklist stays complete
+once the person who wrote it has moved on.
+
+### 12. `test_notebook_coverage.py`
+For every subpackage under `src/axiom/`, collect its public API — every name
+in `__all__` of the package `__init__`, or every non-underscore export if
+`__all__` is absent — and assert each name is referenced in at least one code
+cell of a notebook under `nbs/<subpackage>/`. References are found by parsing
+cell source with `ast` and collecting `Name` and `Attribute` nodes, so a
+symbol only mentioned in markdown does not count. The test reports the
+uncovered symbols by subpackage; a subpackage with public symbols and no
+`nbs/<subpackage>/` directory fails outright.
+
+*Protects:* rule 6. An API nobody has had to demonstrate is an API nobody has
+had to use, and the parent's unused-surface rot (`garden/compat.py` exists
+because of it) starts exactly there. It also keeps the happy path honest: if a
+symbol is awkward enough that writing its notebook cell is painful, that is
+found the day the symbol lands, not at 1.0.
+
+## Notebook series
+
+`nbs/` is part of the deliverable, not documentation written afterward.
+
+```
+nbs/
+├── core/          01-dimensions, 02-specs-and-hashing, 03-expression-tree, 04-protocols
+├── data/          01-panel-and-roles, 02-scaling
+├── io/            01-save-load-an-analysis
+├── identify/      01-graphs-and-verdicts, 02-adjustment-and-estimators, 03-transport
+├── estimands/     01-declaring-an-estimand, 02-transfer-plans, 03-realization
+├── surface/       01-kernels-and-carryover, 02-forward-and-linearize, 03-designs, 04-fit, 05-ascent-and-optimize
+├── design/        01-power-and-mde, 02-eig-and-evoi, 03-methods, 04-simulation, 05-portfolio
+├── calibrate/     01-evidence, 02-prior-route, 03-likelihood-route, 04-transfer-and-ledger
+├── meta/          01-classical, 02-bayesian-pool, 03-priors-handoff, 04-influence
+├── infer/         01-backends, 02-laplace, 03-convergence
+├── diagnose/      01-sbc-and-coverage, 02-sensitivity, 03-learning-and-spec-curve, 04-refute-and-backtest
+├── build/         01-builders
+├── adapters/      01-marketing
+└── end-to-end/    the five Phase 9 notebooks
+```
+
+Rules:
+
+- **One series per subpackage, one notebook per coherent feature group.** The
+  series is opened when the subpackage's first public symbol lands and is a
+  deliverable of the phase that completes the subpackage. A phase does not
+  exit with an uncovered public symbol.
+- **A new public symbol and its notebook cell land in the same PR.** Gate 12
+  enforces it; the reviewer checks that the cell demonstrates the symbol, not
+  merely imports it.
+- **Every notebook executes in CI** via `make notebooks` (`pytest --nbmake`).
+  Notebooks that sample use `sim` worlds small enough to run in under 60 s;
+  anything heavier is a `slow`-marked test, not a notebook. Outputs are
+  stripped before commit; CI re-executes.
+- **Notebooks use `sim`, never external data**, and every cell that produces
+  a number shows the provenance the number carries (interval definition,
+  ledger line, content hash) — the notebooks are where rule 4 is visible.
+- **The end-to-end series is written last** and imports only from the
+  per-subpackage series' vocabulary; if the end-to-end notebook needs a
+  construct that no subpackage notebook shows, the subpackage series is
+  incomplete.
 
 ## Golden fixtures
 
@@ -146,6 +230,7 @@ a 90% interval covering 50% of the truth shipped unnoticed.
 | `full` | `uv sync --group dev` | everything `not slow` | every push |
 | `slow` | `uv sync --group dev` | `-m slow` | nightly + tags |
 | `lint` | dev | `black --check`, `ruff`, `mypy --strict` | every push |
+| `notebooks` | `uv sync --group dev` | `pytest --nbmake nbs/` | every push |
 
 The `core` job is the load-bearing one. It is what proves the four-dependency
 claim, and it is the job that fails when someone adds a top-level `import jax`.

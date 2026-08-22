@@ -1,0 +1,425 @@
+<!--meta {
+  "title": "axiom — Bayesian causal decision science",
+  "description": "A Python toolkit for identification, experimental design, calibration, response surfaces, and evidence meta-analysis. Declare what you want to know, find out whether the data can tell you, and design the experiment that would.",
+  "active": "index"
+} -->
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">Bayesian causal decision science · Python 3.12+</p>
+      <h1>The 40&nbsp;mg arm looked safe.<br><em>It wasn’t.</em></h1>
+      <p class="hero-sub">Averaged over all {{casestudy.protocol.n_units}} patients in this
+        trial, the top dose never comes close to the harm boundary — its worst reading is
+        <strong>Z&nbsp;=&nbsp;+{{casestudy.monitoring[2].lowest_z_seen:.2f}}</strong>, comfortably
+        on the safe side. Split by age band, the same arm crosses that boundary at the
+        <strong>first</strong> scheduled review, week&nbsp;{{casestudy.stop.week}}, in the
+        oldest stratum. Benefit in the younger bands was cancelling harm in the older one.</p>
+      <p class="hero-sub">axiom is the toolkit for asking that kind of question on purpose —
+        and for being able to say afterwards exactly which assumption the answer rested on.</p>
+      <div class="hero-cta">
+        <a class="btn btn-1" href="case-study.html">Read the case study →</a>
+        <a class="btn btn-2" href="identify.html">Start the tour</a>
+      </div>
+    </div>
+    <div>
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">Safety monitoring of the 40 mg arm</p>
+          <p class="fig-s">Each dot is a scheduled review. The shaded band is the region the
+            protocol calls harm.</p>
+        </div>
+        <div class="legend">
+          <span><i class="dash" style="--k:var(--boundary)"></i>harm boundary</span>
+          <span><i style="--k:var(--ink-2)"></i>pooled</span>
+          <span><i style="--k:var(--s4)"></i>51+ only</span>
+          <span><i class="dash" style="--k:var(--s4)"></i>reviews it never reached</span>
+        </div>
+        <div class="chart" data-chart="sequential" data-file="casestudy"
+             data-opt='{"panels":[0,3],"animate":true,"colour":"stratum","panelHeight":215,
+                        "showContinuation":true,"yDomain":[-5,3],
+                        "xLabel":"information fraction"}'></div>
+        <p class="stamp"><b>axiom.design.monitor</b>(rule, z, effects=…, ses=…) ·
+          harm_boundary(0.95, margin={{casestudy.rule.margin:.0f}} mmHg) ·
+          {{casestudy.rule.n_contrasts}} contrasts monitored · seed 20260821</p>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What it is</p>
+      <h2>Five questions, one vocabulary</h2>
+      <p>Most statistical libraries hand you an estimator. axiom starts a step earlier, at
+        whether the number you want is recoverable from the data you have, and keeps going a
+        step later, to what the number is worth and what it assumed. The five pillars share
+        one set of nouns — treatment, dose, unit, outcome, covariate — so a result can move
+        between them without being re-derived by hand.</p>
+    </div>
+
+    <div class="cards">
+      <a class="card" href="identify.html">
+        <p class="card-n">01 · IDENTIFY</p>
+        <h3>Can the data answer it?</h3>
+        <p>Draw the causal graph and ask. axiom finds the back-door, front-door, or
+          instrumental route — or tells you no route exists and names the variable you are
+          missing.</p>
+        <div class="card-f">
+          <p class="card-stat">{{identify.backdoor.estimates[0].error:+.3f}} → {{identify.backdoor.estimates[1].error:+.3f}}
+            <small>naive error vs. adjusted error, against a known truth of
+              {{identify.backdoor.truth:.1f}}</small></p>
+          <p class="card-go">See it work <span aria-hidden="true">→</span></p>
+        </div>
+      </a>
+
+      <a class="card" href="design.html">
+        <p class="card-n">02 · DESIGN</p>
+        <h3>What should I measure next?</h3>
+        <p>Power and minimum detectable effect, but also the part usually left out: what the
+          experiment is worth in money, what withholding treatment costs, and which design
+          wins once you subtract both.</p>
+        <div class="card-f">
+          <p class="card-stat">{{design.value.evpi:,.0f}} USD
+            <small>value of perfect information on a decision that is genuinely
+              on the fence</small></p>
+          <p class="card-go">See it work <span aria-hidden="true">→</span></p>
+        </div>
+      </a>
+
+      <a class="card" href="calibrate.html">
+        <p class="card-n">03 · CALIBRATE</p>
+        <h3>Fold the experiment in</h3>
+        <p>A randomized result should change an observational model. axiom does that two
+          ways — through the prior, or through the likelihood — and writes a ledger line for
+          every assumption the transfer needed.</p>
+        <div class="card-f">
+          <p class="card-stat">{{calibrate.routes.rows[0].beta_a:.1f}} → {{calibrate.routes.rows[1].beta_a:.1f}}
+            <small>confounded estimate pulled back to a truth of
+              {{calibrate.setup.truth.beta_a:.0f}}</small></p>
+          <p class="card-go">See it work <span aria-hidden="true">→</span></p>
+        </div>
+      </a>
+
+      <a class="card" href="surface.html">
+        <p class="card-n">04 · SURFACE</p>
+        <h3>Map the dose–response</h3>
+        <p>Saturating kernels, carryover, and one <code>forward()</code> that the likelihood,
+          the design maths, and the optimizer all call. Then: where is the optimum, and what
+          does another unit of budget buy?</p>
+        <div class="card-f">
+          <p class="card-stat">{{surface.allocation.regret:.3f}}
+            <small>regret of the fitted allocation against an oracle that knows the
+              truth</small></p>
+          <p class="card-go">See it work <span aria-hidden="true">→</span></p>
+        </div>
+      </a>
+
+      <a class="card" href="meta.html">
+        <p class="card-n">05 · POOL</p>
+        <h3>What does all the evidence say?</h3>
+        <p>Pool a corpus of studies, estimate how much they really disagree, and carry a bias
+          term for reads you trust less — then hand the result forward as a prior.</p>
+        <div class="card-f">
+          <p class="card-stat">{{meta.pooled.delta.mean:+.3f}}
+            <small>how far model-based reads sit above experimental ones, estimated rather
+              than assumed away</small></p>
+          <p class="card-go">See it work <span aria-hidden="true">→</span></p>
+        </div>
+      </a>
+
+      <a class="card" href="api.html">
+        <p class="card-n">·  REFERENCE</p>
+        <h3>{{overview.total_symbols}} public symbols</h3>
+        <p>Across {{overview.n_packages}} subpackages, every one of them demonstrated in an
+          executed notebook. A contract test fails the build if a symbol is exported without
+          a notebook that uses it.</p>
+        <div class="card-f">
+          <p class="card-stat">{{overview.import_seconds:.2f}}s
+            <small>to import all five pillars, pulling only
+              {{overview.import_pulls}}</small></p>
+          <p class="card-go">Browse the API <span aria-hidden="true">→</span></p>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Sixty seconds</p>
+      <h2>Ask first, estimate second</h2>
+      <p>The output blocks below are captured from a real run at build time, not typed out.
+        If the library’s answer changes, this page changes with it.</p>
+    </div>
+
+    <div class="stack-lg">
+      <div>
+        <h3>1 · The effect is identified, so adjust and move on</h3>
+        <p class="muted small" style="max-width:var(--measure)">A treatment
+          <code>X</code>, an outcome <code>Y</code>, and a measured common cause
+          <code>Z</code>. Ignoring <code>Z</code> is not a small mistake — it is the whole
+          confounding bias, and axiom names the set you have to condition on before you fit
+          anything.</p>
+        <div class="pair mt">
+          <div class="code">
+            <div class="code-h"><span>identify.py</span>
+              <button class="copy" type="button">Copy</button></div>
+            <pre>{{tour.identify.code}}</pre>
+          </div>
+          <div class="out">
+            <div class="out-h">output</div>
+            <pre>{{tour.identify.output}}</pre>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3>2 · It isn’t identified, and you find out before you fit</h3>
+        <p class="muted small" style="max-width:var(--measure)">The same graph with
+          <code>Z</code> unmeasured. There is nothing to condition on, so there is no
+          unbiased answer — and rather than returning one anyway, axiom downgrades the
+          verdict and states the assumption you would have to defend, along with what would
+          challenge it.</p>
+        <div class="pair mt">
+          <div class="code">
+            <div class="code-h"><span>refuse.py</span>
+              <button class="copy" type="button">Copy</button></div>
+            <pre>{{tour.refuse.code}}</pre>
+          </div>
+          <div class="out">
+            <div class="out-h">output</div>
+            <pre>{{tour.refuse.output}}</pre>
+          </div>
+        </div>
+        <div class="note mt">
+          <p class="note-t">Why this matters</p>
+          <p class="small" style="margin:0">A library that silently returns
+            <code>{{identify.not_identified.naive.estimate:.3f}}</code> here is not wrong
+            about the arithmetic — that really is the regression coefficient. It is wrong
+            about the question. The truth is
+            <code>{{identify.not_identified.truth:.1f}}</code>, and no amount of data fixes
+            it, because the bias does not shrink with n.</p>
+        </div>
+      </div>
+
+      <div>
+        <h3>3 · The number you want is an object, not a convention</h3>
+        <p class="muted small" style="max-width:var(--measure)">“The effect” is ambiguous
+          until you say at what dose, against what reference, over what window, for whom, and
+          at what level of aggregation. axiom makes those nine facets explicit and hashes
+          them, so two results can be checked for whether they are even about the same
+          quantity.</p>
+        <div class="pair mt">
+          <div class="code">
+            <div class="code-h"><span>estimand.py</span>
+              <button class="copy" type="button">Copy</button></div>
+            <pre>{{tour.estimand.code}}</pre>
+          </div>
+          <div class="out">
+            <div class="out-h">output</div>
+            <pre>{{tour.estimand.output}}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Commitments</p>
+      <h2>Six rules the build enforces</h2>
+      <p>These are not aspirations in a style guide. Each one has a contract test behind it,
+        and the evidence below each rule was measured on this build.</p>
+    </div>
+
+    <div class="rules">
+      <div class="rule-i">
+        <div class="rule-n">01</div>
+        <div>
+          <h4>The dependency budget is a hard constraint</h4>
+          <p>The core is numpy, scipy, pandas, pydantic. Nothing else. All the design,
+            identification, planning, and closed-form meta-analysis maths works there.
+            Samplers are extras, and a contract test fails the build if importing the library
+            drags one in.</p>
+          <p class="rule-proof">measured: <code>{{overview.import_workload}}</code> →
+            pulls {{overview.import_pulls}} in {{overview.import_seconds:.2f}}s.
+            Samplers pulled: none.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">02</div>
+        <div>
+          <h4>No marketing vocabulary outside the adapter</h4>
+          <p>The nouns are treatment, dose, unit, outcome, covariate — never channel, spend,
+            geo, or ROAS. Marketing is one adapter in
+            <code>axiom.adapters.marketing</code>, and a gate keeps its vocabulary out of
+            everything below it. The maths came from a marketing platform; the vocabulary
+            deliberately did not.</p>
+          <p class="rule-proof">axiom.adapters exports {{overview.packages[13].n}} symbols —
+            the only place in the library where those words are allowed.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">03</div>
+        <div>
+          <h4>One <code>forward()</code></h4>
+          <p>The likelihood, the data-generating process, the design maths, and the optimizer
+            all call the same transform chain. Nobody reimplements it “for speed” — that
+            drift is a documented bug class in the codebase this one was rewritten from.</p>
+          <p class="rule-proof">the allocation, the response band, and the simulated truth on
+            the surface page are all <code>axiom.surface.forward</code>.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">04</div>
+        <div>
+          <h4>Every number carries its provenance</h4>
+          <p>An interval states which definition it is and at what mass. Every evidence
+            transfer writes a ledger line naming the assumption it needed. Every spec has a
+            content hash. This site is built the same way: every figure names the call that
+            produced it.</p>
+          <p class="rule-proof">e.g. <code>[{{identify.backdoor.estimates[1].lower:.4f}},
+            {{identify.backdoor.estimates[1].upper:.4f}}] (95% WALD)</code> — never a bare
+            pair of numbers.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">05</div>
+        <div>
+          <h4>Never swallow an exception</h4>
+          <p>Code either re-raises, logs at warning or above, or returns a typed failure that
+            says what went wrong. Four separate wrong-number bugs in the parent codebase trace
+            back to a bare <code>except</code>.</p>
+          <p class="rule-proof">a real refusal from this build:
+            “{{surface.refusals[0].reason}}”</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">06</div>
+        <div>
+          <h4>Every public API is shown in a notebook</h4>
+          <p>Anything a subpackage exports appears, executed, in that subpackage’s notebook
+            series. A subpackage is not complete until its series runs in CI. Gate 12 fails
+            the build on an uncovered symbol.</p>
+          <p class="rule-proof">{{overview.total_symbols}} exported symbols,
+            {{overview.n_packages}} notebook series, all executed on every build.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Shape of the code</p>
+      <h2>Imports point down only</h2>
+      <p>Sixteen subpackages in five layers. A contract test walks the import graph and fails
+        if an arrow ever points back up, which is what keeps the foundation usable without
+        the pillars and the pillars usable without each other.</p>
+    </div>
+    <div class="layers">
+      <div class="layer">
+        <div class="layer-n">Composition</div>
+        <div class="layer-p">
+          <a class="pkg" href="api.html#diagnose">diagnose<b>{{overview.packages[11].n}}</b></a>
+          <a class="pkg" href="api.html#build">build<b>{{overview.packages[12].n}}</b></a>
+          <a class="pkg" href="api.html#adapters">adapters<b>{{overview.packages[13].n}}</b></a>
+          <a class="pkg" href="api.html#viz">viz<b>{{overview.packages[14].n}}</b></a>
+          <a class="pkg" href="api.html#report">report<b>{{overview.packages[15].n}}</b></a>
+        </div>
+      </div>
+      <p class="layer-arrow" aria-hidden="true">↓</p>
+      <div class="layer">
+        <div class="layer-n">The pillars</div>
+        <div class="layer-p">
+          <a class="pkg" href="design.html">design<b>{{overview.packages[8].n}}</b></a>
+          <a class="pkg" href="calibrate.html">calibrate<b>{{overview.packages[9].n}}</b></a>
+          <a class="pkg" href="meta.html">meta<b>{{overview.packages[10].n}}</b></a>
+        </div>
+      </div>
+      <p class="layer-arrow" aria-hidden="true">↓</p>
+      <div class="layer">
+        <div class="layer-n">Domain</div>
+        <div class="layer-p">
+          <a class="pkg" href="identify.html">identify<b>{{overview.packages[4].n}}</b></a>
+          <a class="pkg" href="api.html#estimands">estimands<b>{{overview.packages[5].n}}</b></a>
+          <a class="pkg" href="surface.html">surface<b>{{overview.packages[6].n}}</b></a>
+          <a class="pkg" href="api.html#sim">sim<b>{{overview.packages[7].n}}</b></a>
+        </div>
+      </div>
+      <p class="layer-arrow" aria-hidden="true">↓</p>
+      <div class="layer">
+        <div class="layer-n">Sampler seam</div>
+        <div class="layer-p">
+          <a class="pkg" href="api.html#infer">infer<b>{{overview.packages[3].n}}</b></a>
+          <span class="pkg" style="background:none;border-style:dashed">optional deps live
+            here and nowhere else</span>
+        </div>
+      </div>
+      <p class="layer-arrow" aria-hidden="true">↓</p>
+      <div class="layer">
+        <div class="layer-n">Foundation</div>
+        <div class="layer-p">
+          <a class="pkg" href="api.html#core">core<b>{{overview.packages[0].n}}</b></a>
+          <a class="pkg" href="api.html#data">data<b>{{overview.packages[1].n}}</b></a>
+          <a class="pkg" href="api.html#io">io<b>{{overview.packages[2].n}}</b></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2 mt-lg">
+      <div>
+        <h3>Install</h3>
+        <p class="small muted">The core install is enough for identification, design,
+          planning, and closed-form meta-analysis. Add a sampler only when you need one.</p>
+        <div class="code mt">
+          <div class="code-h"><span>shell</span>
+            <button class="copy" type="button">Copy</button></div>
+          <pre><span class="c"># core: numpy, scipy, pandas, pydantic</span>
+pip install axiom
+
+<span class="c"># with a NUTS sampler when you need posterior draws</span>
+pip install <span class="s">"axiom[numpyro]"</span>
+pip install <span class="s">"axiom[pymc]"</span></pre>
+        </div>
+      </div>
+      <div>
+        <h3>Where to go next</h3>
+        <p class="small muted">Three ways in, depending on what you came for.</p>
+        <div class="ledger mt">
+          <div class="ledger-row">
+            <span class="ledger-f">by field</span>
+            <span class="ledger-s"><a href="examples.html">{{examples.n}} runnable
+              examples</a> — agronomy, epidemiology, ecology, energy, process engineering
+              and more, each with its real output.</span>
+            <span class="ledger-v">{{examples.n}} scripts</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">narrative</span>
+            <span class="ledger-s">The <a href="case-study.html">HYPER-3 case study</a> —
+              one trial, worked end to end, from the causal graph to the stopped arm.</span>
+            <span class="ledger-v">6 notebooks</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">by pillar</span>
+            <span class="ledger-s">Start at <a href="identify.html">Identify</a> and follow
+              the chain across the top of the page.</span>
+            <span class="ledger-v">5 pages</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">reference</span>
+            <span class="ledger-s">The <a href="api.html">API map</a>, searchable, grouped by
+              subpackage and layer.</span>
+            <span class="ledger-v">{{overview.total_symbols}} symbols</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

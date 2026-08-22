@@ -1,6 +1,50 @@
-"""estimands: Declarative, versioned, content-hashed counterfactual quantities, realized against any SupportsPosterior.
+"""estimands: declarative, content-hashed counterfactual quantities.
 
-STATUS: not implemented. See docs/plan/03-roadmap.md.
+The declaration half (facets, derived dimension, ``transfer_to``) and the
+realization half (``realize`` against any ``SupportsEstimands`` producer,
+the standard registry, and the estimand as an expression tree). Imports
+``core`` only.
 """
 
-__all__: list[str] = []
+from axiom.estimands.evaluate import (
+    EstimandResult,
+    RealizedDraws,
+    ResultStatus,
+    evaluate,
+    realize,
+)
+from axiom.estimands.graph import check_estimand_dimension, estimand_expr, substitute
+from axiom.estimands.registry import EstimandRegistry, standard_estimands
+from axiom.estimands.spec import (
+    FACETS,
+    Estimand,
+    Facet,
+    FacetDiff,
+    Level,
+    Quantity,
+    QuantityKind,
+    TransferPlan,
+    derived_dimension,
+)
+
+__all__ = [
+    "FACETS",
+    "Estimand",
+    "EstimandRegistry",
+    "EstimandResult",
+    "Facet",
+    "FacetDiff",
+    "Level",
+    "Quantity",
+    "QuantityKind",
+    "RealizedDraws",
+    "ResultStatus",
+    "TransferPlan",
+    "check_estimand_dimension",
+    "derived_dimension",
+    "estimand_expr",
+    "evaluate",
+    "realize",
+    "standard_estimands",
+    "substitute",
+]
