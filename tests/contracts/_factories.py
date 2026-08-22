@@ -141,6 +141,12 @@ from axiom.design import (
     schedule_with_cooldown,
     time_to_re_experiment,
 )
+from axiom.design.identifiability import (
+    Combination,
+    EstimabilityReport,
+    Prescription,
+    ProfileReport,
+)
 from axiom.diagnose import (
     Backtest,
     Benchmark,
@@ -179,6 +185,19 @@ from axiom.diagnose import (
     robustness_value,
     tipping_point,
 )
+from axiom.dynamics import (
+    Block,
+    BlockOrder,
+    BlockSolution,
+    DynamicEquation,
+    DynamicSystem,
+    Unrolled,
+    Variable,
+    block_order,
+    conditional_form,
+    parse_system,
+    unroll,
+)
 from axiom.estimands import Estimand, EstimandResult, FacetDiff, Level, Quantity, TransferPlan
 from axiom.identify import (
     CausalGraph,
@@ -191,6 +210,7 @@ from axiom.identify import (
     identify,
     transport_verdict,
 )
+from axiom.identify.dynamic import SequentialPlan, sequential_plan
 from axiom.identify.transport import TransportVerdict
 from axiom.identify.verdict import IdentificationVerdict
 from axiom.infer import (
@@ -1016,7 +1036,134 @@ def _report_section() -> Section:
     )
 
 
+# -- dynamics ---------------------------------------------------------------------------
+
+
+def _dynamic_variables() -> tuple[Variable, ...]:
+    return (
+        Variable(name="stock", dimension=D.outcome, initial=0.0),
+        Variable(name="inflow", dimension=D.outcome, role="exogenous"),
+    )
+
+
+def _dynamic_system() -> DynamicSystem:
+    return parse_system(
+        "stock = decay * stock[t-1] + inflow",
+        variables=_dynamic_variables(),
+        parameters=(Param(name="decay", dimension=Dimension(exponents={})),),
+        name="one-compartment",
+    )
+
+
+def _dynamic_equation() -> DynamicEquation:
+    return _dynamic_system().equation("stock")
+
+
+def _block_order() -> BlockOrder:
+    return block_order(_dynamic_system())
+
+
+def _block() -> Block:
+    return _block_order().blocks[0]
+
+
+def _block_solution() -> BlockSolution:
+    compiled = conditional_form(_dynamic_system())
+    assert isinstance(compiled, Unrolled)
+    return compiled.solutions[0]
+
+
+def _unrolled() -> Unrolled:
+    compiled = unroll(_dynamic_system(), periods=3)
+    assert isinstance(compiled, Unrolled)
+    return compiled
+
+
+def _sequential_plan() -> SequentialPlan:
+    graph = CausalGraph.from_edges(
+        "dose.t0 -> outcome.t0, outcome.t0 -> dose.t1, dose.t1 -> outcome.t1, "
+        "outcome.t0 -> outcome.t1"
+    )
+    return sequential_plan(graph, ["dose.t0", "dose.t1"], "outcome.t1")
+
+
+# -- identifiability --------------------------------------------------------------------
+
+
+def _combination() -> Combination:
+    return Combination(
+        exponents={"alpha": 1, "k": -1},
+        kind="estimable",
+        scaling="log",
+        score=1.4,
+        label="alpha / k",
+    )
+
+
+def _estimability_report() -> EstimabilityReport:
+    return EstimabilityReport(
+        parameters=("alpha", "k"),
+        observations=("low dose",),
+        scaling="log",
+        n_points=2,
+        rank=1,
+        deficiency=1,
+        persistent_deficiency=0,
+        singular_values=(6.8, 0.02),
+        condition_number=336.0,
+        symmetries=(
+            Combination(
+                exponents={"alpha": 1, "k": 1},
+                kind="symmetry",
+                score=0.01,
+                label="alpha -> alpha*c, k -> k*c",
+            ),
+        ),
+        estimable=(_combination(),),
+        null_basis=((0.7071, 0.7071),),
+        tolerance=0.03,
+    )
+
+
+def _profile_report() -> ProfileReport:
+    return ProfileReport(
+        targets=("alpha", "alpha / k"),
+        truth={"alpha": 4.0, "alpha / k": 0.4},
+        recovered={"alpha": 0.38, "alpha / k": 0.4},
+        interval={"alpha": (0.17, float("inf")), "alpha / k": (0.39, 0.41)},
+        level=0.95,
+        threshold=1.92,
+        flat=("alpha",),
+        n_observations=24,
+        seed=11,
+    )
+
+
+def _prescription() -> Prescription:
+    return Prescription(
+        added=("wide dose",),
+        rank_before=1,
+        rank_after=2,
+        n_parameters=2,
+        broken=(("alpha * k",),),
+        considered=("wide dose",),
+        complete=True,
+    )
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
+    Variable: lambda: _dynamic_variables()[0],
+    DynamicEquation: _dynamic_equation,
+    DynamicSystem: _dynamic_system,
+    Block: _block,
+    BlockOrder: _block_order,
+    BlockSolution: _block_solution,
+    Unrolled: _unrolled,
+    SequentialPlan: _sequential_plan,
+    Combination: _combination,
+    EstimabilityReport: _estimability_report,
+    ProfileReport: _profile_report,
+    Prescription: _prescription,
     ResponseBand: lambda: ResponseBand(
         treatment="a",
         outcome="y",

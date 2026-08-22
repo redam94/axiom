@@ -465,6 +465,15 @@ Two things the verification runs turned up that are not about this work:
 backend that dispatches NUTS to its own sampler, nutpie, numpyro or blackjax over the one
 compiled log density; note [0008](0008-pymc-backend.md).
 
+**Landed**: `axiom.dynamics` — a declarative language for systems that are simultaneous or
+have time structure, compiled into ordinary `core.expr` trees; `identify.unrolled_graph` and
+`identify.sequential_plan` retire the `CausalGraph.feedback` refusal; note
+[0010](0010-dynamic-systems.md).
+
+**Landed**: `design.identifiability` — which *combinations* of nonlinear parameters a design
+can estimate, profile likelihood from a simulated experiment, and what to measure next; note
+[0011](0011-identifiability-of-combinations.md).
+
 Laplace calibration on Hill surfaces (SBC finding,
 Phase 8); block-bootstrap switchback SE; ridge verdict in
 `canonical_analysis`; `df` on `LinearEstimate`; drop the nominal

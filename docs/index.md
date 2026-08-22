@@ -21,7 +21,7 @@ Every public symbol is demonstrated, executed, in a notebook. The notebook
 series live under `nbs/`, one directory per subpackage, numbered
 in reading order:
 
-- Foundation: `nbs/core/`, `nbs/data/`, `nbs/io/`, `nbs/infer/`
+- Foundation: `nbs/core/`, `nbs/data/`, `nbs/io/`, `nbs/infer/`, `nbs/dynamics/`
 - Domain: `nbs/identify/`, `nbs/estimands/`, `nbs/surface/`, `nbs/sim/`
 - Pillars: `nbs/design/`, `nbs/calibrate/`, `nbs/meta/`
 - Composition: `nbs/diagnose/`, `nbs/build/`, `nbs/adapters/`, `nbs/viz/`, `nbs/report/`
@@ -61,7 +61,9 @@ Imports point down only; `tests/contracts/test_layering.py` enforces it.
             |         |          |
             +---------+----------+
                       |
-                    infer                  (sampler seam; optional deps live here)
+             infer     dynamics          (sampler seam, and the system compiler;
+                 |        |                 peers, neither imports the other)
+                 +--------+
                       |
                   core    data    io       (foundation; numpy/scipy/pandas/pydantic)
 ```

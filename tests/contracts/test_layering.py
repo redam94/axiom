@@ -16,6 +16,7 @@ LAYER: dict[str, int] = {
     "data": 1,
     "io": 2,
     "infer": 3,
+    "dynamics": 3,
     "surface": 4,
     "estimands": 4,
     "identify": 4,
