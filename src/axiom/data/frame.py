@@ -159,5 +159,23 @@ class Panel:
         return h.hexdigest()
 
     def to_csv(self) -> str:
-        """Canonical CSV text: role-ordered columns, sorted rows, ``%.17g`` floats."""
-        return str(self._frame.to_csv(index=False, float_format="%.17g", lineterminator="\n"))
+        """Canonical CSV text: unit, time, outcome, then treatments and covariates
+        **sorted by name**; rows sorted by (unit, time); ``%.17g`` floats.
+
+        Sorted rather than in the role map's insertion order, because that order
+        does not survive a round-trip: a ``RoleMap`` is a ``Spec``, so its JSON
+        sorts its mappings, and two role maps that differ only in the order their
+        treatments were declared are equal and hash the same. Ordering the
+        canonical text by insertion order would make a stored panel fail its own
+        hash check on reload without a single number changing.
+        """
+        order = [
+            self._roles.unit,
+            self._roles.time,
+            self._roles.outcome[0],
+            *sorted(self._roles.treatments),
+            *sorted(self._roles.covariates),
+        ]
+        return str(
+            self._frame.loc[:, order].to_csv(index=False, float_format="%.17g", lineterminator="\n")
+        )

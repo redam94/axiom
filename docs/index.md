@@ -28,12 +28,19 @@ in reading order:
 
 Each [API page](api/index.md) links its own series.
 
-For what using all of it at once looks like, read the **case study** under
-`nbs/case-studies/hypertension/`: HYPER-3, a sequential dose-finding trial that
-must stop a dose arm early if it is harming people. Six notebooks, one synthetic
-world, from the causal graph to the boundary crossing that stops an arm at the
-first safety review. Its design notes are
-[note 0004](notes/0004-case-study-hypertension.md).
+For what using all of it at once looks like, read the **case studies** under
+`nbs/case-studies/`. There are two, deliberately different in shape.
+
+`hypertension/` — **HYPER-3**, a sequential dose-finding trial that must stop a
+dose arm early if it is harming people. Six notebooks, one synthetic world, from
+the causal graph to the boundary crossing that stops an arm at the first safety
+review. Design notes: [0004](notes/0004-case-study-hypertension.md).
+
+`tutoring/` — **TUTOR-60**, one decision carried from problem setup through
+experiment planning, measurement and reporting to a recommendation a board can
+act on: how much tutoring to fund, for how many students, on a fixed budget.
+Five notebooks, two dosed treatments and a budget line. Design notes:
+[0009](notes/0009-case-study-tutoring.md).
 
 ## Layering
 

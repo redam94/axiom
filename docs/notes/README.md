@@ -22,3 +22,4 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0006 | [Gaussian-process surfaces, and the recovery world that was never identified](0006-gaussian-process-surfaces.md) | decision + deviation |
 | 0007 | [A surface never travels without its uncertainty, and the reports that carry it](0007-uncertainty-and-reports.md) | decision |
 | 0008 | [PyMC as a third backend, and the PyTensor interpreter under it](0008-pymc-backend.md) | decision |
+| 0009 | [TUTOR-60: one decision end to end, and the two io bugs it found](0009-case-study-tutoring.md) | progress + deviation |

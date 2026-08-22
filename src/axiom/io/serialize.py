@@ -187,6 +187,19 @@ def load_analysis(path: str | Path) -> Analysis:
 
 
 def _pandas_dtypes(recorded: dict[str, str]) -> dict[str, str]:
-    # Let pandas parse numerics; pin only object/string columns so unit labels
-    # like "001" do not become integers.
-    return {c: "str" for c, t in recorded.items() if t in ("object", "string", "str")}
+    """Pin every column to the dtype the manifest recorded.
+
+    Strings are pinned so a unit label like ``"001"`` does not come back as the
+    integer 1. Numerics are pinned for the same reason in reverse: a *float*
+    column whose values all happen to be integral — a dose in whole dollars, a
+    count stored as a float — is written by ``Panel.to_csv`` as ``1200`` and
+    inferred back as ``int64``, which changes the panel's content hash without
+    changing a single number. The dtype is in the manifest; use it.
+    """
+    out: dict[str, str] = {}
+    for column, dtype in recorded.items():
+        if dtype in ("object", "string", "str"):
+            out[column] = "str"
+        elif dtype.startswith(("int", "uint", "float", "bool")):
+            out[column] = dtype
+    return out
