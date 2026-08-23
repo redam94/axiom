@@ -48,8 +48,10 @@ from axiom_dossier.sections import (
     assumption_rows,
     diagnostics_section,
     limitations_section,
+    literal,
     methods_section,
     provenance_section,
+    remarks_section,
     results_section,
     standing_assumptions,
 )
@@ -67,7 +69,14 @@ Format = Literal["html", "pptx", "pdf"]
 Style = Literal["plain", "journal"]
 """``plain`` is a readout; ``journal`` is a paper. They differ in shape and type."""
 
-DEFAULT_SECTIONS = ("methods", "results", "diagnostics", "limitations", "provenance")
+DEFAULT_SECTIONS = (
+    "methods",
+    "results",
+    "remarks",
+    "diagnostics",
+    "limitations",
+    "provenance",
+)
 """The readout order: what was done, what came out, what was checked, what it rests on."""
 
 _BUILDERS = {
@@ -75,6 +84,7 @@ _BUILDERS = {
     "introduction": introduction_section,
     "methods": methods_section,
     "results": results_section,
+    "remarks": remarks_section,
     "diagnostics": diagnostics_section,
     "discussion": discussion_section,
     "conclusions": conclusions_section,
@@ -85,7 +95,10 @@ _BUILDERS = {
 #: Sections whose prose is generated as an interpretation and must not be
 #: rewritten before the numbers they interpret exist. ``provenance`` is never
 #: narrated at all — it is the audit trail, and a model has no business in it.
-_NEVER_NARRATED = ("provenance",)
+#: ``remarks`` joins ``provenance`` here: it is a person's words, and having a
+#: model rewrite them while they stay attributed to that person is not a
+#: quality improvement, it is a misattribution.
+_NEVER_NARRATED = ("provenance", "remarks")
 
 
 def context_for(evidence: Evidence, narrations: Sequence[Narration] = ()) -> dict[str, object]:
@@ -228,6 +241,11 @@ def build(
             if produced.verified:
                 abstract_text = produced.text
 
+    # A report with no recorded remarks should not carry an empty section
+    # saying so; every other section is always meaningful, this one is not.
+    if not evidence.remarks:
+        chosen = tuple(k for k in chosen if k != "remarks")
+
     built: list[Section] = []
     for key in chosen:
         if key == "abstract":
@@ -247,7 +265,7 @@ def build(
     report = Report(
         name=name,
         title=evidence.title,
-        subtitle=subtitle or evidence.question,
+        subtitle=literal(subtitle or evidence.question),
         theme=theme or (JOURNAL_THEME if style == "journal" else Theme()),
         sections=shaped,
     )

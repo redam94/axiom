@@ -154,6 +154,42 @@ src/axiom_dossier/
   dossier.py     assemble the whole document and write it out
 ```
 
+## Two worked examples
+
+```bash
+python examples/hypertension.py --narrate      # one trial, end to end
+python examples/readouts.py                    # all twelve axiom examples
+```
+
+**`hypertension.py`** turns the HYPER-3 case study — the sequential dose-finding
+trial under `nbs/case-studies/hypertension/` — into the document such a trial has
+to produce: protocol and design up front, then identification, findings and
+limitations. Nothing in it is typed in. The protocol constants come from
+`hyper3.py`, the arm counts from the realized randomization, and every contrast
+from `identify.ols` against the analysis frame the trial actually produced.
+Change the seed and the whole report changes.
+
+It is also the example that shows why a conclusions section needs care. The
+40 mg arm pools to −1.53 mmHg (90 % −2.97 to −0.10) — mildly beneficial — while
+in the 51+ band it is **+6.20 mmHg (90 % 3.98 to 8.42)**, harm. `contested()`
+detects that the recorded findings disagree, and the conclusion refuses to
+answer with one number instead of quoting whichever finding came first.
+
+**`readouts.py`** runs each of the twelve scripts in `examples/` with its
+structured-record capture on and writes one journal-shaped report per example.
+Each carries the question, every step with its reasoning *and the alternative
+the example rejected*, the readouts, and the analyst's closing remarks verbatim.
+
+Those remarks are the one part of a report this package will not touch: they are
+a person's words, and a model rewriting them while they stay attributed to that
+person is a misattribution, not an improvement. `remarks` is in `_NEVER_NARRATED`
+beside `provenance`.
+
+The examples record their findings as prose rather than as quantities, so their
+reports carry the narrative and the reasoning but have no metric blocks and no
+threshold reading — there is nothing structured to read. An example that records
+quantities gets those sections with no change here.
+
 ## Testing
 
 ```bash

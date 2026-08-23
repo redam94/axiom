@@ -51,7 +51,12 @@ from axiom_dossier.evidence import (
     Quantity,
     quantity_from,
 )
-from axiom_dossier.interpret import conclusions_section, discussion_section, reading_of
+from axiom_dossier.interpret import (
+    conclusions_section,
+    contested,
+    discussion_section,
+    reading_of,
+)
 from axiom_dossier.journal import (
     JOURNAL_THEME,
     abstract_section,
@@ -79,11 +84,14 @@ from axiom_dossier.sections import (
     assumption_rows,
     diagnostics_section,
     limitations_section,
+    literal,
     methods_section,
     provenance_section,
+    remarks_section,
     results_section,
     standing_assumptions,
 )
+from axiom_dossier.walkthrough import evidence_from_record, tables_from_record
 
 __version__ = "0.1.0"
 
@@ -114,13 +122,16 @@ __all__ = [
     "build",
     "conclusions_section",
     "context_for",
+    "contested",
     "diagnostics_section",
     "discussion_section",
     "evidence_brief",
+    "evidence_from_record",
     "introduction_section",
     "licensed_claims",
     "licensed_numbers",
     "limitations_section",
+    "literal",
     "literals",
     "methods_section",
     "narrate_text",
@@ -128,8 +139,10 @@ __all__ = [
     "provenance_section",
     "quantity_from",
     "reading_of",
+    "remarks_section",
     "results_section",
     "standing_assumptions",
+    "tables_from_record",
     "unlicensed_claims",
     "unverified",
 ]

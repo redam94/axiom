@@ -120,10 +120,21 @@ def test_the_default_order_is_what_a_reader_expects() -> None:
     assert DEFAULT_SECTIONS == (
         "methods",
         "results",
+        "remarks",
         "diagnostics",
         "limitations",
         "provenance",
     )
+
+
+def test_a_record_with_no_remarks_gets_no_empty_remarks_section(evidence) -> None:
+    """The section is dropped rather than rendered saying it has nothing to say."""
+    assert not evidence.remarks
+    assert "What the run showed" not in [s.title for s in build(evidence).report.sections]
+
+    spoken = evidence.model_copy(update={"remarks": ("It did what it said.",)})
+    titles = [s.title for s in build(spoken).report.sections]
+    assert "What the run showed" in titles
 
 
 def test_an_analysis_with_no_diagnostics_says_so_rather_than_omitting_the_section() -> None:

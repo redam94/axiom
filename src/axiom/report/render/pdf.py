@@ -193,6 +193,18 @@ def render_pdf(resolved: ResolvedReport) -> bytes | Unsupported:
                     if block.caption:
                         story.append(Paragraph(_escape(block.caption), styles["caption"]))
                 case ResolvedTable():
+                    if not block.columns:
+                        # A source that resolved to an empty sequence has no
+                        # columns to size. Saying so beats dividing by zero, and
+                        # beats dropping the block silently: an empty table in a
+                        # report is usually a context key that went stale.
+                        story.append(
+                            Paragraph(
+                                _escape(f"{block.caption or 'Table'}: no rows"),
+                                styles["muted"],
+                            )
+                        )
+                        continue
                     data = [
                         [Paragraph(_escape(str(c)), styles["cell_head"]) for c in block.columns]
                     ] + [

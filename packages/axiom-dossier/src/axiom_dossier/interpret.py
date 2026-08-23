@@ -30,9 +30,9 @@ from __future__ import annotations
 from axiom.report import Heading, Paragraph, Section
 
 from axiom_dossier.evidence import Evidence, Quantity
-from axiom_dossier.sections import VERBOSITY, Verbosity
+from axiom_dossier.sections import VERBOSITY, Verbosity, literal
 
-__all__ = ["conclusions_section", "discussion_section", "reading_of"]
+__all__ = ["conclusions_section", "contested", "discussion_section", "reading_of"]
 
 
 def _direction(q: Quantity) -> str:
@@ -175,6 +175,19 @@ def discussion_section(
     return Section(title=title, blocks=tuple(blocks))  # type: ignore[arg-type]
 
 
+def contested(evidence: Evidence) -> tuple[tuple[Quantity, ...], tuple[Quantity, ...]]:
+    """Findings that settle favourably, and findings that settle unfavourably.
+
+    Both non-empty means the record contains a disagreement, and a conclusion
+    drawn from whichever finding happens to be first would be misleading. This
+    is not a hypothetical: a dose can lower pressure on average and raise it in
+    one age band, and the average is the number that gets quoted.
+    """
+    good = tuple(q for q in evidence.findings if q.is_beneficial() is True)
+    bad = tuple(q for q in evidence.findings if q.is_beneficial() is False)
+    return good, bad
+
+
 def conclusions_section(
     evidence: Evidence,
     *,
@@ -186,15 +199,57 @@ def conclusions_section(
     Deliberately terse at every verbosity: a conclusions section that runs long
     is one that has started arguing. It answers the question, names what the
     answer is conditional on, and stops.
+
+    The one thing it will not do is answer from a single finding while another
+    recorded finding points the other way. When the record disagrees with
+    itself, saying so *is* the conclusion.
     """
     causal = _causal(evidence)
     blocks: list[object] = []
 
     if evidence.question:
-        blocks.append(Paragraph(text=f"**{evidence.question}**"))
+        blocks.append(Paragraph(text=f"**{literal(evidence.question)}**"))
 
     if not evidence.findings:
         blocks.append(Paragraph(text="No finding was recorded, so no conclusion follows."))
+        return Section(title=title, blocks=tuple(blocks))  # type: ignore[arg-type]
+
+    favourable, unfavourable = contested(evidence)
+    if favourable and unfavourable:
+        harmed = "; ".join(f"{q.label} at {q.stated()}" for q in unfavourable)
+        helped = (
+            "; ".join(f"{q.label} at {q.stated()}" for q in favourable)
+            if len(favourable) <= 2
+            else (
+                f"{len(favourable)} other findings "
+                f"({', '.join(q.label for q in favourable)})"
+            )
+        )
+        blocks.append(
+            Paragraph(
+                text=(
+                    f"**Not with one number.** {harmed} sits on the unfavourable side "
+                    f"of the threshold. {helped} sit on the favourable side. Any single "
+                    "summary averages a harm with a benefit, and the average is the "
+                    "number that gets quoted — so the disaggregated findings are the "
+                    "result, and the pooled figure is not a substitute for them."
+                )
+            )
+        )
+        scope: list[str] = []
+        if causal:
+            scope.append(
+                "Each is a causal reading, licensed by the "
+                f"{evidence.verdict.route or 'recorded'} route."  # type: ignore[union-attr]
+            )
+        standing = evidence.unresolved()
+        if standing:
+            scope.append(
+                f"All of them hold under {len(standing)} unresolved assumption(s) "
+                f"({', '.join(n.replace('_', ' ') for n in standing)}), and not otherwise."
+            )
+        if scope:
+            blocks.append(Paragraph(text=" ".join(scope)))
         return Section(title=title, blocks=tuple(blocks))  # type: ignore[arg-type]
 
     lead = evidence.findings[0]

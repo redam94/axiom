@@ -227,6 +227,8 @@ def render_pptx(resolved: ResolvedReport) -> bytes | Unsupported:
                     )
                     top += 20.0 + 6.0 * (block.text.count("\n") + len(block.text) // 110)
                 elif isinstance(block, ResolvedTable):
+                    if not block.columns:
+                        continue  # nothing to lay out; see the note in pdf.py
                     rows, cols = len(block.rows) + 1, len(block.columns)
                     table_height = min(24.0 * rows, height - top - margin)
                     shape = slide.shapes.add_table(

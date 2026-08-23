@@ -100,6 +100,7 @@ def strings_of(evidence: Evidence) -> list[str]:
         parts.append(evidence.verdict.reason)
         for a in evidence.verdict.assumptions:
             parts.extend([a.statement, a.challenged_by])
+    parts.extend(evidence.remarks)
     parts.extend(evidence.provenance.values())
     return [p for p in parts if p]
 

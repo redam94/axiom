@@ -161,6 +161,12 @@ class Evidence(Spec):
     assumptions: tuple[Assumption, ...] = ()
     ledger: tuple[LedgerLine, ...] = ()
     verdict: Verdict | None = None
+    #: What the analyst wrote after looking at the output, carried verbatim.
+    #: Distinct from a finding, which is a number: these are sentences, they are
+    #: not generated, and they are never rewritten by a model — a remark is the
+    #: one part of a report whose author is a person, and relabelling it would
+    #: be the one lie this package must not tell.
+    remarks: tuple[str, ...] = ()
     provenance: dict[str, str] = {}
 
     def quantities(self) -> tuple[Quantity, ...]:
@@ -225,14 +231,22 @@ def quantity_from(
     precision: int = 2,
     threshold: float | None = None,
     beneficial: Literal["lower", "higher", "either"] = "either",
+    mass: float = 0.9,
 ) -> Quantity:
     """Build a ``Quantity`` from whatever axiom handed back.
 
-    Accepts a float, an ``Interval``, or any object carrying a ``value`` and an
-    ``interval`` attribute — which is the shape of ``estimands.EstimandResult``
-    and of the summaries the estimators return. Anything else is a ``TypeError``
-    naming what arrived, because guessing at an unfamiliar result type is how a
-    report ends up stating the wrong field.
+    Four shapes are understood, which between them cover what axiom returns:
+
+    * a plain number — a count, a share, something with no interval;
+    * an ``Interval`` — the point is taken as its midpoint and the note says so;
+    * a ``LinearEstimate`` and friends: ``.estimate`` plus ``.ci(mass)``, which
+      is what ``identify.ols`` and the other estimators hand back, and where
+      ``mass`` chooses the interval;
+    * anything carrying ``.value`` and ``.interval`` — ``estimands.EstimandResult``
+      and the posterior summaries.
+
+    Anything else is a ``TypeError`` naming what arrived, because guessing at an
+    unfamiliar result type is how a report ends up stating the wrong field.
     """
     if isinstance(value, Interval):
         point = (value.lower + value.upper) / 2.0
@@ -250,6 +264,25 @@ def quantity_from(
         )
     if isinstance(value, bool):
         raise TypeError(f"{key!r}: a boolean is not a reportable quantity")
+    # axiom's own estimators return `.estimate` and build the interval on demand
+    # through `.ci(mass)` rather than carrying one. Reading that shape here is
+    # what lets `ols(...)` be handed straight to a report; without it the caller
+    # has to take the estimate apart and put it back together.
+    estimate = getattr(value, "estimate", None)
+    maker = getattr(value, "ci", None)
+    if estimate is not None and callable(maker):
+        return Quantity(
+            key=key,
+            label=label,
+            value=float(estimate),
+            unit=unit,
+            interval=maker(mass),
+            source=source or f"{type(value).__name__}.{getattr(value, 'method', 'estimate')}",
+            note=note,
+            precision=precision,
+            threshold=threshold,
+            beneficial=beneficial,
+        )
     if isinstance(value, (int, float)):
         return Quantity(
             key=key,
@@ -307,6 +340,7 @@ class EvidenceBuilder:
         self._assumptions: list[Assumption] = []
         self._ledger: list[LedgerLine] = []
         self._verdict: Verdict | None = None
+        self._remarks: list[str] = []
         self._provenance: dict[str, str] = {}
 
     def finding(self, key: str, value: object, *, label: str, **kw: Any) -> EvidenceBuilder:
@@ -416,6 +450,11 @@ class EvidenceBuilder:
         self._ledger.extend(lines)
         return self
 
+    def remark(self, *texts: str) -> EvidenceBuilder:
+        """Prose the analyst wrote about the run. Carried verbatim, never narrated."""
+        self._remarks.extend(" ".join(t.split()) for t in texts if t.strip())
+        return self
+
     def provenance(self, **entries: str) -> EvidenceBuilder:
         """Content hashes, versions, seeds — whatever makes the run findable again."""
         self._provenance.update(entries)
@@ -438,5 +477,6 @@ class EvidenceBuilder:
             assumptions=tuple(self._assumptions),
             ledger=tuple(self._ledger),
             verdict=self._verdict,
+            remarks=tuple(self._remarks),
             provenance=dict(self._provenance),
         )

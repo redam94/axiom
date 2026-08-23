@@ -33,10 +33,12 @@ __all__ = [
     "VERBOSITY",
     "Verbosity",
     "assumption_rows",
+    "literal",
     "diagnostics_section",
     "limitations_section",
     "methods_section",
     "provenance_section",
+    "remarks_section",
     "results_section",
     "standing_assumptions",
 ]
@@ -98,6 +100,17 @@ def _detail(verbosity: Verbosity) -> dict[str, bool | int]:
     return VERBOSITY[verbosity]
 
 
+def literal(text: str) -> str:
+    """Escape braces so free prose cannot be read as a template placeholder.
+
+    ``report.Paragraph`` treats ``{name}`` as a context key. That is right for
+    text this package writes and wrong for text it merely carries: an analyst's
+    sentence mentioning ``{}`` or a set literal would otherwise fail the render
+    with a missing key. Three of the twelve axiom examples do exactly that.
+    """
+    return text.replace("{", "{{").replace("}", "}}")
+
+
 def assumption_rows(assumptions: tuple[Assumption, ...]) -> list[dict[str, str]]:
     """The standing-assumptions table, with each state written as a sentence."""
     return [
@@ -141,7 +154,7 @@ def methods_section(
     detail = _detail(verbosity)
     blocks: list[object] = []
     if evidence.question:
-        blocks.append(Paragraph(text=f"**Question.** {evidence.question}"))
+        blocks.append(Paragraph(text=f"**Question.** {literal(evidence.question)}"))
 
     for step in evidence.steps:
         blocks.append(Heading(text=step.title, level=3))
@@ -295,6 +308,36 @@ def limitations_section(
     return Section(title=title, blocks=tuple(blocks))  # type: ignore[arg-type]
 
 
+def remarks_section(
+    evidence: Evidence, *, title: str = "What the run showed", verbosity: Verbosity = "standard"
+) -> Section:
+    """The analyst's own words about the run, carried verbatim.
+
+    Every other section here is generated. This one is not, and that is its
+    value: it is the part written after looking at the output, and the part that
+    most often disagrees with the setup. It is never narrated — a model
+    rewriting a person's conclusion and leaving it attributed to them is the one
+    lie this package must not tell.
+    """
+    _detail(verbosity)
+    if not evidence.remarks:
+        return Section(
+            title=title,
+            blocks=(Paragraph(text="No closing remarks were recorded for this run."),),
+        )
+    blocks: list[object] = [
+        Paragraph(
+            text=(
+                "Written by the analyst after seeing the output, and reproduced "
+                "unchanged. Nothing in this section is generated."
+            ),
+            emphasis=True,
+        )
+    ]
+    blocks.extend(Paragraph(text=literal(text)) for text in evidence.remarks)
+    return Section(title=title, blocks=tuple(blocks))  # type: ignore[arg-type]
+
+
 def provenance_section(
     evidence: Evidence, *, title: str = "Provenance", verbosity: Verbosity = "standard"
 ) -> Section:
@@ -316,8 +359,11 @@ def provenance_section(
             )
         ),
         Divider(),
-        Table(source="provenance_table", caption="Quantities and their sources"),
     ]
+    # A record with no quantities has no table to draw, and an empty one reads
+    # as a rendering fault rather than as an absence.
+    if evidence.quantities():
+        blocks.append(Table(source="provenance_table", caption="Quantities and their sources"))
     if evidence.provenance:
         blocks.append(Table(source="run_table", caption="Run"))
     return Section(title=title, blocks=tuple(blocks))  # type: ignore[arg-type]

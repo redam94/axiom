@@ -23,7 +23,7 @@ from __future__ import annotations
 from axiom.report import Heading, Paragraph, Section, Theme
 
 from axiom_dossier.evidence import Evidence
-from axiom_dossier.sections import VERBOSITY, Verbosity, standing_assumptions
+from axiom_dossier.sections import VERBOSITY, Verbosity, literal, standing_assumptions
 
 __all__ = [
     "JOURNAL_SECTIONS",
@@ -57,6 +57,7 @@ JOURNAL_SECTIONS = (
     "introduction",
     "methods",
     "results",
+    "remarks",
     "diagnostics",
     "discussion",
     "conclusions",
@@ -99,7 +100,12 @@ def _fallback_abstract(evidence: Evidence) -> str:
     """
     parts: list[str] = []
     if evidence.question:
-        parts.append(f"**Objective.** {evidence.question}")
+        parts.append(f"**Objective.** {literal(evidence.question)}")
+
+    # Each heading is written only when there is something under it. A structured
+    # abstract whose labels stand alone -- "Methods. Conclusions." -- is worse
+    # than a shorter one, and a record without findings is a real case: an
+    # example that narrates its results in prose has steps but no quantities.
     if evidence.verdict is not None:
         route = evidence.verdict.route or "the recorded route"
         parts.append(
@@ -107,10 +113,17 @@ def _fallback_abstract(evidence: Evidence) -> str:
             f"{evidence.verdict.reason}"
         )
     elif evidence.steps:
-        parts.append(f"**Methods.** {evidence.steps[0].what}")
+        opening = (evidence.steps[0].what or evidence.steps[0].title).rstrip(". ") + "."
+        parts.append(
+            f"**Methods.** {opening} " f"{len(evidence.steps)} step(s) are recorded in full below."
+        )
+
     if evidence.findings:
         stated = "; ".join(f"{q.label} {q.stated()}" for q in evidence.findings)
         parts.append(f"**Results.** {stated}.")
+    elif evidence.remarks:
+        parts.append(f"**Results.** {literal(evidence.remarks[0])}")
+
     standing = evidence.unresolved()
     if standing:
         parts.append(
@@ -118,8 +131,15 @@ def _fallback_abstract(evidence: Evidence) -> str:
             f"{len(standing)} unresolved assumption(s): "
             f"{', '.join(n.replace('_', ' ') for n in standing)}."
         )
-    else:
+    elif evidence.assumptions or evidence.verdict is not None:
         parts.append("**Conclusions.** No assumption in the record is left unresolved.")
+    else:
+        # Saying "none unresolved" when none were recorded would read as a
+        # clean bill of health for a record that never took the examination.
+        parts.append(
+            "**Conclusions.** No assumptions were recorded for this run, which is "
+            "not the same as none being required."
+        )
     return " ".join(parts)
 
 
@@ -155,7 +175,11 @@ def introduction_section(
     detail = VERBOSITY[verbosity]
     blocks: list[object] = []
     if evidence.question:
-        blocks.append(Paragraph(text=f"This report addresses one question: {evidence.question}"))
+        blocks.append(
+            Paragraph(
+                text=f"This report addresses one question: {literal(evidence.question)}"
+            )
+        )
     else:
         blocks.append(
             Paragraph(text="No question was recorded for this analysis; the findings follow.")
