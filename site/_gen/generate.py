@@ -14,8 +14,10 @@ Usage::
 from __future__ import annotations
 
 import ast
+import inspect
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -63,54 +65,68 @@ def write(name: str, payload: Any) -> None:
 # ----------------------------------------------------------------------------------
 
 
+# The package tables live here, at module level, because two sections read them:
+# `overview` (the counts on the landing page) and `api` (the symbol map). One copy
+# means the API page cannot list a subpackage the landing page has never heard of.
+ORDER = (
+    "core data io infer dynamics identify discover estimands surface sim design "
+    "calibrate meta diagnose build adapters viz report"
+).split()
+
+BLURB = {
+    "core": "Specs, dimensions, intervals, expressions — the vocabulary "
+    "everything else is written in.",
+    "data": "Panels and role maps: which column is the treatment, which is the outcome.",
+    "io": "Save and load a whole analysis as JSON plus a posterior file. Never a pickle.",
+    "infer": "The sampler seam. Laplace in core; NumPyro and PyMC behind extras.",
+    "dynamics": "A language for systems that are simultaneous or have time structure, "
+    "compiled into ordinary expression trees.",
+    "identify": "Causal graphs, back-door / front-door / IV routes, transport verdicts.",
+    "discover": "Learn the graph instead of assuming it: essential graphs, GES/GIES, "
+    "bootstrap stability, and FCI when a common cause may be unmeasured.",
+    "estimands": "Declare the number you want as a nine-facet object, then realize it.",
+    "surface": "Dose-response kernels, carryover, the one forward(), optimal allocation.",
+    "sim": "Synthetic worlds with known truth, so every claim has a recovery test.",
+    "design": "Power, MDE, value of information, method leaderboards, sequential boundaries.",
+    "calibrate": "Fold a randomized result into an observational model, and log "
+    "what that assumed.",
+    "meta": "Pool a corpus of studies; heterogeneity, bias terms, privacy-budgeted release.",
+    "diagnose": "SBC, coverage, posterior predictive checks, refutations, "
+    "specification curves.",
+    "build": "Fluent builders for graphs, priors, and corpora.",
+    "adapters": "Domain vocabulary — marketing is one adapter, not the core.",
+    "viz": "Plot helpers for the diagnostics that have a canonical picture.",
+    "report": "Templated HTML / PPTX / PDF reports over the viz layer.",
+}
+
+LAYER = {
+    "core": "foundation",
+    "data": "foundation",
+    "io": "foundation",
+    "infer": "sampler seam",
+    "dynamics": "domain",
+    "identify": "domain",
+    "discover": "domain",
+    "estimands": "domain",
+    "surface": "domain",
+    "sim": "domain",
+    "design": "pillar",
+    "calibrate": "pillar",
+    "meta": "pillar",
+    "diagnose": "composition",
+    "build": "composition",
+    "adapters": "composition",
+    "viz": "composition",
+    "report": "composition",
+}
+
+
 @section
 def overview() -> Any:
     import importlib
     import subprocess
 
-    order = (
-        "core data io infer identify estimands surface sim design calibrate meta "
-        "diagnose build adapters viz report"
-    ).split()
-    blurb = {
-        "core": "Specs, dimensions, intervals, expressions — the vocabulary "
-        "everything else is written in.",
-        "data": "Panels and role maps: which column is the treatment, which is the outcome.",
-        "io": "Save and load a whole analysis as JSON plus a posterior file. Never a pickle.",
-        "infer": "The sampler seam. Laplace in core; NumPyro and PyMC behind extras.",
-        "identify": "Causal graphs, back-door / front-door / IV routes, transport verdicts.",
-        "estimands": "Declare the number you want as a nine-facet object, then realize it.",
-        "surface": "Dose-response kernels, carryover, the one forward(), optimal allocation.",
-        "sim": "Synthetic worlds with known truth, so every claim has a recovery test.",
-        "design": "Power, MDE, value of information, method leaderboards, sequential boundaries.",
-        "calibrate": "Fold a randomized result into an observational model, and log "
-        "what that assumed.",
-        "meta": "Pool a corpus of studies; heterogeneity, bias terms, privacy-budgeted release.",
-        "diagnose": "SBC, coverage, posterior predictive checks, refutations, "
-        "specification curves.",
-        "build": "Fluent builders for graphs, priors, and corpora.",
-        "adapters": "Domain vocabulary — marketing is one adapter, not the core.",
-        "viz": "Plot helpers for the diagnostics that have a canonical picture.",
-        "report": "Templated HTML / PPTX / PDF reports over the viz layer.",
-    }
-    layer = {
-        "core": "foundation",
-        "data": "foundation",
-        "io": "foundation",
-        "infer": "sampler seam",
-        "identify": "domain",
-        "estimands": "domain",
-        "surface": "domain",
-        "sim": "domain",
-        "design": "pillar",
-        "calibrate": "pillar",
-        "meta": "pillar",
-        "diagnose": "composition",
-        "build": "composition",
-        "adapters": "composition",
-        "viz": "composition",
-        "report": "composition",
-    }
+    order, blurb, layer = ORDER, BLURB, LAYER
 
     packages = []
     total = 0
@@ -157,12 +173,306 @@ def overview() -> Any:
 
     return {
         "packages": packages,
+        # Keyed by name as well as ordered, because the pages used to index this
+        # list positionally -- and inserting a subpackage then silently relabelled
+        # every count after it. Reference a package by its name.
+        "by_name": {p["name"]: p for p in packages},
         "total_symbols": total,
         "n_packages": len(packages),
         "import_workload": workload,
         "import_pulls": imported,
         "samplers_pulled": [m for m in imported if m in {"jax", "numpyro", "pymc", "pytensor"}],
         "import_seconds": round(import_seconds, 2),
+    }
+
+# ----------------------------------------------------------------------------------
+# api: every public symbol, with its signature and a line of real usage
+# ----------------------------------------------------------------------------------
+#
+# The map used to be a list of names, which tells a reader that `frontier` exists
+# and nothing about how to call it. What is missing is the shape of the call, and
+# the honest source for that is not a hand-written example -- those rot -- but the
+# notebook that already demonstrates the symbol. Gate 12 guarantees one exists.
+#
+# So for each symbol this section pulls three things out of the code itself: the
+# signature, the first line of the docstring, and the shortest *executed* statement
+# in that subpackage's notebooks that actually uses it. A symbol whose only
+# appearance is inside an `import` line gets no snippet, and the page says so
+# rather than inventing one -- gate 12 counts an import as coverage, and this is
+# the page that shows where that is all the coverage there is.
+
+ADDRESS = re.compile(r" at 0x[0-9a-f]+")
+# Any dotted module path in front of a type name: axiom.core.spec.Spec -> Spec.
+QUALIFIER = re.compile(r"\b(?:[a-z_]\w*\.)+(\w+)")
+MAX_USAGE_LINES = 16
+MAX_DEFAULT_CHARS = 40
+MAX_FIELDS = 12
+
+
+def _collapse_annotated(text: str) -> str:
+    """``Annotated[T, <validators>]`` -> ``T``.
+
+    Pydantic renders the whole validator chain into an annotation's repr, which is
+    both unreadable and unstable across runs. Only the type is wanted.
+    """
+    while True:
+        start = text.find("Annotated[")
+        if start < 0:
+            return text
+        depth, close = 0, len(text) - 1
+        for i in range(start + len("Annotated[") - 1, len(text)):
+            if text[i] == "[":
+                depth += 1
+            elif text[i] == "]":
+                depth -= 1
+                if depth == 0:
+                    close = i
+                    break
+        inner = text[start + len("Annotated[") : close]
+        depth, cut = 0, len(inner)
+        for i, ch in enumerate(inner):
+            if ch in "[(":
+                depth += 1
+            elif ch in "])":
+                depth -= 1
+            elif ch == "," and depth == 0:
+                cut = i
+                break
+        text = text[:start] + inner[:cut].strip() + text[close + 1 :]
+
+
+def _readable_type(text: str) -> str:
+    text = _collapse_annotated(text.replace("<class '", "").replace("'>", ""))
+    text = ADDRESS.sub("", text)
+    text = QUALIFIER.sub(r"\1", text)
+    return text.replace("NoneType", "None")
+
+
+def _short_default(value: Any) -> str:
+    """A default long enough to bury the signature is shown as an ellipsis.
+
+    ``design.simulated_power`` defaults its registry to the whole method table;
+    printed in full it is six thousand characters of signature for one parameter.
+    """
+    shown = ADDRESS.sub("", repr(value))
+    return shown if len(shown) <= MAX_DEFAULT_CHARS else "..."
+
+
+def _model_fields(obj: Any) -> Any:
+    """Pydantic fields, or None for anything that is not a model.
+
+    The test is ``getattr_static`` rather than ``getattr`` on purpose: some classes
+    here define a ``__getattr__`` that raises for an unknown name (``Dimensions``
+    raises ``UndeclaredBaseError``), so merely asking whether the attribute exists
+    would blow up. ``getattr_static`` reads the type without running any of that.
+    Once it says yes, the ordinary lookup is safe and returns the real dict.
+    """
+    if not inspect.isclass(obj):
+        return None
+    if inspect.getattr_static(obj, "model_fields", None) is None:
+        return None
+    return getattr(obj, "model_fields", None)
+
+
+def _signature(obj: Any) -> str:
+    fields = _model_fields(obj)
+    if fields is not None:
+        parts = []
+        for name, field in fields.items():
+            if name.startswith("_"):
+                continue
+            shown = f"{name}: {_readable_type(str(field.annotation))}"
+            if not field.is_required():
+                shown += f" = {_short_default(field.default)}"
+            parts.append(shown)
+        if len(parts) > MAX_FIELDS:
+            rest = len(parts) - MAX_FIELDS
+            parts = parts[:MAX_FIELDS] + [f"... and {rest} more field" + ("s" if rest > 1 else "")]
+        return "(" + ", ".join(parts) + ")"
+    try:
+        sig = inspect.signature(obj)
+    except (TypeError, ValueError):
+        return ""
+    parts = []
+    for name, param in sig.parameters.items():
+        if name.startswith("_"):
+            continue  # a private dataclass field is not part of the public call
+        shown = name
+        if param.kind is param.VAR_POSITIONAL:
+            shown = "*" + shown
+        elif param.kind is param.VAR_KEYWORD:
+            shown = "**" + shown
+        if param.annotation is not param.empty:
+            shown += f": {_readable_type(str(param.annotation))}"
+        if param.default is not param.empty:
+            shown += f" = {_short_default(param.default)}"
+        parts.append(shown)
+    if any(p.kind is p.KEYWORD_ONLY for p in sig.parameters.values()) and not any(
+        p.kind is p.VAR_POSITIONAL for p in sig.parameters.values()
+    ):
+        cut = next(
+            i for i, p in enumerate(sig.parameters.values()) if p.kind is p.KEYWORD_ONLY
+        )
+        parts.insert(cut, "*")
+    rendered = "(" + ", ".join(parts) + ")"
+    if sig.return_annotation is not sig.empty:
+        rendered += f" -> {_readable_type(str(sig.return_annotation))}"
+    return rendered
+
+
+def _kind(obj: Any) -> str:
+    if inspect.isclass(obj):
+        if _model_fields(obj) is not None:
+            return "spec"
+        if issubclass(obj, BaseException):
+            return "exception"
+        return "class"
+    if inspect.isfunction(obj) or inspect.isbuiltin(obj):
+        return "function"
+    return "callable" if callable(obj) else "value"
+
+
+def _summary(obj: Any) -> str:
+    """The first paragraph of the docstring, joined into one line."""
+    doc = inspect.getdoc(obj) or ""
+    for para in doc.split("\n\n"):
+        line = " ".join(x.strip() for x in para.splitlines() if x.strip())
+        if line:
+            return line
+    return ""
+
+
+def _code_cells(nb: Path) -> Any:
+    for cell in json.loads(nb.read_text())["cells"]:
+        if cell.get("cell_type") != "code":
+            continue
+        source = "".join(cell["source"])
+        source = "\n".join(
+            ln for ln in source.splitlines() if not ln.lstrip().startswith(("%", "!"))
+        )
+        try:
+            yield source, ast.parse(source)
+        except SyntaxError:
+            continue
+
+
+def _mentions(node: ast.AST, name: str) -> bool:
+    return any(
+        (isinstance(n, ast.Name) and n.id == name)
+        or (isinstance(n, ast.Attribute) and n.attr == name)
+        for n in ast.walk(node)
+    )
+
+
+def _invokes(node: ast.AST, name: str) -> bool:
+    for sub in ast.walk(node):
+        if not isinstance(sub, ast.Call):
+            continue
+        fn = sub.func
+        if (isinstance(fn, ast.Name) and fn.id == name) or (
+            isinstance(fn, ast.Attribute) and fn.attr == name
+        ):
+            return True
+    return False
+
+
+def _usage(name: str, notebooks: list[Path]) -> dict[str, str] | None:
+    """The shortest executed statement that uses ``name``, preferring a call.
+
+    Import statements are skipped on purpose: ``from axiom.surface import Hill``
+    demonstrates nothing about how ``Hill`` is called.
+    """
+    best: tuple[tuple[int, int, int, int], dict[str, str]] | None = None
+    for nb in notebooks:
+        for source, tree in _code_cells(nb):
+            # Every statement, not only the top-level ones: when the sole call sits
+            # inside a helper the reader wants that line, not the whole function.
+            for stmt in [n for n in ast.walk(tree) if isinstance(n, ast.stmt)]:
+                if isinstance(stmt, (ast.Import, ast.ImportFrom)):
+                    continue
+                if not _mentions(stmt, name):
+                    continue
+                segment = ast.get_source_segment(source, stmt)
+                if not segment:
+                    continue
+                lines = segment.splitlines()
+                if stmt.col_offset:
+                    pad = " " * stmt.col_offset
+                    lines = [lines[0]] + [
+                        ln[len(pad) :] if ln.startswith(pad) else ln for ln in lines[1:]
+                    ]
+                    segment = "\n".join(lines)
+                defines = isinstance(
+                    stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+                )
+                rank = (
+                    0 if _invokes(stmt, name) else 1,
+                    defines,
+                    len(lines) > MAX_USAGE_LINES,
+                    len(lines),
+                )
+                if best is None or rank < best[0]:
+                    if len(lines) > MAX_USAGE_LINES:
+                        segment = "\n".join(lines[:MAX_USAGE_LINES]) + "\n    # ..."
+                    best = (rank, {"code": segment, "notebook": nb.relative_to(ROOT).as_posix()})
+        if best is not None and best[0][0] == 0:
+            break
+    return best[1] if best else None
+
+
+@section
+def api() -> Any:
+    import importlib
+
+    nbs = ROOT / "nbs"
+    packages = []
+    total = with_usage = 0
+    for name in ORDER:
+        module = importlib.import_module("axiom." + name)
+        own = sorted(nbs.glob(f"{name}/*.ipynb"))
+        # A symbol demonstrated in another subpackage's series still counts; the
+        # fallback is what makes "no worked usage anywhere" mean what it says.
+        elsewhere = [p for p in sorted(nbs.rglob("*.ipynb")) if p not in own]
+        symbols = []
+        for symbol in sorted(getattr(module, "__all__", [])):
+            obj = getattr(module, symbol, None)
+            used = _usage(symbol, own) or _usage(symbol, elsewhere)
+            total += 1
+            with_usage += used is not None
+            symbols.append(
+                {
+                    "name": symbol,
+                    "kind": _kind(obj),
+                    "signature": _signature(obj),
+                    "summary": _summary(obj),
+                    "usage": used["code"] if used else "",
+                    "notebook": used["notebook"] if used else "",
+                }
+            )
+        packages.append(
+            {
+                "name": name,
+                "n": len(symbols),
+                "layer": LAYER[name],
+                "blurb": BLURB[name],
+                "symbols": symbols,
+                "n_notebooks": len(own),
+            }
+        )
+        print(f"    axiom.{name}: {len(symbols)} symbols, {len(own)} notebooks")
+
+    return {
+        "packages": packages,
+        "total_symbols": total,
+        "n_packages": len(packages),
+        "n_with_usage": with_usage,
+        "n_without_usage": total - with_usage,
+        "without_usage": [
+            f"{p['name']}.{s['name']}"
+            for p in packages
+            for s in p["symbols"]
+            if not s["usage"]
+        ],
     }
 
 
