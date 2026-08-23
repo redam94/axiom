@@ -474,6 +474,23 @@ have time structure, compiled into ordinary `core.expr` trees; `identify.unrolle
 can estimate, profile likelihood from a simulated experiment, and what to measure next; note
 [0011](0011-identifiability-of-combinations.md).
 
+**Landed**: the ID/IDC algorithm (sound and complete identification under latent confounding,
+returning an estimand or a hedge), sigma-separation for graphs with cycles, and SWIGs; note
+[0012](0012-beyond-dags.md).
+
+**Landed**: `axiom.discover` — essential graphs, GES/GIES, and `orientation_gain`, which
+prices an experiment in the edges it would orient; and `identify.cluster` for cluster-DAGs;
+note [0013](0013-discovery-and-granularity.md).
+
+**Landed**: `diagnose.structure` — refuting the graph itself against the conditional
+independencies it implies, naming the edges a failure implicates; `discover.stability` —
+bootstrap support per edge, separating an unstable edge from a stable edge whose direction
+observation cannot settle; and `discover.fci` — discovery that drops causal sufficiency and
+returns a PAG, sound but deliberately short of Zhang's completeness rules R4-R10; note
+[0014](0014-refutation-stability-and-latents.md). Still open: counterfactual identification
+(ID*), segregated graphs for interference, missingness graphs, FCI's completeness rules, a
+nonlinear conditional-independence test, and bootstrap stability over PAGs.
+
 Laplace calibration on Hill surfaces (SBC finding,
 Phase 8); block-bootstrap switchback SE; ridge verdict in
 `canonical_analysis`; `df` on `LinearEstimate`; drop the nominal

@@ -8,12 +8,12 @@ from axiom.core import D, Param, dimensionless
 from axiom.dynamics import Variable, parse_system
 from axiom.identify import (
     CausalGraph,
-    GraphError,
     SequentialPlan,
     identify,
     sequential_backdoor_admissible,
     sequential_plan,
     unrolled_graph,
+    unrolled_mixed_graph,
 )
 
 NONE = dimensionless()
@@ -97,9 +97,14 @@ def test_the_reduced_form_of_a_cycle_is_a_dag_and_the_structural_one_is_not() ->
     reduced = unrolled_graph(market_system(), periods=2)
     assert reduced.topological_order()
     assert ("cost.t0", "quantity.t0") in reduced.edges
+    # no arrow between the simultaneous variables -- a bidirected edge instead,
+    # because they are determined together and share the block's disturbances
     assert ("price.t0", "quantity.t0") not in reduced.edges
-    with pytest.raises(GraphError, match="cyclic"):
-        unrolled_graph(market_system(), periods=2, reduced=False)
+    assert ("price.t0", "quantity.t0") in reduced.bidirected
+
+    structural = unrolled_mixed_graph(market_system(), periods=2)
+    assert not structural.is_acyclic
+    assert ("quantity.t0", "price.t0") in structural.edges
 
 
 def test_zero_periods_is_a_programming_error() -> None:

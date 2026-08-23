@@ -11,6 +11,7 @@ src/axiom/
 ├── estimands/       declarative counterfactual quantities + realization
 ├── surface/         dose-response kernels, carryover, RSM designs, optimization
 ├── design/          power, EIG, EVOI, methods registry, simulation, portfolio
+├── discover/        essential graphs, GES/GIES, the price of an experiment (note 0013)
 ├── calibrate/       evidence records, prior route, likelihood route, transfer, ledger
 ├── meta/            random-effects pooling, moderators, bias, priors, privacy
 ├── infer/           Backend protocol; NumPyro impl, PyMC impl, Laplace, convergence
@@ -36,9 +37,9 @@ from one above.
    |        |
   build   diagnose                         (compose everything below)
    |        |
-  meta  calibrate  design                  (the four pillars; peers, no cross-imports
-   |        |        |                      except design <- surface, calibrate <- estimands)
-   +--------+--------+
+ meta calibrate design discover            (the pillars; peers, no cross-imports
+   |      |       |       |                  except design <- surface, calibrate <- estimands,
+   +------+-------+-------+                  discover <- identify)
             |
         surface   estimands   identify     (domain layer)
             |         |          |

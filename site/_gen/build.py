@@ -128,21 +128,83 @@ PILLAR_PAGE = {
 }
 
 
+NBS_GITHUB = "https://github.com/redam94/axiom/blob/main"
+
+KIND_TAG = {
+    "spec": "spec",
+    "class": "class",
+    "function": "fn",
+    "callable": "callable",
+    "exception": "error",
+    "value": "value",
+}
+
+
+def symbol_html(sym: dict[str, Any]) -> str:
+    """One public symbol: how to call it, and a line that really calls it.
+
+    The snippet is not written here or anywhere else by hand — ``generate.py``
+    lifts it out of the executed notebook that demonstrates the symbol. A symbol
+    with no snippet says so plainly; inventing one would defeat the point.
+    """
+    name = html.escape(sym["name"])
+    signature = html.escape(sym["signature"])
+    summary = html.escape(sym["summary"])
+    tag = KIND_TAG.get(sym["kind"], sym["kind"])
+    search = html.escape(f"{sym['name']} {sym['summary']}".lower(), quote=True)
+
+    head = (
+        f'<summary><span class="sym-n">{name}</span>'
+        f'<span class="sym-t">{tag}</span></summary>'
+    )
+    body = [f'<p class="sym-sig">{name}{signature}</p>' if signature else ""]
+    if summary:
+        body.append(f'<p class="sym-d">{summary}</p>')
+    if sym["usage"]:
+        nb = html.escape(sym["notebook"])
+        body.append(
+            f'<div class="code">\n'
+            f'  <div class="code-h">'
+            f'<span><a href="{NBS_GITHUB}/{nb}">{nb}</a></span>'
+            f'<button class="copy" type="button">Copy</button></div>\n'
+            f'  <pre>{html.escape(sym["usage"])}</pre>\n'
+            f"</div>"
+        )
+    else:
+        body.append(
+            '<p class="sym-none">No executed statement uses this symbol — it appears '
+            "in the notebooks only inside an <code>import</code>, which is all gate 12 "
+            "requires. Worth a worked line.</p>"
+        )
+    return (
+        f'<details class="sym" data-name="{html.escape(sym["name"], quote=True)}" '
+        f'data-search="{search}">{head}'
+        f'<div class="sym-b">{"".join(x for x in body if x)}</div></details>'
+    )
+
+
 def api_html(data: dict[str, Any]) -> str:
-    """The searchable symbol map. Generated, because typing 700+ names is how they rot."""
+    """The searchable symbol map. Generated, because typing 800+ names is how they rot."""
+    api = data["api"]
     blocks = []
-    for pkg in data["overview"]["packages"]:
+    for pkg in api["packages"]:
         name = pkg["name"]
         page = PILLAR_PAGE.get(name)
         walk = f' · <a href="{page}">walkthrough</a>' if page else ""
-        syms = "".join(f'<span class="sym">{html.escape(s)}</span>' for s in pkg["symbols"])
+        nb_dir = f"nbs/{name}"
+        notebooks = (
+            f' · <a href="{NBS_GITHUB}/{nb_dir}">{pkg["n_notebooks"]} notebooks</a>'
+            if pkg["n_notebooks"]
+            else ""
+        )
+        syms = "\n    ".join(symbol_html(s) for s in pkg["symbols"])
         blocks.append(
             f'<div class="api-pkg" id="{name}" data-pkg="{name}">\n'
             f'  <div class="api-h"><h3>axiom.{name}</h3>'
             f'<span class="tag">{pkg["layer"]}</span>'
-            f'<span class="api-count">{pkg["n"]} symbols{walk}</span></div>\n'
+            f'<span class="api-count">{pkg["n"]} symbols{notebooks}{walk}</span></div>\n'
             f'  <p>{html.escape(pkg["blurb"])}</p>\n'
-            f'  <div class="api-syms">{syms}</div>\n'
+            f'  <div class="api-syms">\n    {syms}\n  </div>\n'
             f"</div>"
         )
     return "\n".join(blocks)

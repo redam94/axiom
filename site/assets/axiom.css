@@ -582,11 +582,45 @@ a.pkg:hover { border-color: var(--accent); color: var(--ink); }
 .api-h h3 { font-family: var(--f-mono); font-size: 1.05rem; letter-spacing: -.01em; }
 .api-h .tag { text-transform: none; letter-spacing: .03em; }
 .api-pkg p { font-size: .92rem; color: var(--ink-2); max-width: var(--measure); margin-bottom: 14px; }
-.api-syms { display: flex; flex-wrap: wrap; gap: 6px; }
+.api-syms { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; }
+
+/* A symbol is a chip until you open it, then it takes the full row and shows
+   its signature, its one-line docstring, and a real call lifted from the
+   notebook that demonstrates it. */
 .sym {
-  font-family: var(--f-mono); font-size: .76rem; padding: 3px 9px; border-radius: 5px;
+  font-family: var(--f-mono); font-size: .76rem; border-radius: 5px;
   background: var(--panel); color: var(--ink-2); border: 1px solid var(--rule-2);
 }
+.sym > summary {
+  padding: 3px 9px; cursor: pointer; display: flex; gap: 7px; align-items: baseline;
+  list-style: none;
+}
+.sym > summary::-webkit-details-marker { display: none; }
+.sym > summary::marker { content: ""; }
+.sym:hover { border-color: var(--accent); color: var(--ink); }
+.sym[open] {
+  flex: 1 1 100%; background: var(--panel-2); border-color: var(--rule);
+  box-shadow: var(--shadow);
+}
+.sym[open] > summary { border-bottom: 1px solid var(--rule-2); padding: 7px 12px; }
+.sym[open] .sym-n { color: var(--ink); font-weight: 600; }
+.sym-t { font-size: .66rem; color: var(--ink-3); letter-spacing: .04em; }
+.sym-b { padding: 12px; }
+.sym-sig {
+  font-family: var(--f-mono); font-size: .78rem; line-height: 1.6; color: var(--ink);
+  white-space: pre-wrap; overflow-wrap: anywhere; margin: 0 0 10px;
+}
+.sym-d {
+  font-family: var(--f-ui); font-size: .85rem; line-height: 1.55; color: var(--ink-2);
+  max-width: var(--measure); margin: 0 0 12px;
+}
+.sym-none {
+  font-family: var(--f-ui); font-size: .8rem; color: var(--ink-3);
+  max-width: var(--measure); margin: 0;
+}
+.sym-b .code { margin: 0; box-shadow: none; }
+.sym-b .code-h a { color: var(--ink-3); }
+.sym-b .code-h a:hover { color: var(--accent); }
 .sym.hit { background: var(--accent-wash); color: var(--ink); border-color: var(--accent); }
 .sym[hidden] { display: none; }
 

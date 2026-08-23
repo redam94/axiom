@@ -25,3 +25,6 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0009 | [TUTOR-60: one decision end to end, and the two io bugs it found](0009-case-study-tutoring.md) | progress + deviation |
 | 0010 | [Systems that are not DAGs: simultaneity, time, and the compiler that removes both](0010-dynamic-systems.md) | decision |
 | 0011 | [Identifiability of nonlinear parameters: which combination, not whether](0011-identifiability-of-combinations.md) | decision |
+| 0012 | [Beyond DAGs: which alternative frameworks axiom implements, and which it does not](0012-beyond-dags.md) | decision |
+| 0013 | [What the data can orient, and at what granularity](0013-discovery-and-granularity.md) | decision |
+| 0014 | [Refuting the graph, resampling the search, and dropping sufficiency](0014-refutation-stability-and-latents.md) | decision |

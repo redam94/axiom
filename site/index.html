@@ -166,12 +166,12 @@
 
       <a class="card" href="api.html">
         <p class="card-n">·  REFERENCE</p>
-        <h3>724 public symbols</h3>
-        <p>Across 16 subpackages, every one of them demonstrated in an
+        <h3>826 public symbols</h3>
+        <p>Across 18 subpackages, every one of them demonstrated in an
           executed notebook. A contract test fails the build if a symbol is exported without
           a notebook that uses it.</p>
         <div class="card-f">
-          <p class="card-stat">0.85s
+          <p class="card-stat">0.77s
             <small>to import all five pillars, pulling only
               numpy, pandas, pydantic, scipy</small></p>
           <p class="card-go">Browse the API <span aria-hidden="true">→</span></p>
@@ -349,7 +349,7 @@ hash      : 0ba29b126aa4df1a</pre>
             Samplers are extras, and a contract test fails the build if importing the library
             drags one in.</p>
           <p class="rule-proof">measured: <code>import axiom.identify, axiom.design, axiom.surface, axiom.meta, axiom.estimands</code> →
-            pulls numpy, pandas, pydantic, scipy in 0.85s.
+            pulls numpy, pandas, pydantic, scipy in 0.77s.
             Samplers pulled: none.</p>
         </div>
       </div>
@@ -408,8 +408,8 @@ hash      : 0ba29b126aa4df1a</pre>
           <p>Anything a subpackage exports appears, executed, in that subpackage’s notebook
             series. A subpackage is not complete until its series runs in CI. Gate 12 fails
             the build on an uncovered symbol.</p>
-          <p class="rule-proof">724 exported symbols,
-            16 notebook series, all executed on every build. And
+          <p class="rule-proof">826 exported symbols,
+            18 notebook series, all executed on every build. And
             because a library that only ever tests itself against its own simulator is
             checking one thing twice, <a href="benchmarks.html">21
             published values</a> from four real datasets are reproduced too.</p>
@@ -432,7 +432,7 @@ hash      : 0ba29b126aa4df1a</pre>
       <div class="layer">
         <div class="layer-n">Composition</div>
         <div class="layer-p">
-          <a class="pkg" href="api.html#diagnose">diagnose<b>79</b></a>
+          <a class="pkg" href="api.html#diagnose">diagnose<b>85</b></a>
           <a class="pkg" href="api.html#build">build<b>13</b></a>
           <a class="pkg" href="api.html#adapters">adapters<b>15</b></a>
           <a class="pkg" href="api.html#viz">viz<b>9</b></a>
@@ -443,7 +443,7 @@ hash      : 0ba29b126aa4df1a</pre>
       <div class="layer">
         <div class="layer-n">The pillars</div>
         <div class="layer-p">
-          <a class="pkg" href="design.html">design<b>151</b></a>
+          <a class="pkg" href="design.html">design<b>165</b></a>
           <a class="pkg" href="calibrate.html">calibrate<b>31</b></a>
           <a class="pkg" href="meta.html">meta<b>70</b></a>
         </div>
@@ -452,7 +452,9 @@ hash      : 0ba29b126aa4df1a</pre>
       <div class="layer">
         <div class="layer-n">Domain</div>
         <div class="layer-p">
-          <a class="pkg" href="identify.html">identify<b>39</b></a>
+          <a class="pkg" href="api.html#dynamics">dynamics<b>31</b></a>
+          <a class="pkg" href="identify.html">identify<b>65</b></a>
+          <a class="pkg" href="api.html#discover">discover<b>25</b></a>
           <a class="pkg" href="api.html#estimands">estimands<b>19</b></a>
           <a class="pkg" href="surface.html">surface<b>88</b></a>
           <a class="pkg" href="api.html#sim">sim<b>23</b></a>
@@ -528,7 +530,7 @@ pip install <span class="s">"axiom[pymc]"</span></pre>
             <span class="ledger-f">reference</span>
             <span class="ledger-s">The <a href="api.html">API map</a>, searchable, grouped by
               subpackage and layer.</span>
-            <span class="ledger-v">724 symbols</span>
+            <span class="ledger-v">826 symbols</span>
           </div>
         </div>
       </div>
