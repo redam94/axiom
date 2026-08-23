@@ -1,7 +1,7 @@
 {
  "identify": {
   "code": "from axiom.identify import identify, ols\nfrom axiom.sim import confounded_world\n\nworld = confounded_world()      # Z confounds X and Y\nverdict = identify(world.graph, \"X\", \"Y\")\nprint(\"status :\", verdict.status)\nprint(\"route  :\", verdict.route)\nprint(\"adjust :\", sorted(verdict.adjustment_set))\n\nframe = world.observed(world.simulate(5_000, seed=0))\nnaive = ols(frame, \"Y\", \"X\")\nfixed = ols(frame, \"Y\", \"X\", covariates=verdict.adjustment_set)\nprint()\nprint(f\"truth            {world.total_effect('X', 'Y'):.3f}\")\nprint(f\"naive            {naive.estimate:.3f}  {naive.ci(0.95)}\")\nprint(f\"back-door        {fixed.estimate:.3f}  {fixed.ci(0.95)}\")",
-  "output": "status : identified\nroute  : backdoor\nadjust : ['Z']\n\ntruth            2.000\nnaive            2.726  [2.69307, 2.7582] (95% WALD)\nback-door        2.013  [1.9849, 2.0404] (95% WALD)"
+  "output": "status : identified\nroute  : backdoor\nadjust : ['Z']\n\ntruth            2.000\nnaive            2.726  [2.693, 2.758] (95% WALD)\nback-door        2.013  [1.985, 2.040] (95% WALD)"
  },
  "refuse": {
   "code": "from axiom.identify import identify\nfrom axiom.sim import hidden_confounder_world\n\nworld = hidden_confounder_world()   # the confounder is never measured\nverdict = identify(world.graph, \"X\", \"Y\")\nprint(\"status :\", verdict.status)\nprint(\"route  :\", verdict.route)\nprint(\"needs  :\", sorted(verdict.unmeasured_required), \"which you do not have\")\nprint()\nfor a in verdict.verdict.assumptions:\n    print(f\"assumption    {a.name}  [{a.state}]\")\n    print(f\"  says        {a.statement}\")\n    print(f\"  challenged  {a.challenged_by}\")",

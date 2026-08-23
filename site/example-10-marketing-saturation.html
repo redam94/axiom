@@ -30,7 +30,7 @@
     <a class="brand" href="index.html">
       <span class="brand-mark" aria-hidden="true"></span>axiom</a>
     <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
-    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">Case study</a><a class="navx" href="api.html">API</a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
     <button class="theme" type="button" aria-label="Switch between light and dark">
       <span class="theme-ico" aria-hidden="true"></span>
     </button>
@@ -46,7 +46,7 @@
       <span class="pkg">7 steps</span>
       <span class="pkg">3 figures</span>
       <span class="pkg">353 lines</span>
-      <span class="pkg">runs in 5.1s</span></div>
+      <span class="pkg">runs in 5.6s</span></div>
     <div class="hero-cta">
       <a class="btn btn-1" href="#step-1">Start the walkthrough</a>
       <a class="btn btn-2" href="https://github.com/redam94/axiom/blob/main/examples/10_marketing_saturation.py">The whole file on GitHub &rarr;</a>
@@ -300,10 +300,10 @@ w.out(f&quot;average return per unit spent : {avg.summary.mean:.4f}&quot;)
 w.out(f&quot;return on the NEXT unit spent : {marg.summary.mean:.4f}&quot;)
 w.out(f&quot;ratio                         : {marg.summary.mean / avg.summary.mean:.2f}&quot;)</pre>
 </div>
-      <div class="out"><div class="out-h">what it printed</div><pre>contribution_paid_search  contrast      66.2346   [58.4151, 73.1128] (90% HDI)
-roas_paid_search          ratio          0.0375   [0.033114, 0.0414458] (90% HDI)
-marginal_roas_paid_search marginal       0.0385   [0.0361679, 0.0405086] (90% HDI)</pre></div>
-<div class="tbl-wrap"><table class="t"><thead><tr><th>estimand</th><th>kind</th><th>mean</th><th>90% interval</th></tr></thead><tbody><tr><td>contribution_paid_search</td><td>contrast</td><td>66.2346</td><td>[58.4151, 73.1128] (90% HDI)</td></tr><tr><td>roas_paid_search</td><td>ratio</td><td>0.0375</td><td>[0.033114, 0.0414458] (90% HDI)</td></tr><tr><td>marginal_roas_paid_search</td><td>marginal</td><td>0.0385</td><td>[0.0361679, 0.0405086] (90% HDI)</td></tr></tbody></table></div>
+      <div class="out"><div class="out-h">what it printed</div><pre>contribution_paid_search  contrast      66.2346   [58.4, 73.1] (90% HDI)
+roas_paid_search          ratio          0.0375   [0.0331, 0.0414] (90% HDI)
+marginal_roas_paid_search marginal       0.0385   [0.0362, 0.0405] (90% HDI)</pre></div>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>estimand</th><th>kind</th><th>mean</th><th>90% interval</th></tr></thead><tbody><tr><td>contribution_paid_search</td><td>contrast</td><td>66.2346</td><td>[58.4, 73.1] (90% HDI)</td></tr><tr><td>roas_paid_search</td><td>ratio</td><td>0.0375</td><td>[0.0331, 0.0414] (90% HDI)</td></tr><tr><td>marginal_roas_paid_search</td><td>marginal</td><td>0.0385</td><td>[0.0362, 0.0405] (90% HDI)</td></tr></tbody></table></div>
 <div class="out"><div class="out-h">what it printed</div><pre>
 average return per unit spent : 0.0375
 return on the NEXT unit spent : 0.0385
@@ -892,14 +892,14 @@ STEP 5  Ask for the three named quantities
   running&#x27; and is routinely used to answer &#x27;should we spend more&#x27; — a question it cannot
   address.
 
-  contribution_paid_search  contrast      66.2346   [58.4151, 73.1128] (90% HDI)
-  roas_paid_search          ratio          0.0375   [0.033114, 0.0414458] (90% HDI)
-  marginal_roas_paid_search marginal       0.0385   [0.0361679, 0.0405086] (90% HDI)
+  contribution_paid_search  contrast      66.2346   [58.4, 73.1] (90% HDI)
+  roas_paid_search          ratio          0.0375   [0.0331, 0.0414] (90% HDI)
+  marginal_roas_paid_search marginal       0.0385   [0.0362, 0.0405] (90% HDI)
   estimand                   kind      mean     90% interval
-  -------------------------  --------  -------  --------------------------------
-  contribution_paid_search   contrast  66.2346  [58.4151, 73.1128] (90% HDI)
-  roas_paid_search           ratio     0.0375   [0.033114, 0.0414458] (90% HDI)
-  marginal_roas_paid_search  marginal  0.0385   [0.0361679, 0.0405086] (90% HDI)
+  -------------------------  --------  -------  --------------------------
+  contribution_paid_search   contrast  66.2346  [58.4, 73.1] (90% HDI)
+  roas_paid_search           ratio     0.0375   [0.0331, 0.0414] (90% HDI)
+  marginal_roas_paid_search  marginal  0.0385   [0.0362, 0.0405] (90% HDI)
 
 
   average return per unit spent : 0.0375

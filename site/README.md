@@ -1,9 +1,15 @@
 # site/ — the axiom marketing and demonstration site
 
-A static site, hostable on GitHub Pages with no build step at serve time. Ten
+A static site, hostable on GitHub Pages with no build step at serve time. Eleven
 authored pages -- a landing page, one per pillar, the examples index, the
-benchmarks, the HYPER-3 case study and a searchable API map -- plus one generated
+benchmarks, two case studies and a searchable API map -- plus one generated
 walkthrough page per example in `examples/`.
+
+The two case studies are deliberately opposite shapes. **HYPER-3** is an analysis
+story: a trial runs and a stopping rule fires. **GEIGER-1911** is a design one --
+nothing is fitted until the last section, because the deliverable is a set of
+angles, an aperture geometry, a time allocation and a stopping rule, all produced
+before an apparatus exists.
 
 The rule the site is built on is the library's own fourth rule — **every number
 carries its provenance.** Nothing here is typed by hand. Every figure and every
@@ -16,7 +22,7 @@ the call that made it.
 site/
   index.html  identify.html  design.html  calibrate.html  surface.html
   meta.html  examples.html  benchmarks.html              <- generated; committed
-  case-study.html  api.html
+  case-study.html  rutherford.html  api.html
   example-01-....html ... example-12-....html            <- one per walkthrough,
                                                             generated from data
   _src/*.html          content fragments (edit these)

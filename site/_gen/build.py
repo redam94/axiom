@@ -32,10 +32,14 @@ WORKFLOW = [
     ("surface", "Surface", "Map the response"),
     ("meta", "Pool", "All the evidence"),
 ]
+# Two worked case studies now, so they are named rather than both being "Case study":
+# HYPER-3 is an analysis story and GEIGER-1911 is a design one, and the nav should say
+# which is which rather than making a reader open both to find out.
 EXTRA = [
     ("examples", "Examples"),
     ("benchmarks", "Benchmarks"),
-    ("case-study", "Case study"),
+    ("case-study", "HYPER-3"),
+    ("rutherford", "GEIGER-1911"),
     ("api", "API"),
 ]
 

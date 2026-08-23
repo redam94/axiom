@@ -1,0 +1,539 @@
+<!--meta {
+  "title": "GEIGER-1911 — an experiment designed before it is run · axiom",
+  "description": "Two atoms, one parameter, and two hundred hours to tell them apart: which angles to point a detector at, what shape to cut the aperture, how long to leave it open, and when to stop. Every number computed with axiom before any apparatus exists."
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Case study · design before data</p>
+    <h1 style="max-width:20ch">GEIGER-1911: where do you point the detector?</h1>
+    <p class="lede prose mt">An atom is neutral and it holds electrons. Where is the positive
+      charge that balances them — concentrated in a small hard centre, or spread through the
+      whole atom? Both answers fit everything known in 1910. This page is the experiment that
+      tells them apart, <em>planned before it is run</em>: nothing here is fitted until the
+      last section, because the deliverable is a set of angles, an aperture geometry, a time
+      allocation and a stopping rule.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The move the whole thing rests on</p>
+      <h2>Two hypotheses become one parameter</h2>
+      <p>Nothing in <code>axiom.design</code> scores “hypothesis A against hypothesis B”.
+        Everything in it scores a <em>parameter</em>. So the first job is to find the number
+        the two atoms differ in — and it exists, and it is physical.</p>
+      <p>An alpha of charge 2<i>e</i> fired head-on at a charge 79<i>e</i> stops and turns
+        around at <code>D = 2zZe²/4πε₀E</code>. A trajectory scattered through θ comes no
+        closer than <code>(D/2)(1 + 1/sin(θ/2))</code>, so a positive charge of radius
+        <i>R</i> kills the scattering past
+        <code>sin(θ<sub>cut</sub>/2) = 1/(2R/D − 1)</code>. The two atoms are two values of
+        that, and the model is continuous between them.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <p class="card-n">THE BEAM</p>
+        <h3>{{rutherford.apparatus.energy_mev}} MeV alphas</h3>
+        <p>Radium-C′ on a {{rutherford.apparatus.foil_um:.1f}} µm gold foil,
+          {{rutherford.apparatus.beam_rate:n}} of them a second. Each one crosses about
+          {{rutherford.apparatus.atoms_crossed:n}} atoms on the way through.</p>
+        <div class="card-f"><p class="card-stat">{{rutherford.apparatus.d_closest_fm:.1f}} fm
+          <small>closest approach head-on — the smallest distance in the experiment</small></p></div>
+      </div>
+      <div class="card">
+        <p class="card-n">THE DIFFUSE ATOM</p>
+        <h3>Charge everywhere</h3>
+        <p>The positive charge fills the whole atom, <code>R =
+          {{rutherford.atoms.diffuse.radius_text}} m</code>. The alpha is already
+          <em>inside</em> it by a fortieth of a degree.</p>
+        <div class="card-f"><p class="card-stat">{{rutherford.atoms.diffuse.cutoff_deg:.3f}}°
+          <small>past which single scattering is dead</small></p></div>
+      </div>
+      <div class="card">
+        <p class="card-n">THE HARD CENTRE</p>
+        <h3>Charge in a point</h3>
+        <p>Below <code>D/2</code> the beam never reaches the charge at any angle, the cut-off
+          disappears, and the Coulomb law holds out to 180°.</p>
+        <div class="card-f"><p class="card-stat">{{rutherford.atoms.hard.decades_apart:.1f}} decades
+          <small>between the two, on one axis</small></p></div>
+      </div>
+    </div>
+
+    <div class="note mt-lg" style="max-width:var(--measure)">
+      <p class="note-t">The ceiling, in four lines of arithmetic</p>
+      <p class="small">That denominator goes to zero. Once <code>R ≤ D/2</code> every charge
+        ball predicts exactly the same thing, so the resolving power of this experiment is
+        <b>{{rutherford.apparatus.floor_fm:.1f}} fm</b> and it is set by the beam energy
+        alone — no exposure, no aperture, no number of counts moves it. The gold nucleus is
+        four times smaller than that. <b>The experiment returns an upper bound on the size of
+        the positive charge, never a value</b>, and it is worth knowing that before spending
+        two hundred hours rather than after.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What the two atoms predict</p>
+      <h2>They agree below a degree and diverge by a hundred million by five</h2>
+      <p>Below about a degree both curves are the same multiple-scattering core — the pile-up
+        of a thousand glancing encounters that <em>both</em> atoms produce — and the
+        difference is a factor, not a fact. Then the diffuse atom’s prediction falls off a
+        cliff, a Gaussian dying against a power law, and by five degrees it has gone under the
+        counting background and stays there.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="fig-head">
+        <p class="fig-t">Scattered particles per steradian per second</p>
+        <p class="fig-s">Both axes logarithmic. The horizontal line is the background the
+          counter records with the foil taken out.</p>
+      </div>
+      <div class="legend">
+        <span><i style="--k:var(--s1)"></i>a hard positive centre</span>
+        <span><i style="--k:var(--s3)"></i>charge spread through the atom</span>
+      </div>
+      <div class="chart" data-chart="lines" data-file="rutherford"
+           data-opt='{"series":[
+             {"label":"hard centre","x":"curve.angles","y":"curve.log10_hard","colour":"s1"},
+             {"label":"diffuse","x":"curve.angles","y":"curve.log10_diffuse","colour":"s3"}],
+             "xLabel":"scattering angle (degrees)","yLabel":"log₁₀ counts / sr / s",
+             "height":320,"rightPad":86}'></div>
+      <p class="stamp"><b>scattering.rate_per_steradian</b>(angles, world) — one
+        <code>forward()</code> per point, for both worlds</p>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Which angles</p>
+      <h2>The information is at five degrees. The evidence is at a hundred and fifty.</h2>
+      <p>For a choice between two hypotheses the expected information gain has a closed form —
+        the Kullback–Leibler divergence between two Poisson counts — so every angle can be
+        priced in nats per hour before anything is built. A human at a scintillation
+        microscope counts about {{rutherford.apparatus.max_per_minute:.0f}} flashes a minute
+        before missing them, so every station from half a degree to seventy-five collects the
+        <em>same</em> counts an hour and what differs is what the diffuse atom has to say
+        about them.</p>
+      <p>On that reading the answer is unambiguous and it is not the one folklore gives: an
+        hour at {{rutherford.evidence.peak_deg:.0f}}° is worth
+        <b>{{rutherford.evidence.peak_nats:n}} nats</b> and an hour at 150° is worth
+        {{rutherford.evidence.at_150_believed:n}} — twenty times less.</p>
+    </div>
+
+    <div class="note mt" style="max-width:var(--measure)">
+      <p class="note-t">Except that the five-degree number is a statement made inside a model</p>
+      <p class="small">It assumes the width of the multiple-scattering core, which is a
+        <em>fitted</em> quantity and is exactly what a defender of the diffuse atom would
+        attack: <em>your core is wider than you think</em>. The defence is not free — the beam
+        is conserved, so a core <i>f</i> times wider is <i>f</i>² times lower at the peak, and
+        an adversary who widens it to explain a wide-angle count makes the small-angle counts
+        come out wrong. So there is a worst case rather than a slippery slope, and it can be
+        found by minimizing.</p>
+    </div>
+
+    <figure class="fig mt-lg">
+      <div class="fig-head">
+        <p class="fig-t">The same hour, before and after the opposition has chosen its core</p>
+        <p class="fig-s">The lower line is the least evidence a station still carries once the
+          diffuse atom may pick any core up to thirty times the fitted width — twenty degrees
+          rms, five times wider than any plate measurement of the period.</p>
+      </div>
+      <div class="legend">
+        <span><i style="--k:var(--s1)"></i>if the model of the core is right</span>
+        <span><i style="--k:var(--s5)"></i>the worst core the opposition can pick</span>
+      </div>
+      <div class="chart" data-chart="lines" data-file="rutherford"
+           data-opt='{"series":[
+             {"label":"believed","x":"evidence.angles","y":"evidence.log10_believed","colour":"s1"},
+             {"label":"attacked","x":"evidence.angles","y":"evidence.log10_attacked","colour":"s5"}],
+             "xLabel":"scattering angle (degrees)","yLabel":"log₁₀ nats per hour",
+             "height":320,"rightPad":76}'></div>
+      <p class="stamp"><b>scattering.surviving_evidence</b>(angles, aperture, 3600) —
+        the Poisson KL minimized over the adversary’s core</p>
+    </figure>
+
+    <p class="prose mt">Where the information was, it evaporates. Where it looked wasted, it
+      does not move: at a hundred and fifty degrees the evidence is
+      <b>{{rutherford.evidence.at_150_attacked:n}} nats</b> against
+      {{rutherford.evidence.at_150_believed:n}} believed — unchanged to four figures, because
+      a core wide enough to reach a hundred and fifty degrees has had its peak destroyed by
+      the <i>f</i>² penalty and is refuted somewhere else instead.</p>
+
+    <div class="tbl-wrap mt-lg">
+      <table class="t">
+        <caption>The eight foil-in stations of the plan, priced both ways. “Kept” is the share
+          of a station’s evidence that survives the attack; the last column is its share of
+          all the evidence that survives.</caption>
+        <thead><tr><th>angle</th><th>role</th><th>hours</th><th>nats/h believed</th>
+          <th>nats/h attacked</th><th>kept</th><th>share of surviving</th></tr></thead>
+        <tbody>
+          <tr><td>{{rutherford.plan[0].angle:.1f}}°</td><td>{{rutherford.plan[0].role}}</td>
+            <td>{{rutherford.plan[0].hours:.0f}}</td>
+            <td>{{rutherford.plan[0].nats_per_hour_believed:n}}</td>
+            <td>{{rutherford.plan[0].nats_per_hour_attacked:n}}</td>
+            <td>{{rutherford.plan[0].kept:pct}}</td>
+            <td>{{rutherford.plan[0].share_of_surviving:pct1}}</td></tr>
+          <tr><td>{{rutherford.plan[1].angle:.1f}}°</td><td>{{rutherford.plan[1].role}}</td>
+            <td>{{rutherford.plan[1].hours:.0f}}</td>
+            <td>{{rutherford.plan[1].nats_per_hour_believed:n}}</td>
+            <td>{{rutherford.plan[1].nats_per_hour_attacked:n}}</td>
+            <td>{{rutherford.plan[1].kept:pct}}</td>
+            <td>{{rutherford.plan[1].share_of_surviving:pct1}}</td></tr>
+          <tr><td>{{rutherford.plan[2].angle:.1f}}°</td><td>{{rutherford.plan[2].role}}</td>
+            <td>{{rutherford.plan[2].hours:.0f}}</td>
+            <td>{{rutherford.plan[2].nats_per_hour_believed:n}}</td>
+            <td>{{rutherford.plan[2].nats_per_hour_attacked:n}}</td>
+            <td class="bad">{{rutherford.plan[2].kept:pct}}</td>
+            <td>{{rutherford.plan[2].share_of_surviving:pct1}}</td></tr>
+          <tr><td>{{rutherford.plan[3].angle:.1f}}°</td><td>{{rutherford.plan[3].role}}</td>
+            <td>{{rutherford.plan[3].hours:.0f}}</td>
+            <td>{{rutherford.plan[3].nats_per_hour_believed:n}}</td>
+            <td>{{rutherford.plan[3].nats_per_hour_attacked:n}}</td>
+            <td class="bad">{{rutherford.plan[3].kept:pct}}</td>
+            <td>{{rutherford.plan[3].share_of_surviving:pct1}}</td></tr>
+          <tr><td>{{rutherford.plan[4].angle:.1f}}°</td><td>{{rutherford.plan[4].role}}</td>
+            <td>{{rutherford.plan[4].hours:.0f}}</td>
+            <td>{{rutherford.plan[4].nats_per_hour_believed:n}}</td>
+            <td>{{rutherford.plan[4].nats_per_hour_attacked:n}}</td>
+            <td class="bad">{{rutherford.plan[4].kept:pct}}</td>
+            <td>{{rutherford.plan[4].share_of_surviving:pct1}}</td></tr>
+          <tr><td>{{rutherford.plan[5].angle:.1f}}°</td><td>{{rutherford.plan[5].role}}</td>
+            <td>{{rutherford.plan[5].hours:.0f}}</td>
+            <td>{{rutherford.plan[5].nats_per_hour_believed:n}}</td>
+            <td>{{rutherford.plan[5].nats_per_hour_attacked:n}}</td>
+            <td>{{rutherford.plan[5].kept:pct}}</td>
+            <td>{{rutherford.plan[5].share_of_surviving:pct1}}</td></tr>
+          <tr><td>{{rutherford.plan[6].angle:.1f}}°</td><td>{{rutherford.plan[6].role}}</td>
+            <td>{{rutherford.plan[6].hours:.0f}}</td>
+            <td>{{rutherford.plan[6].nats_per_hour_believed:n}}</td>
+            <td>{{rutherford.plan[6].nats_per_hour_attacked:n}}</td>
+            <td>{{rutherford.plan[6].kept:pct}}</td>
+            <td>{{rutherford.plan[6].share_of_surviving:pct1}}</td></tr>
+          <tr class="hi"><td>{{rutherford.plan[7].angle:.1f}}°</td>
+            <td>{{rutherford.plan[7].role}}</td>
+            <td><b>{{rutherford.plan[7].hours:.0f}}</b></td>
+            <td>{{rutherford.plan[7].nats_per_hour_believed:n}}</td>
+            <td>{{rutherford.plan[7].nats_per_hour_attacked:n}}</td>
+            <td class="num-good">{{rutherford.plan[7].kept:pct}}</td>
+            <td><b>{{rutherford.plan[7].share_of_surviving:pct1}}</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="prose mt">Which is why the plan spends
+      <b>{{rutherford.plan[7].hours:.0f}} of its {{rutherford.apparatus.hours:.0f}} hours</b>
+      at a hundred and fifty degrees — the opposite of what the evidence-per-hour calculation
+      says, and right, because evidence-per-hour is computed inside the model that is under
+      attack. The allocation is lexicographic rather than optimal: buy every constraint the
+      argument will need, as cheaply as it can be bought, then spend the rest where the
+      evidence cannot be talked out of.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">How far back the witness has to sit</p>
+      <h2>As far as the widest core anybody will concede</h2>
+      <p>Thirty-fold was a choice, and the answer moves with it. Somebody who will concede
+        only a threefold error in the core needs a much less awkward apparatus than somebody
+        arguing with a sceptic who will concede thirty. That trade is a curve, and it is the
+        design’s actual specification for the wide-angle station.</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="t">
+        <caption>The angle past which a station’s evidence is untouched — within one per cent —
+          by any core the opposition is allowed to build.</caption>
+        <thead><tr><th>the opposition may claim a core</th><th>rms scattering</th>
+          <th>immune beyond</th></tr></thead>
+        <tbody>
+          <tr><td>{{rutherford.immunity[0].allowance:.0f}}× the fitted width</td>
+            <td>{{rutherford.immunity[0].rms_deg:.1f}}°</td>
+            <td>{{rutherford.immunity[0].beyond_deg:.0f}}°</td></tr>
+          <tr><td>{{rutherford.immunity[1].allowance:.0f}}×</td>
+            <td>{{rutherford.immunity[1].rms_deg:.1f}}°</td>
+            <td>{{rutherford.immunity[1].beyond_deg:.0f}}°</td></tr>
+          <tr><td>{{rutherford.immunity[2].allowance:.0f}}×</td>
+            <td>{{rutherford.immunity[2].rms_deg:.1f}}°</td>
+            <td>{{rutherford.immunity[2].beyond_deg:.0f}}°</td></tr>
+          <tr><td>{{rutherford.immunity[3].allowance:.0f}}×</td>
+            <td>{{rutherford.immunity[3].rms_deg:.1f}}°</td>
+            <td>{{rutherford.immunity[3].beyond_deg:.0f}}°</td></tr>
+          <tr class="hi"><td>{{rutherford.immunity[4].allowance:.0f}}×</td>
+            <td>{{rutherford.immunity[4].rms_deg:.1f}}°</td>
+            <td><b>{{rutherford.immunity[4].beyond_deg:.0f}}°</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="prose mt">To be immune against a core thirty times the fitted one, the witness
+      has to sit past {{rutherford.immunity[4].beyond_deg:.0f}} degrees. Which is, to within
+      the width of a slit, where Geiger and Marsden put theirs.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What to cut in the brass</p>
+      <h2>An annular slot, not a hole</h2>
+      <p>A detector opening covering azimuth φ and θ ± δ subtends exactly
+        <code>φ · 2 sin θ sin δ</code>. So the same solid angle — the same counts an hour —
+        can be bought by opening in δ or by opening in φ, and <b>only one of them costs
+        anything</b>. The scattering pattern does not depend on azimuth, so an aperture
+        stretched round the beam axis collects more counts of exactly the same measurement;
+        one stretched in θ collects counts of a <em>different</em> measurement and averages
+        them together.</p>
+      <p>The prescription follows: hold the radial half-width at the workshop’s floor of
+        {{rutherford.apparatus.slit_min_half}}° and take every additional steradian out in
+        azimuth, opening radially only once the arc has closed into a full annulus.</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="t">
+        <caption>The same aperture at the same station, bought two ways. Both admit identical
+          counts; the error is what a model that ignored the width of its own aperture would
+          be wrong by.</caption>
+        <thead><tr><th>station</th><th>slot half-width</th><th>slot arc</th><th>slot error</th>
+          <th>round hole half-width</th><th>hole error</th></tr></thead>
+        <tbody>
+          <tr><td>{{rutherford.slit[0].angle:.0f}}°</td>
+            <td>{{rutherford.slit[0].slot_half:.2f}}°</td>
+            <td>{{rutherford.slit[0].slot_arc:.0f}}°</td>
+            <td class="num-good">{{rutherford.slit[0].slot_bias_pct:.3f}}%</td>
+            <td>{{rutherford.slit[0].hole_half:.2f}}°</td>
+            <td>{{rutherford.slit[0].hole_bias_pct:.2f}}%</td></tr>
+          <tr><td>{{rutherford.slit[1].angle:.0f}}°</td>
+            <td>{{rutherford.slit[1].slot_half:.2f}}°</td>
+            <td>{{rutherford.slit[1].slot_arc:.0f}}°</td>
+            <td class="num-good">{{rutherford.slit[1].slot_bias_pct:.3f}}%</td>
+            <td>{{rutherford.slit[1].hole_half:.2f}}°</td>
+            <td>{{rutherford.slit[1].hole_bias_pct:.2f}}%</td></tr>
+          <tr><td>{{rutherford.slit[2].angle:.0f}}°</td>
+            <td>{{rutherford.slit[2].slot_half:.2f}}°</td>
+            <td>{{rutherford.slit[2].slot_arc:.0f}}°</td>
+            <td class="num-good">{{rutherford.slit[2].slot_bias_pct:.3f}}%</td>
+            <td>{{rutherford.slit[2].hole_half:.2f}}°</td>
+            <td>{{rutherford.slit[2].hole_bias_pct:.2f}}%</td></tr>
+          <tr><td>{{rutherford.slit[3].angle:.0f}}°</td>
+            <td>{{rutherford.slit[3].slot_half:.2f}}°</td>
+            <td>{{rutherford.slit[3].slot_arc:.0f}}°</td>
+            <td class="num-good">{{rutherford.slit[3].slot_bias_pct:.3f}}%</td>
+            <td>{{rutherford.slit[3].hole_half:.2f}}°</td>
+            <td>{{rutherford.slit[3].hole_bias_pct:.2f}}%</td></tr>
+          <tr class="hi"><td>{{rutherford.slit[4].angle:.0f}}°</td>
+            <td><b>{{rutherford.slit[4].slot_half:.2f}}°</b></td>
+            <td>{{rutherford.slit[4].slot_arc:.0f}}°</td>
+            <td class="num-good">{{rutherford.slit[4].slot_bias_pct:.3f}}%</td>
+            <td><b>{{rutherford.slit[4].hole_half:.2f}}°</b></td>
+            <td class="bad">{{rutherford.slit[4].hole_bias_pct:.2f}}%</td></tr>
+          <tr><td>{{rutherford.slit[5].angle:.0f}}°</td>
+            <td>{{rutherford.slit[5].slot_half:.2f}}°</td>
+            <td>{{rutherford.slit[5].slot_arc:.0f}}°</td>
+            <td class="num-good">{{rutherford.slit[5].slot_bias_pct:.3f}}%</td>
+            <td>{{rutherford.slit[5].hole_half:.2f}}°</td>
+            <td class="bad">{{rutherford.slit[5].hole_bias_pct:.2f}}%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="prose mt">At ninety degrees the two openings admit exactly the same
+      0.2 steradians. The slot is ±{{rutherford.slit[4].slot_half:.2f}}° wide and reports the
+      rate to a part in four thousand. The hole is ±{{rutherford.slit[4].hole_half:.1f}}°
+      wide — it runs from seventy-seven degrees to a hundred and three — and reports a number
+      {{rutherford.slit[4].hole_bias_pct:.1f}} per cent too high that belongs to no angle in
+      particular. <b>Fourteen times the angular resolution and two hundred times less
+      smearing, for the same counts</b>, because the scattering does not care about azimuth
+      and the experimenter can.</p>
+
+    <div class="note mt-lg" style="max-width:var(--measure)">
+      <p class="note-t">And the anchor cannot be moved closer to the beam</p>
+      <p class="small">The smearing error scales as <code>2(δ/θ)²</code> with δ pinned at the
+        workshop’s floor, so it grows as a station moves inward, while the counting error
+        stays flat — the counter is rate-capped, so ten hours is ten hours’ worth of counts
+        wherever it points. They cross at <b>0.9°</b>. Inside that the number is limited by
+        brass rather than by counting, which is why the anchor sits at
+        {{rutherford.plan[0].angle:.1f}}° and {{rutherford.plan[1].angle:.1f}}° and not at
+        half a degree.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">When to stop</p>
+      <h2>The decisive observation takes five hours. The rest buys the bound.</h2>
+      <p>A hundred and ten hours at a hundred and fifty degrees is the largest single
+        commitment in the plan, and there is no reason to make it blind. The station has a
+        clean interim statistic — counts against a background the foil-out run has measured —
+        and <code>obrien_fleming</code> budgets the looks so that watching costs no error
+        rate. At {{rutherford.sequential.signal_per_hour:.0f}} counts an hour of signal
+        against {{rutherford.sequential.background_per_hour:.2f}} of background, it crosses at
+        the first look.</p>
+      <p>So the question the rule is really being asked is not <em>will this settle it</em>.
+        It is <b>how weak a source would still settle it</b> — which is the question that
+        decides whether an apparatus is worth building.</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="t">
+        <caption>Operating characteristics of the witness station, computed exactly rather
+          than simulated, as the source is scaled down.</caption>
+        <thead><tr><th>source strength</th><th>drift at 110 h</th><th>P(stop)</th>
+          <th>expected hours used</th></tr></thead>
+        <tbody>
+          <tr><td>×{{rutherford.sequential.sources[0].factor_text}} — as modelled</td>
+            <td>{{rutherford.sequential.sources[0].drift:.0f}}</td>
+            <td class="num-good">{{rutherford.sequential.sources[0].stop_probability:.1%}}</td>
+            <td>{{rutherford.sequential.sources[0].expected_hours:.0f}} h</td></tr>
+          <tr><td>×{{rutherford.sequential.sources[1].factor_text}}</td>
+            <td>{{rutherford.sequential.sources[1].drift:.1f}}</td>
+            <td class="num-good">{{rutherford.sequential.sources[1].stop_probability:.1%}}</td>
+            <td>{{rutherford.sequential.sources[1].expected_hours:.0f}} h</td></tr>
+          <tr class="hi"><td>×{{rutherford.sequential.sources[2].factor_text}} — a thousand times weaker</td>
+            <td>{{rutherford.sequential.sources[2].drift:.1f}}</td>
+            <td class="num-good">{{rutherford.sequential.sources[2].stop_probability:.1%}}</td>
+            <td><b>{{rutherford.sequential.sources[2].expected_hours:.0f}} h</b></td></tr>
+          <tr><td>×{{rutherford.sequential.sources[3].factor_text}}</td>
+            <td>{{rutherford.sequential.sources[3].drift:.2f}}</td>
+            <td>{{rutherford.sequential.sources[3].stop_probability:.1%}}</td>
+            <td>{{rutherford.sequential.sources[3].expected_hours:.0f}} h</td></tr>
+          <tr><td>×{{rutherford.sequential.sources[4].factor_text}}</td>
+            <td>{{rutherford.sequential.sources[4].drift:.2f}}</td>
+            <td class="bad">{{rutherford.sequential.sources[4].stop_probability:.1%}}</td>
+            <td>{{rutherford.sequential.sources[4].expected_hours:.0f}} h</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="prose mt">A source a thousand times weaker than this one still settles the
+      question with certainty, in about forty of the hundred and ten hours. That is roughly
+      the situation Geiger and Marsden were actually in — which is why their answer took
+      months of nights at the microscope rather than an afternoon.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What comes back</p>
+      <h2>A bound {{rutherford.answer.gap_pct:.0f}} per cent above the best this beam can do</h2>
+    </div>
+
+    <div class="grid-2 mt-lg">
+      <div class="stack">
+        <div>
+          <p class="readout-l">The radius of the positive charge of gold</p>
+          <div class="readout">
+            <div class="readout-v">R &lt; {{rutherford.answer.bound_fm:.0f}} fm</div>
+            <p class="readout-d" style="margin-top:10px">95%, one-sided. There is no lower
+              bound to report and the profile says so by going flat — a charge the beam never
+              reaches is a charge whose size does not enter any prediction.</p>
+          </div>
+        </div>
+        <div class="ledger">
+          <div class="ledger-row">
+            <span class="ledger-f">the beam’s own floor</span>
+            <span class="ledger-s">set by {{rutherford.apparatus.energy_mev}} MeV alone —
+              nothing left to buy with time</span>
+            <span class="ledger-v">{{rutherford.answer.floor_fm:.1f}} fm</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">how close the plan got</span>
+            <span class="ledger-s">the gap between the bound and the floor</span>
+            <span class="ledger-v">{{rutherford.answer.gap_pct:.0f}}%</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">Rutherford, 1911</span>
+            <span class="ledger-s">published from a smaller version of the same argument</span>
+            <span class="ledger-v">{{rutherford.answer.rutherford_1911_fm:.0f}} fm</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">evidence, model believed</span>
+            <span class="ledger-s">expected log Bayes factor over the whole plan</span>
+            <span class="ledger-v">{{rutherford.answer.evidence_believed:n}} nats</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">evidence, model attacked</span>
+            <span class="ledger-s">of which the two witness stations carry
+              <b>{{rutherford.answer.witness_share:pct}}</b></span>
+            <span class="ledger-v">{{rutherford.answer.evidence_attacked:n}} nats</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="tbl-wrap">
+          <table class="t">
+            <caption>Two hundred hours, run once against a hard centre. The right-hand column
+              is what the diffuse atom said would happen.</caption>
+            <thead><tr><th>station</th><th>hours</th><th>counted</th>
+              <th>if diffuse</th></tr></thead>
+            <tbody>
+              <tr><td>{{rutherford.answer.counts[0].angle:.1f}}°</td>
+                <td>{{rutherford.answer.counts[0].hours:.0f}}</td>
+                <td>{{rutherford.answer.counts[0].observed:n}}</td>
+                <td>{{rutherford.answer.counts[0].if_diffuse_text}}</td></tr>
+              <tr><td>{{rutherford.answer.counts[1].angle:.1f}}°</td>
+                <td>{{rutherford.answer.counts[1].hours:.0f}}</td>
+                <td>{{rutherford.answer.counts[1].observed:n}}</td>
+                <td>{{rutherford.answer.counts[1].if_diffuse_text}}</td></tr>
+              <tr><td>{{rutherford.answer.counts[2].angle:.1f}}°</td>
+                <td>{{rutherford.answer.counts[2].hours:.0f}}</td>
+                <td>{{rutherford.answer.counts[2].observed:n}}</td>
+                <td>{{rutherford.answer.counts[2].if_diffuse_text}}</td></tr>
+              <tr><td>{{rutherford.answer.counts[3].angle:.1f}}°</td>
+                <td>{{rutherford.answer.counts[3].hours:.0f}}</td>
+                <td>{{rutherford.answer.counts[3].observed:n}}</td>
+                <td>{{rutherford.answer.counts[3].if_diffuse_text}}</td></tr>
+              <tr><td>{{rutherford.answer.counts[4].angle:.1f}}°</td>
+                <td>{{rutherford.answer.counts[4].hours:.0f}}</td>
+                <td>{{rutherford.answer.counts[4].observed:n}}</td>
+                <td>{{rutherford.answer.counts[4].if_diffuse_text}}</td></tr>
+              <tr><td>{{rutherford.answer.counts[5].angle:.1f}}°</td>
+                <td>{{rutherford.answer.counts[5].hours:.0f}}</td>
+                <td>{{rutherford.answer.counts[5].observed:n}}</td>
+                <td>{{rutherford.answer.counts[5].if_diffuse_text}}</td></tr>
+              <tr><td>{{rutherford.answer.counts[6].angle:.1f}}°</td>
+                <td>{{rutherford.answer.counts[6].hours:.0f}}</td>
+                <td>{{rutherford.answer.counts[6].observed:n}}</td>
+                <td>{{rutherford.answer.counts[6].if_diffuse_text}}</td></tr>
+              <tr class="hi"><td>{{rutherford.answer.counts[7].angle:.1f}}°</td>
+                <td>{{rutherford.answer.counts[7].hours:.0f}}</td>
+                <td><b>{{rutherford.answer.counts[7].observed:n}}</b></td>
+                <td>{{rutherford.answer.counts[7].if_diffuse_text}}</td></tr>
+              <tr><td>{{rutherford.answer.counts[8].angle:.1f}}° · foil out</td>
+                <td>{{rutherford.answer.counts[8].hours:.0f}}</td>
+                <td>{{rutherford.answer.counts[8].observed:n}}</td>
+                <td>{{rutherford.answer.counts[8].if_diffuse_text}}</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small muted">Ninety-four thousand flashes at a hundred and fifty degrees
+          where the diffuse atom accounts for a hundred and nineteen, every one of them
+          background. There is no version of that which is a fluctuation.</p>
+      </div>
+    </div>
+
+    <div class="note mt-lg" style="max-width:var(--measure)">
+      <p class="note-t">The five notebooks</p>
+      <p class="small">Everything on this page is computed by
+        <code>nbs/case-studies/rutherford/scattering.py</code>, the world the five notebooks
+        share — two atoms and one parameter, which angles, what shape to cut the aperture, how
+        long and when to stop, and running it in both worlds. The mean is a hand-built
+        expression tree and the first implementation of <code>SupportsForward</code> outside
+        <code>axiom.surface</code>; counting is Poisson and <code>forward()</code> returns
+        <code>2√µ</code>, which makes <code>fisher_information</code> exactly the Poisson
+        information. The decisions are in
+        <code>docs/notes/0018-case-study-rutherford.md</code>.</p>
+    </div>
+  </div>
+</section>

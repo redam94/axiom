@@ -30,7 +30,7 @@
     <a class="brand" href="index.html">
       <span class="brand-mark" aria-hidden="true"></span>axiom</a>
     <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
-    <nav class="navx-wrap" aria-label="More"><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">Case study</a><a class="navx navx-on" href="api.html">API</a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx navx-on" href="api.html">API</a></nav>
     <button class="theme" type="button" aria-label="Switch between light and dark">
       <span class="theme-ico" aria-hidden="true"></span>
     </button>
@@ -43,7 +43,7 @@
   <div class="wrap">
     <p class="eyebrow">Reference</p>
     <h1 style="max-width:16ch">Every public symbol</h1>
-    <p class="lede prose mt">826 of them, across
+    <p class="lede prose mt">843 of them, across
       18 subpackages. The list is generated from each subpackage’s
       <code>__all__</code> at build time, so it cannot drift from the code. Gate 12 fails the
       build if any symbol here lacks an executed notebook that uses it.</p>
@@ -51,7 +51,7 @@
       docstring, and <strong>a real call</strong> — the shortest statement in the notebook
       series that actually uses it, lifted out of the executed <code>.ipynb</code> at build
       time. Nothing on this page is a hand-written example, which is why none of it can
-      quietly stop compiling. 821 of the 826 have such a
+      quietly stop compiling. 838 of the 843 have such a
       line; the 5 that do not say so where they sit.</p>
   </div>
 </section>
@@ -66,7 +66,7 @@
     </div>
 
     <div class="api-pkg" id="core" data-pkg="core">
-  <div class="api-h"><h3>axiom.core</h3><span class="tag">foundation</span><span class="api-count">110 symbols · <a href="https://github.com/redam94/axiom/blob/main/nbs/core">7 notebooks</a></span></div>
+  <div class="api-h"><h3>axiom.core</h3><span class="tag">foundation</span><span class="api-count">115 symbols · <a href="https://github.com/redam94/axiom/blob/main/nbs/core">7 notebooks</a></span></div>
   <p>Specs, dimensions, intervals, expressions — the vocabulary everything else is written in.</p>
   <div class="api-syms">
     <details class="sym" data-name="AcceptanceRegion" data-search="acceptanceregion an exact binomial acceptance region for a rate criterion."><summary><span class="sym-n">AcceptanceRegion</span><span class="sym-t">spec</span></summary><div class="sym-b"><p class="sym-sig">AcceptanceRegion(n: int, p: float, alpha: float, lower: int, upper: int)</p><p class="sym-d">An exact binomial acceptance region for a rate criterion.</p><div class="code">
@@ -136,6 +136,10 @@
     <details class="sym" data-name="D" data-search="d the declarable set of base dimensions."><summary><span class="sym-n">D</span><span class="sym-t">value</span></summary><div class="sym-b"><p class="sym-d">The declarable set of base dimensions.</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/core/01-dimensions.ipynb">nbs/core/01-dimensions.ipynb</a></span><button class="copy" type="button">Copy</button></div>
   <pre>print(D.currency, D.time, D.outcome, D.entity)</pre>
+</div></div></details>
+    <details class="sym" data-name="DIGITS" data-search="digits int([x]) -&gt; integer int(x, base=10) -&gt; integer"><summary><span class="sym-n">DIGITS</span><span class="sym-t">value</span></summary><div class="sym-b"><p class="sym-d">int([x]) -&gt; integer int(x, base=10) -&gt; integer</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/core/05-intervals-verdicts-and-failures.ipynb">nbs/core/05-intervals-verdicts-and-failures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>print(&quot;digits kept of the uncertainty:&quot;, DIGITS)</pre>
 </div></div></details>
     <details class="sym" data-name="Data" data-search="data a column of the panel. its dimension is the one its role declares."><summary><span class="sym-n">Data</span><span class="sym-t">spec</span></summary><div class="sym-b"><p class="sym-sig">Data(node: Literal[&#x27;data&#x27;] = &#x27;data&#x27;, name: str, dimension: Dimension)</p><p class="sym-d">A column of the panel. Its dimension is the one its role declares.</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/core/03-expression-tree.ipynb">nbs/core/03-expression-tree.ipynb</a></span><button class="copy" type="button">Copy</button></div>
@@ -458,6 +462,11 @@ except UnknownSpecError as e:
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/core/03-expression-tree.ipynb">nbs/core/03-expression-tree.ipynb</a></span><button class="copy" type="button">Copy</button></div>
   <pre>print([p.name for p in params(model)], data_names(model))</pre>
 </div></div></details>
+    <details class="sym" data-name="decimals_for" data-search="decimals_for decimal places warranted by ``uncertainty``, for ``round`` and ``format``."><summary><span class="sym-n">decimals_for</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">decimals_for(uncertainty: float, *, digits: int = 2) -&gt; int</p><p class="sym-d">Decimal places warranted by ``uncertainty``, for ``round`` and ``format``.</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/core/05-intervals-verdicts-and-failures.ipynb">nbs/core/05-intervals-verdicts-and-failures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>print(f&quot;12.3456789 ± {u:&lt;6} -&gt; {format_measured(12.3456789, u):&gt;8}   &quot;
+      f&quot;decimals={decimals_for(u)}&quot;)</pre>
+</div></div></details>
     <details class="sym" data-name="dimension" data-search="dimension the dimension of ``model``; raises ``dimensionerror`` naming the failing node."><summary><span class="sym-n">dimension</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">dimension(model: Model, path: str = &#x27;&#x27;) -&gt; Dimension</p><p class="sym-d">The dimension of ``model``; raises ``DimensionError`` naming the failing node.</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/core/03-expression-tree.ipynb">nbs/core/03-expression-tree.ipynb</a></span><button class="copy" type="button">Copy</button></div>
   <pre>print(dimension(hill))</pre>
@@ -477,6 +486,14 @@ except UnknownSpecError as e:
     <details class="sym" data-name="eti" data-search="eti equal-tailed interval: the ``(1-mass)/2`` and ``1-(1-mass)/2`` quantiles."><summary><span class="sym-n">eti</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">eti(draws: ArrayLike, mass: float) -&gt; Interval</p><p class="sym-d">Equal-tailed interval: the ``(1-mass)/2`` and ``1-(1-mass)/2`` quantiles.</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/core/05-intervals-verdicts-and-failures.ipynb">nbs/core/05-intervals-verdicts-and-failures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
   <pre>e = eti(draws, 0.9)</pre>
+</div></div></details>
+    <details class="sym" data-name="format_interval" data-search="format_interval ``[lower, upper]`` with both bounds at the precision the width supports."><summary><span class="sym-n">format_interval</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">format_interval(lower: float, upper: float, *, uncertainty: float | None = None, digits: int = 2, fallback: int = 6, group: bool = False) -&gt; str</p><p class="sym-d">``[lower, upper]`` with both bounds at the precision the width supports.</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/core/05-intervals-verdicts-and-failures.ipynb">nbs/core/05-intervals-verdicts-and-failures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>print(format_interval(h.lower, h.upper), &quot;from a half-width of&quot;, round(h.half_width, 4))</pre>
+</div></div></details>
+    <details class="sym" data-name="format_measured" data-search="format_measured ``value`` as text, carrying only the digits ``uncertainty`` supports."><summary><span class="sym-n">format_measured</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">format_measured(value: float, uncertainty: float | None = None, *, digits: int = 2, fallback: int = 6, group: bool = False) -&gt; str</p><p class="sym-d">``value`` as text, carrying only the digits ``uncertainty`` supports.</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/core/05-intervals-verdicts-and-failures.ipynb">nbs/core/05-intervals-verdicts-and-failures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>print(&quot;no stated uncertainty -&gt;&quot;, format_measured(12.3456789))</pre>
 </div></div></details>
     <details class="sym" data-name="free_parameters" data-search="free_parameters parameters that are inferred (everything not ``fixed``), in declaration order."><summary><span class="sym-n">free_parameters</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">free_parameters(model: ModelSpec) -&gt; tuple[Param, ...]</p><p class="sym-d">Parameters that are inferred (everything not ``fixed``), in declaration order.</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/core/07-model-spec-and-jax.ipynb">nbs/core/07-model-spec-and-jax.ipynb</a></span><button class="copy" type="button">Copy</button></div>
@@ -548,6 +565,10 @@ else:
     <details class="sym" data-name="require_jax" data-search="require_jax "><summary><span class="sym-n">require_jax</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">require_jax() -&gt; Unsupported | None</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/core/07-model-spec-and-jax.ipynb">nbs/core/07-model-spec-and-jax.ipynb</a></span><button class="copy" type="button">Copy</button></div>
   <pre>print(&quot;jax available:&quot;, jax_available(), &quot;|&quot;, require_jax())</pre>
+</div></div></details>
+    <details class="sym" data-name="round_to" data-search="round_to ``value`` rounded to the place ``uncertainty`` reaches."><summary><span class="sym-n">round_to</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">round_to(value: float, uncertainty: float, *, digits: int = 2) -&gt; float</p><p class="sym-d">``value`` rounded to the place ``uncertainty`` reaches.</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/core/05-intervals-verdicts-and-failures.ipynb">nbs/core/05-intervals-verdicts-and-failures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>print(round_to(s.mean, s.sd), &quot;vs the stored&quot;, s.mean)</pre>
 </div></div></details>
     <details class="sym" data-name="spec_type_name" data-search="spec_type_name ``&quot;&lt;module&gt;:&lt;qualname&gt;&quot;`` — the name written into the envelope."><summary><span class="sym-n">spec_type_name</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">spec_type_name(cls: type[Spec]) -&gt; str</p><p class="sym-d">``&quot;&lt;module&gt;:&lt;qualname&gt;&quot;`` — the name written into the envelope.</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/core/02-specs-and-hashing.ipynb">nbs/core/02-specs-and-hashing.ipynb</a></span><button class="copy" type="button">Copy</button></div>
@@ -1462,7 +1483,7 @@ except GraphError as e:
   <pre>if isinstance(alloc, Allocation):
     print(alloc.doses, round(alloc.expected_outcome, 3), alloc.status, round(alloc.total_dose, 3))
 else:
-    print(alloc)</pre>
+    show(alloc)</pre>
 </div></div></details>
     <details class="sym" data-name="AllocationMethod" data-search="allocationmethod "><summary><span class="sym-n">AllocationMethod</span><span class="sym-t">callable</span></summary><div class="sym-b"><p class="sym-sig">AllocationMethod(*args, **kwargs)</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/surface/05-ascent-and-optimize.ipynb">nbs/surface/05-ascent-and-optimize.ipynb</a></span><button class="copy" type="button">Copy</button></div>
@@ -1485,7 +1506,7 @@ else:
   <pre>if isinstance(path, AscentPath):
     print(path.n, path.stop, path.best(), round(path.values[-1], 3))
 else:
-    print(path)</pre>
+    show(path)</pre>
 </div></div></details>
     <details class="sym" data-name="BASIS_PRIOR_FAMILIES" data-search="basis_prior_families build an immutable unordered collection of unique elements."><summary><span class="sym-n">BASIS_PRIOR_FAMILIES</span><span class="sym-t">value</span></summary><div class="sym-b"><p class="sym-d">Build an immutable unordered collection of unique elements.</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/surface/01-kernels-and-carryover.ipynb">nbs/surface/01-kernels-and-carryover.ipynb</a></span><button class="copy" type="button">Copy</button></div>
@@ -1549,7 +1570,7 @@ else:
     print(fr.as_frame())
     print(&quot;shadow prices:&quot;, np.round(fr.shadow_prices(), 4))
 else:
-    print(fr)</pre>
+    show(fr)</pre>
 </div></div></details>
     <details class="sym" data-name="GRID_VERSION" data-search="grid_version str(object=&#x27;&#x27;) -&gt; str str(bytes_or_buffer[, encoding[, errors]]) -&gt; str"><summary><span class="sym-n">GRID_VERSION</span><span class="sym-t">value</span></summary><div class="sym-b"><p class="sym-d">str(object=&#x27;&#x27;) -&gt; str str(bytes_or_buffer[, encoding[, errors]]) -&gt; str</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/surface/02-forward-and-linearize.ipynb">nbs/surface/02-forward-and-linearize.ipynb</a></span><button class="copy" type="button">Copy</button></div>
@@ -3546,7 +3567,7 @@ except BuildError as e:
   </div>
 </div>
 <div class="api-pkg" id="adapters" data-pkg="adapters">
-  <div class="api-h"><h3>axiom.adapters</h3><span class="tag">composition</span><span class="api-count">15 symbols · <a href="https://github.com/redam94/axiom/blob/main/nbs/adapters">1 notebooks</a></span></div>
+  <div class="api-h"><h3>axiom.adapters</h3><span class="tag">composition</span><span class="api-count">17 symbols · <a href="https://github.com/redam94/axiom/blob/main/nbs/adapters">2 notebooks</a></span></div>
   <p>Domain vocabulary — marketing is one adapter, not the core.</p>
   <div class="api-syms">
     <details class="sym" data-name="Channel" data-search="channel the thing you can intervene on. its dimension is the dose&#x27;s dimension."><summary><span class="sym-n">Channel</span><span class="sym-t">spec</span></summary><div class="sym-b"><p class="sym-sig">Channel(name: str, dimension: Dimension | None = None, unit: str | None = None, description: str = &#x27;&#x27;)</p><p class="sym-d">The thing you can intervene on. Its dimension is the dose&#x27;s dimension.</p><div class="code">
@@ -3569,6 +3590,10 @@ except BuildError as e:
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/adapters/01-marketing.ipynb">nbs/adapters/01-marketing.ipynb</a></span><button class="copy" type="button">Copy</button></div>
   <pre>roles = MarketingRoles(kpi=&quot;revenue&quot;, channels=(&quot;tv&quot;, &quot;search&quot;), geo=&quot;geo&quot;, date=&quot;week&quot;, impressions=(&quot;tv_impressions&quot;,), controls=(&quot;holiday&quot;,), kpi_dimension=&quot;currency&quot;)</pre>
 </div></div></details>
+    <details class="sym" data-name="agronomy" data-search="agronomy the agronomy adapter: plot / rate / yield / optimum over the general core."><summary><span class="sym-n">agronomy</span><span class="sym-t">value</span></summary><div class="sym-b"><p class="sym-d">The agronomy adapter: plot / rate / yield / optimum over the general core.</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/adapters/02-agronomy.ipynb">nbs/adapters/02-agronomy.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>print(&quot;agronomy&#x27;s public surface:&quot;, len(agronomy.__all__), &quot;names&quot;)</pre>
+</div></div></details>
     <details class="sym" data-name="contribution" data-search="contribution the channel&#x27;s contribution to the kpi: ``kpi at observed spend − kpi at zero spend``, summed over geos and the window (the ``contrast`` estimand, kpi units)."><summary><span class="sym-n">contribution</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">contribution(result: FitResult, channel: str, window: TimeWindow | tuple[int, int] | None = None, *, mass: float = 0.9, definition: IntervalDefinition = &#x27;hdi&#x27;, seed: int | None = None) -&gt; EstimandResult | Unsupported | Blocked</p><p class="sym-d">The channel&#x27;s contribution to the KPI: ``KPI at observed spend − KPI at zero spend``, summed over geos and the window (the ``contrast`` estimand, KPI units).</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/adapters/01-marketing.ipynb">nbs/adapters/01-marketing.ipynb</a></span><button class="copy" type="button">Copy</button></div>
   <pre>for fn in (roas, roi, contribution, marginal_roas):
@@ -3583,6 +3608,10 @@ except BuildError as e:
     <details class="sym" data-name="marginal_roas" data-search="marginal_roas the derivative of the window&#x27;s kpi with respect to a common shift of the channel&#x27;s observed spend (the ``marginal`` estimand). needs a currency-valued kpi."><summary><span class="sym-n">marginal_roas</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">marginal_roas(result: FitResult, channel: str, window: TimeWindow | tuple[int, int] | None = None, *, mass: float = 0.9, definition: IntervalDefinition = &#x27;hdi&#x27;, seed: int | None = None) -&gt; EstimandResult | Unsupported | Blocked</p><p class="sym-d">The derivative of the window&#x27;s KPI with respect to a common shift of the channel&#x27;s observed spend (the ``marginal`` estimand). Needs a currency-valued KPI.</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/adapters/01-marketing.ipynb">nbs/adapters/01-marketing.ipynb</a></span><button class="copy" type="button">Copy</button></div>
   <pre>windowed = marginal_roas(res, &quot;tv&quot;, window=(2, 8))</pre>
+</div></div></details>
+    <details class="sym" data-name="marketing" data-search="marketing the marketing adapter: channel / spend / geo / kpi over the general core."><summary><span class="sym-n">marketing</span><span class="sym-t">value</span></summary><div class="sym-b"><p class="sym-d">The marketing adapter: channel / spend / geo / KPI over the general core.</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/adapters/02-agronomy.ipynb">nbs/adapters/02-agronomy.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>print(&quot; &quot;, marketing.roas.__doc__.strip().splitlines()[0])</pre>
 </div></div></details>
     <details class="sym" data-name="marketing_spec" data-search="marketing_spec a ``surfacespec`` for a marketing panel through ``build.surfacebuilder``."><summary><span class="sym-n">marketing_spec</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">marketing_spec(panel: Panel, channels: Sequence[str] | None = None, *, name: str = &#x27;marketing&#x27;, kernel: str = &#x27;hill&#x27;, carryover: str | None = &#x27;geometric&#x27;, max_lag: int = 4, intercept: InterceptKind = &#x27;hierarchical&#x27;, seasonality: tuple[float, int] | None = None, trend: bool = False, amplitude_scale: float = 1.0) -&gt; SurfaceSpec</p><p class="sym-d">A ``SurfaceSpec`` for a marketing panel through ``build.SurfaceBuilder``.</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/adapters/01-marketing.ipynb">nbs/adapters/01-marketing.ipynb</a></span><button class="copy" type="button">Copy</button></div>
@@ -3618,7 +3647,7 @@ except BuildError as e:
   </div>
 </div>
 <div class="api-pkg" id="viz" data-pkg="viz">
-  <div class="api-h"><h3>axiom.viz</h3><span class="tag">composition</span><span class="api-count">9 symbols · <a href="https://github.com/redam94/axiom/blob/main/nbs/viz">1 notebooks</a></span></div>
+  <div class="api-h"><h3>axiom.viz</h3><span class="tag">composition</span><span class="api-count">19 symbols · <a href="https://github.com/redam94/axiom/blob/main/nbs/viz">1 notebooks</a></span></div>
   <p>Plot helpers for the diagnostics that have a canonical picture.</p>
   <div class="api-syms">
     <details class="sym" data-name="available" data-search="available true when plotly can be imported."><summary><span class="sym-n">available</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">available() -&gt; bool</p><p class="sym-d">True when plotly can be imported.</p><div class="code">
@@ -3628,6 +3657,22 @@ except BuildError as e:
     <details class="sym" data-name="backtest_plot" data-search="backtest_plot per-horizon scores of a rolling-origin backtest — mae, rmse, crps — and the interval coverage against the nominal mass."><summary><span class="sym-n">backtest_plot</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">backtest_plot(backtest: Any) -&gt; Any | Unsupported</p><p class="sym-d">Per-horizon scores of a rolling-origin backtest — MAE, RMSE, CRPS — and the interval coverage against the nominal mass.</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
   <pre>fig = backtest_plot(bt)</pre>
+</div></div></details>
+    <details class="sym" data-name="boundary" data-search="boundary the stopping threshold at each look, which is the protocol sentence. (``design``)"><summary><span class="sym-n">boundary</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">boundary(rule: Any, *, height: float = 360.0) -&gt; Any | Unsupported</p><p class="sym-d">The stopping threshold at each look, which is the protocol sentence. (``design``)</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>boundary(rule)</pre>
+</div></div></details>
+    <details class="sym" data-name="causal_graph" data-search="causal_graph the graph itself: nodes, directed edges, and the bidirected ones."><summary><span class="sym-n">causal_graph</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">causal_graph(graph: Any, *, height: float = 420.0) -&gt; Any | Unsupported</p><p class="sym-d">The graph itself: nodes, directed edges, and the bidirected ones.</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>figure = causal_graph(graph)</pre>
+</div></div></details>
+    <details class="sym" data-name="convergence" data-search="convergence r-hat per parameter against the threshold that decides the run. (``infer``)"><summary><span class="sym-n">convergence</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">convergence(report: Any, *, height: float = 380.0) -&gt; Any | Unsupported</p><p class="sym-d">R-hat per parameter against the threshold that decides the run. (``infer``)</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>convergence(report)</pre>
+</div></div></details>
+    <details class="sym" data-name="corrections" data-search="corrections what each correction did to the number, in order. (``calibrate``)"><summary><span class="sym-n">corrections</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">corrections(applied: Sequence[Any], *, height: float = 360.0) -&gt; Any | Unsupported</p><p class="sym-d">What each correction did to the number, in order. (``calibrate``)</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>corrections(applied)</pre>
 </div></div></details>
     <details class="sym" data-name="coverage_plot" data-search="coverage_plot per-parameter coverage against the nominal mass with each parameter&#x27;s exact acceptance region (``region.lower``/``region.upper``)."><summary><span class="sym-n">coverage_plot</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">coverage_plot(result: Any) -&gt; Any | Unsupported</p><p class="sym-d">Per-parameter coverage against the nominal mass with each parameter&#x27;s exact acceptance region (``region.lower``/``region.upper``).</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
@@ -3641,9 +3686,28 @@ except BuildError as e:
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
   <pre>print(&quot;funnel traces:&quot;, len(funnel(funnel_data(y, se, pooled)).data))</pre>
 </div></div></details>
+    <details class="sym" data-name="intervals" data-search="intervals several named intervals on one axis. (``core``)"><summary><span class="sym-n">intervals</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">intervals(named: Any, *, height: float = 360.0, unit: str = &#x27;&#x27;) -&gt; Any | Unsupported</p><p class="sym-d">Several named intervals on one axis. (``core``)</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>intervals(
+    {
+        &quot;40 mg&quot;: Interval(lower=-16.7, upper=-8.1, definition=&quot;eti&quot;, mass=0.9),
+        &quot;20 mg&quot;: Interval(lower=-6.2, upper=-3.4, definition=&quot;eti&quot;, mass=0.9),
+        &quot;10 mg&quot;: Interval(lower=-2.1, upper=1.4, definition=&quot;eti&quot;, mass=0.9),
+    },
+    unit=&quot;mmHg&quot;,
+)</pre>
+</div></div></details>
     <details class="sym" data-name="marginal_curve" data-search="marginal_curve ``d outcome / d dose`` against dose, with its posterior band."><summary><span class="sym-n">marginal_curve</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">marginal_curve(result: Any, treatment: str = &#x27;&#x27;, *, n_grid: int = 25, mass: float = 0.9, definition: IntervalDefinition = &#x27;eti&#x27;, window: TimeWindow | None = None, seed: int | None = None) -&gt; Any | Unsupported</p><p class="sym-d">``d outcome / d dose`` against dose, with its posterior band.</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
   <pre>slope = marginal_curve(res, &quot;a&quot;, n_grid=8, mass=0.8)</pre>
+</div></div></details>
+    <details class="sym" data-name="panel_coverage" data-search="panel_coverage which unit was observed in which period. (``data``)"><summary><span class="sym-n">panel_coverage</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">panel_coverage(panel: Any, *, height: float = 400.0, max_units: int = 60) -&gt; Any | Unsupported</p><p class="sym-d">Which unit was observed in which period. (``data``)</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>panel_coverage(panel)</pre>
+</div></div></details>
+    <details class="sym" data-name="recovery" data-search="recovery estimated against true, for a world where the truth is known. (``sim``)"><summary><span class="sym-n">recovery</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">recovery(truth: Any, estimated: Any, *, height: float = 400.0) -&gt; Any | Unsupported</p><p class="sym-d">Estimated against true, for a world where the truth is known. (``sim``)</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>recovery(truth, estimated)</pre>
 </div></div></details>
     <details class="sym" data-name="response_curve" data-search="response_curve expected outcome against the dose of ``treatment``, **with its posterior band**."><summary><span class="sym-n">response_curve</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">response_curve(result: Any, treatment: str = &#x27;&#x27;, *, n_grid: int = 25, mass: float = 0.9, definition: IntervalDefinition = &#x27;eti&#x27;, window: TimeWindow | None = None, seed: int | None = None) -&gt; Any | Unsupported</p><p class="sym-d">Expected outcome against the dose of ``treatment``, **with its posterior band**.</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
@@ -3656,6 +3720,18 @@ except BuildError as e:
     <details class="sym" data-name="spec_curve_plot" data-search="spec_curve_plot the specification curve: estimates sorted with their intervals, coloured by whether the interval excludes zero; failed specifications are omitted and counted in the title."><summary><span class="sym-n">spec_curve_plot</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">spec_curve_plot(curve: Any) -&gt; Any | Unsupported</p><p class="sym-d">The specification curve: estimates sorted with their intervals, coloured by whether the interval excludes zero; failed specifications are omitted and counted in the title.</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
   <pre>print(&quot;spec_curve_plot traces:&quot;, len(spec_curve_plot(curve).data))</pre>
+</div></div></details>
+    <details class="sym" data-name="stability" data-search="stability how often each edge came back, split by which way it pointed."><summary><span class="sym-n">stability</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">stability(report: Any, *, height: float = 380.0) -&gt; Any | Unsupported</p><p class="sym-d">How often each edge came back, split by which way it pointed.</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>stability(report)</pre>
+</div></div></details>
+    <details class="sym" data-name="transfer" data-search="transfer which facets differ between source and target, and what that costs. (``estimands``)"><summary><span class="sym-n">transfer</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">transfer(plan: Any, *, height: float = 320.0) -&gt; Any | Unsupported</p><p class="sym-d">Which facets differ between source and target, and what that costs. (``estimands``)</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>transfer(plan)</pre>
+</div></div></details>
+    <details class="sym" data-name="unrolled" data-search="unrolled a dynamic system after unrolling, laid out so depth is time. (``dynamics``)"><summary><span class="sym-n">unrolled</span><span class="sym-t">fn</span></summary><div class="sym-b"><p class="sym-sig">unrolled(system: Any, *, height: float = 420.0) -&gt; Any | Unsupported</p><p class="sym-d">A dynamic system after unrolling, laid out so depth is time. (``dynamics``)</p><div class="code">
+  <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/viz/01-figures.ipynb">nbs/viz/01-figures.ipynb</a></span><button class="copy" type="button">Copy</button></div>
+  <pre>unrolled(unroll(system, periods=4))</pre>
 </div></div></details>
   </div>
 </div>
@@ -3728,7 +3804,7 @@ except BuildError as e:
     LedgerBlock(source=&quot;ledger&quot;),
 )</pre>
 </div></div></details>
-    <details class="sym" data-name="Metric" data-search="metric one number, with its interval when it has one."><summary><span class="sym-n">Metric</span><span class="sym-t">spec</span></summary><div class="sym-b"><p class="sym-sig">Metric(block: Literal[&#x27;metric&#x27;] = &#x27;metric&#x27;, source: str, label: str, unit: str = &#x27;&#x27;, precision: int = 2)</p><p class="sym-d">One number, with its interval when it has one.</p><div class="code">
+    <details class="sym" data-name="Metric" data-search="metric one number, with its interval when it has one."><summary><span class="sym-n">Metric</span><span class="sym-t">spec</span></summary><div class="sym-b"><p class="sym-sig">Metric(block: Literal[&#x27;metric&#x27;] = &#x27;metric&#x27;, source: str, label: str, unit: str = &#x27;&#x27;, precision: int | None = None)</p><p class="sym-d">One number, with its interval when it has one.</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/report/01-templates.ipynb">nbs/report/01-templates.ipynb</a></span><button class="copy" type="button">Copy</button></div>
   <pre>blocks: tuple[AnyBlock, ...] = (
     Heading(text=&quot;Per-arm detail&quot;, level=2),
@@ -3842,7 +3918,7 @@ except BuildError as e:
     LedgerBlock(source=&quot;ledger&quot;),
 )</pre>
 </div></div></details>
-    <details class="sym" data-name="Theme" data-search="theme fonts, colours and geometry for a rendered report."><summary><span class="sym-n">Theme</span><span class="sym-t">spec</span></summary><div class="sym-b"><p class="sym-sig">Theme(name: str = &#x27;axiom&#x27;, font: str = &#x27;Helvetica&#x27;, mono_font: str = &#x27;Courier&#x27;, base_size: float = 11.0, title_size: float = 24.0, heading_sizes: tuple[float, float, float] = (18.0, 14.0, 12.0), text_color: str = &#x27;#1c1c1c&#x27;, muted_color: str = &#x27;#5b6472&#x27;, accent_color: str = &#x27;#2f7fd1&#x27;, background_color: str = &#x27;#ffffff&#x27;, rule_color: str = &#x27;#d8dbe0&#x27;, palette: tuple[str, ...] = ..., ... and 5 more fields)</p><p class="sym-d">Fonts, colours and geometry for a rendered report.</p><div class="code">
+    <details class="sym" data-name="Theme" data-search="theme fonts, colours and geometry for a rendered report."><summary><span class="sym-n">Theme</span><span class="sym-t">spec</span></summary><div class="sym-b"><p class="sym-sig">Theme(name: str = &#x27;axiom&#x27;, font: str = &#x27;Helvetica&#x27;, font_fallback: str = &#x27;system-ui, -apple-system, sans-serif&#x27;, mono_font: str = &#x27;Courier&#x27;, base_size: float = 11.0, title_size: float = 24.0, heading_sizes: tuple[float, float, float] = (18.0, 14.0, 12.0), text_color: str = &#x27;#1c1c1c&#x27;, muted_color: str = &#x27;#5b6472&#x27;, accent_color: str = &#x27;#2f7fd1&#x27;, background_color: str = &#x27;#ffffff&#x27;, rule_color: str = &#x27;#d8dbe0&#x27;, ... and 6 more fields)</p><p class="sym-d">Fonts, colours and geometry for a rendered report.</p><div class="code">
   <div class="code-h"><span><a href="https://github.com/redam94/axiom/blob/main/nbs/report/01-templates.ipynb">nbs/report/01-templates.ipynb</a></span><button class="copy" type="button">Copy</button></div>
   <pre>house = Theme(
     name=&quot;house&quot;, font=&quot;Helvetica&quot;, accent_color=&quot;#b5453b&quot;, muted_color=&quot;#6b7280&quot;,
