@@ -31,7 +31,7 @@ from collections.abc import Iterable
 
 from axiom_dossier.evidence import Evidence
 
-__all__ = ["Literal", "licensed_numbers", "literals", "unverified"]
+__all__ = ["Literal", "licensed_numbers", "literals", "strings_of", "unverified"]
 
 # A signed decimal with optional thousands separators and optional exponent.
 # The second lookbehind rejects a numeral inside an identifier -- the "3" of
@@ -82,7 +82,7 @@ def literals(text: str) -> tuple[Literal, ...]:
     return tuple(out)
 
 
-def _strings_of(evidence: Evidence) -> list[str]:
+def strings_of(evidence: Evidence) -> list[str]:
     """Every string the evidence itself carries — its numbers are licensed too."""
     parts: list[str] = [evidence.title, evidence.question]
     for q in evidence.quantities():
@@ -124,7 +124,7 @@ def licensed_numbers(evidence: Evidence, *, allow: Iterable[float] = ()) -> tupl
             out.add(abs(n))
             if 0.0 < abs(n) <= 1.0:
                 out.add(abs(n) * 100.0)
-    for text in _strings_of(evidence):
+    for text in strings_of(evidence):
         for lit in literals(text):
             out.add(lit.value)
     return tuple(sorted(out))

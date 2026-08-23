@@ -82,7 +82,10 @@ def test_the_stand_ins_satisfy_the_protocol() -> None:
 def test_the_brief_contains_every_number_the_model_may_use(evidence) -> None:
     brief = evidence_brief(evidence)
     assert "-12.4" in brief and "-16.7" in brief and "-8.1" in brief
-    assert "no_unmeasured_confounding" in brief
+    # written as English rather than as an identifier: a model handed snake_case
+    # prints snake_case into the abstract
+    assert "no unmeasured confounding" in brief
+    assert "no_unmeasured_confounding" not in brief
     assert "300 participants" in brief
 
 

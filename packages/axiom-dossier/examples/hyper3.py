@@ -1,11 +1,12 @@
 """A full research report from one axiom analysis, in all three formats.
 
-    python examples/hyper3.py            # generated sections only, no key needed
-    python examples/hyper3.py --narrate  # rewrite the prose through Gemini
+    python examples/hyper3.py                       # readout, no key needed
+    python examples/hyper3.py --journal --full      # a paper, at length
+    python examples/hyper3.py --journal --narrate   # and narrated by Gemini
 
 Writes ``out/hyper3.{html,pdf,pptx}`` and prints what happened to each section,
-including any narration that was rejected for containing a number the evidence
-does not license.
+including any narration rejected for containing a number the evidence does not
+license or a claim it does not make.
 """
 
 from __future__ import annotations
@@ -29,9 +30,7 @@ NO_CONFOUNDING = Assumption(
 
 def evidence():
     """Everything the report is allowed to say, collected from axiom's own results."""
-    graph = CausalGraph.from_edges(
-        "age -> dose, age -> pressure, dose -> pressure", name="HYPER-3"
-    )
+    graph = CausalGraph.from_edges("age -> dose, age -> pressure, dose -> pressure", name="HYPER-3")
     return (
         EvidenceBuilder("HYPER-3", "Does the 40 mg arm lower systolic pressure?")
         # the identification verdict carries the route and the adjustment set,
@@ -57,6 +56,10 @@ def evidence():
             unit="mmHg",
             source="estimands.realize",
             precision=1,
+            # the value the decision turns on: without it a conclusions section
+            # can report the estimate but cannot say whether it settles anything
+            threshold=-5.0,
+            beneficial="lower",
         )
         .diagnostic("coverage", 0.94, label="Interval coverage in simulation")
         .assume(NO_CONFOUNDING)
@@ -76,11 +79,19 @@ def evidence():
 
 def main() -> int:
     narrate = "--narrate" in sys.argv
+    style = "journal" if "--journal" in sys.argv else "plain"
+    verbosity = "full" if "--full" in sys.argv else "standard"
     ev = evidence()
-    built = build(ev, narrator=Narrator() if narrate else None)
+    built = build(
+        ev,
+        narrator=Narrator() if narrate else None,
+        style=style,
+        verbosity=verbosity,
+    )
 
     print(f"evidence hash : {ev.content_hash()}")
     print(f"document      : {built.summary()}")
+    print(f"sections      : {', '.join(s.title for s in built.report.sections)}")
     for n in built.narrations:
         print(f"  {n.summary()}")
     if built.rejected():

@@ -113,7 +113,7 @@ def test_sections_can_be_chosen_and_an_unknown_one_is_refused(evidence) -> None:
     built = build(evidence, sections=("results",))
     assert [s.title for s in built.report.sections] == ["Results"]
     with pytest.raises(ValueError, match="unknown section"):
-        build(evidence, sections=("methods", "conclusions"))
+        build(evidence, sections=("methods", "epilogue"))
 
 
 def test_the_default_order_is_what_a_reader_expects() -> None:

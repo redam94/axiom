@@ -28,7 +28,7 @@ path is not to build one by hand:
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal
 
 from axiom.core import Assumption, Interval, LedgerLine, NonEmptyStr, Spec, Verdict
 
@@ -67,6 +67,13 @@ class Quantity(Spec):
     source: str = ""
     note: str = ""
     precision: int = 2
+    #: The value a decision turns on — a null of no effect, a minimum worthwhile
+    #: difference, a budget. Without one, a conclusions section can only report
+    #: the estimate; with one it can say whether the interval settles the
+    #: question, which is the sentence a reader actually wants.
+    threshold: float | None = None
+    #: Which direction counts as a good outcome, for reading the comparison.
+    beneficial: Literal["lower", "higher", "either"] = "either"
 
     def stated(self) -> str:
         """The quantity as prose: point, unit, and interval with its provenance."""
@@ -86,7 +93,40 @@ class Quantity(Spec):
             out.extend([self.interval.lower, self.interval.upper])
             if self.interval.mass is not None:
                 out.append(self.interval.mass)
+        if self.threshold is not None:
+            out.append(self.threshold)
         return tuple(out)
+
+    def against_threshold(self) -> str:
+        """Where the interval sits relative to ``threshold``: the checkable part.
+
+        One of ``"below"``, ``"above"``, ``"spans"`` (the interval contains the
+        threshold, so the data does not settle which side it is on), or
+        ``"no threshold"`` / ``"no interval"`` when the comparison cannot be
+        made at all. Deliberately a statement about the interval and not about
+        significance: a spanning interval is an unsettled question, not a
+        null result.
+        """
+        if self.threshold is None:
+            return "no threshold"
+        if self.interval is None:
+            return "no interval"
+        if self.interval.upper < self.threshold:
+            return "below"
+        if self.interval.lower > self.threshold:
+            return "above"
+        return "spans"
+
+    def settles(self) -> bool:
+        """Whether the interval lies wholly on one side of the threshold."""
+        return self.against_threshold() in ("below", "above")
+
+    def is_beneficial(self) -> bool | None:
+        """Whether the interval sits wholly on the good side. ``None`` if unsettled."""
+        side = self.against_threshold()
+        if side not in ("below", "above") or self.beneficial == "either":
+            return None
+        return (side == "below") if self.beneficial == "lower" else (side == "above")
 
 
 class MethodStep(Spec):
@@ -183,6 +223,8 @@ def quantity_from(
     source: str = "",
     note: str = "",
     precision: int = 2,
+    threshold: float | None = None,
+    beneficial: Literal["lower", "higher", "either"] = "either",
 ) -> Quantity:
     """Build a ``Quantity`` from whatever axiom handed back.
 
@@ -203,6 +245,8 @@ def quantity_from(
             source=source or "interval",
             note=note or "point is the interval midpoint; no separate estimate was given",
             precision=precision,
+            threshold=threshold,
+            beneficial=beneficial,
         )
     if isinstance(value, bool):
         raise TypeError(f"{key!r}: a boolean is not a reportable quantity")
@@ -216,6 +260,8 @@ def quantity_from(
             source=source,
             note=note,
             precision=precision,
+            threshold=threshold,
+            beneficial=beneficial,
         )
     raw: object = getattr(value, "value", None)
     interval = getattr(value, "interval", None)
@@ -240,6 +286,8 @@ def quantity_from(
         source=source or type(value).__name__,
         note=note,
         precision=precision,
+        threshold=threshold,
+        beneficial=beneficial,
     )
 
 

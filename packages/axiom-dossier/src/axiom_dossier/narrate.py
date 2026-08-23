@@ -24,9 +24,10 @@ from dataclasses import dataclass, field
 from axiom.core import NonEmptyStr, Spec, Unsupported
 from axiom.report import Heading, Paragraph, Section
 
-from axiom_dossier import numbers
+from axiom_dossier import claims, numbers
 from axiom_dossier.evidence import Evidence
 from axiom_dossier.language import LIGHT_MODEL, Gemini, LanguageModel
+from axiom_dossier.sections import VERBOSITY, Verbosity
 
 __all__ = [
     "SECTION_INSTRUCTION",
@@ -45,8 +46,11 @@ declarative, no marketing register, no hedging beyond what the facts state.
 Absolute rules:
 - Never introduce a number that is not in the facts. Not a rounded one, not a
   restated one, not an approximate one, not a percentage you computed.
-- Never claim a result is significant, causal, robust, or confirmed unless the
-  facts say so in those terms.
+- Never claim a result is significant, causal, robust, proven or confirmed
+  unless the facts already say so in those words. These are checked, and a
+  single one that the record does not make gets the whole rewrite thrown away.
+- An interval that contains the decision threshold means the question is
+  unsettled. It does not mean there is no effect. Never write it as one.
 - Never add a citation, a p-value, a sample size, or a date.
 - Keep every interval attached to its estimate.
 - Cover what the draft covers and nothing else. The facts block is the whole
@@ -82,6 +86,23 @@ SECTION_INSTRUCTION = {
         "still standing, what each one licenses, and what would challenge it. Do "
         "not restate the design or repeat the estimate."
     ),
+    "introduction": (
+        "Rewrite the draft as the Introduction of a paper. State the question and "
+        "what would count as an answer. Do not state the result, and do not "
+        "speculate about why the question matters -- the record does not know."
+    ),
+    "discussion": (
+        "Rewrite the draft as the Discussion. Interpret the findings: what each "
+        "one means given where its interval sits relative to the decision "
+        "threshold, and what the identification does and does not license. Keep "
+        "every hedge in the draft -- an interval spanning the threshold means the "
+        "question is unsettled, never that there is no effect."
+    ),
+    "conclusions": (
+        "Rewrite the draft as the Conclusions. Answer the question in the first "
+        "sentence and state what the answer is conditional on. Be brief: a "
+        "conclusions section that runs long has started arguing."
+    ),
 }
 
 
@@ -98,16 +119,21 @@ class Narration(Spec):
     verified: bool = True
     narrated: bool = False
     rejected: tuple[str, ...] = ()
+    overclaimed: tuple[str, ...] = ()
 
     def summary(self) -> str:
         if not self.narrated:
             return f"{self.key}: generated text, not narrated"
         if self.verified:
-            return f"{self.key}: narrated by {self.model}, every numeral traced"
+            return f"{self.key}: narrated by {self.model}, every numeral and claim traced"
+        faults = []
+        if self.rejected:
+            faults.append(f"untraceable numeral(s): {', '.join(self.rejected)}")
+        if self.overclaimed:
+            faults.append(f"unlicensed claim(s): {', '.join(self.overclaimed)}")
         return (
             f"{self.key}: narration by {self.model} rejected "
-            f"({len(self.rejected)} untraceable numeral(s): {', '.join(self.rejected)}); "
-            "kept the generated text"
+            f"({'; '.join(faults)}); kept the generated text"
         )
 
 
@@ -138,7 +164,12 @@ def evidence_brief(evidence: Evidence) -> str:
             lines.append(f"  - {step.title}: {step.what} {step.why}".rstrip())
     standing = evidence.unresolved()
     if standing:
-        lines.append(f"UNRESOLVED ASSUMPTIONS: {', '.join(standing)}")
+        # Written as English, not as identifiers: a model handed
+        # "no_unmeasured_confounding" will faithfully print the underscores into
+        # the abstract, and a paper does not contain snake_case.
+        lines.append(
+            "UNRESOLVED ASSUMPTIONS: " + ", ".join(name.replace("_", " ") for name in standing)
+        )
     return "\n".join(lines)
 
 
@@ -150,17 +181,27 @@ def narrate_text(
     *,
     instruction: str = "",
     temperature: float = 0.2,
+    verbosity: Verbosity = "standard",
 ) -> Narration | Unsupported:
     """Rewrite ``draft`` against ``evidence``; keep the draft if the result drifts.
 
-    ``Unsupported`` only when the model could not be reached at all — a missing
-    extra, a missing key, an empty response. A model that answers and invents a
-    number is not an ``Unsupported``: it is a ``Narration`` with ``verified``
-    false, because the document can still be produced.
+    Two checks, and either one rejects. ``numbers.unverified`` catches a quantity
+    the record does not hold; ``claims.unlicensed`` catches an assertion it does
+    not make — "robust", "significant", "proves" — which is the failure mode a
+    discussion or conclusions section invites and which carries no numeral for
+    the first check to find.
+
+    ``Unsupported`` only when the model could not be reached at all: a missing
+    extra, a missing key, an empty response. A model that answers and overreaches
+    is not ``Unsupported``, it is a ``Narration`` with ``verified`` false,
+    because the document can still be produced.
     """
+    target = int(VERBOSITY[verbosity]["sentences"])
     prompt = (
         f"<<facts>>\n{evidence_brief(evidence)}\n<<end>>\n\n"
-        f"{instruction or 'Rewrite the draft below.'}\n\n"
+        f"{instruction or 'Rewrite the draft below.'}\n"
+        f"Aim for about {target} sentences; cover the draft's content rather than "
+        "padding to length.\n\n"
         f"DRAFT:\n{draft}\n"
     )
     produced = model.generate(prompt, system=SYSTEM, temperature=temperature)
@@ -171,15 +212,17 @@ def narrate_text(
         return Unsupported(
             reason=f"{model.name} returned an empty rewrite", detail={"section": key}
         )
-    bad = numbers.unverified(text, evidence)
-    if bad:
+    bad_numbers = numbers.unverified(text, evidence)
+    bad_claims = claims.unlicensed(text, evidence)
+    if bad_numbers or bad_claims:
         return Narration(
             key=key,
             text=draft,
             model=model.name,
             verified=False,
             narrated=True,
-            rejected=tuple(dict.fromkeys(lit.text for lit in bad)),
+            rejected=tuple(dict.fromkeys(lit.text for lit in bad_numbers)),
+            overclaimed=tuple(dict.fromkeys(c.text.lower() for c in bad_claims)),
         )
     return Narration(key=key, text=text, model=model.name, verified=True, narrated=True)
 
@@ -236,7 +279,12 @@ class Narrator:
     light: LanguageModel = field(default_factory=lambda: Gemini(LIGHT_MODEL))
 
     def section(
-        self, section: Section, evidence: Evidence, *, key: str = ""
+        self,
+        section: Section,
+        evidence: Evidence,
+        *,
+        key: str = "",
+        verbosity: Verbosity = "standard",
     ) -> tuple[Section, Narration]:
         """Narrate one section's prose, returning the section to render and the record.
 
@@ -249,7 +297,12 @@ class Narrator:
         if not draft:
             return section, Narration(key=name, text="", model="", narrated=False)
         out = narrate_text(
-            name, draft, evidence, self.prose, instruction=SECTION_INSTRUCTION.get(name, "")
+            name,
+            draft,
+            evidence,
+            self.prose,
+            instruction=SECTION_INSTRUCTION.get(name, ""),
+            verbosity=verbosity,
         )
         if isinstance(out, Unsupported):
             return section, Narration(
@@ -259,17 +312,26 @@ class Narrator:
             return section, out
         return _with_prose(section, out.text), out
 
-    def abstract(self, evidence: Evidence, *, sentences: int = 4) -> Narration | Unsupported:
-        """A short abstract from the evidence alone, on the cheap model."""
-        draft = evidence_brief(evidence)
+    def abstract(
+        self, evidence: Evidence, *, verbosity: Verbosity = "standard"
+    ) -> Narration | Unsupported:
+        """A structured abstract from the evidence alone, on the cheap model.
+
+        Compression, not judgement — which is exactly the job the light model is
+        for, and why paying flagship rates for it would be waste.
+        """
+        sentences = {"brief": 3, "standard": 5, "full": 8}[verbosity]
         return narrate_text(
             "abstract",
-            draft,
+            evidence_brief(evidence),
             evidence,
             self.light,
             instruction=(
-                f"Write an abstract of at most {sentences} sentences for the report these "
-                "facts describe. State the question, what was estimated, the headline "
-                "quantity with its interval, and the strongest standing assumption."
+                f"Write a structured abstract of at most {sentences} sentences for the "
+                "report these facts describe, in the order Objective, Methods, Results, "
+                "Conclusions, as continuous prose without those labels. State the "
+                "question, how the effect is identified, the headline quantity with its "
+                "interval, and the strongest standing assumption."
             ),
+            verbosity=verbosity,
         )

@@ -34,13 +34,29 @@ trust a model can see exactly which paragraphs it touched.
 
 from __future__ import annotations
 
-from axiom_dossier.dossier import DEFAULT_SECTIONS, Dossier, build, context_for
+from axiom_dossier.claims import CLAIM_WORDS, Claim, licensed_claims
+from axiom_dossier.claims import unlicensed as unlicensed_claims
+from axiom_dossier.dossier import (
+    DEFAULT_SECTIONS,
+    JOURNAL_SECTIONS,
+    Dossier,
+    Style,
+    build,
+    context_for,
+)
 from axiom_dossier.evidence import (
     Evidence,
     EvidenceBuilder,
     MethodStep,
     Quantity,
     quantity_from,
+)
+from axiom_dossier.interpret import conclusions_section, discussion_section, reading_of
+from axiom_dossier.journal import (
+    JOURNAL_THEME,
+    abstract_section,
+    introduction_section,
+    numbered,
 )
 from axiom_dossier.language import (
     LIGHT_MODEL,
@@ -58,6 +74,8 @@ from axiom_dossier.narrate import (
 )
 from axiom_dossier.numbers import licensed_numbers, literals, unverified
 from axiom_dossier.sections import (
+    VERBOSITY,
+    Verbosity,
     assumption_rows,
     diagnostics_section,
     limitations_section,
@@ -70,11 +88,15 @@ from axiom_dossier.sections import (
 __version__ = "0.1.0"
 
 __all__ = [
+    "CLAIM_WORDS",
+    "Claim",
     "DEFAULT_SECTIONS",
     "Dossier",
     "Evidence",
     "EvidenceBuilder",
     "Gemini",
+    "JOURNAL_SECTIONS",
+    "JOURNAL_THEME",
     "LIGHT_MODEL",
     "LanguageModel",
     "MethodStep",
@@ -82,21 +104,32 @@ __all__ = [
     "Narrator",
     "Offline",
     "PROSE_MODEL",
-    "SECTION_INSTRUCTION",
     "Quantity",
+    "SECTION_INSTRUCTION",
+    "Style",
+    "VERBOSITY",
+    "Verbosity",
+    "abstract_section",
     "assumption_rows",
     "build",
+    "conclusions_section",
     "context_for",
     "diagnostics_section",
+    "discussion_section",
     "evidence_brief",
+    "introduction_section",
+    "licensed_claims",
     "licensed_numbers",
     "limitations_section",
     "literals",
     "methods_section",
     "narrate_text",
+    "numbered",
     "provenance_section",
     "quantity_from",
+    "reading_of",
     "results_section",
     "standing_assumptions",
+    "unlicensed_claims",
     "unverified",
 ]

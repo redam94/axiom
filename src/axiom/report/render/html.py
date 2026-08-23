@@ -53,7 +53,7 @@ def _css(theme: Theme) -> str:
 body {{
   margin: 0; padding: {theme.margin}pt;
   background: {theme.background_color}; color: {theme.text_color};
-  font-family: {theme.font}, system-ui, -apple-system, sans-serif;
+  font-family: {theme.font}, {theme.font_fallback};
   font-size: {theme.base_size}pt; line-height: 1.55;
 }}
 main {{ max-width: {width * 1.6}pt; margin: 0 auto; }}

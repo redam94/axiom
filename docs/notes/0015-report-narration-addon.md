@@ -103,6 +103,63 @@ fix was kept.
 This is a fix to axiom proper, not to the add-on, and it improves every table
 axiom has ever rendered to PDF.
 
+## D15.6 — Interpretation, and the second gate it required
+
+The first version stopped at reporting. Adding a **Discussion** and a
+**Conclusions** section means adding the two places a report is most likely to
+lie, so two things went in with them.
+
+**Interpretation is read off a threshold, not judged.** A `Quantity` now carries
+the value the decision turns on, and the reading is derived from where its
+interval sits relative to that value: wholly on one side settles the question,
+containing it does not. The distinction is made explicit in the generated text
+because it is the one applied work destroys most often — *an interval spanning
+the threshold is an unsettled question, not a finding of no effect.* The reading
+also inherits the identification verdict, and carries that qualifier in every
+sentence rather than only in the section's preamble, so a line quoted out of a
+discussion does not lose it.
+
+**`claims.unlicensed` is the second gate.** The numeric check cannot see "the
+effect is robust" or "this proves the treatment works" — sentences with no
+numeral at all, and exactly the sentences a conclusions section invites. A claim
+word is now licensed only if the evidence record already uses it, on the same
+principle as a number, and either gate failing rejects the narration. This was
+the open item the first version recorded, and adding an interpretation section
+without it would have been indefensible.
+
+## D15.7 — Verbosity changes the draft, not the prompt
+
+Asking a model to "write more" about a three-line draft is asking it to pad.
+`brief` / `standard` / `full` therefore change what the *generated* draft
+contains — per-step detail, per-finding headings, the ledger, the recaps — and
+the narration inherits the richer draft along with a longer sentence target. A
+level is a row in one table, so a level that forgets a switch is a test failure
+rather than a silent difference.
+
+## D15.8 — Journal style is a shape before it is a typeface
+
+`style="journal"` changes the section order to the one a reader navigates by
+habit — abstract, introduction, methods, results, checking, discussion,
+conclusions, limitations, provenance — numbers the headings and the `Table N.`
+captions, and applies a serif theme. The order is the substantive half: putting
+discussion before results, or dropping limitations, produces a document that
+reads as marketing whatever face it is set in.
+
+One axiom change was needed. `Theme.font` is used verbatim by all three
+renderers, but `Times-Roman` is a PostScript name rather than a CSS family, so
+the PDF rendered serif while the HTML silently fell back to sans. `Theme` now
+carries a `font_fallback` that HTML uses, defaulting to the previous hard-coded
+chain, so a serif theme renders as one in every format.
+
+## D15.9 — Two more things reading the output caught
+
+Rendering the paper and looking at it found what the tests did not: a per-finding
+heading at `full` verbosity printed the same words as the metric block directly
+beneath it, and assumption names reached the narrated abstract as
+`no_unmeasured_confounding`, because the prompt's fact block passed identifiers
+straight through. Both are fixed. This is the second time in this package's
+short life that rendering and reading found defects nothing else did.
+
 ## What is open
 
 * **Figures.** The dossier generates prose and tables. A `Figure` block pointing
@@ -110,8 +167,10 @@ axiom has ever rendered to PDF.
   *selects* which figures a report should carry.
 * **Narration is per section.** A whole-document pass could remove the residual
   repetition between sections that per-section instructions only reduce.
-* **The gate is numeric only.** A claim like "the effect is robust" carries no
-  numeral and is checked by nothing. Constraining the vocabulary of claims is
-  the obvious next control.
+* **The claim list is a list.** It catches the vocabulary of overreach, not
+  overreach itself: "the data leave little room for doubt" passes both gates.
+* **No references section.** A paper cites; this one has a provenance appendix
+  instead, which is the right artefact for a generated report and not the same
+  thing.
 * **One provider.** `LanguageModel` is a Protocol and `Gemini` is one
   implementation; nothing else is written yet.

@@ -31,7 +31,10 @@ from axiom_dossier import EvidenceBuilder, build
 evidence = (
     EvidenceBuilder("HYPER-3", "Does 40 mg lower systolic pressure?")
     .verdict(verdict)                                     # from axiom.identify
-    .finding("contrast", result, label="40 mg vs control", unit="mmHg")
+    .finding(
+        "contrast", result, label="40 mg vs control", unit="mmHg",
+        threshold=-5.0, beneficial="lower",               # what the decision turns on
+    )
     .diagnostic("coverage", 0.94, label="Interval coverage")
     .build()
 )
@@ -39,6 +42,40 @@ evidence = (
 built = build(evidence)          # no language model involved
 built.write("hyper3.pdf")
 ```
+
+### Journal style, and how long the report is
+
+```python
+built = build(evidence, style="journal", verbosity="full")
+```
+
+`style="journal"` changes both the shape and the type. The shape is the order a
+reader navigates by habit — abstract, introduction, methods, results, model
+checking, **discussion**, **conclusions**, limitations, provenance — with
+numbered headings and numbered `Table N.` captions. The type is serif, tight and
+almost monochrome. `style="plain"` is the readout: no abstract, no discussion,
+no numbering.
+
+`verbosity` is `brief` / `standard` / `full`, and it changes **what the draft
+contains**, not just how long the model is told to write. Asking a model to
+"write more" about a three-line draft is asking it to pad; `full` adds per-step
+detail, per-finding headings, the ledger and the assumption recaps, and the
+narration inherits the richer draft.
+
+### Interpretation, without the overreach
+
+A conclusions section is where a report is most likely to lie, so interpretation
+here is mechanical. Give a finding a `threshold` — a null, a minimum worthwhile
+difference, a budget — and the discussion reads the interval against it:
+
+- interval wholly on one side → *the question is settled in that direction*;
+- interval containing it → *unsettled*, and explicitly **not** a finding of no
+  effect, which is the distinction applied work destroys most often;
+- no threshold → the estimate is stated and the report stops short of judging it.
+
+The reading also inherits the identification verdict: an unidentified effect is
+described as *the observed difference*, never as what the treatment did, and the
+qualifier travels with each sentence rather than sitting only in a preamble.
 
 ### 2. A model may improve the prose — but never the numbers
 
@@ -51,9 +88,18 @@ built.rejected()                                 # narrations that failed the ch
 
 The model is never asked to analyse anything. It is given the evidence and a
 draft that is already correct, and asked to make the draft read better. Then the
-result is checked, mechanically: **every numeral in the returned text must trace
-to a recorded quantity.** One that does not gets the narration rejected and the
-generated draft kept, and the document says so in its own provenance section.
+result is checked, mechanically, against **two** gates:
+
+- **numbers** — every numeral in the returned text must trace to a recorded
+  quantity;
+- **claims** — every claim word must already appear in the record. "Robust",
+  "significant", "proves", "definitive", "always": a causal analysis does not
+  get these for free, and they carry no numeral for the first gate to catch.
+  This one exists because a conclusions section is precisely where a model
+  reaches for them.
+
+Either gate failing rejects the narration and keeps the generated draft, and the
+document says so in its own provenance section.
 
 That check is the reason this is safe to use. Rounding is allowed in the
 direction a writer actually rounds — a value of `12.43` licenses "12.4" and
@@ -98,8 +144,11 @@ extra or a missing key is a typed `Unsupported` naming what to install, not an
 ```
 src/axiom_dossier/
   evidence.py    the record a report is written from — and the only place its numbers come from
-  sections.py    methods / results / diagnostics / limitations, generated from typed results
-  numbers.py     the provenance check: which numerals in this prose are invented?
+  sections.py    methods / results / diagnostics / limitations, plus the verbosity table
+  interpret.py   discussion and conclusions, read mechanically against the threshold
+  journal.py     the paper shape: abstract, introduction, numbering, the serif theme
+  numbers.py     gate one — which numerals in this prose are invented?
+  claims.py      gate two — which claims does the record not actually make?
   language.py    the model seam — a Protocol, a Gemini implementation, an Offline stand-in
   narrate.py     rewrite a draft, verify it, keep the draft when it drifts
   dossier.py     assemble the whole document and write it out
@@ -111,7 +160,12 @@ src/axiom_dossier/
 cd packages/axiom-dossier
 uv run pytest                    # offline; no key, no network
 uv run pytest -m live            # calls the real API; needs GEMINI_API_KEY
+
+python examples/hyper3.py --journal --full --narrate
 ```
+
+The live tests are deselected by `addopts` even when a key is in the
+environment, so a default `pytest` never spends money.
 
 `Offline` is a real `LanguageModel`, not a mock, so the narration path is
 exercised end to end without a network. The `live` tests are deselected by
