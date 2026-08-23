@@ -105,6 +105,10 @@ from axiom_dossier.sections import (
 from axiom_dossier.tables import design_rows, diagnostics_rows, findings_rows, tables_for
 from axiom_dossier.walkthrough import evidence_from_record, tables_from_record
 
+#: The notebook-reading pipeline is a subpackage rather than a re-export:
+#: it needs langgraph, and importing axiom_dossier must not.
+#:
+#:     from axiom_dossier.agent import run_pipeline
 __version__ = "0.1.0"
 
 __all__ = [

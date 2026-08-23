@@ -200,6 +200,55 @@ src/axiom_dossier/
   dossier.py     assemble the whole document and write it out
 ```
 
+## The agent: reading a whole case study
+
+```bash
+pip install "axiom-dossier[agent]"
+python examples/hypertension_agent.py --model --execute
+```
+
+The HYPER-3 case study is six notebooks, ninety-two code cells and **no stored
+outputs** — the repository strips them, so every number in it exists only while
+the code is running. A report on it cannot be assembled by parsing anything. So
+`axiom_dossier.agent` executes the series in one namespace and reports on what
+it leaves behind, using LangGraph to make the order a declared thing and the
+repair loop an edge rather than a `while`:
+
+```
+read ─▶ run ─▶ label ─▶ gaps ─▶ fill ─▶ assemble ─▶ verify ─┐
+                         ▲                                  │
+                         └──────────── unresolved ──────────┘
+```
+
+| stage | model? | what it does |
+|---|---|---|
+| `read` | no | parse the notebook series and the planning notes |
+| `run` | no | execute every notebook in one namespace; harvest per book |
+| `label` | yes | name each harvested object from the prose that introduced it |
+| `gaps` | yes | find figures the prose describes that the run never drew |
+| `fill` | yes | write and run Python that draws them |
+| `assemble` | no | build the `Evidence` and the document |
+| `verify` | no | check the run; loop back if a gap is still open |
+
+**The three model stages name and notice; they never compute.** A variable
+called `itt` is not a label — the sentence above it in the notebook says what it
+is, and that is what the model reads. It is shown the variable, its type and its
+prose, never its value, because a model given the number puts the number in the
+label and the gates would then be checking prose against a model's own
+arithmetic. Every number still comes from executing the analysis, and everything
+reaching prose still passes the numeric and claim gates.
+
+On the real series it runs 6/6 notebooks, harvests 9 quantities and 8 figures,
+keeps the 5–6 that are findings rather than scaffolding, and closes the one or
+two gaps it finds by writing code — typically the sequential-monitoring
+trajectories against the harm boundary, which the notebooks compute and never
+plot as a standalone exhibit.
+
+`--execute` is a separate flag from `--model` because the fill stage runs
+model-written Python **in this process, with this process's permissions**. That
+is right for a developer tool pointed at a repository you already trust and
+wrong for anything else; `run_python` refuses without `allow_execution=True`.
+
 ## Two worked examples
 
 ```bash

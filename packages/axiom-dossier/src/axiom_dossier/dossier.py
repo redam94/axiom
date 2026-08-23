@@ -24,9 +24,9 @@ means the claims did not.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Any, Literal
 
 from axiom.core import Unsupported
 from axiom.report import Figure, Report, Section, Table, Theme
@@ -318,6 +318,7 @@ def build(
     authors: Sequence[str] = (),
     affiliation: str = "",
     author_note: str = "",
+    extra_figures: Mapping[str, tuple[Any, str]] | None = None,
 ) -> Dossier:
     """Turn evidence into a document. Narration is optional and never load-bearing.
 
@@ -383,9 +384,16 @@ def build(
     # only name an exhibit that has data behind it -- naming one that does not
     # would make `missing()` non-empty and the report unrenderable.
     exhibit_context: dict[str, object] = {}
+    extra_captions: list[tuple[str, str]] = []
     if exhibits != "none":
         exhibit_context.update(tables_for(evidence))
         exhibit_context.update(figures_for(evidence, theme=chosen_theme))
+        # Figures produced elsewhere -- by a notebook the agent ran, or by code
+        # it wrote to close a gap -- arrive already drawn. They are exhibits like
+        # any other and are gathered after the generated ones.
+        for key, (figure, description) in (extra_figures or {}).items():
+            exhibit_context[key] = figure
+            extra_captions.append((key, description))
     available = set(exhibit_context)
 
     built: list[Section] = []

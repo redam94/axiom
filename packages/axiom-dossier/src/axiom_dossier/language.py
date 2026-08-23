@@ -17,6 +17,12 @@ that serialize themselves into report provenance.
 is imported inside ``generate``. Importing this module, building a dossier and
 rendering every deterministic section all work with the extra absent; only the
 narration itself comes back as ``Unsupported`` naming what to install.
+
+The same holds for a call that starts and does not finish. A timeout or a
+transport error is reported as ``Unsupported`` rather than raised, because a
+document that is renderable from its generated prose must not be taken down by
+a network. The exception class and message travel in ``detail`` so the cause is
+still there to read.
 """
 
 from __future__ import annotations
@@ -90,7 +96,7 @@ class Gemini:
 
     model: str = PROSE_MODEL
     api_key_variable: str = ""
-    timeout_seconds: float = 60.0
+    timeout_seconds: float = 180.0
     max_output_tokens: int = 4096
     _client: list[object] = field(default_factory=list, repr=False, compare=False)
 
@@ -144,9 +150,20 @@ class Gemini:
             system_instruction=system or None,
             http_options=types.HttpOptions(timeout=int(self.timeout_seconds * 1000)),
         )
-        response = client.models.generate_content(  # type: ignore[attr-defined]
-            model=self.model, contents=prompt, config=config
-        )
+        try:
+            response = client.models.generate_content(  # type: ignore[attr-defined]
+                model=self.model, contents=prompt, config=config
+            )
+        except Exception as exc:  # noqa: BLE001 - returned as a typed failure
+            # A timeout or a transport error is the same kind of event as a
+            # missing key: the model could not be reached. Letting it propagate
+            # would take down a document that is perfectly renderable from its
+            # generated prose, which is the one thing narration must never do.
+            # The class and message are kept so the cause is not lost.
+            return Unsupported(
+                reason=f"{self.model} could not be reached: {type(exc).__name__}",
+                detail={"error": str(exc)[:300], "timeout_seconds": str(self.timeout_seconds)},
+            )
         text = getattr(response, "text", None)
         if not text:
             # An empty body is a real outcome (a safety block, an exhausted token

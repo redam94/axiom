@@ -37,6 +37,26 @@ and claim in the result was traced back to the evidence record before it was
 kept. The provenance section lists which model wrote which section. Re-running
 changes the wording and no number: the numbers come from the trial.
 
+## `hyper3-agent.{pdf,html}` — the whole case study, read by the agent
+
+```bash
+python examples/hypertension_agent.py --model --execute
+```
+
+Not written from one script that knows the trial: **read** from the six
+notebooks under `nbs/case-studies/hypertension/`, which store none of their
+outputs. The pipeline executes all ninety-two code cells in one namespace,
+harvests what they leave behind, labels each object from the prose that
+introduced it, notices which figures the prose describes that the run never
+drew, and writes the code that draws them.
+
+The planning and outcome notes (`docs/notes/0004`, `0005`, and the series
+README) are consolidated into the report's remarks.
+
+Figures here come from three places and the report does not pretend otherwise:
+the ones the notebooks drew, the ones this package generates from the evidence,
+and the one or two the agent wrote code to add.
+
 ## `readouts/*.{pdf,html}` — one per axiom example
 
 ```bash

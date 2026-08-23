@@ -30,7 +30,11 @@ render = ["axiom[report]>=1.0"]
 # Narration. google-genai is imported lazily and only when a Gemini model is
 # actually called, so importing axiom_dossier never needs it.
 gemini = ["google-genai>=1.0"]
-all = ["axiom-dossier[render,gemini]"]
+# The multi-stage pipeline that reads a notebook series and reports on it.
+# langgraph is imported inside build_graph(), so everything else in the package
+# works without it -- including the reports the pipeline eventually produces.
+agent = ["axiom-dossier[gemini,render]", "langgraph>=0.2", "langchain-core>=0.3"]
+all = ["axiom-dossier[render,gemini,agent]"]
 
 [dependency-groups]
 dev = [
