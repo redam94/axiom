@@ -57,6 +57,12 @@ def _styles(theme: Theme) -> dict[str, Any]:
         "metric_label": style("metric_label", theme.base_size * 0.85, theme.muted_color),
         "metric_value": style("metric_value", theme.title_size * 0.72, theme.accent_color),
         "caption": style("caption", theme.base_size * 0.9, theme.muted_color, spaceAfter=10),
+        # Table cells are Paragraphs rather than bare strings so that long text
+        # wraps inside its column. reportlab does not wrap a raw string: it draws
+        # it at full width and lets it run over the next column, which turns a
+        # table of statements into an unreadable overlap.
+        "cell": style("cell", theme.base_size * 0.85, theme.text_color),
+        "cell_head": style("cell_head", theme.base_size * 0.85, theme.muted_color),
     }
 
 
@@ -187,7 +193,12 @@ def render_pdf(resolved: ResolvedReport) -> bytes | Unsupported:
                     if block.caption:
                         story.append(Paragraph(_escape(block.caption), styles["caption"]))
                 case ResolvedTable():
-                    data = [list(block.columns)] + [list(r) for r in block.rows]
+                    data = [
+                        [Paragraph(_escape(str(c)), styles["cell_head"]) for c in block.columns]
+                    ] + [
+                        [Paragraph(_escape(str(c)), styles["cell"]) for c in row]
+                        for row in block.rows
+                    ]
                     table = Table(
                         data, colWidths=[frame_width / len(block.columns)] * len(block.columns)
                     )
@@ -199,9 +210,11 @@ def render_pdf(resolved: ResolvedReport) -> bytes | Unsupported:
                                 ("TEXTCOLOR", (0, 0), (-1, -1), HexColor(theme.text_color)),
                                 ("LINEBELOW", (0, 0), (-1, 0), 1.0, HexColor(theme.rule_color)),
                                 ("LINEBELOW", (0, 1), (-1, -2), 0.4, HexColor(theme.rule_color)),
-                                ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
-                                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                                # wrapped cells read top-aligned; RIGHT would ragged
+                                # the left edge of every multi-line statement
+                                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                                ("TOPPADDING", (0, 0), (-1, -1), 4),
                             ]
                         )
                     )
