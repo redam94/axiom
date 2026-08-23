@@ -12,6 +12,13 @@ reading a verdict about it. Unmeasured nodes are hollow and bidirected edges
 dashed, because those two are what separate a graph you can identify from one
 you cannot. `stability` draws what a resample settled and what it did not.
 
+Every subpackage that returns a result now has a figure of it: `convergence`
+for `infer`, `boundary` for `design`, `corrections` for `calibrate`,
+`panel_coverage` for `data`, `intervals` for `core`, `recovery` for `sim`,
+`unrolled` for `dynamics` and `transfer` for `estimands`. The subpackages
+without one — `io`, `build`, `adapters`, `report`, `display` — return
+plumbing rather than findings, and a chart of a file format is decoration.
+
 ## Notebooks
 
 The executed series under `nbs/viz/`:

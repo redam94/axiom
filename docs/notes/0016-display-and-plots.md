@@ -63,12 +63,48 @@ edge whose direction observation cannot settle — more rows will not move it an
 only an intervention will — while a short bar is an edge the data is unsure about
 at all. One number would lose the distinction that decides what to do next.
 
+## D16.3 — One figure per subpackage that returns a result
+
+The two above left nine subpackages without a picture, which was the wrong
+place to stop. Eight more, each drawing what its subpackage actually returns:
+
+| subpackage | figure | what it answers |
+|---|---|---|
+| `infer` | `convergence` | may I use this sampler's output? |
+| `design` | `boundary` | when did we promise to stop? |
+| `calibrate` | `corrections` | which correction moved the number? |
+| `data` | `panel_coverage` | where are the gaps? |
+| `core` | `intervals` | do these overlap? |
+| `sim` | `recovery` | did the estimator find what was there? |
+| `dynamics` | `unrolled` | does feedback really become a DAG? |
+| `estimands` | `transfer` | what does moving this result cost? |
+
+`io`, `build`, `adapters`, `report` and `display` get none, and that is the
+honest answer rather than a gap: they return plumbing, and a chart of a file
+format is decoration.
+
+Two decisions worth keeping. **`boundary` puts the alpha spent in the hover
+rather than on a second axis** — two scales on one plot is the chart mistake
+this package refuses everywhere else, and a stopping rule is one scale. And
+**`corrections` is a waterfall**, because the useful question about a
+calibrated estimate is never "what is the answer" but "which correction moved
+it", which the corrected number alone cannot answer.
+
+`causal_graph` and `unrolled` share one layout function. That was not tidiness:
+an unrolled system's *depth is time*, so the same layered algorithm puts the
+periods across the page with no parsing of column names, and a cycle that
+survived the unroll shows as a node pushed to the far right rather than hidden.
+
+**D16.3a — a test caught the figure drawing half the graph.** `Unrolled.columns`
+holds the exogenous data columns only; the solved variables are the keys of
+`expressions`. Drawing `columns` alone left every endogenous node out and every
+remaining node a root, so the whole system rendered at depth zero — a picture of
+time with no time in it, which looked plausible enough to ship.
+
 ## What is still open
 
-* **Nine subpackages still have no plot.** `design` has boundaries and power
-  curves, `meta` has more than a forest, `surface` has more than one curve. The
-  two added here are the two that were most conspicuously missing, not a
-  complete set.
+* **`meta` and `surface` have one figure each and deserve more.** `meta` has
+  heterogeneity and shrinkage; `surface` has more than one curve.
 * **The card has no table row.** A `StabilityReport` with forty edges renders
   forty rows; a real table type would render it as a table and truncate.
 * **`enable()` registers `text/plain` only.** A notebook could have an HTML

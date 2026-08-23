@@ -42,16 +42,24 @@ from axiom.core.intervals import IntervalDefinition
 from axiom.surface.bands import ResponseBand, marginal_band, response_band
 
 __all__ = [
-    "causal_graph",
-    "stability",
     "available",
     "backtest_plot",
+    "boundary",
+    "causal_graph",
+    "convergence",
+    "corrections",
     "coverage_plot",
     "forest",
     "funnel",
+    "intervals",
+    "panel_coverage",
+    "recovery",
     "response_curve",
     "sbc_ranks",
     "spec_curve_plot",
+    "stability",
+    "transfer",
+    "unrolled",
 ]
 
 Array = npt.NDArray[np.float64]
@@ -480,6 +488,125 @@ def backtest_plot(backtest: Any) -> Any | Unsupported:
 # -- structure -----------------------------------------------------------------------
 
 
+def _layered_from(
+    nodes: Sequence[str], parents: dict[str, set[str]]
+) -> dict[str, tuple[float, float]]:
+    """Positions from an adjacency map, so a DAG and an unrolled system share it."""
+    depth: dict[str, int] = {}
+    remaining = list(nodes)
+    for _ in range(len(remaining) + 1):
+        progressed = False
+        for node in list(remaining):
+            known = [p for p in parents.get(node, set()) if p in depth]
+            if len(known) == len(parents.get(node, set())):
+                depth[node] = 1 + max((depth[p] for p in known), default=-1)
+                remaining.remove(node)
+                progressed = True
+        if not remaining or not progressed:
+            break
+    for node in remaining:  # a cycle: put it after everything it does reach
+        depth[node] = max(depth.values(), default=0) + 1
+    by_depth: dict[int, list[str]] = {}
+    for node in nodes:
+        by_depth.setdefault(depth.get(node, 0), []).append(node)
+    positions: dict[str, tuple[float, float]] = {}
+    for level, level_nodes in by_depth.items():
+        for i, node in enumerate(sorted(level_nodes)):
+            positions[node] = (float(level), -(i - (len(level_nodes) - 1) / 2.0))
+    return positions
+
+
+def _draw_graph(
+    go: Any,
+    nodes: Sequence[str],
+    edges: Sequence[tuple[str, str]],
+    *,
+    bidirected: Sequence[tuple[str, str]] = (),
+    hollow: Sequence[str] = (),
+    height: float = 420.0,
+    x_title: str = "",
+) -> Any:
+    """The shared drawing: layered nodes, arrows for edges, dashes for bidirected.
+
+    ``go`` is passed in rather than fetched: every caller has already checked
+    that plotly imports, and fetching it again here would mean handling a
+    failure that cannot happen at a point with nothing useful to say about it.
+    """
+    parents: dict[str, set[str]] = {n: set() for n in nodes}
+    for a, b in edges:
+        parents.setdefault(b, set()).add(a)
+        parents.setdefault(a, set())
+    position = _layered_from(list(nodes), parents)
+
+    def arrow(a: str, b: str, dashed: bool) -> dict[str, Any]:
+        x0, y0 = position[a]
+        x1, y1 = position[b]
+        return {
+            "x": x0,
+            "y": y0,
+            "ax": x1,
+            "ay": y1,
+            "xref": "x",
+            "yref": "y",
+            "axref": "x",
+            "ayref": "y",
+            "showarrow": True,
+            "arrowhead": 0 if dashed else 3,
+            "arrowsize": 1.1,
+            "arrowwidth": 1.4,
+            "arrowcolor": "#8a8f98" if dashed else "#3c4148",
+            "opacity": 0.9,
+            "standoff": 14,
+            "startstandoff": 14,
+        }
+
+    annotations = [arrow(b, a, False) for a, b in edges if a in position and b in position]
+    annotations += [arrow(b, a, True) for a, b in bidirected if a in position and b in position]
+    faint = set(hollow)
+    xs = [position[n][0] for n in nodes]
+    ys = [position[n][1] for n in nodes]
+    figure = go.Figure(
+        go.Scatter(
+            x=xs,
+            y=ys,
+            mode="markers+text",
+            text=list(nodes),
+            textposition="middle center",
+            textfont={"size": 11},
+            marker={
+                "size": 46,
+                "color": ["#ffffff" if n in faint else "#e8edf3" for n in nodes],
+                "line": {
+                    "width": [2.0 if n in faint else 1.2 for n in nodes],
+                    "color": ["#8a8f98" if n in faint else "#3c4148" for n in nodes],
+                },
+            },
+            hovertext=[
+                f"{n}{chr(32)+chr(40)+chr(117)+chr(41)}" if n in faint else n for n in nodes
+            ],
+            hoverinfo="text",
+            showlegend=False,
+        )
+    )
+    figure.update_layout(
+        annotations=annotations,
+        height=height,
+        xaxis={
+            "visible": bool(x_title),
+            "title": x_title,
+            "showgrid": False,
+            "range": [min(xs) - 0.6, max(xs) + 0.6],
+            "showticklabels": False,
+        },
+        yaxis={"visible": False, "range": [min(ys) - 0.8, max(ys) + 0.8]},
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+        margin={"l": 20, "r": 20, "t": 20, "b": 40 if x_title else 20},
+        showlegend=False,
+    )
+    return figure
+
+
 def _layered(graph: Any) -> dict[str, tuple[float, float]]:
     """Positions for a DAG: depth from the roots across, spread within a depth down.
 
@@ -518,75 +645,19 @@ def causal_graph(graph: Any, *, height: float = 420.0) -> Any | Unsupported:
     go = _graph_objects()
     if isinstance(go, Unsupported):
         return go
-    bad = _missing_attributes(graph, ("nodes", "edges", "topological_order"), "causal graph")
+    bad = _missing_attributes(graph, ("nodes", "edges"), "causal graph")
     if bad is not None:
         return bad
     if not graph.nodes:
         return Unsupported(reason="the graph has no nodes to draw")
-
-    position = _layered(graph)
-    figure = go.Figure()
-
-    def arrow(a: str, b: str, dashed: bool) -> dict[str, Any]:
-        x0, y0 = position[a]
-        x1, y1 = position[b]
-        return {
-            "x": x0,
-            "y": y0,
-            "ax": x1,
-            "ay": y1,
-            "xref": "x",
-            "yref": "y",
-            "axref": "x",
-            "ayref": "y",
-            "showarrow": True,
-            "arrowhead": 0 if dashed else 3,
-            "arrowsize": 1.1,
-            "arrowwidth": 1.4,
-            "arrowcolor": "#8a8f98" if dashed else "#3c4148",
-            "opacity": 0.9,
-            "standoff": 14,
-            "startstandoff": 14,
-        }
-
-    annotations = [arrow(b, a, False) for a, b in graph.edges]
-    annotations += [arrow(b, a, True) for a, b in getattr(graph, "bidirected", ())]
-
-    unmeasured = set(getattr(graph, "unmeasured", ()))
-    xs = [position[n][0] for n in graph.nodes]
-    ys = [position[n][1] for n in graph.nodes]
-    figure.add_trace(
-        go.Scatter(
-            x=xs,
-            y=ys,
-            mode="markers+text",
-            text=list(graph.nodes),
-            textposition="middle center",
-            textfont={"size": 12},
-            marker={
-                "size": 46,
-                "color": ["#ffffff" if n in unmeasured else "#e8edf3" for n in graph.nodes],
-                "line": {
-                    "width": [2.0 if n in unmeasured else 1.2 for n in graph.nodes],
-                    "color": ["#8a8f98" if n in unmeasured else "#3c4148" for n in graph.nodes],
-                },
-            },
-            hovertext=[f"{n}{' (unmeasured)' if n in unmeasured else ''}" for n in graph.nodes],
-            hoverinfo="text",
-            showlegend=False,
-        )
-    )
-    figure.update_layout(
-        annotations=annotations,
+    return _draw_graph(
+        go,
+        list(graph.nodes),
+        list(graph.edges),
+        bidirected=list(getattr(graph, "bidirected", ())),
+        hollow=list(getattr(graph, "unmeasured", ())),
         height=height,
-        xaxis={"visible": False, "range": [min(xs) - 0.6, max(xs) + 0.6]},
-        yaxis={"visible": False, "range": [min(ys) - 0.8, max(ys) + 0.8]},
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="#ffffff",
-        margin={"l": 20, "r": 20, "t": 20, "b": 20},
-        showlegend=False,
     )
-    return figure
 
 
 def stability(report: Any, *, height: float = 380.0) -> Any | Unsupported:
@@ -634,3 +705,394 @@ def stability(report: Any, *, height: float = 380.0) -> Any | Unsupported:
         legend={"orientation": "h", "y": -0.2},
     )
     return figure
+
+
+# -- one per subpackage that returns something worth seeing ----------------------------
+
+
+def convergence(report: Any, *, height: float = 380.0) -> Any | Unsupported:
+    """R-hat per parameter against the threshold that decides the run. (``infer``)
+
+    The question a sampler's output actually poses is "may I use this?", and the
+    answer is per parameter rather than global — one bad row is enough. Drawing
+    every row against the threshold puts the failing ones where they cannot be
+    missed, which a table of forty numbers does not.
+
+    Rows with no R-hat (a single chain, a constant) are drawn at zero and named,
+    because "not computed" is a different state from "fine" and collapsing them
+    is how an unchecked parameter passes for a checked one.
+    """
+    go = _graph_objects()
+    if isinstance(go, Unsupported):
+        return go
+    bad = _missing_attributes(report, ("rows",), "convergence report")
+    if bad is not None:
+        return bad
+    rows = list(report.rows)
+    if not rows:
+        return Unsupported(reason="the report has no parameters")
+
+    limit = getattr(getattr(report, "thresholds", None), "rhat_max", None)
+    values = [(r.rhat if r.rhat is not None else 0.0) for r in rows]
+    names = [r.name for r in rows]
+    failed = [limit is not None and r.rhat is not None and r.rhat > limit for r in rows]
+    figure = go.Figure(
+        go.Bar(
+            x=values,
+            y=names,
+            orientation="h",
+            marker={"color": ["#b5453b" if f else "#2f7fd1" for f in failed]},
+            hovertemplate="%{y}<br>R-hat %{x:.4f}<extra></extra>",
+        )
+    )
+    if limit is not None:
+        figure.add_vline(
+            x=limit,
+            line={"dash": "dash", "width": 1.2, "color": "#5b6472"},
+            annotation_text=f"threshold {limit:g}",
+            annotation_position="top",
+        )
+    figure.update_layout(
+        height=height,
+        xaxis={"title": "R-hat"},
+        yaxis={"autorange": "reversed"},
+        showlegend=False,
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+    )
+    return figure
+
+
+def boundary(rule: Any, *, height: float = 360.0) -> Any | Unsupported:
+    """The stopping threshold at each look, which is the protocol sentence. (``design``)
+
+    A group-sequential design is a promise about when you will stop, and the
+    promise is these numbers. Drawn as a step, because the threshold holds
+    *until* the next look rather than sliding between them — a smooth line
+    would draw a rule nobody agreed to.
+
+    The alpha spent by each look rides in the hover rather than on a second
+    axis: two scales on one plot is the chart mistake this package refuses
+    everywhere else.
+    """
+    go = _graph_objects()
+    if isinstance(go, Unsupported):
+        return go
+    bad = _missing_attributes(rule, ("z", "kind"), "boundary")
+    if bad is not None:
+        return bad
+    z = list(rule.z)
+    if not z:
+        return Unsupported(reason="the boundary has no looks")
+    spent = list(getattr(rule, "spent", ())) or [float("nan")] * len(z)
+    looks = list(range(1, len(z) + 1))
+    figure = go.Figure(
+        go.Scatter(
+            x=looks,
+            y=z,
+            mode="lines+markers",
+            line={"shape": "hv", "width": 2.0, "color": "#b5453b"},
+            marker={"size": 9},
+            customdata=spent,
+            hovertemplate=(
+                "look %{x}<br>stop beyond z = %{y:.3f}"
+                "<br>alpha spent by here: %{customdata:.4f}<extra></extra>"
+            ),
+            name=f"{rule.kind} boundary",
+        )
+    )
+    figure.update_layout(
+        height=height,
+        xaxis={"title": "look", "dtick": 1},
+        yaxis={"title": "monitoring statistic (z)"},
+        showlegend=False,
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+    )
+    return figure
+
+
+def corrections(applied: Sequence[Any], *, height: float = 360.0) -> Any | Unsupported:
+    """What each correction did to the number, in order. (``calibrate``)
+
+    A calibrated estimate is the raw one with a series of operators applied, and
+    the useful question is never "what is the answer" but "which correction
+    moved it, and by how much". A waterfall answers that; the single corrected
+    number does not, and a reader who cannot see the steps has to take the
+    result on trust.
+    """
+    go = _graph_objects()
+    if isinstance(go, Unsupported):
+        return go
+    steps = list(applied)
+    if not steps:
+        return Unsupported(reason="no corrections were applied")
+    missing = _missing_attributes(steps[0], ("name", "counterfactual", "corrected"), "correction")
+    if missing is not None:
+        return missing
+
+    labels = ["uncorrected"] + [c.name.replace("_", " ") for c in steps] + ["corrected"]
+    start = float(steps[0].counterfactual)
+    deltas = [float(c.corrected) - float(c.counterfactual) for c in steps]
+    measures = ["absolute"] + ["relative"] * len(steps) + ["total"]
+    values = [start, *deltas, 0.0]
+    figure = go.Figure(
+        go.Waterfall(
+            orientation="v",
+            measure=measures,
+            x=labels,
+            y=values,
+            connector={"line": {"color": "#b8bec7"}},
+            increasing={"marker": {"color": "#2f7fd1"}},
+            decreasing={"marker": {"color": "#b5453b"}},
+            totals={"marker": {"color": "#3c4148"}},
+            hovertemplate="%{x}<br>%{y:+.4g}<extra></extra>",
+        )
+    )
+    figure.update_layout(
+        height=height,
+        yaxis={"title": "estimate"},
+        showlegend=False,
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+    )
+    return figure
+
+
+def panel_coverage(panel: Any, *, height: float = 400.0, max_units: int = 60) -> Any | Unsupported:
+    """Which unit was observed in which period. (``data``)
+
+    Every panel method that follows depends on this shape, and a gap in it is
+    the thing that quietly turns an estimator into a different estimator. It is
+    also the one property of a dataset that a table cannot show and a picture
+    can: unbalance has a *pattern*, and the pattern says whether units dropped
+    out, arrived late, or were never there.
+    """
+    go = _graph_objects()
+    if isinstance(go, Unsupported):
+        return go
+    bad = _missing_attributes(panel, ("frame", "roles"), "panel")
+    if bad is not None:
+        return bad
+    # `frame` and `roles` are properties on Panel, not methods
+    frame = panel.frame
+    roles = panel.roles
+    unit, time = roles.unit, roles.time
+    units = list(dict.fromkeys(frame[unit]))[:max_units]
+    periods = sorted(dict.fromkeys(frame[time]))
+    present = {(u, t) for u, t in zip(frame[unit], frame[time], strict=False)}
+    grid = [[1.0 if (u, t) in present else 0.0 for t in periods] for u in units]
+    figure = go.Figure(
+        go.Heatmap(
+            z=grid,
+            x=[str(t) for t in periods],
+            y=[str(u) for u in units],
+            colorscale=[[0.0, "#f2f4f7"], [1.0, "#2f7fd1"]],
+            showscale=False,
+            hovertemplate="unit %{y}<br>period %{x}<br>%{z}<extra></extra>",
+            xgap=1,
+            ygap=1,
+        )
+    )
+    dropped = len(dict.fromkeys(frame[unit])) - len(units)
+    figure.update_layout(
+        height=height,
+        xaxis={"title": str(time)},
+        yaxis={"title": f"{unit} ({dropped} more not shown)" if dropped else str(unit)},
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+    )
+    return figure
+
+
+def intervals(named: Any, *, height: float = 360.0, unit: str = "") -> Any | Unsupported:
+    """Several named intervals on one axis. (``core``)
+
+    The comparison a reader makes by hand, made once. Accepts a mapping of name
+    to ``Interval`` — anything carrying ``lower`` and ``upper`` — and draws them
+    on a shared scale, which is the only way overlap is visible.
+
+    Deliberately not given a threshold argument. Where an interval sits relative
+    to a decision value is an interpretation, and interpretations live where the
+    quantity that carries the threshold lives, not in a drawing helper.
+    """
+    go = _graph_objects()
+    if isinstance(go, Unsupported):
+        return go
+    items = list(named.items()) if hasattr(named, "items") else list(named)
+    if not items:
+        return Unsupported(reason="no intervals to draw")
+    labels = [str(k) for k, _ in items]
+    lows, highs, mids = [], [], []
+    for _, interval in items:
+        missing = _missing_attributes(interval, ("lower", "upper"), "interval")
+        if missing is not None:
+            return missing
+        lows.append(float(interval.lower))
+        highs.append(float(interval.upper))
+        mids.append((float(interval.lower) + float(interval.upper)) / 2.0)
+
+    figure = go.Figure(
+        go.Scatter(
+            x=mids,
+            y=labels,
+            mode="markers",
+            marker={"size": 10, "symbol": "line-ns-open", "color": "#3c4148"},
+            error_x={
+                "type": "data",
+                "symmetric": False,
+                "array": [h - m for h, m in zip(highs, mids, strict=True)],
+                "arrayminus": [m - lo for m, lo in zip(mids, lows, strict=True)],
+                "color": "#3c4148",
+                "thickness": 1.6,
+                "width": 7,
+            },
+            hovertemplate="%{y}<br>%{x:.4g}<extra></extra>",
+            showlegend=False,
+        )
+    )
+    figure.update_layout(
+        height=height,
+        xaxis={"title": unit},
+        yaxis={"autorange": "reversed"},
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+    )
+    return figure
+
+
+def transfer(plan: Any, *, height: float = 320.0) -> Any | Unsupported:
+    """Which facets differ between source and target, and what that costs. (``estimands``)
+
+    A transfer plan's finding is a *set*: these facets differ, so these
+    corrections are required and these assumptions come with them. Drawn as
+    counts because the number of differing facets is what decides whether a
+    result travels at all, and it is the first thing a reader wants and the last
+    thing a paragraph gives them.
+    """
+    go = _graph_objects()
+    if isinstance(go, Unsupported):
+        return go
+    bad = _missing_attributes(plan, ("differing", "status"), "transfer plan")
+    if bad is not None:
+        return bad
+    counts = {
+        "facets that differ": len(getattr(plan, "differing", ())),
+        "corrections required": len(getattr(plan, "corrections", ())),
+        "assumptions added": len(getattr(plan, "assumptions", ())),
+        "ledger lines": len(getattr(plan, "ledger_lines", ())),
+    }
+    colour = {"identified": "#3aa17e", "downgraded": "#c9a227"}.get(plan.status, "#b5453b")
+    figure = go.Figure(
+        go.Bar(
+            x=list(counts.values()),
+            y=list(counts),
+            orientation="h",
+            marker={"color": colour},
+            text=[str(v) for v in counts.values()],
+            textposition="auto",
+            hovertemplate="%{y}: %{x}<extra></extra>",
+        )
+    )
+    figure.update_layout(
+        height=height,
+        xaxis={"title": f"count — transfer is {plan.status}"},
+        yaxis={"autorange": "reversed"},
+        showlegend=False,
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+    )
+    return figure
+
+
+def recovery(truth: Any, estimated: Any, *, height: float = 400.0) -> Any | Unsupported:
+    """Estimated against true, for a world where the truth is known. (``sim``)
+
+    The picture every recovery test is implicitly making. Points on the diagonal
+    are parameters the estimator found; distance from it is bias, and it is
+    visible at a glance in a way a table of differences is not.
+
+    Both arguments are mappings from name to value, so this works for any
+    simulated world rather than for one result type.
+    """
+    go = _graph_objects()
+    if isinstance(go, Unsupported):
+        return go
+    shared = [k for k in truth if k in estimated]
+    if not shared:
+        return Unsupported(
+            reason="truth and estimate share no parameter names",
+            detail={
+                "truth": ", ".join(list(truth)[:6]),
+                "estimated": ", ".join(list(estimated)[:6]),
+            },
+        )
+    xs = [float(truth[k]) for k in shared]
+    ys = [float(estimated[k]) for k in shared]
+    lo = min(min(xs), min(ys))
+    hi = max(max(xs), max(ys))
+    pad = (hi - lo) * 0.08 or 1.0
+    figure = go.Figure()
+    figure.add_trace(
+        go.Scatter(
+            x=[lo - pad, hi + pad],
+            y=[lo - pad, hi + pad],
+            mode="lines",
+            line={"dash": "dash", "width": 1.2, "color": "#b8bec7"},
+            hoverinfo="skip",
+            showlegend=False,
+        )
+    )
+    figure.add_trace(
+        go.Scatter(
+            x=xs,
+            y=ys,
+            mode="markers+text",
+            text=shared,
+            textposition="top center",
+            textfont={"size": 10},
+            marker={"size": 10, "color": "#2f7fd1"},
+            hovertemplate="%{text}<br>true %{x:.4g} · estimated %{y:.4g}<extra></extra>",
+            showlegend=False,
+        )
+    )
+    figure.update_layout(
+        height=height,
+        xaxis={"title": "true value", "range": [lo - pad, hi + pad]},
+        yaxis={"title": "estimated", "range": [lo - pad, hi + pad]},
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+    )
+    return figure
+
+
+def unrolled(system: Any, *, height: float = 420.0) -> Any | Unsupported:
+    """A dynamic system after unrolling, laid out so depth is time. (``dynamics``)
+
+    The point of unrolling is that a system with feedback becomes a DAG once
+    time is made explicit, and this is where that stops being a claim. The
+    layered layout puts each node one step to the right of its parents, so the
+    horizontal axis *is* the period — no parsing of column names required, and
+    a cycle that survived the unroll would be visible as a node pushed to the
+    far right rather than hidden.
+    """
+    go = _graph_objects()
+    if isinstance(go, Unsupported):
+        return go
+    bad = _missing_attributes(system, ("columns", "edges", "expressions"), "unrolled system")
+    if bad is not None:
+        return bad
+    # `columns` is the exogenous data only; the endogenous nodes are the keys of
+    # `expressions`. Drawing `columns` alone leaves every solved variable out and
+    # every remaining node a root, which puts the whole system at depth zero and
+    # loses the one thing this figure exists to show.
+    nodes = list(dict.fromkeys([*system.columns, *system.expressions]))
+    if not nodes:
+        return Unsupported(reason="the unrolled system has no nodes to draw")
+    return _draw_graph(
+        go,
+        nodes,
+        list(system.edges),
+        height=height,
+        x_title="time →",
+    )
