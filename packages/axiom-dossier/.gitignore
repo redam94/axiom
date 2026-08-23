@@ -1,3 +1,6 @@
-out/
+# examples/out/ is committed: the generated documents are the clearest
+# statement of what this package produces, and a reader should not have to
+# install an extra and hold an API key to see one. Re-running an example
+# overwrites them in place.
 dist/
 *.egg-info/

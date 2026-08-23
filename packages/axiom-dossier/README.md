@@ -161,6 +161,12 @@ python examples/hypertension.py --narrate      # one trial, end to end
 python examples/readouts.py                    # all twelve axiom examples
 ```
 
+**The output of both is committed**, under
+[`examples/out/`](examples/out/) — one narrated trial report in PDF, HTML and
+PPTX, and twenty-four generated readouts. Open one rather than taking this
+README's word for it; `examples/out/README.md` records exactly how each was
+produced. Re-running an example overwrites its files in place.
+
 **`hypertension.py`** turns the HYPER-3 case study — the sequential dose-finding
 trial under `nbs/case-studies/hypertension/` — into the document such a trial has
 to produce: protocol and design up front, then identification, findings and

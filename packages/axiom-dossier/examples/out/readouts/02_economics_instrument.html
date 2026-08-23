@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="axiom.report">
+<meta name="axiom-report-hash" content="3e97d563e898e58abe8921ef3bd990668306e828bc608d6bc697b726dae0d631">
+<title>An effect you can only see sideways</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 64.0pt;
+  background: #ffffff; color: #111111;
+  font-family: Times-Roman, Georgia, "Times New Roman", Times, serif;
+  font-size: 10.5pt; line-height: 1.55;
+}
+main { max-width: 952.0pt; margin: 0 auto; }
+h1 { font-size: 19.0pt; margin: 0 0 .15em; letter-spacing: -.01em; }
+h2 { font-size: 13.5pt; margin: 1.6em 0 .4em;
+      padding-bottom: .25em; border-bottom: 1px solid #c9c9c9; }
+h3 { font-size: 11.5pt; margin: 1.2em 0 .3em; }
+h4 { font-size: 10.5pt; margin: 1em 0 .3em; }
+p { margin: .5em 0; }
+p.emphasis { font-size: 11.760000000000002pt; color: #1a1a1a; }
+.subtitle { color: #555555; font-size: 12.075pt;
+             margin: 0 0 1.4em; }
+.summary { color: #555555; margin: 0 0 .8em; }
+code { font-family: Courier, ui-monospace, monospace;
+        background: rgba(0,0,0,.05); padding: .08em .3em; border-radius: 3px; }
+figure { margin: 1.1em 0; }
+figcaption { color: #555555; font-size: 9.66pt; margin-top: .3em; }
+table { border-collapse: collapse; width: 100%; margin: .8em 0;
+         font-size: 9.975pt; }
+th, td { text-align: left; padding: .35em .6em; border-bottom: 1px solid #c9c9c9; }
+th { font-weight: 600; border-bottom: 2px solid #c9c9c9; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.metrics { display: flex; flex-wrap: wrap; gap: 1.4em; margin: 1em 0; }
+.metric { min-width: 12em; }
+.metric .label { color: #555555; font-size: 9.450000000000001pt;
+                  text-transform: uppercase; letter-spacing: .04em; }
+.metric .value { font-size: 15.579999999999998pt; font-weight: 600;
+                  color: #1a1a1a; font-variant-numeric: tabular-nums; }
+.metric .interval { color: #555555; font-size: 9.450000000000001pt;
+                     font-variant-numeric: tabular-nums; }
+.ledger { border-left: 3px solid #c9c9c9; padding-left: .9em; margin: 1em 0; }
+.ledger .line { margin: .55em 0; }
+.ledger .kind { color: #1a1a1a; font-family: Courier, monospace;
+                 font-size: 8.924999999999999pt; }
+.ledger .assumption { color: #555555; font-size: 9.450000000000001pt; }
+hr { border: 0; border-top: 1px solid #c9c9c9; margin: 1.4em 0; }
+footer { margin-top: 2.5em; padding-top: .8em; border-top: 1px solid #c9c9c9;
+          color: #555555; font-size: 8.924999999999999pt; }
+@media print { body { padding: 0; } h2 { break-before: page; } }
+</style>
+</head><body><main>
+<h1>An effect you can only see sideways</h1>
+<p class="subtitle">Does a training programme raise earnings, when the people who enrol are exactly the people who would have earned more anyway?</p>
+<h2>Abstract</h2>
+<p><strong>Objective.</strong> Does a training programme raise earnings, when the people who enrol are exactly the people who would have earned more anyway? <strong>Methods.</strong> Write down the world, including the part nobody measured. 5 step(s) are recorded in full below. <strong>Results.</strong> OLS overstates the programme by +0.35, and the chart of sample sizes shows that no amount of data would have helped: the naive line converges on 2.32 against a truth of 2.00. Bias is not a small-sample problem. <strong>Conclusions.</strong> No assumptions were recorded for this run, which is not the same as none being required.</p>
+<h2>1. Introduction</h2>
+<p>This report addresses one question: Does a training programme raise earnings, when the people who enrol are exactly the people who would have earned more anyway?</p>
+<h2>2. Methods</h2>
+<p><strong>Question.</strong> Does a training programme raise earnings, when the people who enrol are exactly the people who would have earned more anyway?</p>
+<h4>Write down the world, including the part nobody measured</h4>
+<p>The obstacle here is not a missing column, it is a structure: drive and circumstance push both enrolment and earnings, and they were never recorded. Writing that down as an edge — X &lt;-&gt; Y, a latent common cause — is what makes the problem statable. An analysis that cannot say what is confounding it cannot say what would fix it either.</p>
+<p class="emphasis">considered instead: Starting from the estimator. &#x27;We ran 2SLS with distance as an instrument&#x27; skips the only question that determines whether the number means anything: does the graph you believe in actually license that move?; readout: graph    : X -&gt; Y, Z -&gt; X, X &lt;-&gt; Y; measured : [&#x27;X&#x27;, &#x27;Y&#x27;, &#x27;Z&#x27;]; X &lt;-&gt; Y is the bidirected edge: a common cause of enrolment and earnings; that is not in the data and never will be. Z is the shifter -- distance to</p>
+<h4>Ask whether the effect is recoverable at all, before estimating anything</h4>
+<p>identify() is a question about the graph, not about the data, and it can be asked before a single row is collected. It returns the route, the instrument it found, and — the part that matters most in a referee report — the assumptions the route rests on, each tagged with whether the data can check it.</p>
+<p class="emphasis">considered instead: Nominating the instrument yourself and checking the first-stage F. That tests relevance, which is the assumption you can test, and quietly skips exclusion, which is the one that actually fails in practice.; readout: status     : downgraded; route      : instrument; instrument : Z   (found in the graph, not nominated by hand)</p>
+<h4>Estimate it twice: once naively, once through the instrument</h4>
+<p>Both estimators are run on the same 5,000 workers so the difference between them is the method and nothing else. The naive comparison is not a straw man — it is what a well-run analysis of this dataset would report if nobody had drawn the graph.</p>
+<p class="emphasis">considered instead: Reporting only the instrumented estimate. The gap between the two is the size of the selection, and it is the most informative number on the page: it says how much of the raw programme effect was never the programme.; readout: naive OLS     2.347 +/- 0.011   [ 2.326,  2.367]   error +0.347; 2SLS          1.999 +/- 0.021   [ 1.958,  2.040]   error -0.001; truth         2.000</p>
+<h4>Watch what more data does to each one</h4>
+<p>This is the distinction the whole example turns on. Noise shrinks as the square root of n; bias does not shrink at all. Re-running both estimators across sample sizes from 250 to 32,000 draws the difference rather than asserting it — the naive line converges, confidently, on the wrong number.</p>
+<p class="emphasis">considered instead: Saying &#x27;OLS is biased&#x27; and moving on. Every analyst agrees with that sentence in the abstract and then, under deadline, argues that a large enough sample makes it academic. The chart is the answer to that argument.</p>
+<h4>Check the instrument is actually doing work</h4>
+<p>A weak instrument is not a neutral loss of precision. When the first stage barely moves, 2SLS becomes biased towards OLS and its intervals stop covering, so a weak-instrument analysis can be worse than the naive one it was meant to replace. The first-stage F is the standard diagnostic, and axiom returns it as an assumption with a state rather than a number to eyeball.</p>
+<p class="emphasis">considered instead: Assuming relevance because the instrument is clever. Cleverness is an argument for exclusion, which cannot be tested; relevance is the part that can be, so it should be.; readout: first-stage F : 2214.6; relevance     : instrument_strength -&gt; satisfied; a nearly irrelevant instrument (Z -&gt; X of 0.05 instead of 1.0):;   first-stage F : 0.1</p>
+<h2>3. Results</h2>
+<p>No findings were recorded.</p>
+<h2>4. What the run showed</h2>
+<p class="emphasis">Written by the analyst after seeing the output, and reproduced unchanged. Nothing in this section is generated.</p>
+<p>OLS overstates the programme by +0.35, and the chart of sample sizes shows that no amount of data would have helped: the naive line converges on 2.32 against a truth of 2.00. Bias is not a small-sample problem.</p>
+<p>What 2SLS bought was accuracy, and what it cost was width: its interval is 2.0 times wider than the naive one. That is the honest price of using only the part of the variation in enrolment that geography explains, and it is the right trade — a wide interval around the truth is usable, a narrow one around the wrong number is not.</p>
+<p>The assumption table is the part to take to a referee. Relevance was checked and passed. Exclusion — that distance to a training centre affects earnings only through enrolment — is recorded as unverified, because it is unverifiable from this data. If it fails, everything above fails with it, and the verdict says so rather than burying it in a methods appendix.</p>
+<h2>5. Model checking</h2>
+<p>No diagnostics were recorded. An analysis with no model checking is not therefore sound; it is unexamined.</p>
+<h2>6. Discussion</h2>
+<p>There are no findings to interpret.</p>
+<h2>7. Conclusions</h2>
+<p><strong>Does a training programme raise earnings, when the people who enrol are exactly the people who would have earned more anyway?</strong></p>
+<p>No finding was recorded, so no conclusion follows.</p>
+<h2>8. Limitations</h2>
+<p>No assumption in the record is left unresolved. That is a statement about the record, not a guarantee about the world.</p>
+<h2>9. Provenance</h2>
+<p>Every number in this document resolves to a quantity in the evidence record below. Prose was checked against that record: any numeral not traceable to it, and any claim the record does not itself make, is reported rather than published.</p>
+<figure><table><thead><tr><th class="">Field</th><th class="">Value</th></tr></thead><tbody><tr><td class="">field</td><td class="">Labour economics</td></tr><tr><td class="">source</td><td class="">examples/ walkthrough record</td></tr><tr><td class="">steps</td><td class="">5</td></tr><tr><td class="">evidence hash</td><td class="">d0655ed9defa20a90073698364f8660d5375bc65958153a9bb01a6bac8810d0e</td></tr></tbody></table><figcaption>Table 1. Run</figcaption></figure>
+
+</main></body></html>
