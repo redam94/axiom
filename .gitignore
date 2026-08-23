@@ -28,4 +28,7 @@ nbs/report/readout.*
 # under the upstream terms. See benchmarks/README.md.
 benchmarks/cache/
 
+# Credentials. axiom-dossier reads GEMINI_API_KEY from here; it must never
+# become a commit.
 .env
+.env.*
