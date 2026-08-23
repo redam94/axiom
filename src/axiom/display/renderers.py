@@ -17,9 +17,11 @@ number is missing.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
 from typing import Any
 
+from axiom.core.rounding import format_interval, format_measured
 from axiom.display.card import Card, Status, status_from
 
 __all__ = ["REGISTRY", "card_for", "generic_card", "renders"]
@@ -49,9 +51,68 @@ def card_for(obj: object) -> Card:
 # -- the fallback, which is what makes this cover everything -----------------------------
 
 
-def _short(value: object, *, limit: int = 68) -> str:
+#: Field names that hold the number an object's own uncertainty is *about*.
+#: A card rounds these to the place that uncertainty reaches and leaves every
+#: other float alone, because a p-value, a mass and a coefficient sitting on
+#: one card do not share a resolution.
+_MEASURED = frozenset(
+    {
+        "effect",
+        "estimate",
+        "expected_outcome",
+        "intercept",
+        "mean",
+        "median",
+        "point",
+        "pooled",
+        "slope",
+        "theta",
+        "value",
+    }
+)
+
+#: The suffixes that name a *specific* field's uncertainty. ``slope_se`` beats
+#: the object's own ``se``, which belongs to something else — a result with two
+#: coefficients has two resolutions and one of them is not both.
+_SUFFIXES = ("_se", "_sd", "_interval")
+
+#: Where a card looks when a field names no uncertainty of its own, in order.
+#: A standard error wins over an interval's half-width: a band is one or two
+#: sigma wide, so rounding to the band throws away a digit the sigma supports,
+#: and a card that has the sigma should use it for everything it prints.
+_UNCERTAINTY = ("se", "sd", "standard_error", "interval")
+
+
+def _scale(found: object) -> float | None:
+    """A usable resolution from an ``Interval``, a float, or neither."""
+    half = getattr(found, "half_width", found)
+    if isinstance(half, (int, float)) and not isinstance(half, bool):
+        u = abs(float(half))
+        if math.isfinite(u) and u > 0.0:
+            return u
+    return None
+
+
+def _uncertainty_of(obj: object, field: str = "") -> float | None:
+    """The resolution stated for ``field``, or for the object as a whole."""
+    for suffix in _SUFFIXES if field else ():
+        scale = _scale(getattr(obj, field + suffix, None))
+        if scale is not None:
+            return scale
+    if field and field not in _MEASURED:
+        return None
+    for name in _UNCERTAINTY:
+        scale = _scale(getattr(obj, name, None))
+        if scale is not None:
+            return scale
+    return None
+
+
+def _short(value: object, *, limit: int = 68, uncertainty: float | None = None) -> str:
     if isinstance(value, float):
-        return f"{value:.4g}"
+        return format_measured(value, uncertainty, fallback=4)
+    if uncertainty is not None and hasattr(value, "text") and hasattr(value, "half_width"):
+        return str(value.text(uncertainty))  # an Interval, at the card's one resolution
     if isinstance(value, (list, tuple)):
         if not value:
             return ""
@@ -74,17 +135,28 @@ def generic_card(obj: object) -> Card:
     title = type(obj).__name__
     fields = getattr(type(obj), "model_fields", None)
     card = Card(title=title)
+
+    def cell(name: str, value: object) -> str:
+        # the uncertainty prints at its own resolution — two significant digits
+        # of itself — and the number it qualifies prints at that same place
+        if isinstance(value, float) and (name in _UNCERTAINTY or name.endswith(_SUFFIXES)):
+            return _short(value, uncertainty=value)
+        if hasattr(value, "half_width"):
+            # an interval prints at whatever resolution the rest of the card uses
+            return _short(value, uncertainty=_uncertainty_of(obj))
+        return _short(value, uncertainty=_uncertainty_of(obj, name))
+
     if fields is not None:
         for name in fields:
             if name.startswith("_"):
                 continue
-            card.add(name.replace("_", " "), _short(getattr(obj, name, None)))
+            card.add(name.replace("_", " "), cell(name, getattr(obj, name, None)))
         return card
     values = getattr(obj, "__dict__", None)
     if values:
         for name, value in values.items():
             if not name.startswith("_"):
-                card.add(name.replace("_", " "), _short(value))
+                card.add(name.replace("_", " "), cell(name, value))
         return card
     card.add("value", _short(obj))
     return card
@@ -93,11 +165,17 @@ def generic_card(obj: object) -> Card:
 # -- the results a reader actually looks at ----------------------------------------------
 
 
-def _interval_text(interval: Any) -> str:
+def _bounds(interval: Any, uncertainty: float | None = None) -> str:
+    """``lower to upper``, both at the precision the card is working at."""
+    bounds = format_interval(interval.lower, interval.upper, uncertainty=uncertainty)
+    return bounds.strip("[]").replace(", ", " to ")
+
+
+def _interval_text(interval: Any, uncertainty: float | None = None) -> str:
     if interval is None:
         return ""
     mass = f"{interval.mass:.0%}" if getattr(interval, "mass", None) is not None else "?"
-    return f"{interval.lower:.4g} to {interval.upper:.4g}  ({mass} {interval.definition.upper()})"
+    return f"{_bounds(interval, uncertainty)}  ({mass} {interval.definition.upper()})"
 
 
 def register_core() -> None:
@@ -115,7 +193,7 @@ def register_core() -> None:
     @renders(Interval)
     def _interval(obj: Any) -> Card:
         card = Card(title="Interval", status="neutral")
-        card.add("range", f"{obj.lower:.4g} to {obj.upper:.4g}", emphasis=True)
+        card.add("range", _bounds(obj), emphasis=True)
         card.add("mass", f"{obj.mass:.0%}" if obj.mass is not None else "unstated")
         card.add("definition", obj.definition.upper())
         return card
@@ -123,10 +201,12 @@ def register_core() -> None:
     @renders(Summary)
     def _summary(obj: Any) -> Card:
         card = Card(title="Summary")
-        card.add("mean", f"{obj.mean:.4g}", emphasis=True)
-        card.add("median", f"{obj.median:.4g}")
-        card.add("sd", f"{obj.sd:.4g}")
-        card.add("interval", _interval_text(obj.interval))
+        # every point summary at the resolution the spread states: a mean of
+        # 4000 draws has fifteen digits and two of them are the posterior
+        card.add("mean", format_measured(obj.mean, obj.sd), emphasis=True)
+        card.add("median", format_measured(obj.median, obj.sd))
+        card.add("sd", format_measured(obj.sd, obj.sd))
+        card.add("interval", _interval_text(obj.interval, obj.sd))
         card.add("draws", obj.n)
         return card
 
@@ -192,9 +272,9 @@ def register_results() -> None:
         card = Card(
             title=f"{obj.method or 'estimate'}: {obj.treatment} → {obj.outcome}".strip(": "),
         )
-        card.add("estimate", f"{obj.estimate:.4g}", emphasis=True)
-        card.add("standard error", f"{obj.se:.4g}")
-        card.add("90% interval", _interval_text(obj.ci(0.9)))
+        card.add("estimate", format_measured(obj.estimate, obj.se), emphasis=True)
+        card.add("standard error", format_measured(obj.se, obj.se))
+        card.add("90% interval", _interval_text(obj.ci(0.9), obj.se))
         card.add("n", obj.n)
         card.add("adjusted for", ", ".join(obj.covariates) or "nothing")
         return card

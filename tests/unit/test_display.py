@@ -121,7 +121,15 @@ def test_a_ledger_line_carries_its_assumption() -> None:
 def test_a_summary_shows_its_interval() -> None:
     band = Interval(lower=1.0, upper=3.0, definition="eti", mass=0.9)
     text = render(Summary(mean=2.0, median=2.0, sd=0.5, interval=band, n=1000))
-    assert "1 to 3" in text and "90%" in text
+    assert "1.00 to 3.00" in text and "90%" in text
+
+
+def test_a_summary_prints_no_more_digits_than_its_spread_supports() -> None:
+    """The point summaries stop where the sd stops; the rest was arithmetic."""
+    band = Interval(lower=10.1234, upper=14.5678, definition="hdi", mass=0.9)
+    text = render(Summary(mean=12.3456789, median=12.2987, sd=1.23456, interval=band, n=4000))
+    assert "12.3" in text and "12.3456" not in text
+    assert "1.2" in text and "1.23456" not in text
 
 
 # -- the fallback, which is what makes this cover everything -----------------------------
@@ -181,7 +189,7 @@ def test_show_writes_the_plain_form_when_asked() -> None:
     buffer = io.StringIO()
     show(Interval(lower=1.0, upper=2.0, definition="eti", mass=0.9), file=buffer, plain=True)
     written = buffer.getvalue()
-    assert "1 to 2" in written
+    assert "1.00 to 2.00" in written
     assert "\x1b[" not in written, "plain output must carry no escape codes"
 
 

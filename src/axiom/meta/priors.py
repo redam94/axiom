@@ -31,7 +31,7 @@ from typing import Literal
 
 import numpy as np
 
-from axiom.core import LedgerLine, Prior
+from axiom.core import LedgerLine, Prior, format_measured
 from axiom.meta.pool import PoolResult
 
 __all__ = ["PriorTarget", "prior_from_pool"]
@@ -85,13 +85,15 @@ def prior_from_pool(
         prior = Prior(family="normal", hyper={"mu": float(m), "sigma": float(s)})
         statement = (
             f"prior on {target} of {result.quantity!r} in family {result.family!r}: "
-            f"N({m:.6g}, {s:.6g}) from a pool of {result.k} records"
+            f"N({format_measured(m, s)}, {format_measured(s, s)}) "
+            f"from a pool of {result.k} records"
         )
     elif result.scale == "log":
         prior = Prior(family="lognormal", hyper={"mu": float(m), "sigma": float(s)})
         statement = (
             f"lognormal prior on {target} of {result.quantity!r} in family {result.family!r}: "
-            f"LogNormal({m:.6g}, {s:.6g}) — the pool was on the log scale"
+            f"LogNormal({format_measured(m, s)}, {format_measured(s, s)}) "
+            f"— the pool was on the log scale"
         )
         detail["lognormal"] = "log-scale pool: normal on the log scale is the lognormal"
     else:
@@ -104,7 +106,7 @@ def prior_from_pool(
         prior = Prior(family="lognormal", hyper={"mu": log_mu, "sigma": float(np.sqrt(sigma2))})
         statement = (
             f"lognormal prior on {target} of {result.quantity!r} in family {result.family!r}: "
-            f"moment-matched to mean {m:.6g}, sd {s:.6g}"
+            f"moment-matched to mean {format_measured(m, s)}, sd {format_measured(s, s)}"
         )
         detail["lognormal"] = "natural-scale pool: moment-matched (mean and sd preserved)"
     line = LedgerLine(

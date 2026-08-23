@@ -23,7 +23,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from axiom.core import Interval, LedgerLine, Unsupported
+from axiom.core import Interval, LedgerLine, Unsupported, format_interval, format_measured
 from axiom.report.spec import (
     AnyBlock,
     Figure,
@@ -36,6 +36,11 @@ from axiom.report.spec import (
     Table,
 )
 from axiom.report.spec import missing as _missing
+
+#: Decimals for a metric that carries neither a stated precision nor an
+#: interval. Two, as before: with nothing to round against there is nothing to
+#: derive, and the old default is the least surprising answer.
+_UNSTATED_PRECISION = 2
 
 __all__ = [
     "ResolvedBlock",
@@ -98,10 +103,8 @@ class ResolvedMetric:
     def interval_text(self) -> str:
         if self.interval is None:
             return ""
-        return (
-            f"[{self.interval.lower:,.4g}, {self.interval.upper:,.4g}] "
-            f"({self.interval.mass:.0%} {self.interval.definition.upper()})"
-        )
+        bounds = format_interval(self.interval.lower, self.interval.upper, group=True)
+        return f"{bounds} ({self.interval.mass:.0%} {self.interval.definition.upper()})"
 
 
 @dataclass(frozen=True)
@@ -233,10 +236,18 @@ def _metric_of(value: object, block: Metric) -> ResolvedMetric:
             f"EstimandResult, got {type(value).__name__}"
         )
     unit = f" {block.unit}" if block.unit else ""
+    if block.precision is not None:
+        text = f"{point:,.{block.precision}f}"
+    elif interval is not None:
+        # the interval is the resolution: a point printed finer than its own
+        # half-width claims digits the source never had
+        text = format_measured(point, interval.half_width, group=True)
+    else:
+        text = f"{point:,.{_UNSTATED_PRECISION}f}"
     return ResolvedMetric(
         label=block.label,
         value=point,
-        text=f"{point:,.{block.precision}f}{unit}",
+        text=f"{text}{unit}",
         interval=interval,
         unit=block.unit,
     )

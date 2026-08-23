@@ -19,7 +19,8 @@ def test_interval_requires_provenance_and_sane_bounds() -> None:
         Interval(lower=float("nan"), upper=0, definition="eti", mass=0.9)
     i = Interval(lower=-1, upper=2, definition="hdi", mass=0.5)
     assert i.width == 3 and i.contains(0) and not i.contains(3)
-    assert str(i) == "[-1, 2] (50% HDI)"
+    # the bounds print at the place the half-width reaches, not at six digits
+    assert str(i) == "[-1.0, 2.0] (50% HDI)"
 
 
 def test_eti_matches_quantiles() -> None:

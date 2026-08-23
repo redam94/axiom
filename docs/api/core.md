@@ -69,6 +69,9 @@ The executed series under `nbs/core/`:
 .. automodule:: axiom.core.result
    :members:
 
+.. automodule:: axiom.core.rounding
+   :members:
+
 .. automodule:: axiom.core.spec
    :members:
 
