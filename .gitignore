@@ -27,3 +27,5 @@ nbs/report/readout.*
 # redistributing them. Fetched on request by `python benchmarks/fetch.py`,
 # under the upstream terms. See benchmarks/README.md.
 benchmarks/cache/
+
+.env
