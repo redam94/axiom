@@ -62,6 +62,52 @@ contains**, not just how long the model is told to write. Asking a model to
 detail, per-finding headings, the ledger and the assumption recaps, and the
 narration inherits the richer draft.
 
+### Figures and data tables
+
+`figures.py` draws what a causal report needs and `tables.py` builds what it
+tabulates — both from the evidence, so neither can disagree with the metric
+blocks beside them.
+
+The figure that carries the weight is `findings_plot`: every finding on one
+axis with its interval, the decision threshold marked, and each row coloured by
+which side it settled on. Three colours, not two — a row whose interval *spans*
+the threshold is grey, because unsettled is a third state and drawing it as
+either of the others is the lie this package exists to avoid.
+
+**HTML charts are interactive.** `axiom.report` renders a plotly figure live in
+HTML and rasterises it through kaleido for PDF and PPTX, so the same report is
+hoverable on screen and printable on paper.
+
+Two refusals worth knowing about. A figure is never given a title, because the
+caption carries it and a figure with both says everything twice. And
+`diagnostics_plot` returns `Unsupported` when the diagnostics span more than two
+orders of magnitude: a retention share of 0.797 drawn beside a count of 372 is a
+bar of no width next to a bar of full width, which tells a reader the share is
+nothing. The table reports them properly instead.
+
+```python
+built = build(evidence, exhibits="embedded")   # each with the prose that discusses it
+built = build(evidence, exhibits="gathered")   # collected after the text, APA-style
+built = build(evidence, exhibits="none")
+```
+
+### APA manuscript style
+
+```python
+built = build(evidence, style="apa", authors=("A. Author",), affiliation="Somewhere")
+```
+
+Follows the UCSD Psychology guide *How to Write APA Style Research Papers* and
+the empirical-paper example beside it: title page with author note and running
+head, abstract on its own page, body continuous from introduction to discussion,
+then tables and figures each on their own page after the text, captioned
+`*Table 1*.` and `*Figure 1*.` Twelve-point Times, one-inch margins, no display
+type.
+
+Two departures, both deliberate. A causal report has to say what licensed its
+estimate, so **Limitations** and **Provenance** stay as their own sections; APA
+folds the first into the discussion and has no equivalent of the second.
+
 ### Interpretation, without the overreach
 
 A conclusions section is where a report is most likely to lie, so interpretation

@@ -72,3 +72,9 @@ markers = ["live: calls a real language-model API; needs a key and is off by def
 [tool.mypy]
 python_version = "3.12"
 strict = true
+
+# plotly ships no stubs and no py.typed marker. Figures are drawn through it
+# and nothing is read back out of it, so untyped is the honest description.
+[[tool.mypy.overrides]]
+module = ["plotly.*"]
+ignore_missing_imports = true

@@ -7,8 +7,12 @@ and every number traced.
 
     python examples/hypertension.py                  # generated, no key needed
     python examples/hypertension.py --narrate        # prose through Gemini
+    python examples/hypertension.py --apa            # an APA manuscript
+    python examples/hypertension.py --apa --standalone   # HTML with plotly bundled
 
-Writes ``out/hyper3-full.{html,pdf,pptx}``.
+Writes ``out/hyper3-full.{html,pdf,pptx}``, or ``out/hyper3-apa.*`` with
+``--apa``. The HTML carries the figures as live plotly charts; the PDF and PPTX
+rasterise them.
 
 What makes it worth having as an example rather than a fixture: nothing below is
 typed in. The protocol constants come from ``hyper3.py``, the arm counts from the
@@ -285,12 +289,18 @@ def evidence():
 
 def main() -> int:
     narrate = "--narrate" in sys.argv
+    apa = "--apa" in sys.argv
+    stem = "hyper3-apa" if apa else "hyper3-full"
     ev = evidence()
     built = build(
         ev,
         narrator=Narrator() if narrate else None,
-        style="journal",
+        style="apa" if apa else "journal",
         verbosity="full",
+        # APA puts the author block under the title and gathers the exhibits
+        # after the text; the journal style embeds them with the prose.
+        authors=("Matthew Reda",) if apa else (),
+        affiliation="axiom" if apa else "",
     )
 
     print(f"evidence hash : {ev.content_hash()}")
@@ -309,7 +319,14 @@ def main() -> int:
     out = Path(__file__).parent / "out"
     print()
     for fmt in ("html", "pdf", "pptx"):
-        result = built.write(str(out / f"hyper3-full.{fmt}"))
+        # The committed samples link the plotting library rather than bundling
+        # it: self-contained is the right default for a report you email, and
+        # the wrong one for a file that lives in a repository forever at five
+        # megabytes a copy. `--standalone` writes the bundled version.
+        result = built.write(
+            str(out / f"{stem}.{fmt}"),
+            inline_plotly="--standalone" in sys.argv,
+        )
         if isinstance(result, Unsupported):
             print(f"  {fmt:5s} skipped — {result.reason}")
         else:

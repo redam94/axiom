@@ -176,9 +176,7 @@ def introduction_section(
     blocks: list[object] = []
     if evidence.question:
         blocks.append(
-            Paragraph(
-                text=f"This report addresses one question: {literal(evidence.question)}"
-            )
+            Paragraph(text=f"This report addresses one question: {literal(evidence.question)}")
         )
     else:
         blocks.append(

@@ -34,12 +34,22 @@ trust a model can see exactly which paragraphs it touched.
 
 from __future__ import annotations
 
+from axiom_dossier.apa import (
+    APA_SECTIONS,
+    APA_THEME,
+    apa_caption,
+    exhibit_sections,
+    running_head,
+    title_block,
+    title_page_section,
+)
 from axiom_dossier.claims import CLAIM_WORDS, Claim, licensed_claims
 from axiom_dossier.claims import unlicensed as unlicensed_claims
 from axiom_dossier.dossier import (
     DEFAULT_SECTIONS,
     JOURNAL_SECTIONS,
     Dossier,
+    Exhibits,
     Style,
     build,
     context_for,
@@ -51,6 +61,7 @@ from axiom_dossier.evidence import (
     Quantity,
     quantity_from,
 )
+from axiom_dossier.figures import diagnostics_plot, figures_for, findings_plot
 from axiom_dossier.interpret import (
     conclusions_section,
     contested,
@@ -91,11 +102,27 @@ from axiom_dossier.sections import (
     results_section,
     standing_assumptions,
 )
+from axiom_dossier.tables import design_rows, diagnostics_rows, findings_rows, tables_for
 from axiom_dossier.walkthrough import evidence_from_record, tables_from_record
 
 __version__ = "0.1.0"
 
 __all__ = [
+    "title_block",
+    "title_page_section",
+    "tables_for",
+    "running_head",
+    "findings_rows",
+    "findings_plot",
+    "figures_for",
+    "exhibit_sections",
+    "diagnostics_rows",
+    "diagnostics_plot",
+    "design_rows",
+    "apa_caption",
+    "Exhibits",
+    "APA_THEME",
+    "APA_SECTIONS",
     "CLAIM_WORDS",
     "Claim",
     "DEFAULT_SECTIONS",

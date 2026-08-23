@@ -24,7 +24,7 @@ means the claims did not.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -33,7 +33,16 @@ from axiom.report import Figure, Report, Section, Table, Theme
 from axiom.report import missing as report_missing
 from axiom.report import write as report_write
 
+from axiom_dossier.apa import (
+    APA_SECTIONS,
+    APA_THEME,
+    apa_caption,
+    exhibit_sections,
+    title_block,
+    title_page_section,
+)
 from axiom_dossier.evidence import Evidence
+from axiom_dossier.figures import figures_for
 from axiom_dossier.interpret import conclusions_section, discussion_section
 from axiom_dossier.journal import (
     JOURNAL_SECTIONS,
@@ -55,9 +64,11 @@ from axiom_dossier.sections import (
     results_section,
     standing_assumptions,
 )
+from axiom_dossier.tables import tables_for
 
 __all__ = [
     "DEFAULT_SECTIONS",
+    "Exhibits",
     "JOURNAL_SECTIONS",
     "Dossier",
     "Style",
@@ -66,8 +77,11 @@ __all__ = [
 ]
 
 Format = Literal["html", "pptx", "pdf"]
-Style = Literal["plain", "journal"]
-"""``plain`` is a readout; ``journal`` is a paper. They differ in shape and type."""
+Style = Literal["plain", "journal", "apa"]
+"""``plain`` is a readout, ``journal`` a paper, ``apa`` an APA manuscript."""
+
+Exhibits = Literal["embedded", "gathered", "none"]
+"""Where figures and tables sit. APA gathers them after the text; a readout embeds."""
 
 DEFAULT_SECTIONS = (
     "methods",
@@ -79,7 +93,11 @@ DEFAULT_SECTIONS = (
 )
 """The readout order: what was done, what came out, what was checked, what it rests on."""
 
-_BUILDERS = {
+#: Section key -> builder. Heterogeneous on purpose: the title page takes
+#: author details the others have no use for, so the shared contract is only
+#: "takes an Evidence, returns a Section".
+_BUILDERS: dict[str, Callable[..., Section]] = {
+    "title_page": title_page_section,
     "abstract": abstract_section,
     "introduction": introduction_section,
     "methods": methods_section,
@@ -135,25 +153,103 @@ def context_for(evidence: Evidence, narrations: Sequence[Narration] = ()) -> dic
     return ctx
 
 
-def _number_captions(sections: tuple[Section, ...]) -> tuple[Section, ...]:
+#: Which exhibits belong to which section when they are embedded rather than
+#: gathered. A figure goes with the prose that discusses it; a table goes under
+#: the figure it tabulates. Keys absent from the context are skipped, so a
+#: report without plotly loses its figures and keeps its tables.
+_EXHIBITS: dict[str, tuple[tuple[str, str, str], ...]] = {
+    "methods": (("table", "design_table", "The design, as recorded parameters."),),
+    "results": (
+        ("figure", "findings_figure", "Estimated quantities with their intervals."),
+        ("table", "findings_table", "Estimated quantities."),
+    ),
+    "diagnostics": (
+        ("figure", "diagnostics_figure", "Recorded diagnostics."),
+        ("table", "diagnostics_table", "Recorded diagnostics."),
+    ),
+}
+
+
+#: The order exhibits appear in when gathered, and how each is described.
+#: Tables before figures, matching the manuscript order the guide specifies.
+_GATHERED_TABLES = (
+    ("design_table", "The design, as recorded parameters."),
+    ("findings_table", "Estimated quantities with their intervals and thresholds."),
+    ("diagnostics_table", "Recorded diagnostics."),
+)
+_GATHERED_FIGURES = (
+    (
+        "findings_figure",
+        "Estimated quantities with their intervals. The dashed rule marks the "
+        "decision threshold; a row whose interval crosses it is unsettled rather "
+        "than null.",
+    ),
+    ("diagnostics_figure", "Recorded diagnostics."),
+)
+
+
+def _with_exhibits(section: Section, key: str, available: set[str]) -> Section:
+    """Append this section's figures and tables, skipping the ones with no data."""
+    extra: list[object] = []
+    for kind, source, description in _EXHIBITS.get(key, ()):
+        if source not in available:
+            continue
+        if kind == "figure":
+            extra.append(Figure(source=source, caption=description))
+        else:
+            extra.append(Table(source=source, caption=description, max_rows=40))
+    if not extra:
+        return section
+    return Section(
+        title=section.title,
+        blocks=(*section.blocks, *extra),  # type: ignore[arg-type]
+        summary=section.summary,
+    )
+
+
+#: Sections whose exhibits were numbered when they were built. Running the
+#: document-order numbering over them again is what produced "Figure 1. Figure
+#: 1." and gave a gathered table a second number that disagreed with its title.
+_SELF_NUMBERED = ("Tables", "Figures")
+
+
+def _number_captions(
+    sections: tuple[Section, ...], *, style: Style = "journal"
+) -> tuple[Section, ...]:
     """``Table 1.`` / ``Figure 1.`` in front of every caption, in document order.
 
     A paper refers to its exhibits by number; a caption that does not carry one
-    cannot be referred to at all.
+    cannot be referred to at all. APA italicises the label and number and leaves
+    the description roman, which is what ``apa_caption`` produces.
     """
+
+    def caption_for(kind: str, n: int, description: str) -> str:
+        if style == "apa":
+            return apa_caption(kind, n, description)
+        return f"{kind} {n}. {description}".rstrip(". ")
+
     tables = figures = 0
     out: list[Section] = []
     for section in sections:
+        if section.title in _SELF_NUMBERED:
+            out.append(section)
+            continue
         blocks: list[object] = []
         for block in section.blocks:
             if isinstance(block, Table):
                 tables += 1
-                caption = f"Table {tables}. {block.caption}".rstrip(". ")
-                blocks.append(block.model_copy(update={"caption": caption}))
+                blocks.append(
+                    block.model_copy(
+                        update={"caption": caption_for("Table", tables, block.caption)}
+                    )
+                )
             elif isinstance(block, Figure):
                 figures += 1
-                caption = f"Figure {figures}. {block.caption}".rstrip(". ")
-                blocks.append(block.model_copy(update={"caption": caption}))
+                blocks.append(
+                    block.model_copy(
+                        update={"caption": caption_for("Figure", figures, block.caption)}
+                    )
+                )
             else:
                 blocks.append(block)
         out.append(
@@ -181,9 +277,21 @@ class Dossier:
         """Narrations that failed a check and were replaced by their draft."""
         return tuple(n for n in self.narrations if n.narrated and not n.verified)
 
-    def write(self, path: str, format: Format | None = None) -> str | Unsupported:
-        """Render and write. ``Unsupported`` names a missing extra or a missing key."""
-        return report_write(self.report, self.context, path, format)
+    def write(
+        self,
+        path: str,
+        format: Format | None = None,
+        *,
+        inline_plotly: bool = True,
+    ) -> str | Unsupported:
+        """Render and write. ``Unsupported`` names a missing extra or a missing key.
+
+        ``inline_plotly`` bundles the plotting library into the HTML, which is
+        the default because a report that needs a CDN to draw its own figures is
+        not a document you can email. It costs a few megabytes; pass ``False``
+        for a small file that fetches the library at open time.
+        """
+        return report_write(self.report, self.context, path, format, inline_plotly=inline_plotly)
 
     def summary(self) -> str:
         narrated = sum(1 for n in self.narrations if n.narrated)
@@ -202,10 +310,14 @@ def build(
     narrator: Narrator | None = None,
     style: Style = "plain",
     verbosity: Verbosity = "standard",
+    exhibits: Exhibits | None = None,
     sections: Sequence[str] | None = None,
     theme: Theme | None = None,
     subtitle: str = "",
     name: str = "dossier",
+    authors: Sequence[str] = (),
+    affiliation: str = "",
+    author_note: str = "",
 ) -> Dossier:
     """Turn evidence into a document. Narration is optional and never load-bearing.
 
@@ -215,17 +327,29 @@ def build(
     unlicensed claim keeps its generated text, and ``Dossier.rejected()`` says
     which.
 
-    ``style="journal"`` selects the paper shape and typography, and narrates the
-    abstract on the cheap model — the one place the light model earns its place,
-    because an abstract is a compression rather than a judgement.
+    ``style="journal"`` selects the paper shape and typography and ``style="apa"``
+    an APA manuscript — title page, abstract on its own page, and exhibits
+    gathered after the text. Both narrate the abstract on the cheap model, which
+    is the one place the light model earns its place: an abstract is a
+    compression rather than a judgement.
+
+    ``exhibits`` says where figures and tables go. ``embedded`` puts each with
+    the prose that discusses it; ``gathered`` collects them into Tables and
+    Figures sections at the end, which is what APA asks for and therefore the
+    default for that style. ``none`` leaves them out.
     """
-    if style not in ("plain", "journal"):
-        raise ValueError(f"unknown style {style!r}; have ['journal', 'plain']")
-    chosen = (
-        tuple(sections)
-        if sections is not None
-        else (JOURNAL_SECTIONS if style == "journal" else DEFAULT_SECTIONS)
-    )
+    if style not in ("plain", "journal", "apa"):
+        raise ValueError(f"unknown style {style!r}; have ['apa', 'journal', 'plain']")
+    if exhibits is None:
+        exhibits = "gathered" if style == "apa" else "embedded"
+    if exhibits not in ("embedded", "gathered", "none"):
+        raise ValueError(f"unknown exhibits {exhibits!r}; have ['embedded', 'gathered', 'none']")
+    default_sections = {
+        "apa": APA_SECTIONS,
+        "journal": JOURNAL_SECTIONS,
+        "plain": DEFAULT_SECTIONS,
+    }[style]
+    chosen = tuple(sections) if sections is not None else default_sections
     unknown = [s for s in chosen if s not in _BUILDERS]
     if unknown:
         raise ValueError(f"unknown section(s) {unknown}; have {sorted(_BUILDERS)}")
@@ -246,32 +370,82 @@ def build(
     if not evidence.remarks:
         chosen = tuple(k for k in chosen if k != "remarks")
 
+    chosen_theme = (
+        theme
+        or {
+            "apa": APA_THEME,
+            "journal": JOURNAL_THEME,
+            "plain": Theme(),
+        }[style]
+    )
+
+    # Figures and tables are built before the sections, because a section may
+    # only name an exhibit that has data behind it -- naming one that does not
+    # would make `missing()` non-empty and the report unrenderable.
+    exhibit_context: dict[str, object] = {}
+    if exhibits != "none":
+        exhibit_context.update(tables_for(evidence))
+        exhibit_context.update(figures_for(evidence, theme=chosen_theme))
+    available = set(exhibit_context)
+
     built: list[Section] = []
     for key in chosen:
+        if key == "title_page":
+            built.append(
+                title_page_section(
+                    evidence,
+                    authors=tuple(authors),
+                    affiliation=affiliation,
+                    author_note=author_note,
+                    verbosity=verbosity,
+                )
+            )
+            continue
         if key == "abstract":
             section = abstract_section(evidence, text=abstract_text, verbosity=verbosity)
         else:
             section = _BUILDERS[key](evidence, verbosity=verbosity)
+        if exhibits == "embedded":
+            section = _with_exhibits(section, key, available)
         if narrator is not None and key not in _NEVER_NARRATED and key != "abstract":
             section, narration = narrator.section(section, evidence, key=key, verbosity=verbosity)
             narrations.append(narration)
         built.append(section)
 
+    if exhibits == "gathered":
+        built.extend(
+            exhibit_sections(
+                tables=[
+                    (key, description) for key, description in _GATHERED_TABLES if key in available
+                ],
+                figures=[
+                    (key, description) for key, description in _GATHERED_FIGURES if key in available
+                ],
+            )
+        )
+
+    # APA puts the author block under the title; every other style puts the
+    # question there, because a readout has no authors and does have a question.
+    chosen_subtitle = subtitle or (
+        title_block(authors, affiliation) if style == "apa" else evidence.question
+    )
+
     shaped = tuple(built)
+    if style in ("journal", "apa"):
+        shaped = _number_captions(shaped, style=style)
     if style == "journal":
-        shaped = _number_captions(shaped)
         shaped = numbered(shaped)
 
     report = Report(
         name=name,
         title=evidence.title,
-        subtitle=literal(subtitle or evidence.question),
-        theme=theme or (JOURNAL_THEME if style == "journal" else Theme()),
+        subtitle=literal(chosen_subtitle),
+        theme=chosen_theme,
         sections=shaped,
     )
     return Dossier(
         report=report,
-        context=context_for(evidence, narrations),
+        context={**context_for(evidence, narrations), **exhibit_context},
         narrations=tuple(narrations),
         evidence=evidence,
         style=style,

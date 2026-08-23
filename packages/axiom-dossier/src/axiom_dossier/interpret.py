@@ -221,8 +221,7 @@ def conclusions_section(
             "; ".join(f"{q.label} at {q.stated()}" for q in favourable)
             if len(favourable) <= 2
             else (
-                f"{len(favourable)} other findings "
-                f"({', '.join(q.label for q in favourable)})"
+                f"{len(favourable)} other findings " f"({', '.join(q.label for q in favourable)})"
             )
         )
         blocks.append(
