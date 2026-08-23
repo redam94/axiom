@@ -1,0 +1,403 @@
+<!--meta {
+  "title": "HYPER-3 — a trial that has to stop an arm · axiom",
+  "description": "A sequential dose-finding trial worked end to end: the causal graph, the sizing, the dose-response, the stopping rule, and the first safety review, where a stratum-level boundary fires that an arm-level one never would."
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Case study · all five pillars</p>
+    <h1 style="max-width:18ch">HYPER-3: the trial that has to stop an arm</h1>
+    <p class="lede prose mt">Adults with elevated blood pressure are randomized to standard
+      care or to one of three daily doses of an investigational agent. Seated systolic
+      pressure is measured weekly for {{casestudy.protocol.follow_up_weeks}} weeks.
+      Everything below is computed with axiom against a synthetic world whose truth we know —
+      which is the only way to check that a method catches what it is supposed to catch.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The protocol</p>
+      <h2>{{casestudy.protocol.n_units}} patients, four arms, three age bands</h2>
+      <p>Randomization is stratified by age band in 2:1:1:1 blocks, so the shared control arm
+        is twice the size of each dose arm. Enrollment is staggered over
+        {{casestudy.protocol.enrollment_weeks}} calendar weeks, which is what makes an
+        interim review a real event: at any given review some patients have months of
+        follow-up and some have weeks.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <p class="card-n">ARMS</p>
+        <h3>Four</h3>
+        <p>{{casestudy.protocol.arm_labels.standard_of_care}},
+          {{casestudy.protocol.arm_labels.dose_10}},
+          {{casestudy.protocol.arm_labels.dose_20}} and
+          {{casestudy.protocol.arm_labels.dose_40}} daily.</p>
+        <div class="card-f"><p class="card-stat">{{casestudy.protocol.n_arm.dose_40}}
+          <small>patients in each dose arm; {{casestudy.protocol.n_arm.standard_of_care}} on
+            standard care</small></p></div>
+      </div>
+      <div class="card">
+        <p class="card-n">STRATA</p>
+        <h3>Three age bands</h3>
+        <p>{{casestudy.protocol.stratum_labels.age_25_35}},
+          {{casestudy.protocol.stratum_labels.age_36_50}} and
+          {{casestudy.protocol.stratum_labels.age_51_plus}}, in shares
+          {{casestudy.protocol.stratum_share.age_25_35:.0%}} /
+          {{casestudy.protocol.stratum_share.age_36_50:.0%}} /
+          {{casestudy.protocol.stratum_share.age_51_plus:.0%}}.</p>
+        <div class="card-f"><p class="card-stat">clearance
+          <small>is slowest in the oldest band — which is where the trouble is</small></p></div>
+      </div>
+      <div class="card">
+        <p class="card-n">REVIEWS</p>
+        <h3>{{casestudy.rule.n_looks}} safety looks</h3>
+        <p>At calendar weeks {{casestudy.rule.look_weeks}}, monitoring
+          {{casestudy.rule.n_contrasts}} contrasts — every dose arm, pooled and inside each
+          age band.</p>
+        <div class="card-f"><p class="card-stat">{{casestudy.rule.n_contrasts}} × {{casestudy.rule.n_looks}}
+          <small>chances to stop something early</small></p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The truth the trial is trying to find</p>
+      <h2>Benefit in the young cancels harm in the old</h2>
+      <p>The agent lowers blood pressure through a saturating dose–response. It also has a
+        <em>superlinear</em> pressor effect that is negligible below 20 mg and concentrated in
+        the oldest band, where clearance is slowest. Below is what that does to the net
+        benefit — and why looking only at the arm average is not a conservative choice.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="fig-head">
+        <p class="fig-t">Change in systolic pressure versus control at week
+          {{casestudy.truth.week:.0f}}</p>
+        <p class="fig-s">Below zero is a fall in blood pressure, which is the point of the
+          drug. Above zero is harm. This is the intention-to-treat contrast — the quantity
+          randomization actually licenses, averaged over how much medication people take.</p>
+      </div>
+      <div class="legend">
+        <span><i style="--k:var(--s2)"></i>25–35</span>
+        <span><i style="--k:var(--s3)"></i>36–50</span>
+        <span><i style="--k:var(--s4)"></i>51+</span>
+        <span><i style="--k:var(--ink-2)"></i>pooled over the trial population</span>
+      </div>
+      <div class="chart" data-chart="lines" data-file="casestudy"
+           data-opt='{"series":[
+             {"label":"25–35","x":"truth.doses","y":"truth.curves[0].itt","colour":"s2"},
+             {"label":"36–50","x":"truth.doses","y":"truth.curves[1].itt","colour":"s3"},
+             {"label":"51+","x":"truth.doses","y":"truth.curves[2].itt","colour":"s4"},
+             {"label":"pooled","x":"truth.doses","y":"truth.pooled_itt","colour":"ink2"}],
+             "hline":0,"hlineLabel":"same as control","direct":false,
+             "xLabel":"assigned daily dose (mg)",
+             "yLabel":"change vs control (mmHg)","height":330}'></div>
+      <p class="stamp"><b>hyper3.intent_to_treat_contrast</b>(dose, stratum, week={{casestudy.truth.week:.0f}})
+        — the data-generating process itself, integrated over the adherence distribution.
+        In a real trial this curve is exactly what you do not have.</p>
+    </figure>
+
+    <div class="note mt" style="max-width:var(--measure)">
+      <p class="note-t">Why the average is the dangerous statistic here</p>
+      <p class="small">Follow the grey line to 40 mg. Pooled over the whole trial population
+        the contrast is <strong>{{casestudy.truth.at_40.pooled_itt:+.2f}} mmHg</strong> —
+        which is to say the top dose looks
+        <em>indistinguishable from doing nothing</em>. Unremarkable, not alarming. A
+        monitoring rule watching that number has nothing to fire on.</p>
+      <p class="small" style="margin:0">Now split it. At the same dose the youngest band is at
+        <strong>{{casestudy.truth.at_40.by_stratum.age_25_35:+.2f}}</strong> — a substantial
+        benefit — while the oldest is at
+        <strong>{{casestudy.truth.at_40.by_stratum.age_51_plus:+.2f}}</strong>, a substantial
+        <em>rise</em> in blood pressure. The average is near zero because the two are
+        cancelling. Averaging is not the conservative choice here; it is the choice that
+        destroys the only signal that matters.</p>
+    </div>
+
+    <p class="prose muted small mt">Worth noting what the dose is doing to the pooled curve
+      even so: at 20 mg the pooled contrast is
+      {{casestudy.truth.at_20.pooled_itt:+.2f}} mmHg, and going up to 40 mg moves it to
+      {{casestudy.truth.at_40.pooled_itt:+.2f}}. The higher dose is worse on average — but
+      “worse than the middle dose” is not the same alarm as “harming a quarter of the
+      patients”, and only one of those triggers a stopping rule.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The rule, written before the data</p>
+      <h2>A boundary the statistic has to cross</h2>
+      <p>The protocol commits in advance: stop an arm when there is at least a
+        {{casestudy.rule.probability:.0%}} posterior probability that it is worse than
+        control by more than {{casestudy.rule.margin:.0f}} mmHg. axiom turns that sentence
+        into a Z threshold at every scheduled review, accounting for how much information has
+        accumulated by then.</p>
+    </div>
+
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>the rule, for one contrast</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>information = <span class="f">information_fractions</span>(enrolled_by_look, n_total)
+schedule    = <span class="f">LookSchedule</span>(labels=..., information=information)
+
+rule = <span class="f">StoppingRule</span>(
+    name=<span class="s">"harm|age_51_plus|dose_40"</span>,
+    looks=schedule,
+    boundaries=(<span class="f">harm_boundary</span>(
+        <span class="n">{{casestudy.rule.probability:.2f}}</span>,            <span class="c"># posterior probability that fires the rule</span>
+        information,
+        margin=<span class="n">{{casestudy.rule.margin:.1f}}</span>,        <span class="c"># mmHg worse than control</span>
+        se_at_full_information=se,
+    ),),
+)
+
+path = <span class="f">monitor</span>(rule, observed_z, effects=effects, ses=ses)</pre>
+    </div>
+
+    <p class="prose muted small mt">Two things are worth noticing. The boundary is
+      <em>derived</em> from the protocol sentence rather than chosen from a table — change
+      the margin or the probability and the thresholds move accordingly. And the same
+      <code>StoppingRule</code> object is used both to check the realized data and to compute
+      the rule’s operating characteristics before the trial opens, so the thing being
+      evaluated is the thing that will actually run.</p>
+
+    <div class="tbl-wrap mt-lg">
+      <table class="t">
+        <caption>Operating characteristics of this rule, computed exactly rather than
+          simulated. Drift is the true standardized harm; 0 means the arm is genuinely no
+          worse than control.</caption>
+        <thead><tr><th>true drift</th><th>P(stop at some review)</th>
+          <th>expected reviews taken</th><th>expected information used</th></tr></thead>
+        <tbody>
+          <tr><td>{{casestudy.operating_characteristics[0].drift:+.1f}} — no harm</td>
+            <td class="num-good">{{casestudy.operating_characteristics[0].stop_probability:.1%}}</td>
+            <td>{{casestudy.operating_characteristics[0].expected_looks:.2f}}</td>
+            <td>{{casestudy.operating_characteristics[0].expected_information:.3f}}</td></tr>
+          <tr><td>{{casestudy.operating_characteristics[1].drift:+.1f}}</td>
+            <td>{{casestudy.operating_characteristics[1].stop_probability:.1%}}</td>
+            <td>{{casestudy.operating_characteristics[1].expected_looks:.2f}}</td>
+            <td>{{casestudy.operating_characteristics[1].expected_information:.3f}}</td></tr>
+          <tr><td>{{casestudy.operating_characteristics[2].drift:+.1f}}</td>
+            <td>{{casestudy.operating_characteristics[2].stop_probability:.1%}}</td>
+            <td>{{casestudy.operating_characteristics[2].expected_looks:.2f}}</td>
+            <td>{{casestudy.operating_characteristics[2].expected_information:.3f}}</td></tr>
+          <tr><td>{{casestudy.operating_characteristics[3].drift:+.1f}}</td>
+            <td>{{casestudy.operating_characteristics[3].stop_probability:.1%}}</td>
+            <td>{{casestudy.operating_characteristics[3].expected_looks:.2f}}</td>
+            <td>{{casestudy.operating_characteristics[3].expected_information:.3f}}</td></tr>
+          <tr class="hi"><td>{{casestudy.operating_characteristics[4].drift:+.1f}} — severe</td>
+            <td>{{casestudy.operating_characteristics[4].stop_probability:.1%}}</td>
+            <td>{{casestudy.operating_characteristics[4].expected_looks:.2f}}</td>
+            <td>{{casestudy.operating_characteristics[4].expected_information:.3f}}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted mt">Under no harm at all the rule fires
+      {{casestudy.operating_characteristics[0].stop_probability:.1%}} of the time — a low
+      false-stop rate is what buys the right to look six times. Under severe harm it fires
+      {{casestudy.operating_characteristics[4].stop_probability:.0%}} of the time and, on
+      average, after {{casestudy.operating_characteristics[4].expected_looks:.1f}} reviews
+      rather than all {{casestudy.rule.n_looks}}.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The trial runs</p>
+      <h2>Pooled it is fine. Split by age it is not.</h2>
+      <p>All four panels below monitor the <em>same</em> 40 mg arm against the
+        <em>same</em> protocol rule, on the same vertical scale. The only difference is who is
+        counted.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="fig-head">
+        <p class="fig-t">Safety monitoring of the 40 mg arm, four ways</p>
+        <p class="fig-s">Shaded region is harm. Faint dotted continuations are reviews the
+          arm never reached, because it had already been stopped.</p>
+      </div>
+      <div class="legend">
+        <span><i class="dash" style="--k:var(--boundary)"></i>harm boundary</span>
+        <span><i style="--k:var(--ink-2)"></i>pooled</span>
+        <span><i style="--k:var(--s2)"></i>25–35</span>
+        <span><i style="--k:var(--s3)"></i>36–50</span>
+        <span><i style="--k:var(--s4)"></i>51+</span>
+      </div>
+      <div class="chart" data-chart="sequential" data-file="casestudy"
+           data-opt='{"panels":[0,1,2,3],"colour":"stratum","panelHeight":230,
+                      "showContinuation":true,"yDomain":[-5,3],"animate":true,
+                      "xLabel":"information fraction"}'></div>
+      <p class="stamp"><b>axiom.design.monitor</b>(rule, z, effects, ses) per contrast ·
+        effects from <b>axiom.identify.ols</b> with ANCOVA covariates at each look ·
+        seed 20260821</p>
+    </figure>
+
+    <div class="grid-2 mt-lg">
+      <div class="stack">
+        <div>
+          <p class="readout-l">The crossing, in the protocol’s own words</p>
+          <div class="readout">
+            <div class="readout-v is-boundary">{{casestudy.stop.posterior_probability:.3f}}</div>
+            <p class="readout-d" style="margin-top:10px">P(40 mg is worse than control by more
+              than {{casestudy.rule.margin:.0f}} mmHg | data) — against a rule that fires at
+              {{casestudy.rule.probability:.2f}}</p>
+          </div>
+        </div>
+        <div class="ledger">
+          <div class="ledger-row">
+            <span class="ledger-f">decision</span>
+            <span class="ledger-s"><b>{{casestudy.stop.decision}}</b> at review
+              {{casestudy.stop.look}} of {{casestudy.stop.n_looks}} — calendar week
+              {{casestudy.stop.week}}, the <em>first</em> scheduled look</span>
+            <span class="tag is-bad">stopped</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">effect</span>
+            <span class="ledger-s">{{casestudy.stop.effect:+.2f}} mmHg against control
+              (se {{casestudy.stop.se:.2f}}, n = {{casestudy.stop.n}}) — blood pressure
+              <em>higher</em> on treatment</span>
+            <span class="ledger-v">Z {{casestudy.stop.z:.3f}}</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">threshold</span>
+            <span class="ledger-s">the boundary at this information fraction
+              ({{casestudy.stop.information:.3f}})</span>
+            <span class="ledger-v">{{casestudy.stop.threshold:.3f}}</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">pooled arm</span>
+            <span class="ledger-s">the same arm, all
+              {{casestudy.protocol.n_units}} patients: never below
+              <b>Z = {{casestudy.monitoring[2].lowest_z_seen:+.2f}}</b> at any of the six
+              reviews</span>
+            <span class="tag is-good">never fires</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="note is-refusal">
+          <p class="note-t">Stopping early costs you something, and axiom records what</p>
+          <p class="small">The decision writes a ledger line:
+            “{{casestudy.stop.ledger_statement}}”</p>
+          <p class="small" style="margin:0">The assumption it carries is
+            <code>{{casestudy.stop.assumption_name}}</code> —
+            {{casestudy.stop.assumption_statement}} It is challenged by:
+            {{casestudy.stop.challenged_by}}</p>
+        </div>
+        <p class="small muted">This matters more than it sounds. An arm stopped at a boundary
+          crossing has a biased effect estimate <em>by construction</em>: you stopped
+          precisely because the reading was extreme, so the reading overstates the effect.
+          The right thing for a library to do is not to hide that, and not to silently
+          correct it either, but to record it as an assumption attached to the number so that
+          whoever writes the report knows a stage-wise-ordered estimate is owed.</p>
+      </div>
+    </div>
+
+    <div class="mt-lg">
+      <h3>Every monitored contrast</h3>
+      <p class="prose muted small">Twelve contrasts, six reviews each. Exactly one fired.</p>
+      <div class="tbl-wrap mt">
+        <table class="t">
+          <caption>Lowest Z reached by each contrast over the reviews it took. Lower is
+            worse; the boundary sits near −2.5 at the first look and tightens after.</caption>
+          <thead><tr><th>stratum</th><th>arm</th><th>reviews taken</th><th>lowest Z</th>
+            <th>decision</th><th>stopped at</th></tr></thead>
+          <tbody>
+            <tr><td>{{casestudy.monitoring[0].stratum_label}}</td><td>{{casestudy.monitoring[0].arm_label}}</td>
+              <td>{{casestudy.monitoring[0].looks_taken}}</td><td>{{casestudy.monitoring[0].lowest_z_seen:+.2f}}</td>
+              <td>{{casestudy.monitoring[0].decision}}</td><td>—</td></tr>
+            <tr><td>{{casestudy.monitoring[1].stratum_label}}</td><td>{{casestudy.monitoring[1].arm_label}}</td>
+              <td>{{casestudy.monitoring[1].looks_taken}}</td><td>{{casestudy.monitoring[1].lowest_z_seen:+.2f}}</td>
+              <td>{{casestudy.monitoring[1].decision}}</td><td>—</td></tr>
+            <tr><td>{{casestudy.monitoring[2].stratum_label}}</td><td>{{casestudy.monitoring[2].arm_label}}</td>
+              <td>{{casestudy.monitoring[2].looks_taken}}</td><td>{{casestudy.monitoring[2].lowest_z_seen:+.2f}}</td>
+              <td>{{casestudy.monitoring[2].decision}}</td><td>—</td></tr>
+            <tr><td>{{casestudy.monitoring[3].stratum_label}}</td><td>{{casestudy.monitoring[3].arm_label}}</td>
+              <td>{{casestudy.monitoring[3].looks_taken}}</td><td>{{casestudy.monitoring[3].lowest_z_seen:+.2f}}</td>
+              <td>{{casestudy.monitoring[3].decision}}</td><td>—</td></tr>
+            <tr><td>{{casestudy.monitoring[4].stratum_label}}</td><td>{{casestudy.monitoring[4].arm_label}}</td>
+              <td>{{casestudy.monitoring[4].looks_taken}}</td><td>{{casestudy.monitoring[4].lowest_z_seen:+.2f}}</td>
+              <td>{{casestudy.monitoring[4].decision}}</td><td>—</td></tr>
+            <tr><td>{{casestudy.monitoring[5].stratum_label}}</td><td>{{casestudy.monitoring[5].arm_label}}</td>
+              <td>{{casestudy.monitoring[5].looks_taken}}</td><td>{{casestudy.monitoring[5].lowest_z_seen:+.2f}}</td>
+              <td>{{casestudy.monitoring[5].decision}}</td><td>—</td></tr>
+            <tr><td>{{casestudy.monitoring[6].stratum_label}}</td><td>{{casestudy.monitoring[6].arm_label}}</td>
+              <td>{{casestudy.monitoring[6].looks_taken}}</td><td>{{casestudy.monitoring[6].lowest_z_seen:+.2f}}</td>
+              <td>{{casestudy.monitoring[6].decision}}</td><td>—</td></tr>
+            <tr><td>{{casestudy.monitoring[7].stratum_label}}</td><td>{{casestudy.monitoring[7].arm_label}}</td>
+              <td>{{casestudy.monitoring[7].looks_taken}}</td><td>{{casestudy.monitoring[7].lowest_z_seen:+.2f}}</td>
+              <td>{{casestudy.monitoring[7].decision}}</td><td>—</td></tr>
+            <tr><td>{{casestudy.monitoring[8].stratum_label}}</td><td>{{casestudy.monitoring[8].arm_label}}</td>
+              <td>{{casestudy.monitoring[8].looks_taken}}</td><td>{{casestudy.monitoring[8].lowest_z_seen:+.2f}}</td>
+              <td>{{casestudy.monitoring[8].decision}}</td><td>—</td></tr>
+            <tr><td>{{casestudy.monitoring[9].stratum_label}}</td><td>{{casestudy.monitoring[9].arm_label}}</td>
+              <td>{{casestudy.monitoring[9].looks_taken}}</td><td>{{casestudy.monitoring[9].lowest_z_seen:+.2f}}</td>
+              <td>{{casestudy.monitoring[9].decision}}</td><td>—</td></tr>
+            <tr><td>{{casestudy.monitoring[10].stratum_label}}</td><td>{{casestudy.monitoring[10].arm_label}}</td>
+              <td>{{casestudy.monitoring[10].looks_taken}}</td><td>{{casestudy.monitoring[10].lowest_z_seen:+.2f}}</td>
+              <td>{{casestudy.monitoring[10].decision}}</td><td>—</td></tr>
+            <tr class="bad"><td>{{casestudy.monitoring[11].stratum_label}}</td><td>{{casestudy.monitoring[11].arm_label}}</td>
+              <td>{{casestudy.monitoring[11].looks_taken}}</td><td>{{casestudy.monitoring[11].lowest_z_seen:+.2f}}</td>
+              <td>{{casestudy.monitoring[11].decision}}</td>
+              <td>week {{casestudy.monitoring[11].stopped_week}}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What it took</p>
+      <h2>Every pillar showed up</h2>
+      <p>The stopping decision is one line of output. Getting to a trial where that line means
+        something used the whole toolkit.</p>
+    </div>
+
+    <div class="cards">
+      <a class="card" href="identify.html">
+        <p class="card-n">01 · IDENTIFY</p>
+        <h3>What randomization buys</h3>
+        <p>Randomization licenses the contrast, but the analysis still conditions on baseline
+          and stratum. axiom states which adjustment set the graph licenses and what
+          per-protocol versus intention-to-treat actually changes.</p>
+        <div class="card-f"><p class="card-go">See the pillar <span aria-hidden="true">→</span></p></div>
+      </a>
+      <a class="card" href="design.html">
+        <p class="card-n">02 · DESIGN</p>
+        <h3>Sizing and the boundary</h3>
+        <p>The {{casestudy.protocol.n_units}}-patient size, the information fractions at each
+          review, the boundary derived from the protocol sentence, and the operating
+          characteristics that justify looking six times.</p>
+        <div class="card-f"><p class="card-go">See the pillar <span aria-hidden="true">→</span></p></div>
+      </a>
+      <a class="card" href="surface.html">
+        <p class="card-n">04 · SURFACE</p>
+        <h3>The dose–response</h3>
+        <p>An Emax curve in dose with an exponential onset, which is what makes 20 mg and
+          40 mg nearly indistinguishable on benefit while their harm profiles diverge
+          sharply.</p>
+        <div class="card-f"><p class="card-go">See the pillar <span aria-hidden="true">→</span></p></div>
+      </a>
+    </div>
+
+    <div class="note mt-lg" style="max-width:var(--measure)">
+      <p class="note-t">The six notebooks</p>
+      <p class="small" style="margin:0">This page is a summary. The full case study lives in
+        the repository at <code>nbs/case-studies/hypertension/</code> — six executed
+        notebooks over one synthetic world, from the causal graph through sizing, the
+        dose–response, the sequential design, and the review that stops the arm. Its design
+        notes are in <code>docs/notes/0004-case-study-hypertension.md</code>.</p>
+    </div>
+  </div>
+</section>

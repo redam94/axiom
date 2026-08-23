@@ -141,6 +141,12 @@ from axiom.design import (
     schedule_with_cooldown,
     time_to_re_experiment,
 )
+from axiom.design.identifiability import (
+    Combination,
+    EstimabilityReport,
+    Prescription,
+    ProfileReport,
+)
 from axiom.diagnose import (
     Backtest,
     Benchmark,
@@ -179,6 +185,31 @@ from axiom.diagnose import (
     robustness_value,
     tipping_point,
 )
+from axiom.diagnose.structure import (
+    ImpliedIndependence,
+    IndependenceCheck,
+    StructureRefutation,
+    refute_structure,
+)
+from axiom.discover import Dataset as DiscoveryDataset
+from axiom.discover import EssentialGraph, GaussianBIC
+from axiom.discover.fci import PAG, PagEdge
+from axiom.discover.independence import IndependenceResult
+from axiom.discover.search import DiscoveryResult, ges
+from axiom.discover.stability import EdgeSupport, StabilityReport
+from axiom.dynamics import (
+    Block,
+    BlockOrder,
+    BlockSolution,
+    DynamicEquation,
+    DynamicSystem,
+    Unrolled,
+    Variable,
+    block_order,
+    conditional_form,
+    parse_system,
+    unroll,
+)
 from axiom.estimands import Estimand, EstimandResult, FacetDiff, Level, Quantity, TransferPlan
 from axiom.identify import (
     CausalGraph,
@@ -191,6 +222,11 @@ from axiom.identify import (
     identify,
     transport_verdict,
 )
+from axiom.identify.cluster import ClusterDAG
+from axiom.identify.cyclic import MixedGraph
+from axiom.identify.dynamic import SequentialPlan, sequential_plan
+from axiom.identify.formula import Density, Marginal, Product, Ratio
+from axiom.identify.id_algorithm import Hedge, IdentifiedEffect, identify_effect
 from axiom.identify.transport import TransportVerdict
 from axiom.identify.verdict import IdentificationVerdict
 from axiom.infer import (
@@ -1016,7 +1052,282 @@ def _report_section() -> Section:
     )
 
 
+# -- dynamics ---------------------------------------------------------------------------
+
+
+def _dynamic_variables() -> tuple[Variable, ...]:
+    return (
+        Variable(name="stock", dimension=D.outcome, initial=0.0),
+        Variable(name="inflow", dimension=D.outcome, role="exogenous"),
+    )
+
+
+def _dynamic_system() -> DynamicSystem:
+    return parse_system(
+        "stock = decay * stock[t-1] + inflow",
+        variables=_dynamic_variables(),
+        parameters=(Param(name="decay", dimension=Dimension(exponents={})),),
+        name="one-compartment",
+    )
+
+
+def _dynamic_equation() -> DynamicEquation:
+    return _dynamic_system().equation("stock")
+
+
+def _block_order() -> BlockOrder:
+    return block_order(_dynamic_system())
+
+
+def _block() -> Block:
+    return _block_order().blocks[0]
+
+
+def _block_solution() -> BlockSolution:
+    compiled = conditional_form(_dynamic_system())
+    assert isinstance(compiled, Unrolled)
+    return compiled.solutions[0]
+
+
+def _unrolled() -> Unrolled:
+    compiled = unroll(_dynamic_system(), periods=3)
+    assert isinstance(compiled, Unrolled)
+    return compiled
+
+
+def _sequential_plan() -> SequentialPlan:
+    graph = CausalGraph.from_edges(
+        "dose.t0 -> outcome.t0, outcome.t0 -> dose.t1, dose.t1 -> outcome.t1, "
+        "outcome.t0 -> outcome.t1"
+    )
+    return sequential_plan(graph, ["dose.t0", "dose.t1"], "outcome.t1")
+
+
+# -- identifiability --------------------------------------------------------------------
+
+
+def _combination() -> Combination:
+    return Combination(
+        exponents={"alpha": 1, "k": -1},
+        kind="estimable",
+        scaling="log",
+        score=1.4,
+        label="alpha / k",
+    )
+
+
+def _estimability_report() -> EstimabilityReport:
+    return EstimabilityReport(
+        parameters=("alpha", "k"),
+        observations=("low dose",),
+        scaling="log",
+        n_points=2,
+        rank=1,
+        deficiency=1,
+        persistent_deficiency=0,
+        singular_values=(6.8, 0.02),
+        condition_number=336.0,
+        symmetries=(
+            Combination(
+                exponents={"alpha": 1, "k": 1},
+                kind="symmetry",
+                score=0.01,
+                label="alpha -> alpha*c, k -> k*c",
+            ),
+        ),
+        estimable=(_combination(),),
+        null_basis=((0.7071, 0.7071),),
+        tolerance=0.03,
+    )
+
+
+def _profile_report() -> ProfileReport:
+    return ProfileReport(
+        targets=("alpha", "alpha / k"),
+        truth={"alpha": 4.0, "alpha / k": 0.4},
+        recovered={"alpha": 0.38, "alpha / k": 0.4},
+        interval={"alpha": (0.17, float("inf")), "alpha / k": (0.39, 0.41)},
+        level=0.95,
+        threshold=1.92,
+        flat=("alpha",),
+        n_observations=24,
+        seed=11,
+    )
+
+
+def _prescription() -> Prescription:
+    return Prescription(
+        added=("wide dose",),
+        rank_before=1,
+        rank_after=2,
+        n_parameters=2,
+        broken=(("alpha * k",),),
+        considered=("wide dose",),
+        complete=True,
+    )
+
+
+# -- graphs with cycles, and identification formulas -------------------------------------
+
+
+def _mixed_graph() -> MixedGraph:
+    return MixedGraph.from_edges("x -> a, a -> b, b -> a, b -> y", name="a market at equilibrium")
+
+
+def _density() -> Density:
+    return Density(outcomes=("Y",), given=("X", "Z"))
+
+
+def _product() -> Product:
+    return Product(factors=(_density(), Density(outcomes=("Z",))))
+
+
+def _marginal() -> Marginal:
+    return Marginal(over=("Z",), term=_product())
+
+
+def _ratio() -> Ratio:
+    return Ratio(numerator=Density(outcomes=("X", "Y")), denominator=Density(outcomes=("X",)))
+
+
+def _hedge() -> Hedge:
+    return Hedge(root=("X", "Y"), subset=("Y",), variables=("X", "Y"))
+
+
+def _identified_effect() -> IdentifiedEffect:
+    return identify_effect(CausalGraph.from_edges("Z -> X, Z -> Y, X -> Y"), "X", "Y")
+
+
+# -- discovery ---------------------------------------------------------------------------
+
+
+def _cluster_dag() -> ClusterDAG:
+    return ClusterDAG(
+        clusters={"demand": ("price", "quantity"), "cost": ("wage",)},
+        edges=(("cost", "demand"),),
+        name="a two-block market",
+    )
+
+
+def _essential_graph() -> EssentialGraph:
+    from axiom.discover import cpdag
+
+    return cpdag(CausalGraph.from_edges("a -> c, b -> c, c -> d"))
+
+
+def _discovery_dataset() -> DiscoveryDataset:
+    import numpy as np
+
+    rng = np.random.default_rng(0)
+    a = rng.normal(size=200)
+    b = 1.5 * a + rng.normal(size=200)
+    return DiscoveryDataset(np.column_stack([a, b]), ("a", "b"), (frozenset(),) * 200)
+
+
+def _discovery_result() -> DiscoveryResult:
+    return ges(GaussianBIC(_discovery_dataset()))
+
+
+# -- refutation and discovery under latents ----------------------------------------------
+
+
+def _independence_result() -> IndependenceResult:
+    return IndependenceResult(
+        x="heat",
+        y="growth",
+        given=("light",),
+        correlation=0.65,
+        p_value=1e-60,
+        n=2000,
+        statistic=38.5,
+    )
+
+
+def _implied_independence() -> ImpliedIndependence:
+    return ImpliedIndependence(x="heat", y="growth", given=("light",))
+
+
+def _structure_refutation() -> StructureRefutation:
+    import numpy as np
+
+    rng = np.random.default_rng(0)
+    rows = 400
+    a = rng.normal(size=rows)
+    b = 1.4 * a + rng.normal(size=rows)
+    c = 0.9 * b + rng.normal(size=rows)
+    data = DiscoveryDataset(np.column_stack([a, b, c]), ("a", "b", "c"), (frozenset(),) * rows)
+    report = refute_structure(CausalGraph.from_edges("a -> b, b -> c"), data)
+    assert isinstance(report, StructureRefutation)
+    return report
+
+
+def _independence_check() -> IndependenceCheck:
+    return _structure_refutation().checks[0]
+
+
+def _pag_edge() -> PagEdge:
+    return PagEdge(a="sprout", b="harvest", mark_a="arrow", mark_b="arrow")
+
+
+def _pag() -> PAG:
+    return PAG(
+        nodes=("harvest", "seed", "sprout"),
+        edges=(
+            _pag_edge(),
+            PagEdge(a="seed", b="sprout", mark_a="circle", mark_b="arrow"),
+        ),
+        limits_hit=("Zhang's rules R4 and R5-R10 are not implemented",),
+    )
+
+
+def _edge_support() -> EdgeSupport:
+    return EdgeSupport(
+        a="heat", b="light", adjacent=0.97, forward=0.10, backward=0.02, undirected=0.85
+    )
+
+
+def _stability_report() -> StabilityReport:
+    return StabilityReport(
+        variables=("heat", "light"),
+        edges=(_edge_support(),),
+        n_bootstrap=60,
+        n_rows=2000,
+        penalty=1.0,
+        seed=7,
+    )
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
+    IndependenceResult: _independence_result,
+    ImpliedIndependence: _implied_independence,
+    IndependenceCheck: _independence_check,
+    StructureRefutation: _structure_refutation,
+    PagEdge: _pag_edge,
+    PAG: _pag,
+    EdgeSupport: _edge_support,
+    StabilityReport: _stability_report,
+    ClusterDAG: _cluster_dag,
+    EssentialGraph: _essential_graph,
+    DiscoveryResult: _discovery_result,
+    MixedGraph: _mixed_graph,
+    Density: _density,
+    Product: _product,
+    Marginal: _marginal,
+    Ratio: _ratio,
+    Hedge: _hedge,
+    IdentifiedEffect: _identified_effect,
+    Variable: lambda: _dynamic_variables()[0],
+    DynamicEquation: _dynamic_equation,
+    DynamicSystem: _dynamic_system,
+    Block: _block,
+    BlockOrder: _block_order,
+    BlockSolution: _block_solution,
+    Unrolled: _unrolled,
+    SequentialPlan: _sequential_plan,
+    Combination: _combination,
+    EstimabilityReport: _estimability_report,
+    ProfileReport: _profile_report,
+    Prescription: _prescription,
     ResponseBand: lambda: ResponseBand(
         treatment="a",
         outcome="y",

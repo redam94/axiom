@@ -22,3 +22,8 @@ nbs/report/readout.*
 
 # Claude Code worktrees.
 .claude/worktrees/
+
+# Benchmark datasets whose licence this repository cannot satisfy by
+# redistributing them. Fetched on request by `python benchmarks/fetch.py`,
+# under the upstream terms. See benchmarks/README.md.
+benchmarks/cache/

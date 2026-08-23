@@ -11,6 +11,8 @@ The executed series under `nbs/identify/`:
 - [01-graphs-and-verdicts.ipynb](../../nbs/identify/01-graphs-and-verdicts.ipynb)
 - [02-adjustment-and-estimators.ipynb](../../nbs/identify/02-adjustment-and-estimators.ipynb)
 - [03-transport.ipynb](../../nbs/identify/03-transport.ipynb)
+- [04-dynamic-systems.ipynb](../../nbs/identify/04-dynamic-systems.ipynb)
+- [05-beyond-dags.ipynb](../../nbs/identify/05-beyond-dags.ipynb)
 
 ## Package
 
@@ -23,6 +25,24 @@ The executed series under `nbs/identify/`:
 
 ```{eval-rst}
 .. automodule:: axiom.identify.backdoor
+   :members:
+
+.. automodule:: axiom.identify.cluster
+   :members:
+
+.. automodule:: axiom.identify.cyclic
+   :members:
+
+.. automodule:: axiom.identify.dynamic
+   :members:
+
+.. automodule:: axiom.identify.formula
+   :members:
+
+.. automodule:: axiom.identify.id_algorithm
+   :members:
+
+.. automodule:: axiom.identify.swig
    :members:
 
 .. automodule:: axiom.identify.endogeneity

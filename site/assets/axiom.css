@@ -1,0 +1,738 @@
+/* ==========================================================================
+   axiom — Bayesian causal decision science
+   --------------------------------------------------------------------------
+   The design follows the library's own fourth rule: every number carries its
+   provenance. Key figures are set as interval readouts that state their
+   definition and mass; every chart carries a stamp naming the call that made
+   it. Red is reserved — it marks a crossed boundary and never a data series.
+   ========================================================================== */
+
+/* -- tokens ---------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+
+  --paper:    #f4f7fa;
+  --panel:    #ffffff;
+  --panel-2:  #eaeff5;
+  --ink:      #0f1720;
+  --ink-2:    #48545f;
+  --ink-3:    #74808d;
+  --rule:     #d8e0e9;
+  --rule-2:   #e8edf3;
+  --grid:     #e2e8ef;
+
+  --accent:      #2a78d6;
+  --accent-deep: #1c5cab;
+  --accent-wash: #e6effb;
+
+  /* reserved: a threshold that was crossed. never a series colour. */
+  --boundary:      #d03b3b;
+  --boundary-wash: #f7e4e3;
+  --good:          #0ca30c;
+  --warn:          #fab219;
+
+  /* validated categorical slots (light) */
+  --s1: #2a78d6;  --s2: #eb6834;  --s3: #1baf7a;  --s4: #eda100;
+  --s5: #e87ba4;  --s6: #008300;  --s7: #4a3aa7;  --s8: #e34948;
+
+  --f-display: "IBM Plex Sans Condensed", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+  --f-ui: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --wrap: 1200px;
+  --measure: 68ch;
+  --pad: clamp(20px, 5vw, 52px);
+  --shadow: 0 1px 2px rgba(16, 32, 52, .05), 0 8px 24px -12px rgba(16, 32, 52, .16);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper:   #0d1219;
+    --panel:   #141c25;
+    --panel-2: #1a232e;
+    --ink:     #edf1f6;
+    --ink-2:   #a3aebc;
+    --ink-3:   #7b8794;
+    --rule:    #253040;
+    --rule-2:  #1d2735;
+    --grid:    #202b39;
+
+    --accent:      #3987e5;
+    --accent-deep: #6da7ec;
+    --accent-wash: #16283f;
+
+    --boundary:      #e05f5c;
+    --boundary-wash: #35201f;
+
+    --s1: #3987e5;  --s2: #d95926;  --s3: #199e70;  --s4: #c98500;
+    --s5: #d55181;  --s6: #008300;  --s7: #9085e9;  --s8: #e66767;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px -14px rgba(0, 0, 0, .7);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper:   #0d1219;
+  --panel:   #141c25;
+  --panel-2: #1a232e;
+  --ink:     #edf1f6;
+  --ink-2:   #a3aebc;
+  --ink-3:   #7b8794;
+  --rule:    #253040;
+  --rule-2:  #1d2735;
+  --grid:    #202b39;
+
+  --accent:      #3987e5;
+  --accent-deep: #6da7ec;
+  --accent-wash: #16283f;
+
+  --boundary:      #e05f5c;
+  --boundary-wash: #35201f;
+
+  --s1: #3987e5;  --s2: #d95926;  --s3: #199e70;  --s4: #c98500;
+  --s5: #d55181;  --s6: #008300;  --s7: #9085e9;  --s8: #e66767;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px -14px rgba(0, 0, 0, .7);
+}
+
+/* -- base ------------------------------------------------------------------ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 17px;
+  line-height: 1.66;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 { font-family: var(--f-display); font-weight: 700; line-height: 1.05; margin: 0; }
+h1 { font-size: clamp(2.6rem, 6.4vw, 4.6rem); letter-spacing: -.022em; }
+h2 { font-size: clamp(1.9rem, 3.6vw, 2.7rem); letter-spacing: -.016em; }
+h3 { font-size: clamp(1.25rem, 2vw, 1.5rem); letter-spacing: -.01em; }
+h4 { font-size: 1.05rem; letter-spacing: -.005em; font-family: var(--f-ui); font-weight: 600; }
+
+p { margin: 0 0 1.1em; }
+a { color: var(--accent-deep); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { color: var(--accent); }
+strong { font-weight: 600; }
+code { font-family: var(--f-mono); font-size: .87em; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+.skip {
+  position: absolute; left: -9999px; top: 8px; z-index: 100;
+  background: var(--accent); color: #fff; padding: 10px 16px; border-radius: 6px;
+  font-family: var(--f-ui); font-size: .9rem;
+}
+.skip:focus { left: 12px; }
+
+.wrap { max-width: var(--wrap); margin-inline: auto; padding-inline: var(--pad); }
+.prose { max-width: var(--measure); }
+.lede { font-size: 1.18rem; line-height: 1.6; color: var(--ink-2); }
+
+/* -- top bar: the nav is the workflow -------------------------------------- */
+
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: saturate(1.6) blur(12px);
+  border-bottom: 1px solid var(--rule);
+}
+.topbar-in {
+  max-width: var(--wrap); margin-inline: auto; padding: 0 var(--pad);
+  display: flex; align-items: center; gap: clamp(12px, 2.5vw, 30px); min-height: 60px;
+}
+
+.brand {
+  display: inline-flex; align-items: center; gap: 9px; flex: none;
+  font-family: var(--f-display); font-weight: 700; font-size: 1.32rem;
+  letter-spacing: -.02em; color: var(--ink); text-decoration: none;
+}
+.brand-mark {
+  width: 15px; height: 15px; flex: none; border-radius: 50%;
+  border: 2.5px solid var(--accent);
+  /* a point with an interval around it — the library's atom */
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+/* the chain of pillars, in working order */
+.chain { display: flex; align-items: center; flex: 1 1 auto; min-width: 0; overflow-x: auto;
+  scrollbar-width: none; }
+.chain::-webkit-scrollbar { display: none; }
+.step {
+  display: inline-flex; align-items: baseline; gap: 6px; flex: none;
+  padding: 6px 9px; border-radius: 6px; text-decoration: none;
+  font-family: var(--f-ui); font-size: .87rem; font-weight: 500; color: var(--ink-2);
+  white-space: nowrap;
+}
+.step:hover { background: var(--panel-2); color: var(--ink); }
+.step-n {
+  font-family: var(--f-mono); font-size: .68rem; font-weight: 600;
+  color: var(--ink-3); font-variant-numeric: tabular-nums;
+}
+.step-on { color: var(--ink); background: var(--accent-wash); }
+.step-on .step-n { color: var(--accent); }
+.step-link { flex: none; width: 12px; height: 1px; background: var(--rule); }
+
+.navx-wrap { display: flex; gap: 4px; flex: none; }
+.navx {
+  font-family: var(--f-ui); font-size: .87rem; font-weight: 500; color: var(--ink-2);
+  text-decoration: none; padding: 6px 9px; border-radius: 6px; white-space: nowrap;
+}
+.navx:hover { background: var(--panel-2); color: var(--ink); }
+.navx-on { color: var(--ink); background: var(--panel-2); }
+
+.theme {
+  flex: none; width: 34px; height: 34px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--rule); background: var(--panel); display: grid; place-items: center;
+}
+.theme:hover { border-color: var(--accent); }
+.theme-ico {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: linear-gradient(90deg, var(--ink) 0 50%, transparent 50% 100%);
+  border: 1.6px solid var(--ink); box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .chain { order: 3; flex-basis: 100%; padding-bottom: 8px; }
+  .topbar-in { flex-wrap: wrap; padding-top: 8px; }
+  .step-link { width: 8px; }
+}
+
+/* On a narrow phone the brand, the secondary links and the theme button together
+   are wider than the viewport, and `flex: none` means they cannot give. Let the
+   link group shrink and scroll rather than pushing the whole page sideways. */
+@media (max-width: 560px) {
+  .topbar-in { gap: 10px; }
+  .navx-wrap {
+    flex: 1 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none;
+    justify-content: flex-end;
+  }
+  .navx-wrap::-webkit-scrollbar { display: none; }
+  .navx { padding: 6px 7px; }
+  .brand { font-size: 1.18rem; }
+}
+
+/* -- structural bits ------------------------------------------------------- */
+
+.eyebrow {
+  font-family: var(--f-mono); font-size: .72rem; font-weight: 500;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--ink-3);
+  margin: 0 0 14px; display: flex; align-items: center; gap: 10px;
+}
+.eyebrow::before {
+  content: ""; width: 18px; height: 2px; background: var(--accent); flex: none;
+}
+
+section { padding-block: clamp(48px, 7vw, 92px); }
+section + section { border-top: 1px solid var(--rule-2); }
+.section-head { max-width: var(--measure); margin-bottom: 38px; }
+.section-head p { color: var(--ink-2); margin-bottom: 0; }
+.section-head h2 + p { margin-top: 14px; }
+
+/* -- hero ------------------------------------------------------------------ */
+
+.hero { padding-block: clamp(40px, 6vw, 76px) clamp(40px, 6vw, 80px); }
+.hero-grid {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+  gap: clamp(32px, 5vw, 64px); align-items: center;
+}
+@media (max-width: 940px) { .hero-grid { grid-template-columns: 1fr; } }
+
+.hero h1 { margin-bottom: 22px; }
+.hero h1 em {
+  font-style: normal; color: var(--boundary);
+  /* the one red thing above the fold: a boundary that was crossed */
+}
+.hero-sub { font-size: 1.16rem; color: var(--ink-2); max-width: 54ch; }
+.hero-sub strong { color: var(--ink); }
+
+.hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; align-items: center; }
+.btn {
+  font-family: var(--f-ui); font-size: .93rem; font-weight: 500;
+  padding: 11px 20px; border-radius: 8px; text-decoration: none;
+  border: 1px solid transparent; display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-1 { background: var(--accent); color: #fff; }
+.btn-1:hover { background: var(--accent-deep); color: #fff; }
+.btn-2 { background: var(--panel); color: var(--ink); border-color: var(--rule); }
+.btn-2:hover { border-color: var(--accent); color: var(--ink); }
+
+/* -- the interval readout: axiom's fourth rule, as a component -------------- */
+
+.readout { font-family: var(--f-mono); display: block; }
+.readout-v {
+  font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 600; letter-spacing: -.02em;
+  color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.1;
+}
+.readout-v.is-boundary { color: var(--boundary); }
+.readout-bar {
+  position: relative; height: 11px; margin: 9px 0 5px; max-width: 220px;
+}
+.readout-bar::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 1.5px;
+  background: var(--ink-3);
+}
+/* The point estimate, placed where it actually falls inside its interval —
+   `--pos` is computed at build time, so a skewed posterior draws skewed. */
+.readout-bar::after {
+  content: ""; position: absolute; left: var(--pos, 50%); top: 0; width: 1.5px;
+  height: 11px; background: var(--accent); transform: translateX(-50%);
+}
+.readout-bar i {
+  position: absolute; top: 1px; width: 1.5px; height: 9px; background: var(--ink-3);
+}
+.readout-bar i:first-child { left: 0; }
+.readout-bar i:last-child { right: 0; }
+.readout-e {
+  display: flex; justify-content: space-between; max-width: 220px;
+  font-size: .78rem; color: var(--ink-3); font-variant-numeric: tabular-nums;
+}
+.readout-d {
+  font-size: .72rem; color: var(--ink-3); margin-top: 7px; letter-spacing: .01em;
+}
+.readout-l {
+  font-family: var(--f-ui); font-size: .82rem; color: var(--ink-2); margin-bottom: 5px;
+}
+
+/* -- figures & charts ------------------------------------------------------ */
+
+.fig {
+  margin: 0 0 8px; background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 12px; padding: 20px 20px 14px; box-shadow: var(--shadow);
+}
+.fig-head { margin-bottom: 14px; }
+.fig-t {
+  font-family: var(--f-ui); font-weight: 600; font-size: .98rem; color: var(--ink);
+  margin: 0 0 4px;
+}
+.fig-s { font-size: .88rem; color: var(--ink-2); margin: 0; line-height: 1.5; font-family: var(--f-ui); }
+.chart { width: 100%; position: relative; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+
+/* the provenance stamp — every figure names the call that produced it */
+.stamp {
+  font-family: var(--f-mono); font-size: .705rem; color: var(--ink-3);
+  margin: 12px 0 0; padding-top: 10px; border-top: 1px dashed var(--rule);
+  line-height: 1.6; text-indent: -14px; padding-left: 14px;
+}
+.stamp::before { content: "↳ "; color: var(--accent); }
+.stamp b { font-weight: 500; color: var(--ink-2); }
+
+.legend {
+  display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 12px;
+  font-family: var(--f-ui); font-size: .82rem; color: var(--ink-2);
+}
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.legend i {
+  width: 14px; height: 3px; border-radius: 2px; background: var(--k, var(--s1)); flex: none;
+}
+.legend i.dash {
+  height: 0; border-top: 2px dashed var(--k, var(--boundary)); border-radius: 0;
+}
+.legend i.dot { width: 9px; height: 9px; border-radius: 50%; }
+
+/* tooltip */
+.tip {
+  position: absolute; pointer-events: none; z-index: 20; opacity: 0;
+  transition: opacity .1s ease; background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 8px; padding: 9px 11px;
+  font-family: var(--f-mono); font-size: .74rem; line-height: 1.55;
+  box-shadow: var(--shadow); max-width: 260px; white-space: nowrap;
+}
+.tip.on { opacity: 1; }
+.tip b { color: var(--ink); font-weight: 600; }
+.tip em { font-style: normal; color: var(--ink-3); }
+@media (prefers-reduced-motion: reduce) { .tip { transition: none; } }
+
+/* the table view every chart owes its reader */
+.tbl-toggle {
+  font-family: var(--f-ui); font-size: .78rem; color: var(--ink-2); background: none;
+  border: 1px solid var(--rule); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  margin-top: 12px;
+}
+.tbl-toggle:hover { border-color: var(--accent); color: var(--ink); }
+.chart-tbl { display: none; margin-top: 12px; max-height: 340px; overflow: auto; }
+.chart-tbl.on { display: block; }
+
+/* -- tables ---------------------------------------------------------------- */
+
+.tbl-wrap { overflow-x: auto; margin: 0 0 8px; }
+table.t {
+  border-collapse: collapse; width: 100%; font-family: var(--f-mono); font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+}
+table.t caption {
+  text-align: left; font-family: var(--f-ui); font-size: .88rem; color: var(--ink-2);
+  padding-bottom: 10px;
+}
+table.t th, table.t td { padding: 8px 14px 8px 0; text-align: right; white-space: nowrap; }
+table.t th:first-child, table.t td:first-child { text-align: left; }
+table.t th {
+  font-weight: 500; font-size: .7rem; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--ink-3); border-bottom: 1px solid var(--rule); padding-bottom: 7px;
+}
+table.t td { border-bottom: 1px solid var(--rule-2); color: var(--ink-2); }
+table.t td:first-child { color: var(--ink); }
+table.t tr.hi td { background: var(--accent-wash); color: var(--ink); }
+table.t tr.bad td { color: var(--boundary); }
+table.t .num-good { color: var(--good); }
+table.t .num-bad { color: var(--boundary); }
+
+/* -- code ------------------------------------------------------------------ */
+
+.code {
+  position: relative; background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 12px; margin: 0 0 18px; box-shadow: var(--shadow); overflow: hidden;
+}
+.code-h {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 14px; border-bottom: 1px solid var(--rule-2); background: var(--panel-2);
+}
+.code-h span {
+  font-family: var(--f-mono); font-size: .72rem; color: var(--ink-3); letter-spacing: .04em;
+}
+.copy {
+  font-family: var(--f-ui); font-size: .74rem; color: var(--ink-2); background: none;
+  border: 1px solid var(--rule); border-radius: 5px; padding: 3px 9px; cursor: pointer;
+}
+.copy:hover { border-color: var(--accent); color: var(--ink); }
+.code pre {
+  margin: 0; padding: 16px; overflow-x: auto; font-family: var(--f-mono);
+  font-size: .805rem; line-height: 1.7; color: var(--ink);
+}
+.code pre .c { color: var(--ink-3); font-style: italic; }
+.code pre .k { color: var(--s7); }
+.code pre .s { color: var(--s3); }
+.code pre .n { color: var(--s2); }
+.code pre .f { color: var(--accent-deep); }
+.code pre .o { color: var(--ink-2); }
+
+/* a block of real terminal output, paired with the code that made it */
+.out {
+  background: var(--panel-2); border: 1px solid var(--rule); border-radius: 12px;
+  padding: 0; margin: 0 0 18px; overflow: hidden;
+}
+.out-h {
+  padding: 9px 14px; border-bottom: 1px solid var(--rule);
+  font-family: var(--f-mono); font-size: .72rem; color: var(--ink-3); letter-spacing: .04em;
+}
+.out pre {
+  margin: 0; padding: 16px; overflow-x: auto; font-family: var(--f-mono);
+  font-size: .775rem; line-height: 1.72; color: var(--ink-2);
+}
+.out pre b { color: var(--ink); font-weight: 600; }
+.out pre .hl { color: var(--accent-deep); font-weight: 600; }
+.out pre .bad { color: var(--boundary); font-weight: 600; }
+.out pre .ok { color: var(--good); font-weight: 600; }
+
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+@media (max-width: 860px) { .pair { grid-template-columns: 1fr; } }
+
+/* -- cards ----------------------------------------------------------------- */
+
+.cards { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); }
+.card {
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 12px;
+  padding: 22px; display: flex; flex-direction: column; text-decoration: none;
+  color: inherit; box-shadow: var(--shadow);
+}
+a.card:hover { border-color: var(--accent); }
+a.card:hover .card-go { color: var(--accent); gap: 10px; }
+.card-n {
+  font-family: var(--f-mono); font-size: .7rem; color: var(--accent); font-weight: 600;
+  letter-spacing: .1em; margin-bottom: 12px;
+}
+.card h3 { margin-bottom: 9px; }
+.card p { font-size: .93rem; color: var(--ink-2); margin-bottom: 16px; }
+.card-f { margin-top: auto; }
+.card-go {
+  font-family: var(--f-ui); font-size: .85rem; color: var(--ink-2); font-weight: 500;
+  display: inline-flex; align-items: center; gap: 6px; transition: gap .15s ease;
+}
+@media (prefers-reduced-motion: reduce) { .card-go { transition: none; } }
+
+/* a number pulled out of a card, in the library's own idiom */
+.card-stat {
+  font-family: var(--f-mono); font-size: 1.05rem; font-weight: 600; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.card-stat small {
+  display: block; font-family: var(--f-ui); font-size: .76rem; font-weight: 400;
+  color: var(--ink-3); margin-top: 3px; letter-spacing: 0;
+}
+
+/* -- callouts -------------------------------------------------------------- */
+
+.note {
+  border-left: 2px solid var(--accent); background: var(--panel);
+  padding: 16px 20px; border-radius: 0 10px 10px 0; margin: 0 0 20px;
+}
+.note p:last-child { margin-bottom: 0; }
+.note-t {
+  font-family: var(--f-ui); font-weight: 600; font-size: .82rem; color: var(--accent-deep);
+  letter-spacing: .02em; margin-bottom: 6px;
+}
+.note.is-refusal { border-left-color: var(--boundary); }
+.note.is-refusal .note-t { color: var(--boundary); }
+.note code { background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
+
+/* a ledger line: what an assumption cost, in axiom's own layout */
+.ledger { display: grid; gap: 10px; margin: 0 0 20px; }
+.ledger-row {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: baseline;
+  padding: 13px 16px; background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+.ledger-f {
+  font-family: var(--f-mono); font-size: .72rem; color: var(--accent); font-weight: 500;
+  white-space: nowrap;
+}
+.ledger-s { font-family: var(--f-ui); font-size: .88rem; color: var(--ink-2); }
+.ledger-s b { color: var(--ink); font-weight: 600; }
+.ledger-v {
+  font-family: var(--f-mono); font-size: .82rem; color: var(--ink); white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.tag {
+  font-family: var(--f-mono); font-size: .66rem; letter-spacing: .07em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 4px; background: var(--panel-2); color: var(--ink-3);
+  border: 1px solid var(--rule); white-space: nowrap;
+}
+.tag.is-warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--rule)); }
+.tag.is-good { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, var(--rule)); }
+.tag.is-bad { color: var(--boundary); border-color: color-mix(in srgb, var(--boundary) 40%, var(--rule)); }
+
+/* A three-column row with two nowrap edges has a min-content width that a phone
+   cannot hold. Below the fold-point it stacks instead of forcing a sideways scroll. */
+@media (max-width: 620px) {
+  .ledger-row { grid-template-columns: 1fr; gap: 7px; }
+  .ledger-f, .ledger-v { white-space: normal; }
+  .ledger-v { font-size: .78rem; color: var(--ink-2); }
+  .tag { white-space: normal; }
+}
+
+/* -- rule strip (the six commitments) -------------------------------------- */
+
+.rules { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+  border-radius: 12px; overflow: hidden; }
+.rule-i { background: var(--panel); padding: 22px 24px; display: grid;
+  grid-template-columns: 44px 1fr; gap: 20px; align-items: start; }
+.rule-n {
+  font-family: var(--f-mono); font-size: .95rem; font-weight: 600; color: var(--accent);
+  padding-top: 2px;
+}
+.rule-i h4 { margin-bottom: 6px; }
+.rule-i p { font-size: .92rem; color: var(--ink-2); margin: 0; }
+.rule-i p + p { margin-top: 8px; }
+.rule-proof {
+  font-family: var(--f-mono); font-size: .74rem; color: var(--ink-3);
+  border-top: 1px dashed var(--rule); padding-top: 9px; margin-top: 11px !important;
+}
+@media (max-width: 620px) { .rule-i { grid-template-columns: 1fr; gap: 6px; } }
+
+/* -- layering diagram ------------------------------------------------------ */
+
+.layers { display: grid; gap: 10px; font-family: var(--f-ui); }
+.layer {
+  display: grid; grid-template-columns: 128px 1fr; gap: 16px; align-items: center;
+  padding: 12px 16px; background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+.layer-n {
+  font-family: var(--f-mono); font-size: .7rem; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.layer-p { display: flex; flex-wrap: wrap; gap: 7px; }
+.pkg {
+  font-family: var(--f-mono); font-size: .78rem; padding: 3px 10px; border-radius: 6px;
+  background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--rule-2);
+  text-decoration: none;
+}
+a.pkg:hover { border-color: var(--accent); color: var(--ink); }
+.pkg b { color: var(--ink-3); font-weight: 400; font-size: .9em; margin-left: 5px; }
+.layer-arrow { text-align: center; color: var(--ink-3); font-family: var(--f-mono); font-size: .8rem; }
+@media (max-width: 620px) { .layer { grid-template-columns: 1fr; gap: 8px; } }
+
+/* -- API explorer ---------------------------------------------------------- */
+
+.api-search {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 26px;
+}
+.api-search input {
+  flex: 1 1 260px; font-family: var(--f-mono); font-size: .88rem; padding: 11px 14px;
+  border: 1px solid var(--rule); border-radius: 9px; background: var(--panel);
+  color: var(--ink);
+}
+.api-search input::placeholder { color: var(--ink-3); }
+.api-count { font-family: var(--f-mono); font-size: .78rem; color: var(--ink-3); }
+
+.api-pkg { border-top: 1px solid var(--rule-2); padding: 22px 0; }
+.api-pkg[hidden] { display: none; }
+.api-h { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+.api-h h3 { font-family: var(--f-mono); font-size: 1.05rem; letter-spacing: -.01em; }
+.api-h .tag { text-transform: none; letter-spacing: .03em; }
+.api-pkg p { font-size: .92rem; color: var(--ink-2); max-width: var(--measure); margin-bottom: 14px; }
+.api-syms { display: flex; flex-wrap: wrap; gap: 6px; }
+.sym {
+  font-family: var(--f-mono); font-size: .76rem; padding: 3px 9px; border-radius: 5px;
+  background: var(--panel); color: var(--ink-2); border: 1px solid var(--rule-2);
+}
+.sym.hit { background: var(--accent-wash); color: var(--ink); border-color: var(--accent); }
+.sym[hidden] { display: none; }
+
+/* -- examples -------------------------------------------------------------- */
+
+.ex-list { display: grid; gap: 14px; }
+.ex {
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 12px;
+  overflow: hidden; scroll-margin-top: 80px;
+}
+.ex-head { padding: 22px 24px 18px; }
+.ex-n {
+  font-family: var(--f-mono); font-size: .7rem; color: var(--accent); font-weight: 600;
+  letter-spacing: .1em; margin-bottom: 10px;
+}
+.ex-head h3 { margin-bottom: 8px; }
+.ex-q { font-size: .95rem; color: var(--ink-2); margin-bottom: 14px; max-width: var(--measure); }
+.ex-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.ex-more { border-top: 1px solid var(--rule-2); }
+.ex-more > summary {
+  cursor: pointer; padding: 13px 24px; list-style: none;
+  font-family: var(--f-ui); font-size: .85rem; font-weight: 500; color: var(--ink-2);
+  display: flex; align-items: center; gap: 9px;
+}
+.ex-more > summary::-webkit-details-marker { display: none; }
+.ex-more > summary::before {
+  content: "+"; font-family: var(--f-mono); font-size: 1rem; color: var(--accent);
+  width: 14px; flex: none;
+}
+.ex-more[open] > summary::before { content: "\2212"; }
+.ex-more > summary:hover { color: var(--ink); background: var(--panel-2); }
+.ex-body { padding: 4px 24px 24px; }
+.ex-framing {
+  max-width: var(--measure); margin-bottom: 20px; font-size: .95rem; color: var(--ink-2);
+}
+.ex-framing p { white-space: pre-line; margin-bottom: .9em; }
+.ex-body .code pre, .ex-body .out pre { max-height: 460px; overflow: auto; }
+
+@media (max-width: 560px) {
+  .ex-head { padding: 18px 16px 14px; }
+  .ex-more > summary { padding: 12px 16px; }
+  .ex-body { padding: 4px 16px 18px; }
+}
+
+/* -- walkthroughs: one example, step by step ------------------------------- */
+
+/* A step is a two-column argument: the reasoning on the left, the code and what
+   it produced on the right. Below the breakpoint it becomes reasoning-then-
+   evidence, which is the order it should be read in anyway. */
+.wt-step { padding-block: clamp(40px, 5.5vw, 76px); scroll-margin-top: 72px; }
+.wt-step .wrap {
+  display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: clamp(24px, 3vw, 44px); align-items: start;
+}
+.wt-head { position: sticky; top: 76px; }
+.wt-n {
+  font-family: var(--f-mono); font-size: .72rem; color: var(--accent); font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; margin-bottom: 12px;
+}
+.wt-n span { color: var(--ink-3); font-weight: 400; }
+.wt-head h2 { font-size: clamp(1.5rem, 2.4vw, 2rem); margin-bottom: 16px; }
+.wt-why p { font-size: .97rem; color: var(--ink-2); margin-bottom: 16px; }
+.wt-body { display: grid; gap: 20px; min-width: 0; }
+.wt-body .fig, .wt-body .out, .wt-body .code, .wt-body .tbl-wrap { margin: 0; }
+/* A hundred-character line has to fit the narrower of the two columns, so the
+   mono size steps down a little here rather than every code block scrolling. */
+.wt-body .code pre, .wt-body .out pre {
+  max-height: 560px; overflow: auto; font-size: .74rem; line-height: 1.65;
+}
+.wt-body .prose p { font-size: .95rem; color: var(--ink-2); margin: 0; }
+
+/* The alternative that was rejected. Deliberately not the accent colour: it is
+   not the path taken, and colouring it like the argument would say it was. */
+.note.is-alt { border-left-color: var(--ink-3); background: var(--panel-2); }
+.note.is-alt .note-t { color: var(--ink-2); }
+.note.is-alt p { font-size: .92rem; color: var(--ink-2); }
+
+.wt-h {
+  font-family: var(--f-ui); font-weight: 600; font-size: .82rem; color: var(--accent-deep);
+  letter-spacing: .02em; margin-bottom: 4px;
+}
+.wt-framing p { font-size: .97rem; color: var(--ink-2); margin-bottom: 1em; }
+.wt-framing .wt-h + p { margin-bottom: 1.4em; }
+
+.wt-toc { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+  border-radius: 12px; overflow: hidden; margin-top: 14px; }
+.wt-toc-i {
+  background: var(--panel); padding: 13px 18px; display: flex; gap: 14px; align-items: baseline;
+  font-family: var(--f-ui); font-size: .92rem; color: var(--ink); text-decoration: none;
+}
+.wt-toc-i:hover { background: var(--panel-2); color: var(--accent-deep); }
+.wt-toc-n { font-family: var(--f-mono); font-size: .8rem; color: var(--accent); flex: none; }
+
+.wt-close { background: var(--panel); }
+.wt-findings p { font-size: 1.02rem; color: var(--ink-2); margin-bottom: 1.1em; }
+.wt-findings p:first-child { color: var(--ink); font-size: 1.08rem; }
+
+@media (max-width: 900px) {
+  .wt-step .wrap { grid-template-columns: 1fr; }
+  .wt-head { position: static; }
+}
+
+/* -- footer ---------------------------------------------------------------- */
+
+.foot { border-top: 1px solid var(--rule); background: var(--panel); margin-top: 40px; }
+.foot-in {
+  max-width: var(--wrap); margin-inline: auto; padding: 44px var(--pad);
+  display: grid; gap: 18px; max-width: 1200px;
+}
+.foot-b { max-width: var(--measure); color: var(--ink-2); font-size: .95rem; margin: 0; }
+.foot-b strong { color: var(--ink); }
+.foot-s { font-family: var(--f-ui); font-size: .84rem; color: var(--ink-3); margin: 0; }
+.foot-s code { font-size: .84rem; color: var(--ink-2); }
+
+/* -- utilities ------------------------------------------------------------- */
+
+.stack-lg > * + * { margin-top: 46px; }
+.stack-lg h3 { margin-bottom: 12px; }
+.stack > * + * { margin-top: 18px; }
+.mt-lg { margin-top: 40px; }
+.mt { margin-top: 24px; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 22px; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(215px, 100%), 1fr)); gap: 22px; }
+.muted { color: var(--ink-2); }
+.small { font-size: .9rem; }
+.nowrap { white-space: nowrap; }
+.mono { font-family: var(--f-mono); }
+.sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* -- narrow-width safety --------------------------------------------------- */
+/* Long unbreakable strings — call signatures, hashes, dotted paths — are the
+   usual cause of a page that scrolls sideways on a phone. Let them break. */
+.stamp, .readout-d, .readout-e, .ledger-s, .note code, .ledger-s code,
+.api-count, .fig-s { overflow-wrap: anywhere; }
+.tbl-wrap, .chart-tbl { max-width: 100%; }
+.code pre, .out pre { max-width: 100%; }
+.readout-v { overflow-wrap: anywhere; }
+
+@media (max-width: 560px) {
+  body { font-size: 16px; }
+  .readout-bar, .readout-e { max-width: 100%; }
+  .rule-i { padding: 18px 16px; }
+  .card { padding: 18px; }
+  .fig { padding: 16px 14px 12px; }
+}

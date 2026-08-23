@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API map — every public symbol · axiom</title>
+<meta name="description" content="All 724 public symbols across axiom&#x27;s 16 subpackages, grouped by layer and searchable. Every one of them is demonstrated in an executed notebook.">
+<meta property="og:title" content="API map — every public symbol · axiom">
+<meta property="og:description" content="All 724 public symbols across axiom&#x27;s 16 subpackages, grouped by layer and searchable. Every one of them is demonstrated in an executed notebook.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="api">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">Case study</a><a class="navx navx-on" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero" style="padding-bottom:24px">
+  <div class="wrap">
+    <p class="eyebrow">Reference</p>
+    <h1 style="max-width:16ch">Every public symbol</h1>
+    <p class="lede prose mt">724 of them, across
+      16 subpackages. The list is generated from each subpackage’s
+      <code>__all__</code> at build time, so it cannot drift from the code. Gate 12 fails the
+      build if any symbol here lacks an executed notebook that uses it.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="api-search">
+      <input id="api-q" type="search" placeholder="Filter symbols — try “boundary”, “prior”, “transfer”…"
+             aria-label="Filter symbols" autocomplete="off" spellcheck="false">
+      <span class="api-count" id="api-count"></span>
+      <span class="api-count">press <kbd>/</kbd> to focus</span>
+    </div>
+
+    <div class="api-pkg" id="core" data-pkg="core">
+  <div class="api-h"><h3>axiom.core</h3><span class="tag">foundation</span><span class="api-count">110 symbols</span></div>
+  <p>Specs, dimensions, intervals, expressions — the vocabulary everything else is written in.</p>
+  <div class="api-syms"><span class="sym">AcceptanceRegion</span><span class="sym">Add</span><span class="sym">Apply</span><span class="sym">ApplyFn</span><span class="sym">Assumption</span><span class="sym">BASES</span><span class="sym">BaseRegistry</span><span class="sym">Blocked</span><span class="sym">Capability</span><span class="sym">Const</span><span class="sym">Constraint</span><span class="sym">Convolve</span><span class="sym">Covariate</span><span class="sym">D</span><span class="sym">Data</span><span class="sym">DesignMatrix</span><span class="sym">Dimension</span><span class="sym">DimensionError</span><span class="sym">Div</span><span class="sym">Dose</span><span class="sym">Entity</span><span class="sym">EntityName</span><span class="sym">Equation</span><span class="sym">Expr</span><span class="sym">Failure</span><span class="sym">Gather</span><span class="sym">Interval</span><span class="sym">Intervention</span><span class="sym">LedgerLine</span><span class="sym">Likelihood</span><span class="sym">LikelihoodFamily</span><span class="sym">Link</span><span class="sym">LinkFn</span><span class="sym">Model</span><span class="sym">ModelSpec</span><span class="sym">Mul</span><span class="sym">NonEmptyStr</span><span class="sym">ODESystem</span><span class="sym">Opaque</span><span class="sym">OpaqueFn</span><span class="sym">OpaqueRegistry</span><span class="sym">Outcome</span><span class="sym">PRIOR_HYPER</span><span class="sym">Param</span><span class="sym">Population</span><span class="sym">Posterior</span><span class="sym">Pow</span><span class="sym">PredictiveDraws</span><span class="sym">Prior</span><span class="sym">PriorFamily</span><span class="sym">Reduce</span><span class="sym">SchemaVersionError</span><span class="sym">Spec</span><span class="sym">SpecDiff</span><span class="sym">SpecError</span><span class="sym">Summary</span><span class="sym">SupportsEstimands</span><span class="sym">SupportsForward</span><span class="sym">SupportsIntervention</span><span class="sym">SupportsPosterior</span><span class="sym">System</span><span class="sym">TimeWindow</span><span class="sym">Treatment</span><span class="sym">UNITS</span><span class="sym">UndeclaredBaseError</span><span class="sym">UndimensionedWarning</span><span class="sym">Unit</span><span class="sym">UnitConversionError</span><span class="sym">UnitSystem</span><span class="sym">UnknownSpecError</span><span class="sym">Unsupported</span><span class="sym">Unverified</span><span class="sym">Verdict</span><span class="sym">causal_convolve</span><span class="sym">check</span><span class="sym">children</span><span class="sym">clopper_pearson</span><span class="sym">compile_jax</span><span class="sym">compile_log_density</span><span class="sym">constrain</span><span class="sym">data_names</span><span class="sym">dimension</span><span class="sym">dimension_of</span><span class="sym">dimensionless</span><span class="sym">effective_sample_size</span><span class="sym">eti</span><span class="sym">free_parameters</span><span class="sym">hdi</span><span class="sym">interval</span><span class="sym">is_failure</span><span class="sym">jax_available</span><span class="sym">latex</span><span class="sym">latex_or_unsupported</span><span class="sym">likelihood_scale</span><span class="sym">load_spec</span><span class="sym">log_density</span><span class="sym">log_likelihood</span><span class="sym">log_prior</span><span class="sym">mc_standard_error</span><span class="sym">missing_capabilities</span><span class="sym">node_path</span><span class="sym">params</span><span class="sym">require_jax</span><span class="sym">spec_type_name</span><span class="sym">summarize</span><span class="sym">unconstrain</span><span class="sym">value</span><span class="sym">wald</span><span class="sym">walk</span><span class="sym">z_score</span></div>
+</div>
+<div class="api-pkg" id="data" data-pkg="data">
+  <div class="api-h"><h3>axiom.data</h3><span class="tag">foundation</span><span class="api-count">9 symbols</span></div>
+  <p>Panels and role maps: which column is the treatment, which is the outcome.</p>
+  <div class="api-syms"><span class="sym">ColumnScaling</span><span class="sym">Completeness</span><span class="sym">Panel</span><span class="sym">PanelError</span><span class="sym">RoleKind</span><span class="sym">RoleMap</span><span class="sym">ScalingMethod</span><span class="sym">ScalingParameters</span><span class="sym">fit_scaling</span></div>
+</div>
+<div class="api-pkg" id="io" data-pkg="io">
+  <div class="api-h"><h3>axiom.io</h3><span class="tag">foundation</span><span class="api-count">8 symbols</span></div>
+  <p>Save and load a whole analysis as JSON plus a posterior file. Never a pickle.</p>
+  <div class="api-syms"><span class="sym">Analysis</span><span class="sym">ArtifactRegistry</span><span class="sym">FORMAT_VERSION</span><span class="sym">FormatError</span><span class="sym">Provenance</span><span class="sym">environment_fingerprint</span><span class="sym">load_analysis</span><span class="sym">save_analysis</span></div>
+</div>
+<div class="api-pkg" id="infer" data-pkg="infer">
+  <div class="api-h"><h3>axiom.infer</h3><span class="tag">sampler seam</span><span class="api-count">26 symbols</span></div>
+  <p>The sampler seam. Laplace in core; NumPyro and PyMC behind extras.</p>
+  <div class="api-syms"><span class="sym">BACKEND_NAMES</span><span class="sym">Backend</span><span class="sym">ConvergenceReport</span><span class="sym">ConvergenceThresholds</span><span class="sym">LaplaceBackend</span><span class="sym">NUTS_SAMPLERS</span><span class="sym">NumpyroBackend</span><span class="sym">NutsSampler</span><span class="sym">ParameterDiagnostics</span><span class="sym">PointEstimate</span><span class="sym">Posterior</span><span class="sym">PymcBackend</span><span class="sym">SampleSettings</span><span class="sym">SamplerStatus</span><span class="sym">diagnose</span><span class="sym">ess_bulk</span><span class="sym">ess_tail</span><span class="sym">find_mode</span><span class="sym">from_inference_data</span><span class="sym">get_backend</span><span class="sym">hessian_at</span><span class="sym">laplace</span><span class="sym">mcse_mean</span><span class="sym">samplers</span><span class="sym">split_rhat</span><span class="sym">to_inference_data</span></div>
+</div>
+<div class="api-pkg" id="identify" data-pkg="identify">
+  <div class="api-h"><h3>axiom.identify</h3><span class="tag">domain</span><span class="api-count">39 symbols · <a href="identify.html">walkthrough</a></span></div>
+  <p>Causal graphs, back-door / front-door / IV routes, transport verdicts.</p>
+  <div class="api-syms"><span class="sym">CausalGraph</span><span class="sym">EndogeneityTest</span><span class="sym">FrontDoorRoute</span><span class="sym">GraphError</span><span class="sym">IdentificationVerdict</span><span class="sym">InstrumentRoute</span><span class="sym">LinearEstimate</span><span class="sym">Role</span><span class="sym">RoleAssignment</span><span class="sym">Route</span><span class="sym">TransportVerdict</span><span class="sym">adjustment_sets</span><span class="sym">admissible_set_exists</span><span class="sym">assign_roles</span><span class="sym">backdoor_admissible</span><span class="sym">canonical_adjustment_set</span><span class="sym">conditional_instruments</span><span class="sym">directly_transportable</span><span class="sym">durbin_wu_hausman</span><span class="sym">frontdoor_admissible</span><span class="sym">frontdoor_linear</span><span class="sym">frontdoor_sets</span><span class="sym">hausman_iv_vs_ols</span><span class="sym">identify</span><span class="sym">instrument_admissible</span><span class="sym">instruments</span><span class="sym">minimal_adjustment_sets</span><span class="sym">minimal_s_admissible_sets</span><span class="sym">ols</span><span class="sym">parse_edges</span><span class="sym">requires_unmeasured</span><span class="sym">roles</span><span class="sym">s_admissible</span><span class="sym">s_admissible_sets</span><span class="sym">selection_diagram</span><span class="sym">transport_verdict</span><span class="sym">trivially_transportable</span><span class="sym">two_stage_least_squares</span><span class="sym">weak_instrument_check</span></div>
+</div>
+<div class="api-pkg" id="estimands" data-pkg="estimands">
+  <div class="api-h"><h3>axiom.estimands</h3><span class="tag">domain</span><span class="api-count">19 symbols</span></div>
+  <p>Declare the number you want as a nine-facet object, then realize it.</p>
+  <div class="api-syms"><span class="sym">Estimand</span><span class="sym">EstimandRegistry</span><span class="sym">EstimandResult</span><span class="sym">FACETS</span><span class="sym">Facet</span><span class="sym">FacetDiff</span><span class="sym">Level</span><span class="sym">Quantity</span><span class="sym">QuantityKind</span><span class="sym">RealizedDraws</span><span class="sym">ResultStatus</span><span class="sym">TransferPlan</span><span class="sym">check_estimand_dimension</span><span class="sym">derived_dimension</span><span class="sym">estimand_expr</span><span class="sym">evaluate</span><span class="sym">realize</span><span class="sym">standard_estimands</span><span class="sym">substitute</span></div>
+</div>
+<div class="api-pkg" id="surface" data-pkg="surface">
+  <div class="api-h"><h3>axiom.surface</h3><span class="tag">domain</span><span class="api-count">88 symbols · <a href="surface.html">walkthrough</a></span></div>
+  <p>Dose-response kernels, carryover, the one forward(), optimal allocation.</p>
+  <div class="api-syms"><span class="sym">Allocation</span><span class="sym">AllocationMethod</span><span class="sym">AnyCarryover</span><span class="sym">AnyKernel</span><span class="sym">AnyNuisanceTerm</span><span class="sym">AscentPath</span><span class="sym">BASIS_PRIOR_FAMILIES</span><span class="sym">BandKind</span><span class="sym">Bounds</span><span class="sym">CARRYOVERS</span><span class="sym">CarryoverKernel</span><span class="sym">CarryoverRole</span><span class="sym">CovarianceFamily</span><span class="sym">Criterion</span><span class="sym">DelayedCarryover</span><span class="sym">Design</span><span class="sym">EventIndicators</span><span class="sym">ExponentialKernel</span><span class="sym">FitResult</span><span class="sym">FourierSeasonality</span><span class="sym">Frontier</span><span class="sym">GRID_VERSION</span><span class="sym">GaussianProcessKernel</span><span class="sym">GeometricCarryover</span><span class="sym">HillKernel</span><span class="sym">InterceptKind</span><span class="sym">KERNELS</span><span class="sym">KernelRole</span><span class="sym">LinearKernel</span><span class="sym">LinearTrend</span><span class="sym">LogisticKernel</span><span class="sym">MarginalHorizon</span><span class="sym">Method</span><span class="sym">NoCarryover</span><span class="sym">NuisanceSet</span><span class="sym">NuisanceTerm</span><span class="sym">Objective</span><span class="sym">ParameterRole</span><span class="sym">PiecewiseLinearKernel</span><span class="sym">PolynomialKernel</span><span class="sym">PowerKernel</span><span class="sym">ResponseBand</span><span class="sym">ResponseKernel</span><span class="sym">SplineKernel</span><span class="sym">StationaryPoint</span><span class="sym">SupportsBands</span><span class="sym">Surface</span><span class="sym">SurfaceSpec</span><span class="sym">WeibullCarryover</span><span class="sym">a_criterion</span><span class="sym">allocate</span><span class="sym">bayesian_criterion</span><span class="sym">box_behnken</span><span class="sym">build</span><span class="sym">canonical_analysis</span><span class="sym">carryover_from_name</span><span class="sym">central_composite</span><span class="sym">check_linearization</span><span class="sym">column_names</span><span class="sym">counterfactual_doses</span><span class="sym">d_criterion</span><span class="sym">defining_relation</span><span class="sym">design_matrix</span><span class="sym">e_criterion</span><span class="sym">equal_spacing</span><span class="sym">fit</span><span class="sym">forward</span><span class="sym">fractional_factorial</span><span class="sym">frontier</span><span class="sym">full_factorial</span><span class="sym">gradient</span><span class="sym">hessian</span><span class="sym">interaction_name</span><span class="sym">kernel_from_name</span><span class="sym">latin_hypercube</span><span class="sym">linear_coefficients</span><span class="sym">marginal</span><span class="sym">marginal_band</span><span class="sym">marginal_expr</span><span class="sym">marginal_total</span><span class="sym">optimal_exchange</span><span class="sym">parameter_roles</span><span class="sym">predict</span><span class="sym">predict_marginal</span><span class="sym">prepare</span><span class="sym">resolve_conventions</span><span class="sym">response_band</span><span class="sym">steepest_ascent</span></div>
+</div>
+<div class="api-pkg" id="sim" data-pkg="sim">
+  <div class="api-h"><h3>axiom.sim</h3><span class="tag">domain</span><span class="api-count">23 symbols</span></div>
+  <p>Synthetic worlds with known truth, so every claim has a recovery test.</p>
+  <div class="api-syms"><span class="sym">DoseDistribution</span><span class="sym">DosePlan</span><span class="sym">Horizon</span><span class="sym">LinearSCM</span><span class="sym">SCMError</span><span class="sym">SurfaceWorld</span><span class="sym">TruthMode</span><span class="sym">arms_world</span><span class="sym">coefficient_key</span><span class="sym">confounded_world</span><span class="sym">draw_doses</span><span class="sym">feedback_world</span><span class="sym">frontdoor_world</span><span class="sym">hidden_confounder_world</span><span class="sym">iv_world</span><span class="sym">latent_key</span><span class="sym">long_frame</span><span class="sym">mediator_world</span><span class="sym">panel_from_arrays</span><span class="sym">surface_world</span><span class="sym">transport_pair</span><span class="sym">true_parameters</span><span class="sym">unit_labels</span></div>
+</div>
+<div class="api-pkg" id="design" data-pkg="design">
+  <div class="api-h"><h3>axiom.design</h3><span class="tag">pillar</span><span class="api-count">151 symbols · <a href="design.html">walkthrough</a></span></div>
+  <p>Power, MDE, value of information, method leaderboards, sequential boundaries.</p>
+  <div class="api-syms"><span class="sym">ASSUMPTIONS</span><span class="sym">AnchoredEffect</span><span class="sym">Assignment</span><span class="sym">Boundary</span><span class="sym">BoundaryKind</span><span class="sym">CANONICAL</span><span class="sym">CalibrationResult</span><span class="sym">CandidateScore</span><span class="sym">ClusterDesign</span><span class="sym">CostPerOutcomeInterval</span><span class="sym">CostPerOutcomePower</span><span class="sym">CrossingProbabilities</span><span class="sym">DESIGN_RELATIVE_SE</span><span class="sym">Decision</span><span class="sym">DecisionSpec</span><span class="sym">DerivativeMethod</span><span class="sym">DesignCandidate</span><span class="sym">EIGEstimate</span><span class="sym">EVOIResult</span><span class="sym">EconomicInputs</span><span class="sym">ExperimentValue</span><span class="sym">FisherInformation</span><span class="sym">HoldoutTradeoff</span><span class="sym">IdentifiabilityRidge</span><span class="sym">IdentifyingDesign</span><span class="sym">Leaderboard</span><span class="sym">LeaderboardRow</span><span class="sym">LearningPriority</span><span class="sym">LookOutcome</span><span class="sym">LookSchedule</span><span class="sym">MDE</span><span class="sym">METHODS</span><span class="sym">MatchMetric</span><span class="sym">MethodEstimate</span><span class="sym">MethodName</span><span class="sym">MethodSpec</span><span class="sym">MethodStatus</span><span class="sym">MonitoringPath</span><span class="sym">OperatingCharacteristics</span><span class="sym">OpportunityCost</span><span class="sym">PanelArrays</span><span class="sym">PanelDesign</span><span class="sym">Parameter</span><span class="sym">Pattern</span><span class="sym">PowerCurve</span><span class="sym">PowerResult</span><span class="sym">ProgramSchedule</span><span class="sym">ReExperimentTiming</span><span class="sym">Recommendation</span><span class="sym">STOPPED_ESTIMATE_BIAS</span><span class="sym">SampleSize</span><span class="sym">Schedule</span><span class="sym">ScheduledExperiment</span><span class="sym">SensitivityTable</span><span class="sym">Side</span><span class="sym">SimulatedPower</span><span class="sym">SimulationSpec</span><span class="sym">SpendingFunction</span><span class="sym">StoppingRule</span><span class="sym">StudySummary</span><span class="sym">TreatmentCandidate</span><span class="sym">ValueFn</span><span class="sym">ValuePerOutcome</span><span class="sym">alpha_spending</span><span class="sym">alternating</span><span class="sym">anchor_draws</span><span class="sym">anchor_effect</span><span class="sym">bartlett_bandwidth</span><span class="sym">calibrate_method</span><span class="sym">calibrate_registry</span><span class="sym">cluster_mde</span><span class="sym">cluster_power</span><span class="sym">clusters_needed</span><span class="sym">coefficient_mde</span><span class="sym">coefficient_power</span><span class="sym">coefficient_sample_size</span><span class="sym">constant</span><span class="sym">contrast_score</span><span class="sym">cost_per_outcome_interval</span><span class="sym">cost_per_outcome_power</span><span class="sym">crossing_probabilities</span><span class="sym">decayed_sd</span><span class="sym">design_effect</span><span class="sym">design_for_method</span><span class="sym">design_to_identify</span><span class="sym">difference_in_differences_se</span><span class="sym">difference_se</span><span class="sym">discount_weights</span><span class="sym">effective_sample_size</span><span class="sym">eig_gaussian</span><span class="sym">eig_monte_carlo</span><span class="sym">elasticity</span><span class="sym">estimate</span><span class="sym">estimate_cluster_based_regression</span><span class="sym">estimate_difference_in_differences</span><span class="sym">estimate_ghost</span><span class="sym">estimate_switchback</span><span class="sym">estimate_synthetic_control</span><span class="sym">estimate_time_based_regression</span><span class="sym">evaluate_candidate</span><span class="sym">evoi_gaussian</span><span class="sym">evpi</span><span class="sym">evpi_gaussian</span><span class="sym">evsi</span><span class="sym">evsi_gaussian</span><span class="sym">expected_posterior_sd</span><span class="sym">experiment_se_for_design</span><span class="sym">experiment_value</span><span class="sym">fisher_information</span><span class="sym">harm_boundary</span><span class="sym">holdout_tradeoff</span><span class="sym">identifiability_ridge</span><span class="sym">information_fractions</span><span class="sym">information_half_life</span><span class="sym">information_value_of</span><span class="sym">leaderboard</span><span class="sym">match_clusters</span><span class="sym">max_detectable_cost_per_outcome</span><span class="sym">mde</span><span class="sym">method_assumption</span><span class="sym">method_spec</span><span class="sym">mid_horizon_factor</span><span class="sym">monitor</span><span class="sym">obrien_fleming</span><span class="sym">operating_characteristics</span><span class="sym">opportunity_cost</span><span class="sym">panel_arrays</span><span class="sym">pareto_front</span><span class="sym">perturb</span><span class="sym">pocock</span><span class="sym">power</span><span class="sym">power_curve</span><span class="sym">power_from_se</span><span class="sym">preposterior_sd</span><span class="sym">preposterior_sd_ratio</span><span class="sym">prior_from_history</span><span class="sym">pulse</span><span class="sym">ramp</span><span class="sym">random_switchback</span><span class="sym">rank_treatments</span><span class="sym">recommend</span><span class="sym">ridge_of</span><span class="sym">sample_size</span><span class="sym">schedule_with_cooldown</span><span class="sym">simplex_weights</span><span class="sym">simulate_panel</span><span class="sym">simulated_power</span><span class="sym">spending</span><span class="sym">t_critical</span><span class="sym">time_to_re_experiment</span><span class="sym">wald_t</span></div>
+</div>
+<div class="api-pkg" id="calibrate" data-pkg="calibrate">
+  <div class="api-h"><h3>axiom.calibrate</h3><span class="tag">pillar</span><span class="api-count">31 symbols · <a href="calibrate.html">walkthrough</a></span></div>
+  <p>Fold a randomized result into an observational model, and log what that assumed.</p>
+  <div class="api-syms"><span class="sym">Agreement</span><span class="sym">AgreementVerdict</span><span class="sym">CalibratedSpec</span><span class="sym">Correction</span><span class="sym">CorrectionKind</span><span class="sym">FACET_PREFIX</span><span class="sym">Ledger</span><span class="sym">Measurement</span><span class="sym">PriorFamily</span><span class="sym">ResolvedTransfer</span><span class="sym">UNCORRECTED</span><span class="sym">aggregation_level</span><span class="sym">agreement</span><span class="sym">amplitude_prior</span><span class="sym">attach</span><span class="sym">carryover_window_factor</span><span class="sym">chord_to_marginal</span><span class="sym">combine_inverse_variance</span><span class="sym">combine_measurements</span><span class="sym">constraint_for</span><span class="sym">derive_prior</span><span class="sym">design_factor</span><span class="sym">dose_path_accumulation</span><span class="sym">facet_of</span><span class="sym">fit_calibrated</span><span class="sym">lognormal_from_moments</span><span class="sym">lognormal_mu_from_moments</span><span class="sym">lognormal_sigma_from_moments</span><span class="sym">mean_sd_to_gamma</span><span class="sym">resolve</span><span class="sym">variance_reweight</span></div>
+</div>
+<div class="api-pkg" id="meta" data-pkg="meta">
+  <div class="api-h"><h3>axiom.meta</h3><span class="tag">pillar</span><span class="api-count">70 symbols · <a href="meta.html">walkthrough</a></span></div>
+  <p>Pool a corpus of studies; heterogeneity, bias terms, privacy-budgeted release.</p>
+  <div class="api-syms"><span class="sym">BaujatData</span><span class="sym">Cell</span><span class="sym">Corpus</span><span class="sym">CorpusStore</span><span class="sym">DEFAULT_COLUMNS</span><span class="sym">EffectShrinkage</span><span class="sym">EggerTest</span><span class="sym">EpsilonCharge</span><span class="sym">EpsilonLedger</span><span class="sym">EpsilonSplit</span><span class="sym">ForestData</span><span class="sym">ForestRow</span><span class="sym">FunnelContour</span><span class="sym">FunnelData</span><span class="sym">Heterogeneity</span><span class="sym">LeaveOneOut</span><span class="sym">Mechanism</span><span class="sym">ModeratorDesign</span><span class="sym">NO_DUAL_READ</span><span class="sym">POOLABLE_QUANTITIES</span><span class="sym">ParameterSummary</span><span class="sym">PoolMethod</span><span class="sym">PoolPriors</span><span class="sym">PoolResult</span><span class="sym">PoolSpec</span><span class="sym">PoolableQuantity</span><span class="sym">Pooled</span><span class="sym">PooledEstimate</span><span class="sym">PriorTarget</span><span class="sym">PrivacyPolicy</span><span class="sym">ReadKind</span><span class="sym">Release</span><span class="sym">StudyRecord</span><span class="sym">TauEstimate</span><span class="sym">TauMethod</span><span class="sym">baujat</span><span class="sym">carry_forward</span><span class="sym">cell_from_records</span><span class="sym">charge</span><span class="sym">check_cell</span><span class="sym">contributor_totals</span><span class="sym">delta_identification</span><span class="sym">egger</span><span class="sym">fixed_effect</span><span class="sym">forest_data</span><span class="sym">from_frame</span><span class="sym">funnel_data</span><span class="sym">gaussian_sigma</span><span class="sym">gaussian_sigma_classical</span><span class="sym">heterogeneity</span><span class="sym">jaccard_distance</span><span class="sym">laplace_scale</span><span class="sym">leave_one_out</span><span class="sym">moderator_matrix</span><span class="sym">normalize</span><span class="sym">orthogonal_split</span><span class="sym">pool</span><span class="sym">pool_model</span><span class="sym">poolable_quantity</span><span class="sym">prediction_interval</span><span class="sym">prior_from_pool</span><span class="sym">random_effects</span><span class="sym">record_from_result</span><span class="sym">record_from_summary</span><span class="sym">release</span><span class="sym">reml_log_likelihood</span><span class="sym">se_from_summary</span><span class="sym">tau_dersimonian_laird</span><span class="sym">tau_paule_mandel</span><span class="sym">tau_reml</span></div>
+</div>
+<div class="api-pkg" id="diagnose" data-pkg="diagnose">
+  <div class="api-h"><h3>axiom.diagnose</h3><span class="tag">composition</span><span class="api-count">79 symbols</span></div>
+  <p>SBC, coverage, posterior predictive checks, refutations, specification curves.</p>
+  <div class="api-syms"><span class="sym">Backtest</span><span class="sym">Benchmark</span><span class="sym">BiasBounds</span><span class="sym">CoverageResult</span><span class="sym">DEFAULT_STATISTICS</span><span class="sym">EstimandCoverage</span><span class="sym">EstimandCoverageResult</span><span class="sym">ExpectedSign</span><span class="sym">FitSettings</span><span class="sym">Fitter</span><span class="sym">FrozenPredictor</span><span class="sym">HorizonScore</span><span class="sym">LearningReport</span><span class="sym">OriginFailure</span><span class="sym">OriginForecast</span><span class="sym">PPCResult</span><span class="sym">ParameterCoverage</span><span class="sym">ParameterLearning</span><span class="sym">ParameterRanks</span><span class="sym">PriorPredictive</span><span class="sym">Refutation</span><span class="sym">RefutationKind</span><span class="sym">ResidualReport</span><span class="sym">ResidualTest</span><span class="sym">RobustnessValue</span><span class="sym">SBCResult</span><span class="sym">SBCSpec</span><span class="sym">ShiftedPosterior</span><span class="sym">Simulator</span><span class="sym">SpecCurve</span><span class="sym">SpecCurveSummary</span><span class="sym">SpecOption</span><span class="sym">SpecRow</span><span class="sym">SpecificationAxis</span><span class="sym">Statistic</span><span class="sym">StatisticCheck</span><span class="sym">SupportsWorld</span><span class="sym">TippingPoint</span><span class="sym">UnitResiduals</span><span class="sym">WeakIdReport</span><span class="sym">WorldFactory</span><span class="sym">WorldView</span><span class="sym">added_noise</span><span class="sym">apply_option</span><span class="sym">benchmark</span><span class="sym">bhattacharyya</span><span class="sym">bias_bounds</span><span class="sym">coverage</span><span class="sym">crps</span><span class="sym">default_bins</span><span class="sym">default_estimand</span><span class="sym">draw_prior</span><span class="sym">estimand_coverage</span><span class="sym">forecast</span><span class="sym">freeze</span><span class="sym">learning</span><span class="sym">misspecify</span><span class="sym">partial_r2</span><span class="sym">permutation</span><span class="sym">placebo_treatment</span><span class="sym">posterior_predictive</span><span class="sym">prior_moments</span><span class="sym">prior_predictive</span><span class="sym">random_subset</span><span class="sym">rank_uniformity</span><span class="sym">realized_point</span><span class="sym">residuals</span><span class="sym">robustness_value</span><span class="sym">rolling_origin</span><span class="sym">sbc</span><span class="sym">sbc_pool</span><span class="sym">sbc_surface</span><span class="sym">shift_posterior</span><span class="sym">simulate_outcome</span><span class="sym">specification_curve</span><span class="sym">tipping_point</span><span class="sym">training_panel</span><span class="sym">truth_producer</span><span class="sym">weak_identification</span></div>
+</div>
+<div class="api-pkg" id="build" data-pkg="build">
+  <div class="api-h"><h3>axiom.build</h3><span class="tag">composition</span><span class="api-count">13 symbols</span></div>
+  <p>Fluent builders for graphs, priors, and corpora.</p>
+  <div class="api-syms"><span class="sym">BuildError</span><span class="sym">Builder</span><span class="sym">EntitySpec</span><span class="sym">Fields</span><span class="sym">GraphBuilder</span><span class="sym">MetaBuilder</span><span class="sym">MomentFamily</span><span class="sym">PriorBuilder</span><span class="sym">SchedulePattern</span><span class="sym">StudyBuilder</span><span class="sym">SurfaceBuilder</span><span class="sym">VariableBuilder</span><span class="sym">VariableKind</span></div>
+</div>
+<div class="api-pkg" id="adapters" data-pkg="adapters">
+  <div class="api-h"><h3>axiom.adapters</h3><span class="tag">composition</span><span class="api-count">15 symbols</span></div>
+  <p>Domain vocabulary — marketing is one adapter, not the core.</p>
+  <div class="api-syms"><span class="sym">Channel</span><span class="sym">EXPOSURE</span><span class="sym">Geo</span><span class="sym">KPI</span><span class="sym">MarketingRoles</span><span class="sym">contribution</span><span class="sym">impressions</span><span class="sym">marginal_roas</span><span class="sym">marketing_spec</span><span class="sym">panel_from_marketing_frame</span><span class="sym">panel_from_mff</span><span class="sym">roas</span><span class="sym">roi</span><span class="sym">role_map</span><span class="sym">spend</span></div>
+</div>
+<div class="api-pkg" id="viz" data-pkg="viz">
+  <div class="api-h"><h3>axiom.viz</h3><span class="tag">composition</span><span class="api-count">9 symbols</span></div>
+  <p>Plot helpers for the diagnostics that have a canonical picture.</p>
+  <div class="api-syms"><span class="sym">available</span><span class="sym">backtest_plot</span><span class="sym">coverage_plot</span><span class="sym">forest</span><span class="sym">funnel</span><span class="sym">marginal_curve</span><span class="sym">response_curve</span><span class="sym">sbc_ranks</span><span class="sym">spec_curve_plot</span></div>
+</div>
+<div class="api-pkg" id="report" data-pkg="report">
+  <div class="api-h"><h3>axiom.report</h3><span class="tag">composition</span><span class="api-count">34 symbols</span></div>
+  <p>Templated HTML / PPTX / PDF reports over the viz layer.</p>
+  <div class="api-syms"><span class="sym">AnyBlock</span><span class="sym">Divider</span><span class="sym">FORMATS</span><span class="sym">Figure</span><span class="sym">Format</span><span class="sym">GEOMETRY</span><span class="sym">Heading</span><span class="sym">LedgerBlock</span><span class="sym">Metric</span><span class="sym">PageBreak</span><span class="sym">PageSize</span><span class="sym">Paragraph</span><span class="sym">Report</span><span class="sym">ReportBuilder</span><span class="sym">ResolvedBlock</span><span class="sym">ResolvedFigure</span><span class="sym">ResolvedLedger</span><span class="sym">ResolvedMetric</span><span class="sym">ResolvedReport</span><span class="sym">ResolvedSection</span><span class="sym">ResolvedTable</span><span class="sym">ResolvedText</span><span class="sym">Section</span><span class="sym">Table</span><span class="sym">Theme</span><span class="sym">figure_png</span><span class="sym">missing</span><span class="sym">placeholders</span><span class="sym">render</span><span class="sym">render_html</span><span class="sym">render_pdf</span><span class="sym">render_pptx</span><span class="sym">resolve</span><span class="sym">write</span></div>
+</div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">How to read this</p>
+      <h2>Layers, and why they matter to you</h2>
+    </div>
+    <div class="grid-2">
+      <div class="stack">
+        <div>
+          <h4>foundation</h4>
+          <p class="small muted">core, data, io. Specs, dimensions, intervals, panels, and
+            the analysis round-trip. Pure numpy / scipy / pandas / pydantic. If you only ever
+            import these, axiom is a very small dependency.</p>
+        </div>
+        <div>
+          <h4>sampler seam</h4>
+          <p class="small muted">infer. The one place an optional dependency is allowed to
+            live. Laplace works with no extras; NumPyro and PyMC sit behind
+            <code>pip install "axiom[numpyro]"</code> and
+            <code>pip install "axiom[pymc]"</code>, and four NUTS samplers agree to within
+            0.12 posterior standard deviations over one shared log density.</p>
+        </div>
+        <div>
+          <h4>domain</h4>
+          <p class="small muted">identify, estimands, surface, sim. The causal and functional
+            vocabulary — graphs, nine-facet estimands, response kernels, and the synthetic
+            worlds that make every claim in the test suite checkable against a known truth.</p>
+        </div>
+      </div>
+      <div class="stack">
+        <div>
+          <h4>the pillars</h4>
+          <p class="small muted">design, calibrate, meta. Peers, with no cross-imports except
+            design ← surface and calibrate ← estimands. You can use any one of them without
+            dragging in the others.</p>
+        </div>
+        <div>
+          <h4>composition</h4>
+          <p class="small muted">diagnose, build, adapters, viz, report. Everything that
+            composes the layers below — model checking, fluent builders, the domain
+            adapters, plots, and templated HTML / PPTX / PDF reports.</p>
+        </div>
+        <div class="note">
+          <p class="note-t">Imports point down only</p>
+          <p class="small" style="margin:0">A contract test walks the import graph and fails
+            the build if an arrow ever points back up. That is what keeps the foundation
+            usable on its own and lets the pillars be adopted one at a time.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div>
+        <h3>Getting the full documentation</h3>
+        <p class="small muted">This page is a map, not a reference manual. The Sphinx
+          documentation — signatures, docstrings, and the notebook series for each subpackage
+          — builds from the repository with <code>make docs</code>, and every subpackage’s
+          API page links its own notebook series.</p>
+        <div class="code mt">
+          <div class="code-h"><span>shell</span>
+            <button class="copy" type="button">Copy</button></div>
+          <pre>git clone https://github.com/redam94/axiom
+<span class="k">cd</span> axiom
+uv sync --group dev
+
+make docs        <span class="c"># Sphinx, builds with zero warnings</span>
+make notebooks   <span class="c"># execute every notebook under nbs/</span>
+make gates       <span class="c"># the twelve contract tests</span></pre>
+        </div>
+      </div>
+      <div>
+        <h3>Where to start reading code</h3>
+        <div class="ledger mt">
+          <div class="ledger-row">
+            <span class="ledger-f">nbs/end-to-end</span>
+            <span class="ledger-s">Five notebooks, one per pillar. The shortest path from
+              nothing to a working analysis.</span>
+            <span class="ledger-v">5</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">nbs/case-studies</span>
+            <span class="ledger-s">The <a href="case-study.html">HYPER-3 trial</a>, worked
+              over one synthetic world.</span>
+            <span class="ledger-v">6</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">docs/plan</span>
+            <span class="ledger-s">The charter, architecture, porting ledger, roadmap, and
+              the contracts-and-testing rules the build enforces.</span>
+            <span class="ledger-v">6</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">docs/notes</span>
+            <span class="ledger-s">Numbered design decisions, written as the work happened —
+              including why a number deliberately changed from its parent.</span>
+            <span class="ledger-v">8</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

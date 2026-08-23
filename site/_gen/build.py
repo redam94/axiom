@@ -1,0 +1,656 @@
+"""Assemble the axiom site from content fragments plus generated data.
+
+Content lives in ``site/_src/*.html`` as body fragments. This script wraps each in
+the shared shell (head, workflow nav, footer) and substitutes ``{{path:spec}}``
+tokens with values from ``site/assets/data/*.json`` — so a number written into the
+prose is the number a real run produced, baked in at build time rather than
+fetched by script.
+
+    python site/_gen/build.py
+"""
+
+from __future__ import annotations
+
+import html
+import json
+import re
+import sys
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[2]
+SITE = ROOT / "site"
+SRC = SITE / "_src"
+DATA = SITE / "assets" / "data"
+
+# The five pillars in the order you actually meet them in a piece of work. The nav
+# renders this as a chain, because the order is real information, not decoration.
+WORKFLOW = [
+    ("identify", "Identify", "Can the data answer it?"),
+    ("design", "Design", "What should I measure?"),
+    ("calibrate", "Calibrate", "Fold the experiment in"),
+    ("surface", "Surface", "Map the response"),
+    ("meta", "Pool", "All the evidence"),
+]
+EXTRA = [
+    ("examples", "Examples"),
+    ("benchmarks", "Benchmarks"),
+    ("case-study", "Case study"),
+    ("api", "API"),
+]
+
+TOKEN = re.compile(r"\{\{\s*([a-zA-Z0-9_.\[\]-]+?)\s*(?::([^}]+))?\s*\}\}")
+
+# {{@ value lower upper }} -> where the point estimate sits inside its own interval,
+# as a percentage. The interval readout uses it to place the marker, so a skewed
+# posterior is drawn skewed instead of being quietly centred.
+POSITION = re.compile(r"\{\{@\s*(\S+)\s+(\S+)\s+(\S+)\s*\}\}")
+
+
+def load_data() -> dict[str, Any]:
+    return {p.stem: json.loads(p.read_text()) for p in sorted(DATA.glob("*.json"))}
+
+
+PART = re.compile(r"([^\[\]]*)((?:\[\d+\])*)")
+
+
+def lookup(data: dict[str, Any], path: str) -> Any:
+    """Walk a dotted path, with any number of chained [i] indices per segment."""
+    cur: Any = data
+    for part in path.split("."):
+        m = PART.fullmatch(part)
+        if m is None:
+            raise KeyError(part)
+        name, idx = m.group(1), m.group(2)
+        if name:
+            cur = cur[int(name)] if isinstance(cur, list) else cur[name]
+        for n in re.findall(r"\[(\d+)\]", idx):
+            cur = cur[int(n)]
+    return cur
+
+
+def render_token(data: dict[str, Any], path: str, spec: str | None) -> str:
+    value = lookup(data, path)
+    if spec is None:
+        if isinstance(value, float):
+            return f"{value:g}"
+        if isinstance(value, (list, tuple)):
+            return ", ".join(str(v) for v in value)
+        return html.escape(str(value))
+    if spec == "raw":
+        return str(value)
+    if spec == "n":  # thousands separator, no decimals
+        return f"{round(float(value)):,}"
+    if spec == "pct":
+        return f"{float(value) * 100:.0f}%"
+    if spec == "pct1":
+        return f"{float(value) * 100:.1f}%"
+    return format(float(value), spec)
+
+
+def substitute(text: str, data: dict[str, Any], where: str) -> str:
+    def pos(m: re.Match[str]) -> str:
+        try:
+            v, lo, hi = (float(lookup(data, m.group(i))) for i in (1, 2, 3))
+        except (KeyError, IndexError, TypeError, ValueError) as exc:
+            raise SystemExit(f"{where}: cannot resolve {m.group(0)} — {exc}") from exc
+        if hi == lo:
+            return "50%"
+        return f"{max(0.0, min(1.0, (v - lo) / (hi - lo))) * 100:.1f}%"
+
+    text = POSITION.sub(pos, text)
+
+    def repl(m: re.Match[str]) -> str:
+        path, spec = m.group(1), m.group(2)
+        try:
+            return render_token(data, path, spec)
+        except (KeyError, IndexError, TypeError, ValueError) as exc:
+            raise SystemExit(f"{where}: cannot resolve {{{{{path}}}}} — {exc}") from exc
+
+    return TOKEN.sub(repl, text)
+
+
+def parse_meta(text: str, name: str) -> tuple[dict[str, Any], str]:
+    if not text.lstrip().startswith("<!--meta"):
+        raise SystemExit(f"{name}: fragment must open with a <!--meta {{...}} --> block")
+    start = text.index("<!--meta") + len("<!--meta")
+    end = text.index("-->", start)
+    meta = json.loads(text[start:end])
+    return meta, text[end + 3 :]
+
+
+PILLAR_PAGE = {
+    "identify": "identify.html",
+    "design": "design.html",
+    "calibrate": "calibrate.html",
+    "surface": "surface.html",
+    "meta": "meta.html",
+}
+
+
+def api_html(data: dict[str, Any]) -> str:
+    """The searchable symbol map. Generated, because typing 700+ names is how they rot."""
+    blocks = []
+    for pkg in data["overview"]["packages"]:
+        name = pkg["name"]
+        page = PILLAR_PAGE.get(name)
+        walk = f' · <a href="{page}">walkthrough</a>' if page else ""
+        syms = "".join(f'<span class="sym">{html.escape(s)}</span>' for s in pkg["symbols"])
+        blocks.append(
+            f'<div class="api-pkg" id="{name}" data-pkg="{name}">\n'
+            f'  <div class="api-h"><h3>axiom.{name}</h3>'
+            f'<span class="tag">{pkg["layer"]}</span>'
+            f'<span class="api-count">{pkg["n"]} symbols{walk}</span></div>\n'
+            f'  <p>{html.escape(pkg["blurb"])}</p>\n'
+            f'  <div class="api-syms">{syms}</div>\n'
+            f"</div>"
+        )
+    return "\n".join(blocks)
+
+
+PILLAR_LABEL = {
+    "identify": "Identify",
+    "design": "Design",
+    "calibrate": "Calibrate",
+    "surface": "Surface",
+    "meta": "Pool",
+    "diagnose": "Diagnose",
+    "adapters": "Adapters",
+}
+
+
+# ----------------------------------------------------------------------------------
+# the walkthrough pages: one per example, built from the record its own run wrote
+# ----------------------------------------------------------------------------------
+
+GITHUB = "https://github.com/redam94/axiom/blob/main/examples"
+
+
+def para_html(text: str, cls: str = "") -> str:
+    attr = f' class="{cls}"' if cls else ""
+    return f"<p{attr}>{html.escape(text)}</p>"
+
+
+def framing_html(docstring: str) -> str:
+    """Render an example's module docstring.
+
+    The convention in ``examples/`` is a heading line followed by an indented
+    paragraph. Keeping that structure on the page means the framing reads as the
+    author wrote it rather than as one undifferentiated wall.
+    """
+    out = []
+    for block in docstring.split("\n\n"):
+        lines = [ln for ln in block.splitlines() if ln.strip()]
+        if not lines:
+            continue
+        if not lines[0].startswith(" ") and len(lines) > 1 and lines[1].startswith(" "):
+            body = " ".join(ln.strip() for ln in lines[1:])
+            out.append(
+                f'<p class="wt-h">{html.escape(lines[0].strip())}</p>' f"<p>{html.escape(body)}</p>"
+            )
+        else:
+            out.append(f'<p>{html.escape(" ".join(ln.strip() for ln in lines))}</p>')
+    return "".join(out)
+
+
+def legend_html(legend: list[list[str]]) -> str:
+    """``[["accent", "posterior mean"], ["ink-2:dash", "the truth"]]`` -> the swatch row."""
+    if not legend:
+        return ""
+    items = []
+    for swatch, label in legend:
+        token, _, style = swatch.partition(":")
+        cls = f' class="{style}"' if style else ""
+        items.append(f'<span><i{cls} style="--k:var(--{token})"></i>{html.escape(label)}</span>')
+    return f'<div class="legend">{"".join(items)}</div>'
+
+
+# The chart types site/assets/charts.js knows how to draw. Listed here so a typo
+# in an example fails the build rather than rendering "unknown chart type" to a
+# reader who has no way to tell it was ever meant to be a picture.
+CHART_KINDS = {
+    "band",
+    "bars",
+    "dumbbell",
+    "funnel",
+    "heatmap",
+    "hist",
+    "intervals",
+    "lines",
+    "scatter",
+    "sequential",
+}
+
+
+def resolve_paths(opt: Any, block: dict[str, Any], data: dict[str, Any], where: str) -> Any:
+    """Turn a figure's ``@`` references into real paths, and check they resolve.
+
+    An example writes ``{"rows": "@rows"}`` because it has no business knowing where
+    its data will be stored. Here is where it finds out — and where a reference to
+    something the payload does not contain stops the build, rather than failing
+    silently in a browser and shipping a page with a hole in it.
+    """
+    if isinstance(opt, str) and opt.startswith("@"):
+        rest = opt[1:]
+        path = f"{block['name']}.{rest}" if rest else block["name"]
+        try:
+            lookup(data, f"{block['file']}.{path}")
+        except (KeyError, IndexError, TypeError) as exc:
+            raise SystemExit(f"{where}: chart path {opt!r} does not resolve — {exc}") from exc
+        return path
+    if isinstance(opt, dict):
+        return {k: resolve_paths(v, block, data, where) for k, v in opt.items()}
+    if isinstance(opt, list):
+        return [resolve_paths(v, block, data, where) for v in opt]
+    return opt
+
+
+def figure_html(block: dict[str, Any], stem: str, data: dict[str, Any]) -> str:
+    if block["kind"] not in CHART_KINDS:
+        raise SystemExit(f"{stem}/{block['name']}: no chart type {block['kind']!r}")
+    opt = resolve_paths(dict(block["opt"]), block, data, f"{stem}/{block['name']}")
+    if block.get("height") and "height" not in opt:
+        opt["height"] = block["height"]
+    # single-quoted attribute, so the apostrophe in a label has to be escaped too
+    payload = html.escape(json.dumps(opt), quote=True)
+    note = f'<p class="fig-s">{html.escape(block["note"])}</p>' if block.get("note") else ""
+    return (
+        f'<figure class="fig" id="{stem}-{block["name"]}">\n'
+        f'  <div class="fig-head"><p class="fig-t">{html.escape(block["title"])}</p>{note}</div>\n'
+        f'  {legend_html(block.get("legend") or [])}\n'
+        f'  <div class="chart" data-chart="{block["kind"]}" data-file="{block["file"]}"\n'
+        f"       data-opt='{payload}'></div>\n"
+        f"</figure>"
+    )
+
+
+def table_html(block: dict[str, Any]) -> str:
+    head = "".join(f"<th>{html.escape(str(c))}</th>" for c in block["columns"])
+    body = "".join(
+        "<tr>" + "".join(f"<td>{html.escape(str(c))}</td>" for c in row) + "</tr>"
+        for row in block["rows"]
+    )
+    caption = f"<caption>{html.escape(block['caption'])}</caption>" if block.get("caption") else ""
+    return (
+        f'<div class="tbl-wrap"><table class="t">{caption}'
+        f"<thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>"
+    )
+
+
+def blocks_html(blocks: list[dict[str, Any]], stem: str, data: dict[str, Any]) -> str:
+    out = []
+    for block in blocks:
+        kind = block["type"]
+        if kind == "say":
+            out.append(f'<div class="prose">{para_html(block["text"])}</div>')
+        elif kind == "out":
+            text = "\n".join(block["lines"]).rstrip()
+            out.append(
+                '<div class="out"><div class="out-h">what it printed</div>'
+                f"<pre>{html.escape(text)}</pre></div>"
+            )
+        elif kind == "table":
+            out.append(table_html(block))
+        elif kind == "figure":
+            out.append(figure_html(block, stem, data))
+        else:  # a new block type must be rendered deliberately, not silently dropped
+            raise SystemExit(f"{stem}: no renderer for walkthrough block {kind!r}")
+    return "\n".join(out)
+
+
+def steps_html(entry: dict[str, Any], data: dict[str, Any]) -> str:
+    stem = entry["stem"]
+    walk = entry["walkthrough"]
+    total = len(walk["steps"])
+    out = []
+    for step in walk["steps"]:
+        instead = ""
+        if step.get("instead"):
+            instead = (
+                '<div class="note is-alt"><p class="note-t">The path not taken</p>'
+                f'{para_html(step["instead"])}</div>'
+            )
+        code = (
+            f'<div class="code">\n'
+            f'  <div class="code-h"><span>examples/{stem}.py</span>'
+            f'<button class="copy" type="button">Copy</button></div>\n'
+            f'  <pre>{html.escape(step["code"])}</pre>\n'
+            f"</div>"
+            if step["code"].strip()
+            else ""
+        )
+        out.append(f"""<section class="wt-step" id="step-{step['n']}">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step {step['n']} <span>of {total}</span></p>
+      <h2>{html.escape(step['title'])}</h2>
+      <div class="wt-why prose">{para_html(step['why'])}</div>
+      {instead}
+    </div>
+    <div class="wt-body">
+      {code}
+      {blocks_html(step['blocks'], stem, data)}
+    </div>
+  </div>
+</section>""")
+    return "\n".join(out)
+
+
+def walkthrough_body(entry: dict[str, Any], prev: Any, nxt: Any, data: dict[str, Any]) -> str:
+    stem = entry["stem"]
+    walk = entry["walkthrough"]
+    pillars = "".join(
+        (
+            f'<a class="pkg" href="{p}.html">{PILLAR_LABEL.get(p, p)}</a>'
+            if p in PILLAR_PAGE
+            else f'<span class="pkg">{PILLAR_LABEL.get(p, p)}</span>'
+        )
+        for p in entry["pillars"]
+    )
+    contents = "".join(
+        f'<a class="wt-toc-i" href="#step-{s["n"]}">'
+        f'<span class="wt-toc-n">{s["n"]}</span>{html.escape(s["title"])}</a>'
+        for s in walk["steps"]
+    )
+    findings = "".join(para_html(f) for f in walk["findings"])
+    setup = (
+        f"""<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Before the first step</p>
+      <h2>What this example imports, and why that list is short</h2>
+      <p>Everything below runs on the four core dependencies. No sampler, no extras.</p>
+    </div>
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>examples/{stem}.py</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>{html.escape(entry['setup_code'])}</pre>
+    </div>
+  </div>
+</section>"""
+        if entry.get("setup_code")
+        else ""
+    )
+    nav = []
+    if prev:
+        nav.append(
+            f'<a class="btn btn-2" href="{prev["slug"]}.html">&larr; '
+            f'{prev["number"]} · {html.escape(prev["field"])}</a>'
+        )
+    nav.append('<a class="btn btn-2" href="examples.html">All twelve</a>')
+    if nxt:
+        nav.append(
+            f'<a class="btn btn-2" href="{nxt["slug"]}.html">'
+            f'{nxt["number"]} · {html.escape(nxt["field"])} &rarr;</a>'
+        )
+
+    return f"""<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Example {entry['number']} · {html.escape(entry['field'])}</p>
+    <h1 style="max-width:18ch">{html.escape(walk['title'])}</h1>
+    <p class="lede prose mt">{html.escape(walk['question'])}</p>
+    <div class="ex-meta">{pillars}
+      <span class="pkg">{len(walk['steps'])} steps</span>
+      <span class="pkg">{entry['n_figures']} figures</span>
+      <span class="pkg">{entry['lines']} lines</span>
+      <span class="pkg">runs in {entry['seconds']}s</span></div>
+    <div class="hero-cta">
+      <a class="btn btn-1" href="#step-1">Start the walkthrough</a>
+      <a class="btn btn-2" href="{GITHUB}/{stem}.py">The whole file on GitHub &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div class="prose wt-framing">{framing_html(entry['docstring'])}</div>
+      <div>
+        <p class="eyebrow">The route</p>
+        <nav class="wt-toc">{contents}</nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+{setup}
+
+{steps_html(entry, data)}
+
+<section class="wt-close">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The close</p>
+      <h2>What it actually showed</h2>
+      <p>Written after looking at the output, which is why it does not always agree
+        with the setup.</p>
+    </div>
+    <div class="prose wt-findings">{findings}</div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <details class="ex-more">
+      <summary>The whole file, and everything this run printed</summary>
+      <div class="ex-body">
+        <div class="pair">
+          <div class="code">
+            <div class="code-h"><span>examples/{stem}.py</span>
+              <button class="copy" type="button">Copy</button></div>
+            <pre>{html.escape(entry['code'])}</pre>
+          </div>
+          <div class="out">
+            <div class="out-h">stdout, captured on this build</div>
+            <pre>{html.escape(entry['output'])}</pre>
+          </div>
+        </div>
+      </div>
+    </details>
+    <div class="hero-cta" style="margin-top:28px">{''.join(nav)}</div>
+  </div>
+</section>"""
+
+
+def examples_html(data: dict[str, Any]) -> str:
+    """The index: one card per example, each linking to its walkthrough."""
+    cards = []
+    for e in data["examples"]["entries"]:
+        walk = e["walkthrough"]
+        pillars = " · ".join(PILLAR_LABEL.get(p, p) for p in e["pillars"])
+        cards.append(f"""<a class="card" href="{e['slug']}.html">
+  <p class="card-n">{e['number']} · {html.escape(e['field']).upper()}</p>
+  <h3>{html.escape(walk['title'])}</h3>
+  <p>{html.escape(e['question'])}</p>
+  <div class="card-f">
+    <p class="card-go">{len(walk['steps'])} steps, {e['n_figures']} figures
+      <span aria-hidden="true">→</span></p>
+    <p class="card-stat"><small>{html.escape(pillars)}</small></p>
+  </div>
+</a>""")
+    return f'<div class="cards">{"".join(cards)}</div>'
+
+
+def benchmarks_html(data: dict[str, Any]) -> str:
+    """One block per dataset: the comparison table, the terms, the full output."""
+    blocks = []
+    for e in data["benchmarks"]["entries"]:
+        rows = []
+        for r in e["rows"]:
+            fmt = r["fmt"]
+            ok = r["rel"] < 1e-2
+            rows.append(
+                f"<tr><td>{html.escape(r['label'])}</td>"
+                f"<td>{format(r['axiom'], fmt)}</td>"
+                f"<td>{format(r['published'], fmt)}</td>"
+                f"<td>{r['rel']:.1e}</td>"
+                f"<td class=\"{'num-good' if ok else 'num-bad'}\">"
+                f"{'match' if ok else 'CHECK'}</td></tr>"
+            )
+        tag = (
+            '<span class="tag is-good">committed</span>'
+            if e["availability"] == "vendored"
+            else '<span class="tag is-warn">fetch to run</span>'
+        )
+        blocks.append(f"""<article class="ex" id="{e['name']}">
+  <div class="ex-head">
+    <p class="ex-n">{html.escape(e['field']).upper()} &middot; {html.escape(e['pillar'])}</p>
+    <h3>{html.escape(e['title'])}</h3>
+    <p class="ex-q">Checked against <strong>{html.escape(e['reference'])}</strong> &mdash;
+      {html.escape(e['scale'])}.</p>
+    <div class="ex-meta">{tag}
+      <span class="pkg">{len(e['rows'])} published values</span>
+      <span class="pkg">worst relative error {e['worst_rel']:.1e}</span></div>
+  </div>
+  <div class="ex-body" style="padding-top:16px">
+    <div class="tbl-wrap">
+      <table class="t">
+        <caption>{html.escape(e['citation'])}</caption>
+        <thead><tr><th>quantity</th><th>axiom</th><th>published</th>
+          <th>relative error</th><th></th></tr></thead>
+        <tbody>{''.join(rows)}</tbody>
+      </table>
+    </div>
+    <p class="stamp"><b>licence</b> &middot; {html.escape(e['licence'])}</p>
+  </div>
+  <details class="ex-more">
+    <summary>Read the full run</summary>
+    <div class="ex-body">
+      <div class="out">
+        <div class="out-h">benchmarks/case_{e['name'].replace('lalonde_nsw', 'lalonde')}.py</div>
+        <pre>{html.escape(e['output'])}</pre>
+      </div>
+    </div>
+  </details>
+</article>""")
+    return "\n".join(blocks)
+
+
+def nav_html(active: str) -> str:
+    steps = []
+    for i, (key, label, hint) in enumerate(WORKFLOW):
+        cls = "step" + (" step-on" if key == active else "")
+        steps.append(
+            f'<a class="{cls}" href="{key}.html" title="{html.escape(hint)}">'
+            f'<span class="step-n">{i + 1}</span><span class="step-l">{label}</span></a>'
+        )
+    chain = '<span class="step-link" aria-hidden="true"></span>'.join(steps)
+    extra = "".join(
+        f'<a class="navx{" navx-on" if k == active else ""}" href="{k}.html">{lbl}</a>'
+        for k, lbl in EXTRA
+    )
+    return f"""<a class="brand{' brand-on' if active == 'index' else ''}" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order">{chain}</nav>
+    <nav class="navx-wrap" aria-label="More">{extra}</nav>"""
+
+
+SHELL = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<meta name="description" content="{description}">
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{description}">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&\
+family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&\
+family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {{
+  try {{
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  }} catch (e) {{ /* private mode: fall through to the system setting */ }}
+}})();
+</script>
+</head>
+<body data-page="{page}">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    {nav}
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+{body}
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>
+"""
+
+
+def main() -> int:
+    data = load_data()
+    if not data:
+        raise SystemExit("no data — run site/_gen/generate.py first")
+    fragments = sorted(SRC.glob("*.html"))
+    if not fragments:
+        raise SystemExit(f"no fragments in {SRC}")
+    for frag in fragments:
+        meta, body = parse_meta(frag.read_text(), frag.name)
+        body = body.replace("<!--API-->", api_html(data))
+        body = body.replace("<!--EXAMPLES-->", examples_html(data))
+        body = body.replace("<!--BENCHMARKS-->", benchmarks_html(data))
+        body = substitute(body, data, frag.name)
+        page = frag.stem
+        out = SHELL.format(
+            title=html.escape(meta["title"]),
+            description=html.escape(meta["description"]),
+            page=page,
+            nav=nav_html(meta.get("active", page)),
+            body=body,
+        )
+        (SITE / f"{page}.html").write_text(out)
+        print(f"  {page}.html  ({len(out) / 1024:.0f} kB)")
+
+    # One walkthrough page per example. These are generated rather than authored:
+    # their content is the record the example's own run wrote, so a page cannot
+    # describe a step the code no longer takes.
+    entries = data["examples"]["entries"]
+    for i, entry in enumerate(entries):
+        prev = entries[i - 1] if i else None
+        nxt = entries[i + 1] if i + 1 < len(entries) else None
+        walk = entry["walkthrough"]
+        title = f"{entry['number']} · {walk['title']} — {entry['field']} · axiom"
+        out = SHELL.format(
+            title=html.escape(title),
+            description=html.escape(
+                f"{entry['field']}: {entry['question']} A {len(walk['steps'])}-step "
+                "walkthrough with charts, the code for every step, and the reasoning "
+                "behind each one."
+            ),
+            page="example",
+            nav=nav_html("examples"),
+            body=walkthrough_body(entry, prev, nxt, data),
+        )
+        (SITE / f"{entry['slug']}.html").write_text(out)
+        print(f"  {entry['slug']}.html  ({len(out) / 1024:.0f} kB)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

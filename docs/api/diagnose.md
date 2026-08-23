@@ -4,7 +4,14 @@ Trust machinery: SBC, coverage, posterior predictive and residual checks, sensit
 unobserved confounding, weak identification, prior-to-posterior learning, specification curves,
 refutation, and rolling-origin backtests.
 
-See `docs/plan/03-roadmap.md` (Phase 8) and `nbs/diagnose/`.
+`structure` refutes the *graph* rather than the estimate: a DAG entails
+conditional independencies, each one is a testable claim, and a claim the data
+contradicts is a claim the graph got wrong. Surviving is not passing — a test
+that fails to reject with 200 rows is weak evidence, and the module reports the
+distinction rather than hiding it.
+
+See `docs/plan/03-roadmap.md` (Phase 8), `nbs/diagnose/`, and design note
+[0014](../notes/0014-refutation-stability-and-latents.md).
 
 ## Notebooks
 
@@ -15,6 +22,7 @@ The executed series under `nbs/diagnose/`:
 - [03-learning-and-spec-curve.ipynb](../../nbs/diagnose/03-learning-and-spec-curve.ipynb)
 - [04-refute-and-backtest.ipynb](../../nbs/diagnose/04-refute-and-backtest.ipynb)
 - [05-ppc-and-residuals.ipynb](../../nbs/diagnose/05-ppc-and-residuals.ipynb)
+- [06-refuting-the-graph.ipynb](../../nbs/diagnose/06-refuting-the-graph.ipynb)
 
 ## Package
 
@@ -51,6 +59,9 @@ The executed series under `nbs/diagnose/`:
    :members:
 
 .. automodule:: axiom.diagnose.spec_curve
+   :members:
+
+.. automodule:: axiom.diagnose.structure
    :members:
 
 .. automodule:: axiom.diagnose.surface_prior

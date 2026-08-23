@@ -94,7 +94,10 @@ def _feedback_assumption() -> Assumption:
             "the static summary graph is adequate despite treatment–outcome feedback over time; "
             "no lagged outcome confounds the lagged dose"
         ),
-        challenged_by="carryover in the treatment; g-methods or an unrolled graph are needed",
+        challenged_by=(
+            "carryover in the treatment; unroll the system and run "
+            "identify.sequential_plan on the time-indexed graph instead"
+        ),
     )
 
 

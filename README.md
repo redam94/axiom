@@ -5,6 +5,24 @@ whether the data can tell you, design the experiment that would, fold the
 experiment's answer back into the model, map the response surface it implies,
 and pool the evidence across every study you have run.
 
+📊 **[See it working →](https://redam94.github.io/axiom/)** — a guided tour of all
+five pillars and the HYPER-3 case study, where every figure and every number was
+produced by actually running the library. Source in [`site/`](site/).
+
+✅ **[Checked against published results →](benchmarks/)** — 21 numbers from four real
+datasets, reproduced end to end: R `metafor` on the BCG vaccine trials, NIST
+certified values for a nonlinear fit, Cinelli & Hazlett (2020) on Darfur, and the
+LaLonde/Dehejia–Wahba experimental benchmark. Worst relative disagreement 6×10⁻³.
+
+🧪 **[Twelve worked examples →](examples/)** — the same library across agronomy,
+labour economics, education, epidemiology, conservation ecology, public health,
+clinical research, energy, process engineering, marketing, behavioural science and
+product analytics. Each is a narrated walkthrough rather than a listing: every step
+says why it is the necessary step and what was rejected to get there, and each ends
+with what the run actually showed — which is not always what the setup pointed at.
+`python examples/run_all.py` runs all of them in about a minute on the core
+install.
+
 Four pillars, one vocabulary:
 
 | Pillar | Question it answers | Package |

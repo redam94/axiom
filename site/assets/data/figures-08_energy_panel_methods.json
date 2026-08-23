@@ -1,0 +1,114 @@
+{
+ "size": {
+  "rows": [
+   {
+    "label": "difference_in_differences",
+    "estimate": 0.041667,
+    "lower": 0.005913,
+    "upper": 0.07742,
+    "note": "5 false positives in 120 runs",
+    "bad": false
+   },
+   {
+    "label": "time_based_regression",
+    "estimate": 0.058333,
+    "lower": 0.016399,
+    "upper": 0.100268,
+    "note": "7 false positives in 120 runs",
+    "bad": false
+   },
+   {
+    "label": "cluster_based_regression",
+    "estimate": 0.033333,
+    "lower": 0.001216,
+    "upper": 0.065451,
+    "note": "4 false positives in 120 runs",
+    "bad": false
+   },
+   {
+    "label": "switchback",
+    "estimate": 0.091667,
+    "lower": 0.040038,
+    "upper": 0.143296,
+    "note": "11 false positives in 120 runs",
+    "bad": false
+   },
+   {
+    "label": "ghost",
+    "estimate": 0.033333,
+    "lower": 0.001216,
+    "upper": 0.065451,
+    "note": "4 false positives in 120 runs",
+    "bad": false
+   }
+  ]
+ },
+ "power": {
+  "rows": [
+   {
+    "label": "difference_in_differences",
+    "value": 1.0,
+    "display": "1.00",
+    "colour": "accent",
+    "note": "bias -0.004, coverage 0.96"
+   },
+   {
+    "label": "time_based_regression",
+    "value": 0.966667,
+    "display": "0.97",
+    "colour": "accent",
+    "note": "bias +0.001, coverage 0.94"
+   },
+   {
+    "label": "cluster_based_regression",
+    "value": 1.0,
+    "display": "1.00",
+    "colour": "accent",
+    "note": "bias -0.003, coverage 0.97"
+   },
+   {
+    "label": "switchback",
+    "value": 1.0,
+    "display": "1.00",
+    "colour": "accent",
+    "note": "bias -0.005, coverage 0.91"
+   },
+   {
+    "label": "ghost",
+    "value": 0.191667,
+    "display": "0.19",
+    "colour": "boundary",
+    "note": "bias +0.005, coverage 0.97"
+   }
+  ]
+ },
+ "coverage": {
+  "rows": [
+   {
+    "label": "difference_in_differences",
+    "a": 0.95,
+    "b": 0.958333
+   },
+   {
+    "label": "time_based_regression",
+    "a": 0.95,
+    "b": 0.941667
+   },
+   {
+    "label": "cluster_based_regression",
+    "a": 0.95,
+    "b": 0.966667
+   },
+   {
+    "label": "switchback",
+    "a": 0.95,
+    "b": 0.908333
+   },
+   {
+    "label": "ghost",
+    "a": 0.95,
+    "b": 0.966667
+   }
+  ]
+ }
+}
