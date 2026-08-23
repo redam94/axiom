@@ -29,3 +29,4 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0013 | [What the data can orient, and at what granularity](0013-discovery-and-granularity.md) | decision |
 | 0014 | [Refuting the graph, resampling the search, and dropping sufficiency](0014-refutation-stability-and-latents.md) | decision |
 | 0015 | [The report generator the charter refuses, as a package beside it](0015-report-narration-addon.md) | decision |
+| 0016 | [Showing a result, and drawing the structure](0016-display-and-plots.md) | decision |

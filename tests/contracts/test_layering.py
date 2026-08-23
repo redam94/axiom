@@ -27,6 +27,7 @@ LAYER: dict[str, int] = {
     "discover": 5,
     "build": 6,
     "diagnose": 6,
+    "display": 7,
     "viz": 7,
     "adapters": 7,
     "report": 8,

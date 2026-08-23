@@ -42,6 +42,8 @@ from axiom.core.intervals import IntervalDefinition
 from axiom.surface.bands import ResponseBand, marginal_band, response_band
 
 __all__ = [
+    "causal_graph",
+    "stability",
     "available",
     "backtest_plot",
     "coverage_plot",
@@ -473,3 +475,162 @@ def backtest_plot(backtest: Any) -> Any | Unsupported:
     fig.update_yaxes(title_text="coverage", range=[0.0, 1.0], row=1, col=2)
     fig.update_layout(title="Rolling-origin backtest")
     return fig
+
+
+# -- structure -----------------------------------------------------------------------
+
+
+def _layered(graph: Any) -> dict[str, tuple[float, float]]:
+    """Positions for a DAG: depth from the roots across, spread within a depth down.
+
+    A layered layout rather than a force-directed one because a causal graph has
+    a direction and the reader is looking for it. Depth is the longest path from
+    a root, so an edge always points forwards and never doubles back — which is
+    the property that makes the picture readable without arrowheads being
+    studied one at a time.
+    """
+    depth: dict[str, int] = {}
+    for node in graph.topological_order():
+        parents = [p for p in graph.parents(node) if p in depth]
+        depth[node] = 1 + max((depth[p] for p in parents), default=-1)
+    by_depth: dict[int, list[str]] = {}
+    for node in graph.nodes:
+        by_depth.setdefault(depth.get(node, 0), []).append(node)
+    positions: dict[str, tuple[float, float]] = {}
+    for level, nodes in by_depth.items():
+        for i, node in enumerate(sorted(nodes)):
+            offset = i - (len(nodes) - 1) / 2.0
+            positions[node] = (float(level), -offset)
+    return positions
+
+
+def causal_graph(graph: Any, *, height: float = 420.0) -> Any | Unsupported:
+    """The graph itself: nodes, directed edges, and the bidirected ones.
+
+    axiom is a causal package whose central object had no picture. A verdict
+    says "identified via the back door adjusting for age"; this is where a
+    reader sees *why* — which path the adjustment blocks, and which arrow the
+    unmeasured common cause puts there.
+
+    Unmeasured nodes are drawn hollow and bidirected edges dashed, because those
+    two are what separate a graph you can identify from one you cannot.
+    """
+    go = _graph_objects()
+    if isinstance(go, Unsupported):
+        return go
+    bad = _missing_attributes(graph, ("nodes", "edges", "topological_order"), "causal graph")
+    if bad is not None:
+        return bad
+    if not graph.nodes:
+        return Unsupported(reason="the graph has no nodes to draw")
+
+    position = _layered(graph)
+    figure = go.Figure()
+
+    def arrow(a: str, b: str, dashed: bool) -> dict[str, Any]:
+        x0, y0 = position[a]
+        x1, y1 = position[b]
+        return {
+            "x": x0,
+            "y": y0,
+            "ax": x1,
+            "ay": y1,
+            "xref": "x",
+            "yref": "y",
+            "axref": "x",
+            "ayref": "y",
+            "showarrow": True,
+            "arrowhead": 0 if dashed else 3,
+            "arrowsize": 1.1,
+            "arrowwidth": 1.4,
+            "arrowcolor": "#8a8f98" if dashed else "#3c4148",
+            "opacity": 0.9,
+            "standoff": 14,
+            "startstandoff": 14,
+        }
+
+    annotations = [arrow(b, a, False) for a, b in graph.edges]
+    annotations += [arrow(b, a, True) for a, b in getattr(graph, "bidirected", ())]
+
+    unmeasured = set(getattr(graph, "unmeasured", ()))
+    xs = [position[n][0] for n in graph.nodes]
+    ys = [position[n][1] for n in graph.nodes]
+    figure.add_trace(
+        go.Scatter(
+            x=xs,
+            y=ys,
+            mode="markers+text",
+            text=list(graph.nodes),
+            textposition="middle center",
+            textfont={"size": 12},
+            marker={
+                "size": 46,
+                "color": ["#ffffff" if n in unmeasured else "#e8edf3" for n in graph.nodes],
+                "line": {
+                    "width": [2.0 if n in unmeasured else 1.2 for n in graph.nodes],
+                    "color": ["#8a8f98" if n in unmeasured else "#3c4148" for n in graph.nodes],
+                },
+            },
+            hovertext=[f"{n}{' (unmeasured)' if n in unmeasured else ''}" for n in graph.nodes],
+            hoverinfo="text",
+            showlegend=False,
+        )
+    )
+    figure.update_layout(
+        annotations=annotations,
+        height=height,
+        xaxis={"visible": False, "range": [min(xs) - 0.6, max(xs) + 0.6]},
+        yaxis={"visible": False, "range": [min(ys) - 0.8, max(ys) + 0.8]},
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+        margin={"l": 20, "r": 20, "t": 20, "b": 20},
+        showlegend=False,
+    )
+    return figure
+
+
+def stability(report: Any, *, height: float = 380.0) -> Any | Unsupported:
+    """How often each edge came back, split by which way it pointed.
+
+    The split is the finding. A bar that is nearly all "undirected" is a *stable
+    edge whose direction observation cannot settle* — more rows will not move
+    it, and only an intervention will. A short bar is an edge the data is unsure
+    about at all. Drawing them as one number would lose exactly the distinction
+    that decides what to do next.
+    """
+    go = _graph_objects()
+    if isinstance(go, Unsupported):
+        return go
+    bad = _missing_attributes(report, ("edges", "n_bootstrap"), "stability report")
+    if bad is not None:
+        return bad
+    if not report.edges:
+        return Unsupported(reason="the report has no edges to draw")
+
+    labels = [f"{e.a} – {e.b}" for e in report.edges]
+    figure = go.Figure()
+    for name, values, colour in (
+        ("→ forward", [e.forward for e in report.edges], "#2f7fd1"),
+        ("← backward", [e.backward for e in report.edges], "#8a63c4"),
+        ("undirected", [e.undirected for e in report.edges], "#b8bec7"),
+    ):
+        figure.add_trace(
+            go.Bar(
+                x=values,
+                y=labels,
+                orientation="h",
+                name=name,
+                marker={"color": colour},
+                hovertemplate="%{y}<br>" + name + " in %{x:.0%} of resamples<extra></extra>",
+            )
+        )
+    figure.update_layout(
+        barmode="stack",
+        height=height,
+        xaxis={"title": f"share of {report.n_bootstrap} resamples", "range": [0, 1]},
+        yaxis={"autorange": "reversed"},
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+        legend={"orientation": "h", "y": -0.2},
+    )
+    return figure

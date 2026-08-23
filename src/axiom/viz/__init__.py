@@ -10,6 +10,7 @@ from __future__ import annotations
 from axiom.viz.figures import (
     available,
     backtest_plot,
+    causal_graph,
     coverage_plot,
     forest,
     funnel,
@@ -17,11 +18,13 @@ from axiom.viz.figures import (
     response_curve,
     sbc_ranks,
     spec_curve_plot,
+    stability,
 )
 
 __all__ = [
     "available",
     "backtest_plot",
+    "causal_graph",
     "coverage_plot",
     "forest",
     "funnel",
@@ -29,4 +32,5 @@ __all__ = [
     "response_curve",
     "sbc_ranks",
     "spec_curve_plot",
+    "stability",
 ]
