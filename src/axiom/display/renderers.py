@@ -255,8 +255,114 @@ def register_results() -> None:
             card.add("limit", limit)
         return card
 
+    from axiom.estimands import TransferPlan
+
+    @renders(TransferPlan)
+    def _transfer(obj: Any) -> Card:
+        """What moving a result costs, which is the only question a plan answers.
+
+        The generic card led with two 64-character content hashes and truncated
+        the three fields a reader wants. The costs are what belong at the top,
+        and *no correction but one assumption* — the common case — has to be
+        legible rather than an empty tuple.
+        """
+        by_status: dict[str, Status] = {"transportable": "good", "downgraded": "assumed"}
+        card = Card(
+            title="Transfer plan",
+            status=status_from(obj.status, by_status, "bad"),
+            note=obj.reason or "; ".join(e.statement for e in obj.entries),
+        )
+        card.add("status", obj.status, emphasis=True)
+        card.add("facets that differ", ", ".join(obj.differing) or "none")
+        card.add("corrections", len(obj.corrections))
+        for correction in obj.corrections[:4]:
+            card.add(f"  {correction.name}", f"×{correction.value:.4g}")
+        card.add("assumptions", len(obj.assumptions))
+        for assumption in obj.assumptions[:4]:
+            card.add(f"  {assumption.name}", assumption.statement)
+        card.add("ledger lines", len(obj.ledger_lines))
+        return card
+
+
+def register_containers() -> None:
+    """Renderers for the three types a reader meets constantly.
+
+    All three rendered *worse* than ``print`` before this, which is the whole
+    argument for looking at the output rather than trusting the fallback.
+    ``Posterior`` and ``Panel`` are not ``Spec`` subclasses, so the generic
+    renderer had no fields to walk and produced a card with a title and nothing
+    else. ``CausalGraph`` is a ``Spec``, but its edges are bare 2-tuples, so the
+    generic flattener turned ``X -> Y, Z -> X`` into ``X, Y, Z, X`` — every
+    arrow gone.
+    """
+    from axiom.core import Posterior
+    from axiom.data import Panel
+    from axiom.identify import CausalGraph
+
+    @renders(Posterior)
+    def _posterior(obj: Any) -> Card:
+        names = sorted(obj.names())  # a frozenset; unsorted reorders per run
+        card = Card(title="Posterior")
+        card.add("parameters", ", ".join(names) or "none", emphasis=True)
+        card.add("chains", obj.n_chains)
+        card.add("draws", obj.n_draws())
+        for name in names[:6]:
+            # the per-draw shape, bracketed: a bare "2" reads as a count next to
+            # `chains 4` and `draws 2000`
+            shape = obj.draws(name).shape[2:]
+            card.add(f"  {name}", "scalar" if not shape else f"[{'×'.join(map(str, shape))}]")
+        if len(names) > 6:
+            card.add("  …", f"{len(names) - 6} more")
+        for axis, labels in obj.coords().items():
+            card.add(f"coord {axis}", _short(list(labels)))
+        seed = obj.provenance.get("seed")
+        card.note = "no seed recorded" if seed is None else f"seed {seed}"
+        return card
+
+    @renders(Panel)
+    def _panel(obj: Any) -> Card:
+        report = obj.completeness()
+        card = Card(
+            title="Panel",
+            # There is no "warn": the vocabulary is holds / taken-on-trust /
+            # failed, and an unbalanced panel is none of those — it is a fact
+            # with consequences. So the note carries it and the mark stays off.
+            status="good" if report.balanced else "neutral",
+            note="balanced" if report.balanced else f"{report.missing_cells} cell(s) missing",
+        )
+        card.add("units", len(obj.units), emphasis=True)
+        card.add("periods", len(obj.periods))
+        card.add("rows", len(obj.frame))
+        card.add("outcome", obj.roles.outcome[0])
+        # `treatments` is a dict, so iterating yields names, not pairs
+        card.add("treatments", ", ".join(obj.roles.treatments) or "none")
+        if report.gaps:
+            card.add("gaps", _short(report.gaps))
+        return card
+
+    @renders(CausalGraph)
+    def _graph(obj: Any) -> Card:
+        card = Card(
+            title=f"CausalGraph — {obj.name}" if obj.name else "CausalGraph",
+            # feedback is not a failure — `dynamics` is built for it — so it is
+            # a row rather than a mark
+            status="neutral",
+            # to_text keeps the arrows; the generic flattener drops them
+            note=obj.to_text(),
+        )
+        card.add("nodes", ", ".join(obj.nodes), emphasis=True)
+        card.add("edges", len(obj.edges) + len(obj.bidirected))
+        card.add("unmeasured", ", ".join(obj.unmeasured) or "none")
+        if obj.bidirected:
+            card.add("bidirected", ", ".join(f"{a} <-> {b}" for a, b in obj.bidirected))
+        if obj.selection:
+            card.add("selection", ", ".join(obj.selection))
+        card.add("feedback", "yes" if obj.feedback else "no")
+        return card
+
 
 def register_all() -> None:
     """Register every renderer. Safe to call more than once."""
     register_core()
     register_results()
+    register_containers()

@@ -128,12 +128,14 @@ def test_a_summary_shows_its_interval() -> None:
 
 
 def test_a_type_with_no_renderer_still_renders_from_its_fields() -> None:
-    """Sixty-one result types; a dozen renderers. The rest must not be worse off."""
-    graph = CausalGraph.from_edges("a -> b", name="g")
-    assert type(graph) not in REGISTRY
-    text = render(graph)
-    assert "CausalGraph" in text
-    assert "nodes" in text
+    """Sixty-one result types; a handful of renderers. The rest must not be worse off."""
+    from axiom.core import Treatment
+
+    treatment = Treatment(name="fertilizer", unit="kg")
+    assert type(treatment) not in REGISTRY
+    text = render(treatment)
+    assert "Treatment" in text
+    assert "fertilizer" in text
 
 
 def test_the_generic_card_shortens_long_collections() -> None:
@@ -204,3 +206,114 @@ def test_enable_is_false_outside_a_notebook() -> None:
     from axiom.display import enable
 
     assert enable() is False, "there is no IPython here to register with"
+
+
+# -- the three that rendered worse than print until someone looked -----------------------
+
+
+def test_a_posterior_card_is_not_just_its_title() -> None:
+    """``Posterior`` is not a ``Spec``, so the generic renderer had no fields to
+    walk and produced a card with a title and nothing else — strictly worse than
+    the ``print`` it was meant to replace."""
+    from axiom.core import Posterior
+
+    rng = np.random.default_rng(0)
+    post = Posterior(
+        {"mu": rng.normal(size=(4, 500, 2)), "sigma": rng.normal(size=(4, 500))},
+        coords={"treatment": ["a", "b"]},
+        provenance={"seed": 42},
+    )
+    text = render(post)
+    assert len(text.splitlines()) > 1, "a bare title is the bug this test exists for"
+    for fragment in ("mu", "sigma", "4", "2000", "seed 42"):
+        assert fragment in text, f"{fragment} is missing from the card"
+
+
+def test_a_posterior_lists_its_parameters_in_a_stable_order() -> None:
+    """``names()`` is a frozenset; rendering it unsorted reorders per run."""
+    from axiom.core import Posterior
+
+    rng = np.random.default_rng(1)
+    draws = {name: rng.normal(size=(2, 50)) for name in ("zeta", "alpha", "mu")}
+    assert "alpha, mu, zeta" in render(Posterior(draws))
+
+
+def test_a_posterior_says_so_when_no_seed_was_recorded() -> None:
+    from axiom.core import Posterior
+
+    assert "no seed recorded" in render(Posterior({"a": np.zeros((2, 10))}))
+
+
+def test_a_panel_card_carries_the_shape_and_where_the_gap_is() -> None:
+    from axiom.core import Outcome
+    from axiom.data import Panel, RoleMap
+
+    frame = pd.DataFrame({"unit": ["a", "a", "b"], "period": [1, 2, 1], "y": [0.1, 0.2, 0.3]})
+    panel = Panel(frame, RoleMap(unit="unit", time="period", outcome=("y", Outcome(name="y"))))
+    text = render(panel)
+    assert len(text.splitlines()) > 1
+    assert "missing" in text, "an unbalanced panel should say it is unbalanced"
+    assert "b=1" in text, "the gap should say which unit it is in"
+
+
+def test_a_panel_names_its_treatments() -> None:
+    """`roles.treatments` is a dict, so iterating yields names and not pairs.
+    Reading it as pairs raised, and a panel with no treatments — which is what
+    the first test used — never enters the loop that does it."""
+    from axiom.core import D, Outcome, Treatment
+    from axiom.data import Panel, RoleMap
+
+    frame = pd.DataFrame(
+        {"unit": ["a", "a"], "period": [1, 2], "y": [0.1, 0.2], "dose": [1.0, 2.0]}
+    )
+    panel = Panel(
+        frame,
+        RoleMap(
+            unit="unit",
+            time="period",
+            outcome=("y", Outcome(name="y", dimension=D.outcome)),
+            treatments={"dose": Treatment(name="dose", dimension=D.currency, unit="USD")},
+        ),
+    )
+    assert "dose" in render(panel)
+
+
+def test_a_transfer_plan_leads_with_the_cost_not_the_hashes() -> None:
+    """The generic card led with two 64-character content hashes and truncated
+    the three fields a reader wants. And *no correction but one assumption* is
+    the common case, so it has to read as something rather than an empty tuple."""
+    from axiom.core import D, Intervention, Outcome, Population, TimeWindow, Treatment
+    from axiom.estimands import Estimand, Level, Quantity
+
+    shared = dict(
+        quantity=Quantity(kind="contrast"),
+        treatment=Treatment(name="fertilizer", dimension=D.currency, unit="USD"),
+        intervention=Intervention(doses={"fertilizer": 100.0}, version="granular"),
+        reference=Intervention(doses={"fertilizer": 0.0}, version="granular"),
+        outcome=Outcome(name="yield_total", dimension=D.outcome, unit="kg"),
+        window=TimeWindow(start=0, stop=8),
+        level=Level(unit="cluster"),
+        dimension=D.outcome,
+    )
+    here = Estimand(name="trial", population=Population(name="north"), **shared)
+    there = Estimand(name="region", population=Population(name="whole_region"), **shared)
+
+    text = render(here.transfer_to(there))
+    assert "population" in text, "the facet that differs is the finding"
+    assert "s_admissibility" in text, "the assumption is the whole cost of this move"
+    assert "corrections             0" in text, "no corrections must read as zero, not blank"
+    assert "8e2c2ccb" not in text, "a content hash is not what a reader came for"
+
+
+def test_a_causal_graph_card_keeps_the_arrows() -> None:
+    """``edges`` are bare 2-tuples, so the generic flattener rendered
+    ``X -> Y, Z -> X`` as ``X, Y, Z, X`` — every arrow gone, and the result read
+    as a node list."""
+    from axiom.identify import CausalGraph
+
+    graph = CausalGraph.from_edges("Z -> X, Z -> Y, X -> Y, A <-> B", unmeasured=["A"], name="toy")
+    text = render(graph)
+    assert "->" in text, "a graph card without an arrow is a node list"
+    assert "Z -> X" in text
+    assert "A <-> B" in text, "the bidirected edge is the one that decides identifiability"
+    assert "toy" in text

@@ -127,6 +127,12 @@ select = ["E", "F", "I", "B", "UP", "BLE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# pytest's default `norecursedirs` contains "build", which silently excluded
+# `nbs/build/` from `make notebooks`: the builders notebook had never once been
+# executed in CI, and nothing reported it — a skipped directory looks exactly
+# like a directory with nothing in it. Set explicitly so that a subpackage's
+# name cannot decide whether its deliverable is tested.
+norecursedirs = [".*", "dist", "node_modules", "venv", "*.egg"]
 markers = [
     "slow: long-running (sampling) tests",
     "golden: compares against fixtures captured from mmm-framework",

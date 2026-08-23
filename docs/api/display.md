@@ -24,6 +24,14 @@ A renderer is registered by type rather than written as a method, because a
 fallback matters more than the specific renderers: it is why adding this layer
 improved sixty-one types rather than the dozen with a renderer of their own.
 
+The fallback has two blind spots, and both are worth knowing before relying on
+it for a new type. It builds a card from a **`Spec`'s own fields**, so a
+hand-written container that is not a `Spec` — `Posterior` and `Panel` were both
+— renders as a title and nothing else. And it shortens collections by joining
+their elements, so a field of bare tuples loses its structure: `CausalGraph`'s
+edges rendered as `X, Y, Z, X` with every arrow gone. All three now have
+renderers of their own; a new type shaped like any of them will want one too.
+
 Design notes: [0016](../notes/0016-display-and-plots.md).
 
 ## Notebooks
