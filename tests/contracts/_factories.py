@@ -12,6 +12,7 @@ from collections.abc import Callable
 from fractions import Fraction
 
 from axiom.adapters import MarketingRoles
+from axiom.adapters.agronomy import EconomicOptimum, Prices, TrialRoles
 from axiom.calibrate import (
     Agreement,
     CalibratedSpec,
@@ -1810,6 +1811,29 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
         hashes={"spec:roles": "c" * 64},
         seed=7,
         environment={"python": "3.12"},
+    ),
+    TrialRoles: lambda: TrialRoles(
+        harvest="grain",
+        nutrients=("nitrogen", "phosphorus"),
+        plot="plot",
+        season="season",
+        soil_tests=("soil_carbon",),
+        controls=("irrigated",),
+    ),
+    Prices: lambda: Prices(harvest=220.0, nutrient=1.1, currency="USD"),
+    EconomicOptimum: lambda: EconomicOptimum(
+        nutrient="nitrogen",
+        rate=138.0,
+        lower=131.0,
+        upper=145.0,
+        expected_gain=4.45,
+        prices=Prices(harvest=220.0, nutrient=2.2),
+        price_ratio=0.01,
+        definition="eti",
+        mass=0.9,
+        searched=(0.0, 270.0),
+        bracketed=True,
+        detail={"n_draws": "800"},
     ),
     MarketingRoles: lambda: MarketingRoles(
         kpi="revenue",

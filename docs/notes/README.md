@@ -32,3 +32,4 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0016 | [Showing a result, and drawing the structure](0016-display-and-plots.md) | decision |
 | 0017 | [A printed number stops where its uncertainty stops](0017-significant-digits.md) | decision |
 | 0018 | [GEIGER-1911: designing an experiment, and what robustness costs](0018-case-study-rutherford.md) | progress |
+| 0019 | [Writing an adapter: the seam, the five parts, and where things actually go](0019-writing-an-adapter.md) | decision + progress |
