@@ -61,7 +61,11 @@
         var pkgName = pkg.dataset.pkg;
         var pkgMatches = q && pkgName.indexOf(q) !== -1;
         pkg.querySelectorAll(".sym").forEach(function (sym) {
-          var hit = !q || pkgMatches || sym.textContent.toLowerCase().indexOf(q) !== -1;
+          /* data-search is the name plus its one-line docstring. Deliberately not
+             textContent: that now includes the usage snippet, so every symbol
+             would match a common word like "graph" through someone else's code. */
+          var hay = sym.dataset.search || sym.textContent.toLowerCase();
+          var hit = !q || pkgMatches || hay.indexOf(q) !== -1;
           sym.hidden = !hit;
           sym.classList.toggle("hit", !!q && hit && !pkgMatches);
           if (hit) { any = true; shown++; }
@@ -70,7 +74,8 @@
       });
       count.textContent = q
         ? shown + " of " + total + " symbols match “" + search.value.trim() + "”"
-        : total + " public symbols across " + packages.length + " subpackages";
+        : total + " public symbols across " + packages.length +
+          " subpackages — click one for its signature and a real call";
     };
 
     search.addEventListener("input", run);

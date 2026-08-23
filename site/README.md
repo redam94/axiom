@@ -45,6 +45,39 @@ python site/_gen/build.py
 python -m http.server 8000 --directory site
 ```
 
+## Where the API page comes from
+
+`api.html` lists every public symbol of every subpackage, and each one opens to
+show three things: its signature, the first line of its docstring, and **a real
+call**. None of that is written by hand.
+
+The signature and the docstring come from `inspect`. The call comes from the
+notebooks: gate 12 already guarantees every public symbol is used in an executed
+notebook, so the `api` section of `generate.py` parses that subpackage's
+notebooks and lifts out the shortest *executed statement* that uses the symbol,
+preferring one that calls it. It walks every statement rather than only the
+top-level ones, so when the only construction sits inside a helper the page shows
+that line instead of the whole function.
+
+Two rules keep it honest:
+
+- **Imports do not count.** `from axiom.surface import Hill` demonstrates nothing
+  about how `Hill` is called, so import statements are skipped. A symbol whose
+  only appearance in the notebooks is inside an import gets no snippet and the
+  page says so. Five symbols are in that position today; gate 12 passes them
+  because an import satisfies it, and this page is where that shows.
+- **The output has to be reproducible.** Pydantic renders validator objects and
+  memory addresses into an annotation's repr, which would churn the committed
+  JSON on every build; `_readable_type` collapses `Annotated[T, ...]` to `T` and
+  strips addresses, and a default longer than 40 characters is shown as `...`
+  (`design.simulated_power` otherwise carries the entire method registry inline,
+  six thousand characters of signature for one parameter). Running the section
+  twice produces byte-identical output.
+
+The package list, blurbs and layers live once at the top of `generate.py` as
+`ORDER` / `BLURB` / `LAYER`, read by both the `overview` and `api` sections, so
+the landing page's symbol count cannot disagree with the map.
+
 ## Where the walkthrough pages come from
 
 The `examples` section of `generate.py` runs every script in `examples/` in a
