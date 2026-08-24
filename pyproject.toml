@@ -1,6 +1,6 @@
 [project]
 name = "axiom"
-version = "1.1.0"
+version = "1.1.1"
 description = "Bayesian causal decision science: identification, experimental design and calibration, response-surface methodology, and evidence meta-analysis"
 readme = "README.md"
 license = "LicenseRef-Proprietary"
@@ -84,6 +84,11 @@ all = ["axiom[numpyro,pymc,netcdf,convex,privacy,viz,display,report]"]
 [dependency-groups]
 dev = [
     "axiom[all]",
+    # The add-on the tutorial notebook ends on. It depends on axiom and axiom
+    # never imports it, so this is a dev-only edge: `pip install axiom` still
+    # pulls nothing extra, and `make notebooks` can execute the one notebook
+    # that shows a report being written.
+    "axiom-dossier[render]",
     "black>=24.0",
     "ruff>=0.13",
     "mypy>=1.11",
@@ -111,6 +116,11 @@ packages = ["src/axiom"]
 # that work is allowed to live.
 [tool.uv.workspace]
 members = ["packages/*"]
+
+# The dev group's `axiom-dossier` is the one in this repository, not one from an
+# index: it is developed alongside axiom and has never been published.
+[tool.uv.sources]
+axiom-dossier = { workspace = true }
 
 [tool.black]
 line-length = 100
