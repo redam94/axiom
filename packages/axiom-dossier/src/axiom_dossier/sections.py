@@ -22,10 +22,20 @@ along with a longer target.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Literal
 
 from axiom.core import Assumption
-from axiom.report import Divider, Heading, LedgerBlock, Metric, Paragraph, Section, Table
+from axiom.report import (
+    Divider,
+    Figure,
+    Heading,
+    LedgerBlock,
+    Metric,
+    Paragraph,
+    Section,
+    Table,
+)
 
 from axiom_dossier.evidence import Evidence
 
@@ -34,6 +44,7 @@ __all__ = [
     "Verbosity",
     "assumption_rows",
     "literal",
+    "readout_text",
     "diagnostics_section",
     "limitations_section",
     "methods_section",
@@ -107,8 +118,24 @@ def literal(text: str) -> str:
     text this package writes and wrong for text it merely carries: an analyst's
     sentence mentioning ``{}`` or a set literal would otherwise fail the render
     with a missing key. Three of the twelve axiom examples do exactly that.
+
+    **An ``Evidence`` holds raw text and the escape happens where the paragraph
+    is built.** The other order — escaping on the way in — is what put
+    ``{{'alpha': 1.41…}}`` in a design table, because the same value is a table
+    cell too, and a cell is not a template.
     """
     return text.replace("{", "{{").replace("}", "}}")
+
+
+def readout_text(lines: Sequence[str]) -> str:
+    """Printed output as one paragraph of monospaced lines, escaped and marked.
+
+    ``report`` has no preformatted block, and adding one to carry six lines of
+    terminal output would be the wrong place to put it: what a readout needs is
+    a fixed pitch and its own line breaks, and the inline code mark gives both
+    in every renderer that has a monospaced face.
+    """
+    return "\n".join("`" + literal(line).replace("`", "'") + "`" for line in lines)
 
 
 def assumption_rows(assumptions: tuple[Assumption, ...]) -> list[dict[str, str]]:
@@ -157,13 +184,26 @@ def methods_section(
         blocks.append(Paragraph(text=f"**Question.** {literal(evidence.question)}"))
 
     for step in evidence.steps:
-        blocks.append(Heading(text=step.title, level=3))
+        blocks.append(Heading(text=literal(step.title), level=3))
         sentences = [s for s in (step.what, step.why) if s]
         if sentences:
-            blocks.append(Paragraph(text=" ".join(sentences)))
+            blocks.append(Paragraph(text=literal(" ".join(sentences))))
+        if step.instead and detail["include_step_detail"]:
+            blocks.append(Paragraph(text=f"**Considered instead.** {literal(step.instead)}"))
         if step.detail and detail["include_step_detail"]:
-            line = "; ".join(f"{k}: {v}" for k, v in sorted(step.detail.items()))
+            # Escaped here rather than on the way in: the same value is a table
+            # cell in the design table, and a cell is not a template.
+            line = "; ".join(f"{k}: {literal(v)}" for k, v in sorted(step.detail.items()))
             blocks.append(Paragraph(text=line, emphasis=True))
+        if step.readout and detail["include_step_detail"]:
+            blocks.append(Paragraph(text=readout_text(step.readout)))
+        for exhibit in step.exhibits:
+            if exhibit.kind == "figure":
+                blocks.append(Figure(source=exhibit.key, caption=literal(exhibit.caption)))
+            else:
+                blocks.append(
+                    Table(source=exhibit.key, caption=literal(exhibit.caption), max_rows=40)
+                )
 
     standing = standing_assumptions(evidence)
     if standing and detail["include_assumption_table"]:

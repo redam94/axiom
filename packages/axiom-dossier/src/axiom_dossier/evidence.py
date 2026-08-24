@@ -35,6 +35,7 @@ from axiom.core import Assumption, Interval, LedgerLine, NonEmptyStr, Spec, Verd
 __all__ = [
     "Evidence",
     "EvidenceBuilder",
+    "Exhibit",
     "MethodStep",
     "Quantity",
     "quantity_from",
@@ -142,20 +143,50 @@ class Quantity(Spec):
         return (side == "below") if self.beneficial == "lower" else (side == "above")
 
 
+class Exhibit(Spec):
+    """A figure or a table a step produced, named by the context key holding it.
+
+    The exhibit itself is data and lives in the render context; what the record
+    keeps is which step made it, what it is, and what to call it. That is the
+    same separation ``Evidence`` keeps everywhere else: claims here, data beside
+    it.
+    """
+
+    key: NonEmptyStr
+    kind: Literal["figure", "table"]
+    caption: str = ""
+
+
 class MethodStep(Spec):
     """One thing that was done, and what it rests on.
 
     ``what`` is the action, ``why`` is the reason it was the right one. Both are
     written by the collector from a typed axiom result rather than by a person,
     which is what stops a methods section describing an analysis nobody ran.
+
+    Four kinds of thing a step can carry, deliberately kept apart because they
+    are read differently and belong in different places:
+
+    * ``detail`` — the protocol's *settings*: arms, allocation, the estimator.
+      Short keys and short values, because they are gathered into the design
+      table and a table cell holding a paragraph is not a table.
+    * ``instead`` — the alternative that was rejected, in prose. The most useful
+      sentence in a methods section and the one most often missing; it is not a
+      setting and putting it in ``detail`` made the design table a wall of text.
+    * ``readout`` — what the step *printed*, verbatim. Terminal output is not a
+      parameter either; it is shown as it was seen, in a monospaced block.
+    * ``exhibits`` — the figures and tables the step produced.
     """
 
     key: NonEmptyStr
     title: NonEmptyStr
     what: str = ""
     why: str = ""
+    instead: str = ""
     assumptions: tuple[Assumption, ...] = ()
     detail: dict[str, str] = {}
+    readout: tuple[str, ...] = ()
+    exhibits: tuple[Exhibit, ...] = ()
 
 
 class Evidence(Spec):
@@ -393,8 +424,11 @@ class EvidenceBuilder:
         *,
         what: str = "",
         why: str = "",
+        instead: str = "",
         assumptions: Iterable[Assumption] = (),
         detail: Mapping[str, str] | None = None,
+        readout: Iterable[str] = (),
+        exhibits: Iterable[Exhibit] = (),
     ) -> EvidenceBuilder:
         self._steps.append(
             MethodStep(
@@ -402,8 +436,11 @@ class EvidenceBuilder:
                 title=title,
                 what=what,
                 why=why,
+                instead=instead,
                 assumptions=tuple(assumptions),
                 detail=dict(detail or {}),
+                readout=tuple(readout),
+                exhibits=tuple(exhibits),
             )
         )
         return self

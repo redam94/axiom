@@ -142,7 +142,7 @@ def discussion_section(
             blocks.append(Heading(text=q.label, level=3))
             blocks.append(Paragraph(text=reading_of(q, causal=causal)))
             if q.note and detail["include_notes"]:
-                blocks.append(Paragraph(text=q.note, emphasis=True))
+                blocks.append(Paragraph(text=literal(q.note), emphasis=True))
     else:
         for q in evidence.findings:
             blocks.append(Paragraph(text=reading_of(q, causal=causal)))

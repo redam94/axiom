@@ -45,7 +45,7 @@ _ITALIC = re.compile(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)")
 _CODE = re.compile(r"`(.+?)`")
 #: The ``Table 3.`` / ``Figure 1:`` a caption often opens with, so it can be set
 #: apart from the sentence after it the way a journal sets it.
-_CAPTION_LABEL = re.compile(r"^((?:Table|Figure|Fig\.|Exhibit)\s+[\w.]+\s*[.:])(\s+)")
+_CAPTION_LABEL = re.compile(r"^((?:Table|Figure|Fig\.|Exhibit)\s+[\w.]+\s*[.:]?)(\s+|$)")
 #: A leading section number, so ``2. Methods`` is recognisable as the methods
 #: section and the contents rail can set the number apart from the title.
 _SECTION_NUMBER = re.compile(r"^\s*(\d+(?:\.\d+)*)[.)]?\s+")
@@ -212,9 +212,11 @@ p:last-child { margin-bottom: 0; }
 .summary { color: var(--muted); margin: 0 0 1.1em; }
 a { color: var(--accent); text-underline-offset: .16em; text-decoration-thickness: .06em; }
 strong { font-weight: 700; }
+/* `white-space: pre-wrap` is not a detail: a readout is column-aligned output,
+   and HTML collapses the columns away without it. */
 code {
   font-family: var(--mono); font-size: .86em; background: var(--wash);
-  border: 1px solid var(--rule); border-radius: 2px; padding: .06em .32em;
+  border-radius: 2px; padding: .1em .35em; white-space: pre-wrap;
 }
 hr { border: 0; border-top: 1px solid var(--rule); margin: 2em 0; }
 

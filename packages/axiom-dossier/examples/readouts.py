@@ -7,6 +7,7 @@ journal-shaped report per example.
     python examples/readouts.py                 # all twelve
     python examples/readouts.py 07 02           # just those
     python examples/readouts.py --narrate       # prose through Gemini
+    python examples/readouts.py --standalone    # HTML with plotly bundled
 
 Writes ``out/readouts/<stem>.{pdf,html}`` and a one-line summary per example.
 
@@ -26,7 +27,7 @@ from pathlib import Path
 
 from axiom.core import Unsupported
 
-from axiom_dossier import Narrator, build, evidence_from_record, tables_from_record
+from axiom_dossier import JOURNAL_THEME, Narrator, build, evidence_from_record, exhibits_from_record
 
 REPO = Path(__file__).resolve().parents[3]
 EXAMPLES = REPO / "examples"
@@ -67,6 +68,7 @@ def record_for(script: Path) -> dict | None:
 def main() -> int:
     argv = [a for a in sys.argv[1:] if not a.startswith("--")]
     narrate = "--narrate" in sys.argv
+    standalone = "--standalone" in sys.argv
     narrator = Narrator() if narrate else None
 
     chosen = scripts(argv)
@@ -83,10 +85,17 @@ def main() -> int:
             failures += 1
             continue
         evidence = evidence_from_record(record)
-        built = build(evidence, narrator=narrator, style="journal", verbosity="full")
-        # the example's own tables ride along in the context; the report names
-        # them only if a section asks for one, so extra keys are harmless
-        built.context.update(tables_from_record(record))
+        # The example's own tables and charts are exhibits of the steps that
+        # made them, so they go in before the sections are built rather than
+        # into the context afterwards: a step names its figure, and `build`
+        # keeps the naming only where there is data behind it.
+        built = build(
+            evidence,
+            narrator=narrator,
+            style="journal",
+            verbosity="full",
+            extra_exhibits=exhibits_from_record(record, theme=JOURNAL_THEME),
+        )
 
         missing = built.missing()
         if missing:
@@ -96,13 +105,21 @@ def main() -> int:
 
         written = []
         for fmt in ("pdf", "html"):
-            result = built.write(str(OUT / f"{script.stem}.{fmt}"))
+            # The committed HTML links plotly rather than bundling it: twelve
+            # reports with the library inside are 58 MB of repository, and these
+            # are read from a checkout. `--standalone` writes the emailable one.
+            result = built.write(
+                str(OUT / f"{script.stem}.{fmt}"),
+                inline_plotly=standalone,
+            )
             written.append(fmt if not isinstance(result, Unsupported) else f"{fmt}:skipped")
         rejected = len(built.rejected())
         note = f", {rejected} narration(s) rejected" if rejected else ""
+        exhibits = sum(len(step.exhibits) for step in evidence.steps)
         print(
             f"  {script.stem:38s} {len(evidence.steps)} steps, "
-            f"{len(evidence.remarks)} remarks -> {', '.join(written)}{note}"
+            f"{exhibits} exhibits, {len(evidence.remarks)} remarks -> "
+            f"{', '.join(written)}{note}"
         )
 
     print(f"\n{len(chosen) - failures}/{len(chosen)} written")

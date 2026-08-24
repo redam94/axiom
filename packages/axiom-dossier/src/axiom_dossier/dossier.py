@@ -207,6 +207,25 @@ def _with_exhibits(section: Section, key: str, available: set[str]) -> Section:
     )
 
 
+def _without_missing_exhibits(section: Section, available: set[str]) -> Section:
+    """Drop the figure and table blocks whose data is not in the context.
+
+    A step names every exhibit it recorded; whether one can be *drawn* is
+    decided later — plotly may be absent, or a payload may not hold what its
+    chart kind needs. Naming one that is not there would make ``missing()``
+    non-empty and the whole report unrenderable, so the block goes and the rest
+    of the step stays.
+    """
+    kept = tuple(
+        block
+        for block in section.blocks
+        if not (isinstance(block, Figure | Table) and block.source not in available)
+    )
+    if len(kept) == len(section.blocks):
+        return section
+    return Section(title=section.title, blocks=kept, summary=section.summary)
+
+
 #: Sections whose exhibits were numbered when they were built. Running the
 #: document-order numbering over them again is what produced "Figure 1. Figure
 #: 1." and gave a gathered table a second number that disagreed with its title.
@@ -319,6 +338,7 @@ def build(
     affiliation: str = "",
     author_note: str = "",
     extra_figures: Mapping[str, tuple[Any, str]] | None = None,
+    extra_exhibits: Mapping[str, object] | None = None,
 ) -> Dossier:
     """Turn evidence into a document. Narration is optional and never load-bearing.
 
@@ -338,6 +358,11 @@ def build(
     the prose that discusses it; ``gathered`` collects them into Tables and
     Figures sections at the end, which is what APA asks for and therefore the
     default for that style. ``none`` leaves them out.
+
+    ``extra_exhibits`` carries figures and tables the evidence does not produce
+    but a step names — a walkthrough record's own charts, say. They join the
+    exhibit context before the sections are built, which is what lets a step's
+    exhibit be checked against its data rather than assumed into existence.
     """
     if style not in ("plain", "journal", "apa"):
         raise ValueError(f"unknown style {style!r}; have ['apa', 'journal', 'plain']")
@@ -388,6 +413,7 @@ def build(
     if exhibits != "none":
         exhibit_context.update(tables_for(evidence))
         exhibit_context.update(figures_for(evidence, theme=chosen_theme))
+        exhibit_context.update(extra_exhibits or {})
         # Figures produced elsewhere -- by a notebook the agent ran, or by code
         # it wrote to close a gap -- arrive already drawn. They are exhibits like
         # any other and are gathered after the generated ones.
@@ -415,6 +441,7 @@ def build(
             section = _BUILDERS[key](evidence, verbosity=verbosity)
         if exhibits == "embedded":
             section = _with_exhibits(section, key, available)
+        section = _without_missing_exhibits(section, available)
         if narrator is not None and key not in _NEVER_NARRATED and key != "abstract":
             section, narration = narrator.section(section, evidence, key=key, verbosity=verbosity)
             narrations.append(narration)

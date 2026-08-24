@@ -65,15 +65,19 @@ python examples/readouts.py
 
 Built from the structured record each script writes as it runs. Each carries the
 question, every step with its reasoning **and the alternative that example
-rejected**, the readouts, and the analyst's closing remarks verbatim.
+rejected**, the printed output as it was printed, every table the run recorded,
+every chart it recorded — redrawn in plotly from the numbers behind it — and the
+analyst's closing remarks verbatim. Nineteen tables and forty-three figures
+across the twelve.
 
 **Not narrated**, and they need no key: this is what the package produces with
 no language model involved at all, which is most of it.
 
-They have no metric blocks, no figures and no threshold readings. That is not a
-gap in the report — the twelve examples record their findings as prose rather
-than as quantities, so there is nothing structured to draw or tabulate. An
-example that records quantities gets all of it with no change to this package.
+They have no metric blocks and no threshold readings. That is not a gap in the
+report — the twelve examples record their *findings* as prose rather than as
+quantities, so there is nothing structured to read one from, and inventing them
+from the sentences would be guessing. An example that records quantities gets
+those sections with no change to this package.
 
 ## About the HTML
 

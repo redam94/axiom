@@ -43,6 +43,7 @@ from axiom_dossier.apa import (
     title_block,
     title_page_section,
 )
+from axiom_dossier.charts import CHART_KINDS, chart_figure
 from axiom_dossier.claims import CLAIM_WORDS, Claim, licensed_claims
 from axiom_dossier.claims import unlicensed as unlicensed_claims
 from axiom_dossier.dossier import (
@@ -57,6 +58,7 @@ from axiom_dossier.dossier import (
 from axiom_dossier.evidence import (
     Evidence,
     EvidenceBuilder,
+    Exhibit,
     MethodStep,
     Quantity,
     quantity_from,
@@ -98,12 +100,18 @@ from axiom_dossier.sections import (
     literal,
     methods_section,
     provenance_section,
+    readout_text,
     remarks_section,
     results_section,
     standing_assumptions,
 )
 from axiom_dossier.tables import design_rows, diagnostics_rows, findings_rows, tables_for
-from axiom_dossier.walkthrough import evidence_from_record, tables_from_record
+from axiom_dossier.walkthrough import (
+    evidence_from_record,
+    exhibits_from_record,
+    figures_from_record,
+    tables_from_record,
+)
 
 #: The notebook-reading pipeline is a subpackage rather than a re-export:
 #: it needs langgraph, and importing axiom_dossier must not.
@@ -127,12 +135,14 @@ __all__ = [
     "Exhibits",
     "APA_THEME",
     "APA_SECTIONS",
+    "CHART_KINDS",
     "CLAIM_WORDS",
     "Claim",
     "DEFAULT_SECTIONS",
     "Dossier",
     "Evidence",
     "EvidenceBuilder",
+    "Exhibit",
     "Gemini",
     "JOURNAL_SECTIONS",
     "JOURNAL_THEME",
@@ -151,6 +161,7 @@ __all__ = [
     "abstract_section",
     "assumption_rows",
     "build",
+    "chart_figure",
     "conclusions_section",
     "context_for",
     "contested",
@@ -158,11 +169,14 @@ __all__ = [
     "discussion_section",
     "evidence_brief",
     "evidence_from_record",
+    "exhibits_from_record",
+    "figures_from_record",
     "introduction_section",
     "licensed_claims",
     "licensed_numbers",
     "limitations_section",
     "literal",
+    "readout_text",
     "literals",
     "methods_section",
     "narrate_text",

@@ -2,98 +2,309 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="axiom.report">
-<meta name="axiom-report-hash" content="a85d618604062c891be138d1c0042ad088da3af940ee17fb5b7b1e8122f33e68">
+<meta name="axiom-report-hash" content="d2babe55e6b6a54c62f3426b8b842988f21d65337381d6d5dd6ca99e5168c8e9">
 <title>The optimum is outside the operating window</title>
 <style>
-:root { color-scheme: light; }
-* { box-sizing: border-box; }
-body {
-  margin: 0; padding: 64.0pt;
-  background: #ffffff; color: #111111;
-  font-family: Times-Roman, Georgia, "Times New Roman", Times, serif;
-  font-size: 10.5pt; line-height: 1.55;
+:root {
+  color-scheme: light;
+  --ink: #111111;
+  --muted: #555555;
+  --accent: #1a1a1a;
+  --bg: #ffffff;
+  --rule: #c9c9c9;
+  --tint: rgba(26,26,26,0.055);
+  --wash: rgba(17,17,17,0.032);
+  --serif: Times-Roman, Georgia, "Times New Roman", Times, serif;
+  --mono: Courier, ui-monospace, SFMono-Regular, Menlo, monospace;
+  --size-title: 19.0pt;
+  --size-h2: 13.5pt;
+  --size-h3: 11.5pt;
+  --size-h4: 10.5pt;
+  --measure: 34em;
+  --wide: 46em;
+  --rail: 12.5em;
+  --gutter: clamp(1.15rem, 4vw, 64.0pt);
 }
-main { max-width: 952.0pt; margin: 0 auto; }
-h1 { font-size: 19.0pt; margin: 0 0 .15em; letter-spacing: -.01em; }
-h2 { font-size: 13.5pt; margin: 1.6em 0 .4em;
-      padding-bottom: .25em; border-bottom: 1px solid #c9c9c9; }
-h3 { font-size: 11.5pt; margin: 1.2em 0 .3em; }
-h4 { font-size: 10.5pt; margin: 1em 0 .3em; }
-p { margin: .5em 0; }
-p.emphasis { font-size: 11.760000000000002pt; color: #1a1a1a; }
-.subtitle { color: #555555; font-size: 12.075pt;
-             margin: 0 0 1.4em; }
-.summary { color: #555555; margin: 0 0 .8em; }
-code { font-family: Courier, ui-monospace, monospace;
-        background: rgba(0,0,0,.05); padding: .08em .3em; border-radius: 3px; }
-figure { margin: 1.1em 0; }
-figcaption { color: #555555; font-size: 9.66pt; margin-top: .3em; }
-table { border-collapse: collapse; width: 100%; margin: .8em 0;
-         font-size: 9.975pt; }
-th, td { text-align: left; padding: .35em .6em; border-bottom: 1px solid #c9c9c9; }
-th { font-weight: 600; border-bottom: 2px solid #c9c9c9; }
-td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-.metrics { display: flex; flex-wrap: wrap; gap: 1.4em; margin: 1em 0; }
-.metric { min-width: 12em; }
-.metric .label { color: #555555; font-size: 9.450000000000001pt;
-                  text-transform: uppercase; letter-spacing: .04em; }
-.metric .value { font-size: 15.579999999999998pt; font-weight: 600;
-                  color: #1a1a1a; font-variant-numeric: tabular-nums; }
-.metric .interval { color: #555555; font-size: 9.450000000000001pt;
-                     font-variant-numeric: tabular-nums; }
-.ledger { border-left: 3px solid #c9c9c9; padding-left: .9em; margin: 1em 0; }
-.ledger .line { margin: .55em 0; }
-.ledger .kind { color: #1a1a1a; font-family: Courier, monospace;
-                 font-size: 8.924999999999999pt; }
-.ledger .assumption { color: #555555; font-size: 9.450000000000001pt; }
-hr { border: 0; border-top: 1px solid #c9c9c9; margin: 1.4em 0; }
-footer { margin-top: 2.5em; padding-top: .8em; border-top: 1px solid #c9c9c9;
-          color: #555555; font-size: 8.924999999999999pt; }
-@media print { body { padding: 0; } h2 { break-before: page; } }
+html { font-size: 10.5pt; }
+@page { margin: 64.0pt; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  padding: var(--gutter) var(--gutter) calc(var(--gutter) * 1.6);
+  background: var(--bg); color: var(--ink);
+  font-family: var(--serif); font-size: 1rem; line-height: 1.62;
+  font-kerning: normal; text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- the page: the article centred, a contents rail in the left margin --- */
+.paper { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+main { width: 100%; max-width: var(--wide); margin-inline: auto; min-width: 0; }
+@media (min-width: 68em) {
+  /* Out of the flow, so the rail cannot pull the article off centre: a reader
+     navigating by contents and one reading straight through see the same page. */
+  .toc {
+    position: fixed; top: var(--gutter); width: var(--rail);
+    left: max(var(--gutter), calc(50% - var(--wide) / 2 - var(--rail) - 2.5em));
+    max-height: calc(100vh - 2 * var(--gutter)); overflow: auto;
+  }
+}
+
+.toc { font-size: .8em; line-height: 1.4; }
+.toc-title {
+  margin: 0 0 .7em; padding: 0; border: 0; font-size: 1em; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .11em; color: var(--muted);
+}
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc a {
+  display: flex; gap: .5em; padding: .32em .7em; color: var(--muted);
+  text-decoration: none; border-left: 2px solid var(--rule);
+}
+.toc a:hover, .toc a:focus-visible {
+  color: var(--ink); border-left-color: var(--accent); background: var(--wash);
+}
+.toc .n { flex: 0 0 .9em; text-align: right; font-variant-numeric: tabular-nums; opacity: .75; }
+@media (max-width: 67.99em) {
+  .toc {
+    border: 1px solid var(--rule); padding: 1em 1.2em;
+    width: 100%; max-width: var(--wide); margin-inline: auto;
+  }
+  .toc ol { columns: 2 11em; column-gap: 2em; }
+  .toc a { border-left: 0; padding: .22em 0; }
+  .toc a:hover, .toc a:focus-visible { background: none; }
+}
+
+/* --- title block --- */
+.titleblock {
+  text-align: center; margin: 0 0 2.6em;
+  padding-bottom: 1.4em; border-bottom: 1px solid var(--rule);
+}
+h1 {
+  font-size: var(--size-title); line-height: 1.18; font-weight: 700;
+  letter-spacing: -.008em; margin: 0 0 .4em; text-wrap: balance;
+}
+.subtitle {
+  color: var(--muted); font-size: 1.06em; font-style: italic; line-height: 1.45;
+  margin: 0 auto; max-width: 32em; text-align: center; text-wrap: pretty;
+}
+
+/* --- sections: prose on the measure, figures wider than it --- */
+.section {
+  display: grid;
+  grid-template-columns:
+    [wide-start] minmax(0, 1fr)
+    [text-start] minmax(0, var(--measure))
+    [text-end] minmax(0, 1fr) [wide-end];
+}
+.section > * { grid-column: text; min-width: 0; }
+.section > figure, .section > .metrics { grid-column: wide; }
+.section.abstract { font-size: .96em; }
+.section.abstract > h2 {
+  text-align: center; border: 0; padding: 0; font-size: 1em; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .12em; margin: 0 0 .5em;
+}
+.section.abstract > * { grid-column: text; }
+
+h2, h3, h4 { break-after: avoid; scroll-margin-top: 1.2rem; text-wrap: balance; }
+h2 {
+  font-size: var(--size-h2); font-weight: 700; line-height: 1.25;
+  letter-spacing: -.005em; margin: 2.3em 0 .55em;
+  padding-bottom: .28em; border-bottom: 1px solid var(--rule);
+}
+.section:first-of-type h2 { margin-top: .4em; }
+h3 { font-size: var(--size-h3); font-weight: 700; margin: 1.9em 0 .35em; }
+h4 { font-size: var(--size-h4); font-weight: 700; margin: 1.7em 0 .3em; }
+h2 .anchor, h3 .anchor {
+  float: right; margin-left: .5em; color: var(--rule); text-decoration: none;
+  font-size: .72em; font-weight: 400; opacity: 0; transition: opacity .12s;
+}
+h2:hover .anchor, h3:hover .anchor, .anchor:focus-visible { opacity: 1; color: var(--accent); }
+
+p { margin: 0 0 .8em; text-align: justify; hyphens: auto; }
+p:last-child { margin-bottom: 0; }
+.summary { color: var(--muted); margin: 0 0 1.1em; }
+a { color: var(--accent); text-underline-offset: .16em; text-decoration-thickness: .06em; }
+strong { font-weight: 700; }
+/* `white-space: pre-wrap` is not a detail: a readout is column-aligned output,
+   and HTML collapses the columns away without it. */
+code {
+  font-family: var(--mono); font-size: .86em; background: var(--wash);
+  border-radius: 2px; padding: .1em .35em; white-space: pre-wrap;
+}
+hr { border: 0; border-top: 1px solid var(--rule); margin: 2em 0; }
+
+/* A pulled-out line: the parameters a step ran with, or a remark on a number. */
+p.emphasis {
+  margin: 1em 0 1.1em; padding: .6em .95em; text-align: left;
+  border-left: 2px solid var(--accent); background: var(--tint);
+  font-size: .95em; line-height: 1.5;
+}
+
+/* --- figures and tables --- */
+figure { margin: 1.9em 0; padding: 0; }
+figcaption {
+  color: var(--muted); font-size: .85em; line-height: 1.45;
+  margin-top: .75em; text-align: left;
+}
+figcaption .label { color: var(--ink); font-weight: 700; }
+.table-figure { overflow-x: auto; }
+/* A table is read from its caption down; a figure is read up to it. */
+.table-figure > figcaption:first-child { margin: 0 0 .6em; }
+table {
+  border-collapse: collapse; width: 100%; margin: 0;
+  font-size: .88em; line-height: 1.42; font-variant-numeric: tabular-nums;
+}
+thead th {
+  text-align: left; font-weight: 700; padding: .5em .7em; vertical-align: bottom;
+  border-top: 1.5px solid var(--ink); border-bottom: 1px solid var(--ink);
+}
+tbody td { padding: .42em .7em; vertical-align: top; border: 0; }
+tbody tr:nth-child(even) { background: var(--wash); }
+tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
+td.num, th.num { text-align: right; }
+
+/* --- the numbers, as a panel of hairline-separated cells --- */
+.metrics {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(12em, 1fr));
+  gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+  margin: 1.7em 0;
+}
+.metric {
+  background: var(--bg); padding: .8em .95em;
+  display: flex; flex-direction: column;
+}
+.metric .label { color: var(--muted); font-size: .8em; font-weight: 600; line-height: 1.35; }
+.metric .value {
+  font-size: 1.22em; font-weight: 600; line-height: 1.28; margin-top: .3em;
+  color: var(--accent); font-variant-numeric: tabular-nums; text-wrap: balance;
+}
+/* The interval sits on the floor of its cell, so a row of them reads as a row
+   however differently the values above them wrap. */
+.metric .interval {
+  color: var(--muted); font-size: .8em; line-height: 1.35; margin-top: auto;
+  padding-top: .25em; font-variant-numeric: tabular-nums;
+}
+.metric .interval:empty { display: none; }
+
+/* --- the assumption trail --- */
+.ledger {
+  margin: 1.7em 0; padding: .9em 1.1em;
+  background: var(--wash); border-left: 2px solid var(--accent);
+  font-size: .93em; line-height: 1.5;
+}
+.ledger > figcaption:first-child {
+  margin: 0 0 .7em; color: var(--ink); font-weight: 700;
+  font-size: .88em; text-transform: uppercase; letter-spacing: .07em;
+}
+.ledger .line { margin: 0 0 .75em; }
+.ledger .line:last-child { margin-bottom: 0; }
+.ledger .kind {
+  display: inline-block; font-family: var(--mono); font-size: .78em;
+  color: var(--muted); background: var(--bg); border: 1px solid var(--rule);
+  border-radius: 2px; padding: .05em .4em; margin-right: .4em;
+  vertical-align: baseline;
+}
+.ledger .assumption { color: var(--muted); font-size: .93em; margin-top: .25em; }
+.ledger .assumption code { font-size: .95em; }
+
+footer {
+  margin-top: 3em; padding-top: .9em; border-top: 1px solid var(--rule);
+  color: var(--muted); font-size: .82em; line-height: 1.5;
+}
+
+@media print {
+  html { scroll-behavior: auto; }
+  body { padding: 0; }
+  .toc, .anchor { display: none !important; }
+  .paper { display: block; }
+  main { max-width: none; }
+  .section { display: block; }
+  a { color: inherit; text-decoration: none; }
+  /* An article flows: a section does not start a fresh sheet, it starts where
+     the last one ended, and only the things that break badly are held together. */
+  p { orphans: 3; widows: 3; }
+  figure, .metrics, .ledger { break-inside: avoid; }
+  thead { display: table-header-group; }
+}
 </style>
-</head><body><main>
+</head><body><div class="paper">
+<nav class="toc" aria-label="Contents"><div class="toc-title">Contents</div><ol><li><a href="#section-1"><span>Abstract</span></a></li><li><a href="#section-2"><span class="n">1</span><span>Introduction</span></a></li><li><a href="#section-3"><span class="n">2</span><span>Methods</span></a></li><li><a href="#section-4"><span class="n">3</span><span>Results</span></a></li><li><a href="#section-5"><span class="n">4</span><span>What the run showed</span></a></li><li><a href="#section-6"><span class="n">5</span><span>Model checking</span></a></li><li><a href="#section-7"><span class="n">6</span><span>Discussion</span></a></li><li><a href="#section-8"><span class="n">7</span><span>Conclusions</span></a></li><li><a href="#section-9"><span class="n">8</span><span>Limitations</span></a></li><li><a href="#section-10"><span class="n">9</span><span>Provenance</span></a></li></ol></nav>
+<main>
+<header class="titleblock">
 <h1>The optimum is outside the operating window</h1>
 <p class="subtitle">A reactor is running somewhere on the slope. Where should the next batch of expensive experimental runs be placed, and once the climb stops, what kind of place have you arrived at?</p>
-<h2>Abstract</h2>
+</header>
+<section id="section-1" class="section abstract">
+<h2><a class="anchor" href="#section-1" aria-hidden="true">§</a>Abstract</h2>
 <p><strong>Objective.</strong> A reactor is running somewhere on the slope. Where should the next batch of expensive experimental runs be placed, and once the climb stops, what kind of place have you arrived at? <strong>Methods.</strong> Write down the operating window before anything else. 5 step(s) are recorded in full below. <strong>Results.</strong> Nothing here needed a global optimizer or a large design. Nine screening runs bought a direction, 26 cheap steps followed it, and the true yield went from 50.24 to 65.13 — +14.89 verified against the simulation&#x27;s own truth rather than against the fit&#x27;s opinion of itself. <strong>Conclusions.</strong> No assumptions were recorded for this run, which is not the same as none being required.</p>
-<h2>1. Introduction</h2>
+</section>
+<section id="section-2" class="section">
+<h2><a class="anchor" href="#section-2" aria-hidden="true">§</a>1. Introduction</h2>
 <p>This report addresses one question: A reactor is running somewhere on the slope. Where should the next batch of expensive experimental runs be placed, and once the climb stops, what kind of place have you arrived at?</p>
-<h2>2. Methods</h2>
+</section>
+<section id="section-3" class="section">
+<h2><a class="anchor" href="#section-3" aria-hidden="true">§</a>2. Methods</h2>
 <p><strong>Question.</strong> A reactor is running somewhere on the slope. Where should the next batch of expensive experimental runs be placed, and once the climb stops, what kind of place have you arrived at?</p>
 <h4>Write down the operating window before anything else</h4>
 <p>120 to 200 degrees and 5 to 45 minutes are not modelling choices, they are what the plant can physically run. Encoding them as Bounds means the design, the ascent and the canonical analysis all obey the same constraint, and it means an optimizer&#x27;s answer is always something the plant could actually do.</p>
-<p class="emphasis">considered instead: Optimising unconstrained and checking feasibility at the end. On a saturating surface the unconstrained answer is frequently outside the window — as it turns out to be here — and discovering that after the fact loses the much more useful question of what the boundary is costing.; readout: temperature : 120 to 200 C; residence   : 5 to 45 min; running now : 140 C, 12 min</p>
+<p><strong>Considered instead.</strong> Optimising unconstrained and checking feasibility at the end. On a saturating surface the unconstrained answer is frequently outside the window — as it turns out to be here — and discovering that after the fact loses the much more useful question of what the boundary is costing.</p>
+<p><code>temperature : 120 to 200 C</code><br><code>residence   : 5 to 45 min</code><br><code>running now : 140 C, 12 min</code></p>
 <h4>Stage one: buy a direction, not a surface</h4>
 <p>The first design only has to answer &#x27;which way is uphill&#x27;. A 3x3 factorial does that for nine runs. Curvature is not needed yet and estimating it here would be paying for information the next decision does not use.</p>
-<p class="emphasis">considered instead: Going straight to a central composite design at the current setpoint. It costs more runs and it characterises the neighbourhood of a point you are about to leave. Box and Wilson&#x27;s whole insight is that the expensive design belongs at the end of the climb, not at the start.; readout: screening design : full_factorial, 9 runs; converged        : True</p>
+<p><strong>Considered instead.</strong> Going straight to a central composite design at the current setpoint. It costs more runs and it characterises the neighbourhood of a point you are about to leave. Box and Wilson&#x27;s whole insight is that the expensive design belongs at the end of the climb, not at the start.</p>
+<p><code>screening design : full_factorial, 9 runs</code><br><code>converged        : True</code></p>
 <h4>Stage two: walk uphill in cheap steps</h4>
 <p>Steepest ascent is a sequence of small local decisions rather than a global search. When a run costs a shift of plant time and the surface is smooth — which describes most physical processes — it remains the right first move, and it stops on its own when the gradient stops paying or the window gets in the way.</p>
-<p class="emphasis">considered instead: Handing the fitted surface to a global optimizer. It would return the unconstrained peak, which is outside the window, in one call — and it would skip the information the path itself carries about how steep the climb was and where it flattened.; readout: steps taken : 26; stopped because : boundary; best point on the path: temperature 200.0, residence 45.0; predicted yield there : 66.493</p>
+<p><strong>Considered instead.</strong> Handing the fitted surface to a global optimizer. It would return the unconstrained peak, which is outside the window, in one call — and it would skip the information the path itself carries about how steep the climb was and where it flattened.</p>
+<p><code>steps taken : 26</code><br><code>stopped because : boundary</code><br><code>best point on the path: temperature 200.0, residence 45.0</code><br><code>predicted yield there : 66.493</code></p>
+<figure class="table-figure"><figcaption><span class="label">Table 1</span></figcaption><table><thead><tr><th class="num">step</th><th class="num">temperature</th><th class="num">residence</th><th class="num">predicted yield</th></tr></thead><tbody><tr><td class="num">0</td><td class="num">140.0</td><td class="num">12.0</td><td class="num">51.776</td></tr><tr><td class="num">1</td><td class="num">142.4</td><td class="num">17.5</td><td class="num">53.836</td></tr><tr><td class="num">2</td><td class="num">144.8</td><td class="num">23.0</td><td class="num">56.004</td></tr><tr><td class="num">8</td><td class="num">159.2</td><td class="num">45.0</td><td class="num">63.421</td></tr><tr><td class="num">17</td><td class="num">180.9</td><td class="num">45.0</td><td class="num">65.247</td></tr><tr><td class="num">25</td><td class="num">200.0</td><td class="num">45.0</td><td class="num">66.493</td></tr></tbody></table></figure>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.7.0.min.js" integrity="sha256-jvTGqxNp8AGWEcvNLVuKr+8j5dGe9Yw51LQkmDH+IYA=" crossorigin="anonymous"></script>                <div id="90e40669-08b9-48bb-88ef-224651359416" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("90e40669-08b9-48bb-88ef-224651359416")) {                    Plotly.newPlot(                        "90e40669-08b9-48bb-88ef-224651359416",                        [{"hovertemplate":"%{x:.4g}\u003cbr\u003e%{y:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#2f7fd1","width":2},"mode":"lines","name":"predicted yield","x":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],"y":[51.77610558528709,53.83612775744116,56.003695044631264,58.06854201660191,59.92560738173809,61.54430648555096,62.934559365641064,63.18344234471441,63.420897677428954,63.65067747855015,63.87309528104547,64.08844977524522,64.29702556356655,64.49909387840289,64.69491326435627,64.8847302260769,65.06877984303352,65.24728635257054,65.42046370262248,65.58851607545368,65.75163838377702,65.91001674058073,66.06382890396063,66.2132446982172,66.35842641243529,66.49250029686496],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"step along the ascent"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"yaxis":{"title":{"text":"predicted yield"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"showlegend":false,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"legend":{"orientation":"h","y":-0.22,"x":0},"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 1.</span> What each step of the climb bought. The curve flattens long before the path stops. That flattening is the signal to stop spending runs on the direction and start asking what kind of place this is — which is what stage three does</figcaption></figure>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                            <div id="3e078574-2cfb-4012-a57a-3cfc85a2377c" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("3e078574-2cfb-4012-a57a-3cfc85a2377c")) {                    Plotly.newPlot(                        "3e078574-2cfb-4012-a57a-3cfc85a2377c",                        [{"colorbar":{"outlinewidth":0,"thickness":12,"title":{"side":"right","text":"predicted yield"}},"colorscale":[[0.0,"rgba(47,127,209,0.08)"],[1.0,"#2f7fd1"]],"hovertemplate":"%{x:.4g}, %{y:.4g}\u003cbr\u003e%{z:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","x":[120.0,122.75862068965517,125.51724137931035,128.27586206896552,131.0344827586207,133.79310344827587,136.55172413793105,139.31034482758622,142.0689655172414,144.82758620689657,147.58620689655172,150.3448275862069,153.10344827586206,155.86206896551724,158.6206896551724,161.3793103448276,164.13793103448276,166.89655172413794,169.6551724137931,172.41379310344828,175.17241379310346,177.93103448275863,180.68965517241378,183.44827586206895,186.20689655172413,188.9655172413793,191.72413793103448,194.48275862068965,197.24137931034483,200.0],"y":[5.0,6.379310344827586,7.758620689655173,9.137931034482758,10.517241379310345,11.896551724137932,13.275862068965518,14.655172413793103,16.03448275862069,17.413793103448278,18.793103448275865,20.17241379310345,21.551724137931036,22.931034482758623,24.310344827586206,25.689655172413794,27.06896551724138,28.448275862068968,29.827586206896555,31.20689655172414,32.58620689655173,33.96551724137932,35.3448275862069,36.724137931034484,38.10344827586207,39.48275862068966,40.862068965517246,42.24137931034483,43.62068965517241,45.0],"z":[[47.2179249858712,47.684527511757025,48.131518929965495,48.55988805308018,48.97057106599029,49.364453848295156,49.74237432423698,50.10512480661746,50.45345430888553,50.78807080586919,51.10964342871306,51.41880458368348,51.71615198779005,52.00225061679005,52.27763456321257,52.54280880366158,52.79825087591418,53.04441246729163,53.28172091650122,53.510580631674294,53.73137442769807,53.944464786185854,54.15019504158066,54.34889049695824,54.540859473107545,54.726394294431486,54.90577221514047,55.07925628911448,55.247096186694456,55.40952896153432],[47.443328805097174,47.909931330983,48.35692274919147,48.78529187230615,49.195974885216266,49.58985766752113,49.96777814346295,50.330528625843435,50.67885812811151,51.013474625095164,51.33504724793904,51.644208402909456,51.94155580701602,52.227654436016024,52.50303838243855,52.76821262288755,53.02365469514015,53.2698162865176,53.507124735727196,53.73598445090027,53.956778246924046,54.16986860541183,54.37559886080663,54.574294316184215,54.76626329233352,54.95179811365746,55.13117603436645,55.30466010834046,55.47250000592043,55.634932780760295],[47.71603689937671,48.182639425262536,48.629630843471006,49.05799996658569,49.4686829794958,49.86256576180067,50.24048623774249,50.60323672012297,50.951566222391044,51.2861827193747,51.607755342218574,51.91691649718899,52.21426390129556,52.50036253029556,52.77574647671808,53.04092071716709,53.29636278941969,53.54252438079714,53.77983283000673,54.008692545179805,54.22948634120358,54.442576699691365,54.64830695508617,54.84700241046375,55.038971386613056,55.224506207937,55.403884128645984,55.577368202619994,55.74520810019997,55.90764087503983],[48.031512200132056,48.49811472601788,48.94510614422635,49.373475267341036,49.78415828025115,50.17804106255601,50.55596153849783,50.91871202087832,51.26704152314639,51.601658020130046,51.92323064297392,52.23239179794434,52.529739202050905,52.81583783105091,53.09122177747343,53.356396017922435,53.611838090175034,53.857999681552485,54.09530813076208,54.32416784593515,54.54496164195893,54.75805200044671,54.963782255841515,55.1624777112191,55.3544466873684,55.53998150869234,55.71935942940133,55.89284350337534,56.06068340095531,56.22311617579518],[48.38473983820034,48.851342364086165,49.298333782294634,49.72670290540932,50.13738591831943,50.531268700624295,50.909189176566116,51.2719396589466,51.62026916121467,51.95488565819833,52.2764582810422,52.58561943601262,52.88296684011919,53.16906546911919,53.44444941554171,53.70962365599072,53.96506572824332,54.21122731962077,54.44853576883036,54.67739548400343,54.89818928002721,55.11127963851499,55.3170098939098,55.51570534928738,55.707674325436685,55.893209146760626,56.07258706746961,56.24607114144362,56.413911039023596,56.57634381386346],[48.77041674212778,49.237019268013604,49.684010686222074,50.11237980933676,50.52306282224687,50.916945604551735,51.294866080493556,51.65761656287404,52.00594606514211,52.34056256212577,52.66213518496964,52.97129633994006,53.26864374404663,53.55474237304663,53.83012631946915,54.09530055991816,54.35074263217076,54.59690422354821,54.8342126727578,55.06307238793087,55.28386618395465,55.49695654244243,55.70268679783724,55.90138225321482,56.093351229364124,56.278886050688065,56.45826397139705,56.63174804537106,56.799587942951035,56.9620207177909],[49.18313130205454,49.649733827940366,50.096725246148836,50.52509436926352,50.93577738217363,51.3296601644785,51.70758064042032,52.0703311228008,52.418660625068874,52.75327712205253,53.074849744896405,53.38401089986682,53.68135830397339,53.96745693297339,54.242840879395914,54.50801511984492,54.76345719209752,55.00961878347497,55.24692723268456,55.475786947857635,55.69658074388141,55.909671102369195,56.115401357764,56.31409681314158,56.506065789290886,56.69160061061483,56.870978531323814,57.044462605297824,57.2123025028778,57.37473527771766],[49.61752473498889,50.084127260874716,50.531118679083185,50.95948780219787,51.37017081510798,51.76405359741285,52.14197407335467,52.50472455573515,52.853054058003224,53.18767055498688,53.509243177830754,53.81840433280117,54.11575173690774,54.40185036590774,54.67723431233026,54.94240855277927,55.19785062503187,55.44401221640932,55.68132066561891,55.910180380791985,56.13097417681576,56.344064535303545,56.54979479069835,56.74849024607593,56.940459222225236,57.12599404354918,57.305371964258164,57.47885603823217,57.64669593581215,57.80912871065201],[50.06842815652228,50.535030682408106,50.982022100616575,51.41039122373126,51.82107423664137,52.21495701894624,52.59287749488806,52.95562797726854,53.303957479536614,53.63857397652027,53.960146599364144,54.26930775433456,54.56665515844113,54.85275378744113,55.12813773386365,55.39331197431266,55.64875404656526,55.89491563794271,56.1322240871523,56.361083802325375,56.58187759834915,56.794967956836935,57.00069821223174,57.19939366760932,57.391362643758626,57.57689746508257,57.756275385791554,57.92975945976556,58.09759935734554,58.2600321321854],[50.53097202369987,50.99757454958569,51.44456596779416,51.87293509090885,52.28361810381896,52.67750088612382,53.055421362065644,53.41817184444613,53.7665013467142,54.10111784369786,54.42269046654173,54.73185162151215,55.029199025618716,55.31529765461872,55.59068160104124,55.855855841490246,56.111297913742845,56.357459505120296,56.59476795432989,56.82362766950296,57.04442146552674,57.25751182401452,57.463242079409326,57.66193753478691,57.85390651093621,58.039441332260154,58.21881925296914,58.39230332694315,58.560143224523124,58.72257599936299],[51.000667106002226,51.46726963188805,51.91426105009652,52.342630173211205,52.75331318612132,53.14719596842618,53.525116444368,53.88786692674849,54.23619642901656,54.570812926000215,54.89238554884409,55.20154670381451,55.498894107921075,55.784992736921076,56.0603766833436,56.325550923792605,56.580992996045204,56.827154587422655,57.06446303663225,57.29332275180532,57.5141165478291,57.72720690631688,57.932937161711685,58.13163261708927,58.32360159323857,58.50913641456251,58.6885143352715,58.86199840924551,59.02983830682548,59.192271081665346],[51.47345819849746,51.94006072438329,52.387052142591756,52.81542126570644,53.22610427861655,53.61998706092142,53.99790753686324,54.36065801924372,54.708987521511794,55.04360401849545,55.365176641339325,55.67433779630974,55.97168520041631,56.25778382941631,56.533167775838834,56.79834201628784,57.05378408854044,57.29994567991789,57.53725412912748,57.766113844300556,57.98690764032433,58.199997998812115,58.40572825420692,58.6044237095845,58.79639268573381,58.98192750705775,59.161305427766735,59.334789501740744,59.50262939932072,59.66506217416058],[51.9457532892024,52.412355815088226,52.859347233296695,53.28771635641138,53.69839936932149,54.09228215162636,54.47020262756818,54.83295310994866,55.181282612216734,55.51589910920039,55.837471732044264,56.14663288701468,56.44398029112125,56.73007892012125,57.00546286654377,57.27063710699278,57.52607917924538,57.77224077062283,58.00954921983242,58.238408935005495,58.45920273102927,58.672293089517055,58.87802334491186,59.07671880028944,59.268687776438746,59.45422259776269,59.633600518471674,59.80708459244568,59.97492449002566,60.13735726486552],[52.4144318175553,52.88103434344112,53.32802576164959,53.756394884764276,54.16707789767439,54.56096067997925,54.938881155921074,55.30163163830156,55.64996114056963,55.984577637553286,56.30615026039716,56.61531141536758,56.912658819474146,57.19875744847415,57.47414139489667,57.739315635345676,57.994757707598275,58.240919298975726,58.47822774818532,58.70708746335839,58.92788125938217,59.14097161786995,59.346701873264756,59.54539732864234,59.73736630479164,59.92290112611558,60.10227904682457,60.27576312079858,60.44360301837855,60.60603579321842],[52.87683607385969,53.34343859974552,53.79043001795399,54.21879914106867,54.629482153978785,55.02336493628365,55.40128541222547,55.764035894605954,56.112365396874026,56.44698189385768,56.768554516701556,57.077715671671974,57.37506307577854,57.66116170477854,57.936545651201065,58.20171989165007,58.45716196390267,58.70332355528012,58.940632004489714,59.16949171966279,59.390285515686564,59.60337587417435,59.80910612956915,60.00780158494673,60.19977056109604,60.38530538241998,60.564683303128966,60.738167377102975,60.90600727468295,61.06844004952281],[53.33074979363387,53.797352319519696,54.244343737728165,54.67271286084285,55.08339587375296,55.47727865605783,55.85519913199965,56.21794961438013,56.566279116648204,56.90089561363186,57.222468236475734,57.53162939144615,57.82897679555272,58.11507542455272,58.39045937097524,58.65563361142425,58.91107568367685,59.1572372750543,59.39454572426389,59.623405439436965,59.84419923546074,60.057289593948525,60.26301984934333,60.46171530472091,60.653684280870216,60.83921910219416,61.018597022903144,61.19208109687715,61.35992099445713,61.52235376929699],[53.774367713043645,54.24097023892948,54.68796165713795,55.116330780252625,55.52701379316274,55.92089657546761,56.29881705140943,56.661567533789906,57.00989703605798,57.344513533041635,57.66608615588551,57.975247310855934,58.272594714962494,58.5586933439625,58.834077290385025,59.099251530834024,59.35469360308663,59.600855194464074,59.83816364367367,60.06702335884674,60.287817154870524,60.5009075133583,60.70663776875311,60.905333224130686,61.09730220028,61.28283702160394,61.462214942312926,61.635699016286935,61.8035389138669,61.96597168870677],[54.20625938323114,54.67286190911697,55.11985332732544,55.54822245044012,55.958905463350234,56.3527882456551,56.73070872159692,57.0934592039774,57.441788706245475,57.77640520322913,58.097977826073006,58.407138981043424,58.70448638514999,58.99058501414999,59.265968960572515,59.53114320102152,59.78658527327412,60.03274686465157,60.270055313861164,60.49891502903424,60.719708825058014,60.9327991835458,61.1385294389406,61.33722489431818,61.52919387046749,61.71472869179143,61.894106612500416,62.067590686474425,62.2354305840544,62.39786335889426],[54.625329986054105,55.09193251193993,55.5389239301484,55.967293053263084,56.3779760661732,56.77185884847806,57.14977932441988,57.512529806800366,57.86085930906844,58.195475806052094,58.51704842889597,58.82620958386639,59.123556987972954,59.409655616972955,59.68503956339548,59.950213803844484,60.20565587609708,60.451817467474534,60.68912591668413,60.9179856318572,61.138779427880976,61.35186978636876,61.557600041763564,61.756295497141146,61.94826447329045,62.13379929461439,62.31317721532338,62.48666128929739,62.65450118687736,62.816933961717226],[55.03078032274042,55.497382848626245,55.944374266834714,56.3727433899494,56.78342640285951,57.177309185164376,57.555229661106196,57.91798014348668,58.26630964575475,58.60092614273841,58.92249876558228,59.2316599205527,59.52900732465927,59.81510595365927,60.09048990008179,60.3556641405308,60.6111062127834,60.85726780416085,61.09457625337044,61.323435968543514,61.54422976456729,61.757320123055074,61.96305037844988,62.16174583382746,62.353714809976765,62.539249631300706,62.71862755200969,62.8921116259837,63.059951523563676,63.22238429840354],[55.422067608975745,55.88867013486157,56.33566155307004,56.764030676184724,57.17471368909484,57.5685964713997,57.94651694734152,58.309267429722006,58.65759693199008,58.992213428973734,59.31378605181761,59.62294720678803,59.920294610894594,60.206393239894595,60.48177718631712,60.746951426766124,61.00239349901872,61.248555090396174,61.48586353960577,61.71472325477884,61.935517050802616,62.1486074092904,62.354337664685204,62.553033120062786,62.74500209621209,62.93053691753603,63.10991483824502,63.28339891221903,63.451238809799,63.613671584638865],[55.7988682340971,56.265470759982925,56.712462178191394,57.14083130130608,57.55151431421619,57.945397096521056,58.32331757246288,58.68606805484336,59.03439755711143,59.36901405409509,59.69058667693896,59.99974783190938,60.29709523601595,60.58319386501595,60.85857781143847,61.12375205188748,61.37919412414008,61.62535571551753,61.86266416472712,62.091523879900194,62.31231767592397,62.525408034411754,62.73113828980656,62.92983374518414,63.121802721333445,63.307337542657386,63.48671546336637,63.66019953734038,63.828039434920356,63.99047220976022],[56.16104324204095,56.62764576792677,57.07463718613524,57.503006309249926,57.91368932216004,58.3075721044649,58.685492580406724,59.04824306278721,59.39657256505528,59.731189062038936,60.05276168488281,60.36192283985323,60.659270243959796,60.9453688729598,61.22075281938232,61.485927059831326,61.741369132083925,61.987530723461376,62.22483917267097,62.45369888784404,62.67449268386782,62.8875830423556,63.093313297750406,63.29200875312799,63.48397772927729,63.66951255060123,63.84889047131022,64.02237454528422,64.1902144428642,64.35264721770406],[56.50860697009441,56.97520949598024,57.42220091418871,57.85057003730339,58.261253050213504,58.65513583251837,59.03305630846019,59.39580679084067,59.744136293108745,60.0787527900924,60.400325412936276,60.709486567906694,61.00683397201326,61.29293260101326,61.568316547435785,61.83349078788479,62.08893286013739,62.33509445151484,62.572402900724434,62.80126261589751,63.022056411921284,63.23514677040907,63.44087702580387,63.63957248118145,63.83154145733076,64.0170762786547,64.19645419936369,64.3699382733377,64.53777817091768,64.70021094575753],[56.84169903374436,57.30830155963019,57.75529297783866,58.18366210095334,58.594345113863454,58.98822789616832,59.36614837211014,59.72889885449062,60.077228356758695,60.41184485374235,60.733417476586226,61.042578631556644,61.33992603566321,61.62602466466321,61.901408611085735,62.16658285153474,62.42202492378734,62.66818651516479,62.905494964374384,63.13435467954746,63.355148475571234,63.56823883405902,63.77396908945382,63.9726645448314,64.1646335209807,64.35016834230464,64.52954626301363,64.70303033698764,64.87087023456762,65.03330300940748],[57.16055966337574,57.62716218926157,58.07415360747004,58.50252273058472,58.913205743494835,59.3070885257997,59.68500900174152,60.047759484122004,60.396088986390076,60.73070548337373,61.05227810621761,61.361439261188025,61.65878666529459,61.94488529429459,62.220269240717116,62.48544348116612,62.74088555341872,62.98704714479617,63.224355594005765,63.45321530917884,63.674009105202614,63.8870994636904,64.0928297190852,64.29152517446278,64.48349415061209,64.66902897193603,64.84840689264502,65.02189096661903,65.18973086419899,65.35216363903886],[57.46550827084422,57.93211079673004,58.37910221493851,58.8074713380532,59.21815435096331,59.612037133268174,59.989957609209995,60.35270809159048,60.70103759385855,61.03565409084221,61.35722671368608,61.6663878686565,61.96373527276307,62.24983390176307,62.52521784818559,62.7903920886346,63.045834160887196,63.29199575226465,63.52930420147424,63.75816391664731,63.97895771267109,64.19204807115887,64.39777832655368,64.59647378193125,64.78844275808056,64.9739775794045,65.15335550011349,65.3268395740875,65.49467947166747,65.65711224650734],[57.75692504043672,58.223527566322545,58.670518984531014,59.0988881076457,59.50957112055581,59.903453902860676,60.2813743788025,60.64412486118298,60.99245436345105,61.32707086043471,61.64864348327858,61.957804638249,62.25515204235557,62.54125067135557,62.81663461777809,63.0818088582271,63.3372509304797,63.58341252185715,63.82072097106674,64.0495806862398,64.27037448226359,64.48346484075137,64.68919509614618,64.88789055152375,65.07985952767307,65.265394348997,65.444772269706,65.61825634368,65.78609624125997,65.94852901609984],[58.03523528957665,58.50183781546247,58.94882923367094,59.37719835678563,59.78788136969574,60.1817641520006,60.559684627942424,60.92243511032291,61.27076461259098,61.60538110957464,61.92695373241851,62.23611488738893,62.533462291495496,62.8195609204955,63.09494486691802,63.36011910736703,63.615561179619625,63.861722770997076,64.09903122020667,64.32789093537974,64.54868473140351,64.7617750898913,64.9675053452861,65.16620080066369,65.35816977681299,65.54370459813694,65.72308251884593,65.89656659281994,66.0644064903999,66.22683926523976],[58.30089632120184,58.767498847087666,59.214490265296135,59.64285938841082,60.05354240132093,60.447425183625796,60.82534565956762,61.1880961419481,61.53642564421617,61.87104214119983,62.192614764043704,62.50177591901412,62.79912332312069,63.08522195212069,63.36060589854321,63.62578013899222,63.88122221124482,64.12738380262226,64.36469225183185,64.59355196700493,64.81434576302871,65.02743612151649,65.2331663769113,65.43186183228887,65.62383080843819,65.80936562976213,65.98874355047111,66.16222762444512,66.33006752202509,66.49250029686496]],"type":"heatmap"},{"hovertemplate":"%{text}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"line":{"color":"#ffffff","width":2},"size":10,"symbol":"x-thin"},"mode":"markers","text":["running today","ascent stopped here"],"x":[140.0,200.0],"y":[12.0,45.0],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"annotations":[{"bgcolor":"#ffffff","bordercolor":"#c9c9c9","borderpad":2,"font":{"color":"#111111","size":8.924999999999999},"showarrow":false,"text":"running today","x":140.0,"y":12.0,"yshift":14},{"bgcolor":"#ffffff","bordercolor":"#c9c9c9","borderpad":2,"font":{"color":"#111111","size":8.924999999999999},"showarrow":false,"text":"ascent stopped here","x":200.0,"y":45.0,"yshift":14}],"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"temperature (C)"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"yaxis":{"title":{"text":"residence time (min)"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"showlegend":false,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 2.</span> The fitted surface, and where the climb started and ended. The ascent ran into the corner of the window. That is not the algorithm failing — it is the plant&#x27;s limits being the binding constraint, which is a different and more actionable finding than &#x27;the optimum is here&#x27;</figcaption></figure>
 <h4>Stage three: ask what kind of place you have arrived at</h4>
 <p>Both eigenvalues negative means a genuine maximum. Mixed signs would mean a saddle, and the positive direction would be yield available for free along a ridge — worth more than the peak itself, and invisible to anything that only reports the location of the stationary point. And it is outside the window. The unconstrained peak sits where the plant cannot run, which is why the ascent stopped on the boundary rather than at the stationary point. The operating recommendation is the corner of the window; the interesting question becomes what it would cost to widen the window, and that is now a costed engineering question rather than an open-ended one. A flat gradient is not one situation, it is three, and they imply completely different next moves. A maximum means confirm and stop. A rising ridge means keep walking along it, because there is free yield in that direction. A saddle means back off — you are between two better regions. The canonical analysis reads which one off the fitted quadratic&#x27;s eigenvalues.</p>
-<p class="emphasis">considered instead: Declaring victory at the end of the ascent. The path stopping tells you the gradient is small or the window is in the way; it says nothing about the shape of the neighbourhood, and the shape is what decides whether to spend the next batch of runs at all.; readout: confirmation design : central_composite, 12 runs; stationary point is a maximum; at temperature 285.1, residence 74.4; eigenvalues : [-0.0064, -0.00068]</p>
+<p><strong>Considered instead.</strong> Declaring victory at the end of the ascent. The path stopping tells you the gradient is small or the window is in the way; it says nothing about the shape of the neighbourhood, and the shape is what decides whether to spend the next batch of runs at all.</p>
+<p><code>confirmation design : central_composite, 12 runs</code><br><code>stationary point is a maximum</code><br><code>at temperature 285.1, residence 74.4</code><br><code>eigenvalues : [-0.0064, -0.00068]</code><br><code>inside the operating window? False</code></p>
 <h4>Finally, price the whole exercise against the old setpoint</h4>
 <p>Everything above is on the fitted surface. This step goes back to the simulated reactor and evaluates the TRUE yield at the old setpoint and at the point the climb recommended, which is the only check that the recommendation was worth acting on rather than merely internally consistent.</p>
-<p class="emphasis">considered instead: Reporting the predicted improvement. The model&#x27;s prediction of its own recommendation is not evidence: it is the same surface evaluated twice, and it would look just as good if the fit were wrong.; readout: true yield at the old setpoint  : 50.236; true yield at the ascent&#x27;s best : 65.129; improvement                     : +14.894</p>
-<figure><table><thead><tr><th class="">Step</th><th class="">Parameter</th><th class="">Value</th></tr></thead><tbody><tr><td class="">Write down the operating window before anything else</td><td class="">considered instead</td><td class="">Optimising unconstrained and checking feasibility at the end. On a saturating surface the unconstrained answer is frequently outside the window — as it turns out to be here — and discovering that after the fact loses the much more useful question of what the boundary is costing.</td></tr><tr><td class="">Write down the operating window before anything else</td><td class="">readout</td><td class="">temperature : 120 to 200 C; residence   : 5 to 45 min; running now : 140 C, 12 min</td></tr><tr><td class="">Stage one: buy a direction, not a surface</td><td class="">considered instead</td><td class="">Going straight to a central composite design at the current setpoint. It costs more runs and it characterises the neighbourhood of a point you are about to leave. Box and Wilson&#x27;s whole insight is that the expensive design belongs at the end of the climb, not at the start.</td></tr><tr><td class="">Stage one: buy a direction, not a surface</td><td class="">readout</td><td class="">screening design : full_factorial, 9 runs; converged        : True</td></tr><tr><td class="">Stage two: walk uphill in cheap steps</td><td class="">considered instead</td><td class="">Handing the fitted surface to a global optimizer. It would return the unconstrained peak, which is outside the window, in one call — and it would skip the information the path itself carries about how steep the climb was and where it flattened.</td></tr><tr><td class="">Stage two: walk uphill in cheap steps</td><td class="">readout</td><td class="">steps taken : 26; stopped because : boundary; best point on the path: temperature 200.0, residence 45.0; predicted yield there : 66.493</td></tr><tr><td class="">Stage three: ask what kind of place you have arrived at</td><td class="">considered instead</td><td class="">Declaring victory at the end of the ascent. The path stopping tells you the gradient is small or the window is in the way; it says nothing about the shape of the neighbourhood, and the shape is what decides whether to spend the next batch of runs at all.</td></tr><tr><td class="">Stage three: ask what kind of place you have arrived at</td><td class="">readout</td><td class="">confirmation design : central_composite, 12 runs; stationary point is a maximum; at temperature 285.1, residence 74.4; eigenvalues : [-0.0064, -0.00068]</td></tr><tr><td class="">Finally, price the whole exercise against the old setpoint</td><td class="">considered instead</td><td class="">Reporting the predicted improvement. The model&#x27;s prediction of its own recommendation is not evidence: it is the same surface evaluated twice, and it would look just as good if the fit were wrong.</td></tr><tr><td class="">Finally, price the whole exercise against the old setpoint</td><td class="">readout</td><td class="">true yield at the old setpoint  : 50.236; true yield at the ascent&#x27;s best : 65.129; improvement                     : +14.894</td></tr></tbody></table><figcaption>Table 1. The design, as recorded parameters</figcaption></figure>
-<h2>3. Results</h2>
+<p><strong>Considered instead.</strong> Reporting the predicted improvement. The model&#x27;s prediction of its own recommendation is not evidence: it is the same surface evaluated twice, and it would look just as good if the fit were wrong.</p>
+<p><code>true yield at the old setpoint  : 50.236</code><br><code>true yield at the ascent&#x27;s best : 65.129</code><br><code>improvement                     : +14.894</code></p>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                            <div id="1e909d89-8f64-4db8-91f4-f6c87b94b678" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("1e909d89-8f64-4db8-91f4-f6c87b94b678")) {                    Plotly.newPlot(                        "1e909d89-8f64-4db8-91f4-f6c87b94b678",                        [{"hoverinfo":"skip","line":{"color":"#c9c9c9","width":3},"mode":"lines","showlegend":false,"x":[0.25,1.0],"y":["temperature (140 to 200 C)","temperature (140 to 200 C)"],"type":"scatter"},{"hoverinfo":"skip","line":{"color":"#c9c9c9","width":3},"mode":"lines","showlegend":false,"x":[0.175,1.0],"y":["residence (12 to 45 min)","residence (12 to 45 min)"],"type":"scatter"},{"hovertemplate":"%{y}\u003cbr\u003erunning today %{x:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#555555","size":9},"mode":"markers","name":"running today","x":[0.25,0.175],"y":["temperature (140 to 200 C)","residence (12 to 45 min)"],"type":"scatter"},{"hovertemplate":"%{y}\u003cbr\u003erecommended %{x:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#2f7fd1","size":11},"mode":"markers","name":"recommended","x":[1.0,1.0],"y":["temperature (140 to 200 C)","residence (12 to 45 min)"],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"position within the operating window (0 = lowest, 1 = the limit)"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"yaxis":{"title":{"text":""},"gridcolor":"#c9c9c9","zeroline":false,"autorange":"reversed","automargin":true},"showlegend":true,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"legend":{"orientation":"h","y":-0.25,"x":0},"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 3.</span> What the plant would actually change. Both settings end at 1.0 — hard against the limit, with no room left in either direction. That is the same finding as the canonical analysis, seen from the operator&#x27;s side, and it is worth +14.89 in true yield (50.2 to 65.1), verified against the simulation rather than against the fit</figcaption></figure>
+</section>
+<section id="section-4" class="section">
+<h2><a class="anchor" href="#section-4" aria-hidden="true">§</a>3. Results</h2>
 <p>No findings were recorded.</p>
-<h2>4. What the run showed</h2>
+</section>
+<section id="section-5" class="section">
+<h2><a class="anchor" href="#section-5" aria-hidden="true">§</a>4. What the run showed</h2>
 <p class="emphasis">Written by the analyst after seeing the output, and reproduced unchanged. Nothing in this section is generated.</p>
 <p>Nothing here needed a global optimizer or a large design. Nine screening runs bought a direction, 26 cheap steps followed it, and the true yield went from 50.24 to 65.13 — +14.89 verified against the simulation&#x27;s own truth rather than against the fit&#x27;s opinion of itself.</p>
 <p>The part worth keeping is stage three. Arriving somewhere the gradient is flat does not tell you what kind of place it is, and the three possibilities — confirm and stop, keep walking along a ridge, back off a saddle — imply completely different next batches of runs.</p>
 <p>Here the stationary point turned out to lie outside what the plant can run. That reframes the whole exercise: the answer is a corner of the operating window, and the next question is what widening the window would cost. An unconstrained optimizer would have returned an infeasible setpoint and no question at all.</p>
-<h2>5. Model checking</h2>
+</section>
+<section id="section-6" class="section">
+<h2><a class="anchor" href="#section-6" aria-hidden="true">§</a>5. Model checking</h2>
 <p>No diagnostics were recorded. An analysis with no model checking is not therefore sound; it is unexamined.</p>
-<h2>6. Discussion</h2>
+</section>
+<section id="section-7" class="section">
+<h2><a class="anchor" href="#section-7" aria-hidden="true">§</a>6. Discussion</h2>
 <p>There are no findings to interpret.</p>
-<h2>7. Conclusions</h2>
+</section>
+<section id="section-8" class="section">
+<h2><a class="anchor" href="#section-8" aria-hidden="true">§</a>7. Conclusions</h2>
 <p><strong>A reactor is running somewhere on the slope. Where should the next batch of expensive experimental runs be placed, and once the climb stops, what kind of place have you arrived at?</strong></p>
 <p>No finding was recorded, so no conclusion follows.</p>
-<h2>8. Limitations</h2>
+</section>
+<section id="section-9" class="section">
+<h2><a class="anchor" href="#section-9" aria-hidden="true">§</a>8. Limitations</h2>
 <p>No assumption in the record is left unresolved. That is a statement about the record, not a guarantee about the world.</p>
-<h2>9. Provenance</h2>
+</section>
+<section id="section-10" class="section">
+<h2><a class="anchor" href="#section-10" aria-hidden="true">§</a>9. Provenance</h2>
 <p>Every number in this document resolves to a quantity in the evidence record below. Prose was checked against that record: any numeral not traceable to it, and any claim the record does not itself make, is reported rather than published.</p>
-<figure><table><thead><tr><th class="">Field</th><th class="">Value</th></tr></thead><tbody><tr><td class="">field</td><td class="">Process engineering</td></tr><tr><td class="">source</td><td class="">examples/ walkthrough record</td></tr><tr><td class="">steps</td><td class="">5</td></tr><tr><td class="">evidence hash</td><td class="">f786b46f52c355d50c0eb2162dde63517dee7405dc9394a12415bbed0c9bbee5</td></tr></tbody></table><figcaption>Table 2. Run</figcaption></figure>
+</section>
 
-</main></body></html>
+</main>
+</div></body></html>

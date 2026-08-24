@@ -35,3 +35,4 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0019 | [Writing an adapter: the seam, the five parts, and where things actually go](0019-writing-an-adapter.md) | decision + progress |
 | 0020 | [The tutorial: one decision across every phase, ending in a document](0020-the-tutorial-notebook.md) | progress + decision |
 | 0021 | [The HTML report is laid out as a paper, not as a page of defaults](0021-the-html-report-as-a-paper.md) | decision |
+| 0022 | [A readout carries the run's own tables and charts, not a summary of them](0022-the-walkthrough-readouts.md) | decision + deviation |

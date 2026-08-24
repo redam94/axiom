@@ -2,98 +2,310 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="axiom.report">
-<meta name="axiom-report-hash" content="b688ad0accfba57c14a9a78a01356bd03b58621586bf3e9a3d14bcbaa0766680">
+<meta name="axiom-report-hash" content="20a40a229f4930a1adfacaf49b52b0335894bc61536f03b9042408a06f49d557">
 <title>The worst-powered design is the one worth running</title>
 <style>
-:root { color-scheme: light; }
-* { box-sizing: border-box; }
-body {
-  margin: 0; padding: 64.0pt;
-  background: #ffffff; color: #111111;
-  font-family: Times-Roman, Georgia, "Times New Roman", Times, serif;
-  font-size: 10.5pt; line-height: 1.55;
+:root {
+  color-scheme: light;
+  --ink: #111111;
+  --muted: #555555;
+  --accent: #1a1a1a;
+  --bg: #ffffff;
+  --rule: #c9c9c9;
+  --tint: rgba(26,26,26,0.055);
+  --wash: rgba(17,17,17,0.032);
+  --serif: Times-Roman, Georgia, "Times New Roman", Times, serif;
+  --mono: Courier, ui-monospace, SFMono-Regular, Menlo, monospace;
+  --size-title: 19.0pt;
+  --size-h2: 13.5pt;
+  --size-h3: 11.5pt;
+  --size-h4: 10.5pt;
+  --measure: 34em;
+  --wide: 46em;
+  --rail: 12.5em;
+  --gutter: clamp(1.15rem, 4vw, 64.0pt);
 }
-main { max-width: 952.0pt; margin: 0 auto; }
-h1 { font-size: 19.0pt; margin: 0 0 .15em; letter-spacing: -.01em; }
-h2 { font-size: 13.5pt; margin: 1.6em 0 .4em;
-      padding-bottom: .25em; border-bottom: 1px solid #c9c9c9; }
-h3 { font-size: 11.5pt; margin: 1.2em 0 .3em; }
-h4 { font-size: 10.5pt; margin: 1em 0 .3em; }
-p { margin: .5em 0; }
-p.emphasis { font-size: 11.760000000000002pt; color: #1a1a1a; }
-.subtitle { color: #555555; font-size: 12.075pt;
-             margin: 0 0 1.4em; }
-.summary { color: #555555; margin: 0 0 .8em; }
-code { font-family: Courier, ui-monospace, monospace;
-        background: rgba(0,0,0,.05); padding: .08em .3em; border-radius: 3px; }
-figure { margin: 1.1em 0; }
-figcaption { color: #555555; font-size: 9.66pt; margin-top: .3em; }
-table { border-collapse: collapse; width: 100%; margin: .8em 0;
-         font-size: 9.975pt; }
-th, td { text-align: left; padding: .35em .6em; border-bottom: 1px solid #c9c9c9; }
-th { font-weight: 600; border-bottom: 2px solid #c9c9c9; }
-td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-.metrics { display: flex; flex-wrap: wrap; gap: 1.4em; margin: 1em 0; }
-.metric { min-width: 12em; }
-.metric .label { color: #555555; font-size: 9.450000000000001pt;
-                  text-transform: uppercase; letter-spacing: .04em; }
-.metric .value { font-size: 15.579999999999998pt; font-weight: 600;
-                  color: #1a1a1a; font-variant-numeric: tabular-nums; }
-.metric .interval { color: #555555; font-size: 9.450000000000001pt;
-                     font-variant-numeric: tabular-nums; }
-.ledger { border-left: 3px solid #c9c9c9; padding-left: .9em; margin: 1em 0; }
-.ledger .line { margin: .55em 0; }
-.ledger .kind { color: #1a1a1a; font-family: Courier, monospace;
-                 font-size: 8.924999999999999pt; }
-.ledger .assumption { color: #555555; font-size: 9.450000000000001pt; }
-hr { border: 0; border-top: 1px solid #c9c9c9; margin: 1.4em 0; }
-footer { margin-top: 2.5em; padding-top: .8em; border-top: 1px solid #c9c9c9;
-          color: #555555; font-size: 8.924999999999999pt; }
-@media print { body { padding: 0; } h2 { break-before: page; } }
+html { font-size: 10.5pt; }
+@page { margin: 64.0pt; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  padding: var(--gutter) var(--gutter) calc(var(--gutter) * 1.6);
+  background: var(--bg); color: var(--ink);
+  font-family: var(--serif); font-size: 1rem; line-height: 1.62;
+  font-kerning: normal; text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- the page: the article centred, a contents rail in the left margin --- */
+.paper { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+main { width: 100%; max-width: var(--wide); margin-inline: auto; min-width: 0; }
+@media (min-width: 68em) {
+  /* Out of the flow, so the rail cannot pull the article off centre: a reader
+     navigating by contents and one reading straight through see the same page. */
+  .toc {
+    position: fixed; top: var(--gutter); width: var(--rail);
+    left: max(var(--gutter), calc(50% - var(--wide) / 2 - var(--rail) - 2.5em));
+    max-height: calc(100vh - 2 * var(--gutter)); overflow: auto;
+  }
+}
+
+.toc { font-size: .8em; line-height: 1.4; }
+.toc-title {
+  margin: 0 0 .7em; padding: 0; border: 0; font-size: 1em; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .11em; color: var(--muted);
+}
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc a {
+  display: flex; gap: .5em; padding: .32em .7em; color: var(--muted);
+  text-decoration: none; border-left: 2px solid var(--rule);
+}
+.toc a:hover, .toc a:focus-visible {
+  color: var(--ink); border-left-color: var(--accent); background: var(--wash);
+}
+.toc .n { flex: 0 0 .9em; text-align: right; font-variant-numeric: tabular-nums; opacity: .75; }
+@media (max-width: 67.99em) {
+  .toc {
+    border: 1px solid var(--rule); padding: 1em 1.2em;
+    width: 100%; max-width: var(--wide); margin-inline: auto;
+  }
+  .toc ol { columns: 2 11em; column-gap: 2em; }
+  .toc a { border-left: 0; padding: .22em 0; }
+  .toc a:hover, .toc a:focus-visible { background: none; }
+}
+
+/* --- title block --- */
+.titleblock {
+  text-align: center; margin: 0 0 2.6em;
+  padding-bottom: 1.4em; border-bottom: 1px solid var(--rule);
+}
+h1 {
+  font-size: var(--size-title); line-height: 1.18; font-weight: 700;
+  letter-spacing: -.008em; margin: 0 0 .4em; text-wrap: balance;
+}
+.subtitle {
+  color: var(--muted); font-size: 1.06em; font-style: italic; line-height: 1.45;
+  margin: 0 auto; max-width: 32em; text-align: center; text-wrap: pretty;
+}
+
+/* --- sections: prose on the measure, figures wider than it --- */
+.section {
+  display: grid;
+  grid-template-columns:
+    [wide-start] minmax(0, 1fr)
+    [text-start] minmax(0, var(--measure))
+    [text-end] minmax(0, 1fr) [wide-end];
+}
+.section > * { grid-column: text; min-width: 0; }
+.section > figure, .section > .metrics { grid-column: wide; }
+.section.abstract { font-size: .96em; }
+.section.abstract > h2 {
+  text-align: center; border: 0; padding: 0; font-size: 1em; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .12em; margin: 0 0 .5em;
+}
+.section.abstract > * { grid-column: text; }
+
+h2, h3, h4 { break-after: avoid; scroll-margin-top: 1.2rem; text-wrap: balance; }
+h2 {
+  font-size: var(--size-h2); font-weight: 700; line-height: 1.25;
+  letter-spacing: -.005em; margin: 2.3em 0 .55em;
+  padding-bottom: .28em; border-bottom: 1px solid var(--rule);
+}
+.section:first-of-type h2 { margin-top: .4em; }
+h3 { font-size: var(--size-h3); font-weight: 700; margin: 1.9em 0 .35em; }
+h4 { font-size: var(--size-h4); font-weight: 700; margin: 1.7em 0 .3em; }
+h2 .anchor, h3 .anchor {
+  float: right; margin-left: .5em; color: var(--rule); text-decoration: none;
+  font-size: .72em; font-weight: 400; opacity: 0; transition: opacity .12s;
+}
+h2:hover .anchor, h3:hover .anchor, .anchor:focus-visible { opacity: 1; color: var(--accent); }
+
+p { margin: 0 0 .8em; text-align: justify; hyphens: auto; }
+p:last-child { margin-bottom: 0; }
+.summary { color: var(--muted); margin: 0 0 1.1em; }
+a { color: var(--accent); text-underline-offset: .16em; text-decoration-thickness: .06em; }
+strong { font-weight: 700; }
+/* `white-space: pre-wrap` is not a detail: a readout is column-aligned output,
+   and HTML collapses the columns away without it. */
+code {
+  font-family: var(--mono); font-size: .86em; background: var(--wash);
+  border-radius: 2px; padding: .1em .35em; white-space: pre-wrap;
+}
+hr { border: 0; border-top: 1px solid var(--rule); margin: 2em 0; }
+
+/* A pulled-out line: the parameters a step ran with, or a remark on a number. */
+p.emphasis {
+  margin: 1em 0 1.1em; padding: .6em .95em; text-align: left;
+  border-left: 2px solid var(--accent); background: var(--tint);
+  font-size: .95em; line-height: 1.5;
+}
+
+/* --- figures and tables --- */
+figure { margin: 1.9em 0; padding: 0; }
+figcaption {
+  color: var(--muted); font-size: .85em; line-height: 1.45;
+  margin-top: .75em; text-align: left;
+}
+figcaption .label { color: var(--ink); font-weight: 700; }
+.table-figure { overflow-x: auto; }
+/* A table is read from its caption down; a figure is read up to it. */
+.table-figure > figcaption:first-child { margin: 0 0 .6em; }
+table {
+  border-collapse: collapse; width: 100%; margin: 0;
+  font-size: .88em; line-height: 1.42; font-variant-numeric: tabular-nums;
+}
+thead th {
+  text-align: left; font-weight: 700; padding: .5em .7em; vertical-align: bottom;
+  border-top: 1.5px solid var(--ink); border-bottom: 1px solid var(--ink);
+}
+tbody td { padding: .42em .7em; vertical-align: top; border: 0; }
+tbody tr:nth-child(even) { background: var(--wash); }
+tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
+td.num, th.num { text-align: right; }
+
+/* --- the numbers, as a panel of hairline-separated cells --- */
+.metrics {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(12em, 1fr));
+  gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+  margin: 1.7em 0;
+}
+.metric {
+  background: var(--bg); padding: .8em .95em;
+  display: flex; flex-direction: column;
+}
+.metric .label { color: var(--muted); font-size: .8em; font-weight: 600; line-height: 1.35; }
+.metric .value {
+  font-size: 1.22em; font-weight: 600; line-height: 1.28; margin-top: .3em;
+  color: var(--accent); font-variant-numeric: tabular-nums; text-wrap: balance;
+}
+/* The interval sits on the floor of its cell, so a row of them reads as a row
+   however differently the values above them wrap. */
+.metric .interval {
+  color: var(--muted); font-size: .8em; line-height: 1.35; margin-top: auto;
+  padding-top: .25em; font-variant-numeric: tabular-nums;
+}
+.metric .interval:empty { display: none; }
+
+/* --- the assumption trail --- */
+.ledger {
+  margin: 1.7em 0; padding: .9em 1.1em;
+  background: var(--wash); border-left: 2px solid var(--accent);
+  font-size: .93em; line-height: 1.5;
+}
+.ledger > figcaption:first-child {
+  margin: 0 0 .7em; color: var(--ink); font-weight: 700;
+  font-size: .88em; text-transform: uppercase; letter-spacing: .07em;
+}
+.ledger .line { margin: 0 0 .75em; }
+.ledger .line:last-child { margin-bottom: 0; }
+.ledger .kind {
+  display: inline-block; font-family: var(--mono); font-size: .78em;
+  color: var(--muted); background: var(--bg); border: 1px solid var(--rule);
+  border-radius: 2px; padding: .05em .4em; margin-right: .4em;
+  vertical-align: baseline;
+}
+.ledger .assumption { color: var(--muted); font-size: .93em; margin-top: .25em; }
+.ledger .assumption code { font-size: .95em; }
+
+footer {
+  margin-top: 3em; padding-top: .9em; border-top: 1px solid var(--rule);
+  color: var(--muted); font-size: .82em; line-height: 1.5;
+}
+
+@media print {
+  html { scroll-behavior: auto; }
+  body { padding: 0; }
+  .toc, .anchor { display: none !important; }
+  .paper { display: block; }
+  main { max-width: none; }
+  .section { display: block; }
+  a { color: inherit; text-decoration: none; }
+  /* An article flows: a section does not start a fresh sheet, it starts where
+     the last one ended, and only the things that break badly are held together. */
+  p { orphans: 3; widows: 3; }
+  figure, .metrics, .ledger { break-inside: avoid; }
+  thead { display: table-header-group; }
+}
 </style>
-</head><body><main>
+</head><body><div class="paper">
+<nav class="toc" aria-label="Contents"><div class="toc-title">Contents</div><ol><li><a href="#section-1"><span>Abstract</span></a></li><li><a href="#section-2"><span class="n">1</span><span>Introduction</span></a></li><li><a href="#section-3"><span class="n">2</span><span>Methods</span></a></li><li><a href="#section-4"><span class="n">3</span><span>Results</span></a></li><li><a href="#section-5"><span class="n">4</span><span>What the run showed</span></a></li><li><a href="#section-6"><span class="n">5</span><span>Model checking</span></a></li><li><a href="#section-7"><span class="n">6</span><span>Discussion</span></a></li><li><a href="#section-8"><span class="n">7</span><span>Conclusions</span></a></li><li><a href="#section-9"><span class="n">8</span><span>Limitations</span></a></li><li><a href="#section-10"><span class="n">9</span><span>Provenance</span></a></li></ol></nav>
+<main>
+<header class="titleblock">
 <h1>The worst-powered design is the one worth running</h1>
 <p class="subtitle">Before asking how many users an A/B test needs, ask whether it can change what anyone does — and then whether the precision it buys is worth more than the traffic it withholds.</p>
-<h2>Abstract</h2>
+</header>
+<section id="section-1" class="section abstract">
+<h2><a class="anchor" href="#section-1" aria-hidden="true">§</a>Abstract</h2>
 <p><strong>Objective.</strong> Before asking how many users an A/B test needs, ask whether it can change what anyone does — and then whether the precision it buys is worth more than the traffic it withholds. <strong>Methods.</strong> State the decision and, carefully, the stake. 5 step(s) are recorded in full below. <strong>Results.</strong> The winner is the WORST-powered design on the list. &#x27;one_week_90_10&#x27; has power 0.65 — a number that would be rejected out of hand in a design review — and nets 35,322 USD. &#x27;four_week_50_50&#x27; has power 1.00, near certainty, and nets -1,356. <strong>Conclusions.</strong> No assumptions were recorded for this run, which is not the same as none being required.</p>
-<h2>1. Introduction</h2>
+</section>
+<section id="section-2" class="section">
+<h2><a class="anchor" href="#section-2" aria-hidden="true">§</a>1. Introduction</h2>
 <p>This report addresses one question: Before asking how many users an A/B test needs, ask whether it can change what anyone does — and then whether the precision it buys is worth more than the traffic it withholds.</p>
-<h2>2. Methods</h2>
+</section>
+<section id="section-3" class="section">
+<h2><a class="anchor" href="#section-3" aria-hidden="true">§</a>2. Methods</h2>
 <p><strong>Question.</strong> Before asking how many users an A/B test needs, ask whether it can change what anyone does — and then whether the precision it buys is worth more than the traffic it withholds.</p>
 <h4>State the decision and, carefully, the stake</h4>
 <p>The stake is the whole horizon the decision governs, not one month. A checkout change ships and stays shipped, so the value of getting it right is twelve months of margin on the whole base. Getting this wrong is the single most common way a value-of-information calculation comes out saying &#x27;never test&#x27;: the cost of the test is immediate and real, so the benefit has to be counted over the life of the decision it informs.</p>
-<p class="emphasis">considered instead: Valuing the decision at one month of impact. It makes every test look unaffordable, which produces the same answer as never running the calculation — and it is wrong for a different reason than the intuition it agrees with.; readout: decision : roll out if the lift beats 0.4%; stakes   : 36,000,000 USD per unit of conversion rate;            over 12 months and 250,000 users a month; so a 0.4% lift is worth 144,000 USD</p>
+<p><strong>Considered instead.</strong> Valuing the decision at one month of impact. It makes every test look unaffordable, which produces the same answer as never running the calculation — and it is wrong for a different reason than the intuition it agrees with.</p>
+<p><code>decision : roll out if the lift beats 0.4%</code><br><code>stakes   : 36,000,000 USD per unit of conversion rate</code><br><code>           over 12 months and 250,000 users a month</code><br><code>so a 0.4% lift is worth 144,000 USD</code></p>
 <h4>Ask what a test is worth under three different beliefs</h4>
 <p>EVPI is the ceiling: what you would pay to know the truth outright. EVSI is what a test of a given precision is actually worth. Both collapse when the prior already settles the decision — which is the quantitative version of &#x27;we already know this&#x27;, and it is a sentence a team can act on in a way it cannot act on a hunch.</p>
-<p class="emphasis">considered instead: Starting from the sample size. A sample-size calculator will happily size a test for a decision that is already made; it has no way to represent the fact that the result cannot change anything.; readout: already sure it works       EVPI           4   EVSI           0   EIG  0.297; genuinely on the fence      EVPI      50,267   EVSI      42,447   EIG  0.624; already sure it does not    EVPI           1   EVSI           0   EIG  0.297</p>
+<p><strong>Considered instead.</strong> Starting from the sample size. A sample-size calculator will happily size a test for a decision that is already made; it has no way to represent the fact that the result cannot change anything.</p>
+<p><code>already sure it works       EVPI           4   EVSI           0   EIG  0.297</code><br><code>genuinely on the fence      EVPI      50,267   EVSI      42,447   EIG  0.624</code><br><code>already sure it does not    EVPI           1   EVSI           0   EIG  0.297</code></p>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.7.0.min.js" integrity="sha256-jvTGqxNp8AGWEcvNLVuKr+8j5dGe9Yw51LQkmDH+IYA=" crossorigin="anonymous"></script>                <div id="4a7934ff-8d9e-403c-8853-1c8dd631dd4a" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("4a7934ff-8d9e-403c-8853-1c8dd631dd4a")) {                    Plotly.newPlot(                        "4a7934ff-8d9e-403c-8853-1c8dd631dd4a",                        [{"hovertemplate":"%{x:.4g}\u003cbr\u003e%{y:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#2f7fd1","width":2},"mode":"lines","name":"EVPI","x":[-0.006,-0.005666666666666667,-0.005333333333333333,-0.005,-0.004666666666666667,-0.004333333333333333,-0.004,-0.003666666666666667,-0.0033333333333333335,-0.003,-0.002666666666666667,-0.0023333333333333335,-0.002,-0.001666666666666667,-0.001333333333333334,-0.001,-0.000666666666666667,-0.0003333333333333339,0.0,0.00033333333333333305,0.0006666666666666661,0.001,0.001333333333333333,0.0016666666666666661,0.002,0.002333333333333333,0.002666666666666666,0.002999999999999999,0.0033333333333333322,0.003666666666666667,0.004,0.004333333333333333,0.004666666666666666,0.004999999999999999,0.005333333333333332,0.005666666666666665,0.006,0.006333333333333333,0.006666666666666666,0.006999999999999999,0.007333333333333332,0.007666666666666665,0.008,0.008333333333333333,0.008666666666666666,0.009,0.009333333333333332,0.009666666666666665,0.01,0.010333333333333332,0.010666666666666666,0.010999999999999998,0.011333333333333332,0.011666666666666667,0.011999999999999999,0.012333333333333333,0.012666666666666665,0.013,0.013333333333333334,0.013666666666666666,0.014],"y":[79.04442104795028,108.9115821585574,148.88636828832625,201.9453303421476,271.78886853456777,362.9697888066895,481.031289544736,632.6513185202364,825.7891085097123,1069.828529720537,1375.711760410661,1756.0557615984965,2225.243246161731,2799.479360278726,3496.805245991356,4337.060114587144,5341.784495229401,6534.058962406599,7938.2748783229545,9579.836453780868,11484.796625061575,13679.432708739292,16189.771334480482,19041.075541874852,22257.309922250548,25860.60205692189,29870.72004188574,34304.586433443015,39175.84839964158,44494.52219344642,50266.72733058052,44494.52219344642,39175.84839964162,34304.58643344304,29870.72004188577,25860.602056921896,22257.309922250548,19041.075541874867,16189.771334480489,13679.432708739289,11484.7966250616,9579.836453780868,7938.2748783229545,6534.058962406591,5341.784495229408,4337.060114587125,3496.805245991358,2799.4793602787104,2225.2432461617386,1756.0557615984956,1375.7117604106563,1069.8285297205714,825.7891085097259,632.6513185202359,481.03128954472135,362.96978880667046,271.7888685345726,201.9453303421237,148.88636828826185,108.91158215855373,79.04442104799541],"type":"scatter"},{"hovertemplate":"%{x:.4g}\u003cbr\u003e%{y:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#b5453b","width":2},"mode":"lines","name":"EVSI","x":[-0.006,-0.005666666666666667,-0.005333333333333333,-0.005,-0.004666666666666667,-0.004333333333333333,-0.004,-0.003666666666666667,-0.0033333333333333335,-0.003,-0.002666666666666667,-0.0023333333333333335,-0.002,-0.001666666666666667,-0.001333333333333334,-0.001,-0.000666666666666667,-0.0003333333333333339,0.0,0.00033333333333333305,0.0006666666666666661,0.001,0.001333333333333333,0.0016666666666666661,0.002,0.002333333333333333,0.002666666666666666,0.002999999999999999,0.0033333333333333322,0.003666666666666667,0.004,0.004333333333333333,0.004666666666666666,0.004999999999999999,0.005333333333333332,0.005666666666666665,0.006,0.006333333333333333,0.006666666666666666,0.006999999999999999,0.007333333333333332,0.007666666666666665,0.008,0.008333333333333333,0.008666666666666666,0.009,0.009333333333333332,0.009666666666666665,0.01,0.010333333333333332,0.010666666666666666,0.010999999999999998,0.011333333333333332,0.011666666666666667,0.011999999999999999,0.012333333333333333,0.012666666666666665,0.013,0.013333333333333334,0.013666666666666666,0.014],"y":[9.828808231879165,15.126686709756646,23.01752258693178,34.63148095265664,51.52389062420202,75.8054245870373,110.30027260253887,158.7339938362409,225.95118920362214,318.1609852515372,443.2055725578269,610.8437603751682,833.0378494901067,1124.2283349690008,1501.5773695823234,1985.1589634436455,2598.0720270255956,3366.4520433389425,4319.35878155322,5488.521316150698,6907.927784962303,8613.255663104437,10641.148441993917,13028.355817140678,15810.765917122972,19022.368712530275,22694.19844668344,26853.308726895015,31521.836007925922,36716.20510710867,42446.52403007903,36716.20510710867,31521.836007925947,26853.308726895055,22694.198446683455,19022.36871253028,15810.765917122975,13028.355817140678,10641.14844199392,8613.255663104434,6907.927784962305,5488.521316150708,4319.358781553203,3366.4520433389425,2598.07202702559,1985.1589634436727,1501.5773695823166,1124.228334969002,833.0378494900912,610.843760375162,443.2055725578123,318.16098525155184,225.951189203627,158.7339938362402,110.3002726025662,75.805424587079,51.52389062426654,34.63148095263907,23.017522586994687,15.12668670972106,9.82880823186677],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"what the team already believes the lift is"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"yaxis":{"title":{"text":"value of the information, USD"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"showlegend":true,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"legend":{"orientation":"h","y":-0.22,"x":0},"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 1.</span> A test is only worth something near the decision boundary. Both curves peak where the prior mean sits on the rollout bar of 0.4% and fall away in both directions. Far from the bar the decision is already made, and buying information about it returns almost nothing — however many users are thrown at it and however tight the resulting confidence interval looks in the readout</figcaption></figure>
 <h4>Take the live case and size it the ordinary way</h4>
 <p>The on-the-fence case is the only one where a test earns its keep, so it is the one to size. This step is the conventional power calculation, run exactly as it normally would be, so that the next two steps have something familiar to disagree with.</p>
-<p class="emphasis">considered instead: Nothing — this step is not in dispute. A minimum detectable effect and 80% power is the right way to turn a decision-relevant effect size into a number of users. The argument is about what happens next.; readout: powering for a 0.3% lift:;   n = 171,964 users (85,982 / 85,982);   power 0.800, experiment se 0.00107;   EVPI 50,267 USD, EVSI 48,067 USD (96% of the ceiling)</p>
+<p><strong>Considered instead.</strong> Nothing — this step is not in dispute. A minimum detectable effect and 80% power is the right way to turn a decision-relevant effect size into a number of users. The argument is about what happens next.</p>
+<p><code>powering for a 0.3% lift:</code><br><code>  n = 171,964 users (85,982 / 85,982)</code><br><code>  power 0.800, experiment se 0.00107</code><br><code>  EVPI 50,267 USD, EVSI 48,067 USD (96% of the ceiling)</code><br><code>  posterior sd after the test 0.00335, down from 0.00350</code></p>
 <h4>Then watch precision stop paying</h4>
 <p>More precision costs more exposure, and EVSI is bounded above by EVPI no matter how large the test. Plotting the two together shows where the curve flattens: past that point extra users buy a tighter interval that does not change the decision, and a tighter interval that changes nothing is worth nothing.</p>
-<p class="emphasis">considered instead: Choosing the sample size that reaches 95% power. Power is a property of the test, not of the decision; it keeps improving long after the decision has stopped being in doubt, and nothing in a power calculation ever says &#x27;enough&#x27;.</p>
+<p><strong>Considered instead.</strong> Choosing the sample size that reaches 95% power. Power is a property of the test, not of the decision; it keeps improving long after the decision has stopped being in doubt, and nothing in a power calculation ever says &#x27;enough&#x27;.</p>
+<figure class="table-figure"><figcaption><span class="label">Table 1</span></figcaption><table><thead><tr><th class="num">test size</th><th class="num">experiment se</th><th class="num">EVSI</th><th class="">% of EVPI</th></tr></thead><tbody><tr><td class="num">10,000</td><td class="num">0.00444</td><td class="num">31,116</td><td class="">62%</td></tr><tr><td class="num">20,000</td><td class="num">0.00314</td><td class="num">37,416</td><td class="">74%</td></tr><tr><td class="num">40,000</td><td class="num">0.00222</td><td class="num">42,447</td><td class="">84%</td></tr><tr><td class="num">80,000</td><td class="num">0.00157</td><td class="num">45,864</td><td class="">91%</td></tr><tr><td class="num">160,000</td><td class="num">0.00111</td><td class="num">47,914</td><td class="">95%</td></tr><tr><td class="num">320,000</td><td class="num">0.00078</td><td class="num">49,048</td><td class="">98%</td></tr><tr><td class="num">640,000</td><td class="num">0.00056</td><td class="num">49,646</td><td class="">99%</td></tr><tr><td class="num">1,280,000</td><td class="num">0.00039</td><td class="num">49,954</td><td class="">99%</td></tr></tbody></table></figure>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                            <div id="1de367bd-825a-410d-b3e5-439f8cd64ebe" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("1de367bd-825a-410d-b3e5-439f8cd64ebe")) {                    Plotly.newPlot(                        "1de367bd-825a-410d-b3e5-439f8cd64ebe",                        [{"hovertemplate":"%{x:.4g}\u003cbr\u003e%{y:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#2f7fd1","width":2},"mode":"lines","name":"EVSI","x":[10000,20000,40000,80000,160000,320000,640000,1280000],"y":[31116.318269998817,37416.412179642364,42446.52403007903,45863.95191740782,47914.28937103427,49048.248817424654,49646.27707948034,49953.612567262775],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"shapes":[{"line":{"color":"#555555","dash":"dash","width":1.2},"type":"line","x0":0,"x1":1,"xref":"x domain","y0":50266.72733058052,"y1":50266.72733058052,"yref":"y"}],"annotations":[{"font":{"color":"#555555","size":8.924999999999999},"showarrow":false,"text":"EVPI — the ceiling","x":0,"xanchor":"left","xref":"x domain","y":50266.72733058052,"yanchor":"bottom","yref":"y"}],"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"users in the test"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"yaxis":{"title":{"text":"value of what the test tells you, USD"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"showlegend":false,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"legend":{"orientation":"h","y":-0.22,"x":0},"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 2.</span> Doubling the test does not double what it is worth. Each doubling of exposure buys less than the last, and the curve is asymptotic to the value of knowing the truth outright. Between 640,000 and 1,280,000 users the test gains 307 USD of value for double the traffic</figcaption></figure>
 <h4>Now count what the test costs, including the part nobody bills for</h4>
 <p>Showing someone a different checkout page costs nothing to serve, so the cost per unit of exposure is zero — but withholding the change from the holdout arm forgoes the lift on those users for the duration, and that is a real cost the power calculation never mentions. Putting the price of a conversion on the record, with its source, is what lets the two be compared at all.</p>
-<p class="emphasis">considered instead: Comparing designs on run cost alone. Engineering time and analyst time are the visible costs; the invisible one is usually larger, and it scales with exactly the thing a power calculation wants to maximise — how much traffic you hold back.; readout: the price is on the record: one conversion is worth 12 USD (finance, margin per converted user, 2026 H1)</p>
-<figure><table><thead><tr><th class="">Step</th><th class="">Parameter</th><th class="">Value</th></tr></thead><tbody><tr><td class="">State the decision and, carefully, the stake</td><td class="">considered instead</td><td class="">Valuing the decision at one month of impact. It makes every test look unaffordable, which produces the same answer as never running the calculation — and it is wrong for a different reason than the intuition it agrees with.</td></tr><tr><td class="">State the decision and, carefully, the stake</td><td class="">readout</td><td class="">decision : roll out if the lift beats 0.4%; stakes   : 36,000,000 USD per unit of conversion rate;            over 12 months and 250,000 users a month; so a 0.4% lift is worth 144,000 USD</td></tr><tr><td class="">Ask what a test is worth under three different beliefs</td><td class="">considered instead</td><td class="">Starting from the sample size. A sample-size calculator will happily size a test for a decision that is already made; it has no way to represent the fact that the result cannot change anything.</td></tr><tr><td class="">Ask what a test is worth under three different beliefs</td><td class="">readout</td><td class="">already sure it works       EVPI           4   EVSI           0   EIG  0.297; genuinely on the fence      EVPI      50,267   EVSI      42,447   EIG  0.624; already sure it does not    EVPI           1   EVSI           0   EIG  0.297</td></tr><tr><td class="">Take the live case and size it the ordinary way</td><td class="">considered instead</td><td class="">Nothing — this step is not in dispute. A minimum detectable effect and 80% power is the right way to turn a decision-relevant effect size into a number of users. The argument is about what happens next.</td></tr><tr><td class="">Take the live case and size it the ordinary way</td><td class="">readout</td><td class="">powering for a 0.3% lift:;   n = 171,964 users (85,982 / 85,982);   power 0.800, experiment se 0.00107;   EVPI 50,267 USD, EVSI 48,067 USD (96% of the ceiling)</td></tr><tr><td class="">Then watch precision stop paying</td><td class="">considered instead</td><td class="">Choosing the sample size that reaches 95% power. Power is a property of the test, not of the decision; it keeps improving long after the decision has stopped being in doubt, and nothing in a power calculation ever says &#x27;enough&#x27;.</td></tr><tr><td class="">Now count what the test costs, including the part nobody bills for</td><td class="">considered instead</td><td class="">Comparing designs on run cost alone. Engineering time and analyst time are the visible costs; the invisible one is usually larger, and it scales with exactly the thing a power calculation wants to maximise — how much traffic you hold back.</td></tr><tr><td class="">Now count what the test costs, including the part nobody bills for</td><td class="">readout</td><td class="">the price is on the record: one conversion is worth 12 USD (finance, margin per converted user, 2026 H1)</td></tr></tbody></table><figcaption>Table 1. The design, as recorded parameters</figcaption></figure>
-<h2>3. Results</h2>
+<p><strong>Considered instead.</strong> Comparing designs on run cost alone. Engineering time and analyst time are the visible costs; the invisible one is usually larger, and it scales with exactly the thing a power calculation wants to maximise — how much traffic you hold back.</p>
+<p><code>the price is on the record: one conversion is worth 12 USD (finance, margin per converted user, 2026 H1)</code></p>
+<figure class="table-figure"><figcaption><span class="label">Table 2</span></figcaption><table><thead><tr><th class="">design</th><th class="num">power</th><th class="num">EVSI</th><th class="num">holdout cost</th><th class="num">run cost</th><th class="num">net</th><th class="">on the front</th></tr></thead><tbody><tr><td class="">two_week_50_50</td><td class="num">0.96</td><td class="num">48,067</td><td class="num">8,254</td><td class="num">18,000</td><td class="num">21,813</td><td class="">yes</td></tr><tr><td class="">one_week_90_10</td><td class="num">0.65</td><td class="num">45,148</td><td class="num">825</td><td class="num">9,000</td><td class="num">35,322</td><td class="">yes</td></tr><tr><td class="">four_week_50_50</td><td class="num">1.00</td><td class="num">49,152</td><td class="num">16,509</td><td class="num">34,000</td><td class="num">-1,356</td><td class="">yes</td></tr></tbody></table></figure>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                            <div id="d89d45c1-5174-4d3a-bf18-61044e42f24b" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("d89d45c1-5174-4d3a-bf18-61044e42f24b")) {                    Plotly.newPlot(                        "d89d45c1-5174-4d3a-bf18-61044e42f24b",                        [{"cliponaxis":false,"hovertemplate":"%{y}\u003cbr\u003e%{x:.4g}\u003cbr\u003e%{hovertext}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["power 0.96, EVSI 48,067, holdout cost 8,254","power 0.65, EVSI 45,148, holdout cost 825","power 1.00, EVSI 49,152, holdout cost 16,509"],"marker":{"color":"#2f7fd1"},"orientation":"h","text":["21,813","35,322","-1,356"],"textposition":"outside","x":[21813.103516907227,35322.19467778488,-1356.3942568734928],"y":["two week 50 50","one week 90 10","four week 50 50"],"type":"bar"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"net value, USD"},"gridcolor":"#c9c9c9","zeroline":true,"range":[-7224.968486418832,41190.76890733022],"zerolinecolor":"#111111","zerolinewidth":1,"automargin":true},"yaxis":{"title":{"text":""},"gridcolor":"#c9c9c9","zeroline":false,"autorange":"reversed","automargin":true},"showlegend":false,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 3.</span> What each design is worth once everything is counted. Red is net-negative: the design costs more than the decision it improves is worth. Hover any bar for the power it achieves — the ordering by net value is close to the reverse of the ordering by power</figcaption></figure>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                            <div id="a863da43-0704-4f68-a962-186a9ba7f764" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("a863da43-0704-4f68-a962-186a9ba7f764")) {                    Plotly.newPlot(                        "a863da43-0704-4f68-a962-186a9ba7f764",                        [{"hoverinfo":"skip","line":{"color":"#c9c9c9","width":3},"mode":"lines","showlegend":false,"x":[48067.375516907225,21813.103516907227],"y":["two week 50 50","two week 50 50"],"type":"scatter"},{"hoverinfo":"skip","line":{"color":"#c9c9c9","width":3},"mode":"lines","showlegend":false,"x":[45147.62187778488,35322.19467778488],"y":["one week 90 10","one week 90 10"],"type":"scatter"},{"hoverinfo":"skip","line":{"color":"#c9c9c9","width":3},"mode":"lines","showlegend":false,"x":[49152.14974312651,-1356.3942568734928],"y":["four week 50 50","four week 50 50"],"type":"scatter"},{"hovertemplate":"%{y}\u003cbr\u003eEVSI, before costs %{x:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#555555","size":9},"mode":"markers","name":"EVSI, before costs","x":[48067.375516907225,45147.62187778488,49152.14974312651],"y":["two week 50 50","one week 90 10","four week 50 50"],"type":"scatter"},{"hovertemplate":"%{y}\u003cbr\u003enet value %{x:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#2f7fd1","size":11},"mode":"markers","name":"net value","x":[21813.103516907227,35322.19467778488,-1356.3942568734928],"y":["two week 50 50","one week 90 10","four week 50 50"],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"USD"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"yaxis":{"title":{"text":""},"gridcolor":"#c9c9c9","zeroline":false,"autorange":"reversed","automargin":true},"showlegend":true,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"legend":{"orientation":"h","y":-0.25,"x":0},"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 4.</span> How much of each design&#x27;s value survives its costs. The length of each bar is what the design spends — run cost plus the upside withheld from the holdout arm. The design with the largest gross value gives most of it back</figcaption></figure>
+</section>
+<section id="section-4" class="section">
+<h2><a class="anchor" href="#section-4" aria-hidden="true">§</a>3. Results</h2>
 <p>No findings were recorded.</p>
-<h2>4. What the run showed</h2>
+</section>
+<section id="section-5" class="section">
+<h2><a class="anchor" href="#section-5" aria-hidden="true">§</a>4. What the run showed</h2>
 <p class="emphasis">Written by the analyst after seeing the output, and reproduced unchanged. Nothing in this section is generated.</p>
 <p>The winner is the WORST-powered design on the list. &#x27;one_week_90_10&#x27; has power 0.65 — a number that would be rejected out of hand in a design review — and nets 35,322 USD. &#x27;four_week_50_50&#x27; has power 1.00, near certainty, and nets -1,356.</p>
 <p>Nothing is wrong with the power calculation. It is answering a different question. Holding half the traffic away from a change the team mostly believes in forgoes 16,509 USD of upside, and running four weeks instead of one costs more besides — neither of which appears anywhere in a sample-size formula. Once both are counted, the extra precision is being bought at a price higher than the decision it improves is worth.</p>
 <p>Precision is an input, not the objective. Past the point where more of it stops changing what you would do, buying more is just spending — and the first chart in this walkthrough says where that point is before a single user is exposed.</p>
-<h2>5. Model checking</h2>
+</section>
+<section id="section-6" class="section">
+<h2><a class="anchor" href="#section-6" aria-hidden="true">§</a>5. Model checking</h2>
 <p>No diagnostics were recorded. An analysis with no model checking is not therefore sound; it is unexamined.</p>
-<h2>6. Discussion</h2>
+</section>
+<section id="section-7" class="section">
+<h2><a class="anchor" href="#section-7" aria-hidden="true">§</a>6. Discussion</h2>
 <p>There are no findings to interpret.</p>
-<h2>7. Conclusions</h2>
+</section>
+<section id="section-8" class="section">
+<h2><a class="anchor" href="#section-8" aria-hidden="true">§</a>7. Conclusions</h2>
 <p><strong>Before asking how many users an A/B test needs, ask whether it can change what anyone does — and then whether the precision it buys is worth more than the traffic it withholds.</strong></p>
 <p>No finding was recorded, so no conclusion follows.</p>
-<h2>8. Limitations</h2>
+</section>
+<section id="section-9" class="section">
+<h2><a class="anchor" href="#section-9" aria-hidden="true">§</a>8. Limitations</h2>
 <p>No assumption in the record is left unresolved. That is a statement about the record, not a guarantee about the world.</p>
-<h2>9. Provenance</h2>
+</section>
+<section id="section-10" class="section">
+<h2><a class="anchor" href="#section-10" aria-hidden="true">§</a>9. Provenance</h2>
 <p>Every number in this document resolves to a quantity in the evidence record below. Prose was checked against that record: any numeral not traceable to it, and any claim the record does not itself make, is reported rather than published.</p>
-<figure><table><thead><tr><th class="">Field</th><th class="">Value</th></tr></thead><tbody><tr><td class="">field</td><td class="">Product analytics</td></tr><tr><td class="">source</td><td class="">examples/ walkthrough record</td></tr><tr><td class="">steps</td><td class="">5</td></tr><tr><td class="">evidence hash</td><td class="">df0a937948c6eee11d15e2ed9713149a71a2b074a4518f7d674a17a6d89969d1</td></tr></tbody></table><figcaption>Table 2. Run</figcaption></figure>
+</section>
 
-</main></body></html>
+</main>
+</div></body></html>

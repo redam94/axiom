@@ -6,7 +6,15 @@ import pytest
 from axiom.core import Unsupported
 from axiom.report import Paragraph
 
-from axiom_dossier import build, evidence_from_record, literal, tables_from_record
+from axiom_dossier import (
+    JOURNAL_THEME,
+    build,
+    evidence_from_record,
+    exhibits_from_record,
+    figures_from_record,
+    literal,
+    tables_from_record,
+)
 
 RECORD = {
     "field": "economics",
@@ -34,11 +42,21 @@ RECORD = {
             "title": "Check the instrument",
             "why": "A weak instrument is not a neutral loss of precision.",
             "instead": None,
-            "blocks": [{"type": "say", "text": "The first stage is strong."}],
+            "blocks": [
+                {"type": "say", "text": "The first stage is strong."},
+                {
+                    "type": "figure",
+                    "name": "first_stage",
+                    "kind": "bars",
+                    "opt": {"rows": "@rows", "xLabel": "F statistic"},
+                    "title": "The first stage, by cohort",
+                    "note": "Anything under ten is a weak instrument",
+                },
+            ],
         },
     ],
     "findings": ["OLS overstates the programme by +0.35.", "Bias is not a small-sample problem."],
-    "figures": {},
+    "figures": {"first_stage": {"rows": [{"label": "1998", "value": 41.2}]}},
 }
 
 
@@ -48,9 +66,48 @@ def test_the_record_becomes_an_evidence_that_keeps_the_reasoning() -> None:
     assert len(ev.steps) == 2
     assert ev.steps[0].why.startswith("The obstacle")
     # the rejected alternative is the most useful thing in an example
-    assert ev.steps[0].detail["considered instead"] == "Starting from the estimator."
-    assert "naive OLS 2.347" in ev.steps[0].detail["readout"]
-    assert ev.steps[1].detail.get("considered instead") is None
+    assert ev.steps[0].instead == "Starting from the estimator."
+    assert ev.steps[1].instead == ""
+
+
+def test_printed_output_is_kept_as_lines_rather_than_run_together() -> None:
+    """Column-aligned output is aligned in columns; joining it loses the columns."""
+    ev = evidence_from_record(RECORD)
+    assert ev.steps[0].readout == ("naive OLS 2.347", "2SLS 1.999", "truth 2.000")
+    assert ev.steps[0].detail == {}, "printed output is not a design parameter"
+
+
+def test_a_step_names_the_exhibits_it_produced() -> None:
+    ev = evidence_from_record(RECORD)
+    (table,) = ev.steps[0].exhibits
+    assert (table.key, table.kind, table.caption) == ("table_1", "table", "Two estimators")
+    (figure,) = ev.steps[1].exhibits
+    assert figure.key == "figure_1" and figure.kind == "figure"
+    assert figure.caption == (
+        "The first stage, by cohort. Anything under ten is a weak instrument"
+    ), "a title and its note are two sentences, not one run-on"
+
+
+def test_the_recorded_charts_are_drawn_and_reach_the_document() -> None:
+    figures = figures_from_record(RECORD, theme=JOURNAL_THEME)
+    assert list(figures) == ["figure_1"]
+    built = build(
+        evidence_from_record(RECORD),
+        style="journal",
+        verbosity="full",
+        extra_exhibits=exhibits_from_record(RECORD, theme=JOURNAL_THEME),
+    )
+    assert built.missing() == ()
+    sources = {getattr(b, "source", "") for s in built.report.sections for b in s.blocks}
+    assert {"figure_1", "table_1"} <= sources, "the run's own exhibits were dropped"
+
+
+def test_an_exhibit_with_no_data_behind_it_is_dropped_rather_than_breaking_the_render() -> None:
+    """A chart plotly cannot draw must not leave the report naming a key nobody filled."""
+    built = build(evidence_from_record(RECORD), style="journal", verbosity="full")
+    assert built.missing() == ()
+    sources = {getattr(b, "source", "") for s in built.report.sections for b in s.blocks}
+    assert "figure_1" not in sources and "table_1" not in sources
 
 
 def test_the_analysts_own_words_are_carried_verbatim() -> None:
@@ -94,6 +151,28 @@ def test_braces_in_prose_do_not_become_template_placeholders() -> None:
     }
     built = build(evidence_from_record(awkward), style="journal")
     assert built.missing() == (), "a brace was read as a context key"
+
+
+def test_the_evidence_holds_raw_text_and_the_escape_happens_at_the_paragraph() -> None:
+    """Escaping on the way in put ``{{'alpha': 1.41}}`` in a design table cell."""
+    braced = {
+        **RECORD,
+        "steps": [
+            {
+                "n": 1,
+                "title": "Print a dict",
+                "why": "Because {a} is what the run printed.",
+                "blocks": [{"type": "out", "lines": ["detail : {'alpha': 1.41}"]}],
+            }
+        ],
+    }
+    ev = evidence_from_record(braced)
+    assert ev.steps[0].readout == ("detail : {'alpha': 1.41}",), "the record is kept as it was"
+    assert "{{" not in ev.steps[0].why
+    built = build(ev, style="journal", verbosity="full")
+    assert built.missing() == ()
+    text = " ".join(getattr(b, "text", "") for s in built.report.sections for b in s.blocks)
+    assert "{{'alpha': 1.41}}" in text, "the paragraph is where the brace is escaped"
 
 
 def test_a_record_with_no_quantities_still_renders(tmp_path) -> None:  # type: ignore[no-untyped-def]
