@@ -79,11 +79,22 @@ Estimand labels are long enough to run off the left of plotly's fixed 55 px
 margin, so both axes are set to `automargin`: the margin grows to fit the
 labels instead of the labels being drawn over the panel.
 
-## What this did not fix
+## D21.8 — A diagnostic is measured against the axis it is drawn on
 
-`axiom_dossier.figures.diagnostics_bar` draws z-statistics and counts on one
-axis; when the values are mostly positive the negative bars collapse against
-the left edge and their labels collide with the category names. The
-`SPREAD_LIMIT` guard in that function exists for exactly this and does not
-catch it, because the ratio is inside the limit. That is a figure bug in the
-add-on, not a stylesheet one, and it is open.
+Restyling the page made a figure bug visible rather than causing one:
+`axiom_dossier.figures.diagnostics_plot` drew the depot report's two z-scores,
+two probabilities and two counts as one bar chart, with the negative bars
+collapsed against the left edge and their labels over the row names.
+
+The guard in that function compared the largest magnitude to the smallest and
+allowed a ratio of 100. That is not what a reader sees: a bar is read against
+the axis, and an axis running from -2.26 to 40 is 42 units long whatever the
+ratio of its ends is. It now compares the span — from zero, or from the most
+negative value — to the smallest bar on it, and allows 20, which puts the
+smallest bar at five per cent of the panel. The depot set is refused, and its
+section keeps the table that says the same thing properly.
+
+The two drawing faults are fixed for the charts that still pass: labels sit
+outside their bars with the range padded to hold them, and a zero line is drawn
+whenever a value is negative, because bars on both sides of nothing need the
+line they are measured from.
