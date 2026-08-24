@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4. Designing the experiment — the axiom tutorial</title>
+<meta name="description" content="Step 4 of 8: How big does the trial need to be, and is the answer worth its cost?">
+<meta property="og:title" content="4. Designing the experiment — the axiom tutorial">
+<meta property="og:description" content="Step 4 of 8: How big does the trial need to be, and is the answer worth its cost?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Tutorial · step 4 of 8</p>
+    <h1 style="max-width:18ch">Designing the experiment</h1>
+    <p class="lede prose mt">How big does the trial need to be, and is the answer worth its cost?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>Four questions in order: what effect to power for, how many depots that takes, what the answer is worth, and which concrete design buys it cheapest. Powering for the effect you hope for is how trials get commissioned that cannot fail informatively.</p>
+      <p><strong>The effect worth detecting is the break-even, not the point estimate — the experiment has to distinguish &#x27;worth funding&#x27; from &#x27;not&#x27;, and that boundary is where the precision has to land.</strong></p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 4</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>from axiom.design import DecisionSpec, ValuePerOutcome, evoi_gaussian, sample_size
+
+from axiom.calibrate import carryover_window_factor
+from axiom.surface import GeometricCarryover as GC
+
+# The experiment reads a first week; the decision lives in the steady
+# state. `carryover_window_factor` says how much of the effect has
+# landed by then, which is what converts the break-even onto the
+# scale the trial can actually measure.
+lam = float(biased.posterior.flat(&quot;lam_a&quot;).mean())
+share = carryover_window_factor(GC(max_lag=MAX_LAG), {&quot;lam_a&quot;: lam}, 1, treatment=&quot;a&quot;)
+threshold_first_week = BREAK_EVEN * share.counterfactual
+print(f&quot;{share.counterfactual:.3f} of the effect lands in the first week&quot;)
+print(f&quot;break-even on the experiment&#x27;s scale: {threshold_first_week:.3f}&quot;)
+print()
+
+decision = DecisionSpec(
+    name=&quot;raise_the_schedule&quot;,
+    threshold=threshold_first_week,
+    value_per_outcome_unit=VALUE_PER_POINT * 500 * 52,
+    numeraire=&quot;USD&quot;,
+)
+
+sd = float(observed_panel.frame[&quot;y&quot;].std())
+ss = sample_size(effect=threshold_first_week, sd=sd, power=0.8, alpha=0.05)
+print(f&quot;powering for the boundary, not the hope: {threshold_first_week:.3f}&quot;)
+print(f&quot;  depots per arm : {ss.n}&quot;)
+
+first_week = realize(
+    experiment_estimand, biased, assume_identified=True, mass=0.9, seed=SEED
+)
+ev = evoi_gaussian(
+    decision,
+    float(first_week.summary.mean),
+    float(first_week.summary.sd),
+    0.35,
+)
+print()
+print(f&quot;perfect information would be worth : {ev.evpi:,.0f} USD&quot;)
+print(f&quot;this experiment, at se=0.35        : {ev.evsi:,.0f} USD&quot;)</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>0.572 of the effect lands in the first week
+break-even on the experiment&#x27;s scale: 3.863
+
+powering for the boundary, not the hope: 3.863
+  depots per arm : 23
+
+perfect information would be worth : 567,331 USD
+this experiment, at se=0.35        : 392,538 USD</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="tutorial-1-the-question.html"><span class="wt-toc-n">1</span>The question, written down</a><a class="wt-toc-i" href="tutorial-2-identification.html"><span class="wt-toc-n">2</span>Can the data we already have answer it?</a><a class="wt-toc-i" href="tutorial-3-the-prior.html"><span class="wt-toc-n">3</span>The belief we start from</a><a class="wt-toc-i" href="tutorial-4-design.html"><span class="wt-toc-n">4</span>Designing the experiment</a><a class="wt-toc-i" href="tutorial-5-measurement.html"><span class="wt-toc-n">5</span>The experiment lands</a><a class="wt-toc-i" href="tutorial-6-calibration.html"><span class="wt-toc-n">6</span>Folding the experiment into the model</a><a class="wt-toc-i" href="tutorial-7-the-follow-up.html"><span class="wt-toc-n">7</span>Planning the follow-up</a><a class="wt-toc-i" href="tutorial-8-the-report.html"><span class="wt-toc-n">8</span>The report</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="tutorial-3-the-prior.html">&larr; 3 · The belief we start from</a><a class="btn btn-2" href="tutorial.html">All eight steps</a><a class="btn btn-2" href="tutorial-5-measurement.html">5 · The experiment lands &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

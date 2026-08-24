@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tutorial — one question, carried all the way · axiom</title>
+<meta name="description" content="An eight-step tutorial that works one real decision end to end: whether to fund a weekly maintenance schedule. Identification refuses the data on hand, an experiment is designed and run, and the answer it gives reverses the one the observational model would have given.">
+<meta property="og:title" content="Tutorial — one question, carried all the way · axiom">
+<meta property="og:description" content="An eight-step tutorial that works one real decision end to end: whether to fund a weekly maintenance schedule. Identification refuses the data on hand, an experiment is designed and run, and the answer it gives reverses the one the observational model would have given.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Tutorial · eight steps</p>
+    <h1 style="max-width:16ch">One question, carried all the way</h1>
+    <p class="lede prose mt">Most library tours show you a subpackage at a time. This
+      one takes a single decision and carries it through every phase it actually has to
+      survive — because the hard part of causal work is not any one of those phases, it
+      is that they have to agree with each other at the end.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p><strong>A logistics operator runs 40 distribution depots in one region and 500 nationally. Should the standing weekly maintenance schedule go from nothing to 60 hours per depot?</strong></p>
+      <p>The operator already has a panel: depots, weeks, maintenance hours, an outcome
+        index. The obvious move is to fit it. Step two is where axiom refuses — the
+        depots that were already in good shape got more hours, and "good shape" was
+        never written down, so no adjustment available in that data recovers the
+        effect.</p>
+      <p>So an experiment gets designed, sized against the boundary the decision turns
+        on rather than the effect anyone hopes for, and run. Then its answer has to be
+        folded back into a model that can be asked the question the trial never measured
+        directly — the trial reads one week, the decision lives in the steady state.</p>
+      <p>The punchline is in step six. The observational model says fund it. The
+        experiment says do not. Both numbers are on this site, and both were computed
+        when it was built.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The steps</p>
+      <h2>Each one is a page, and they are meant in order</h2>
+      <p>They share a namespace: the fit made in step three is the fit recalibrated in
+        step six. Read straight through and the code on each page is the code you would
+        type next.</p>
+    </div>
+    <div class="cards"><a class="card" href="tutorial-1-the-question.html">
+  <p class="card-n">STEP 1</p>
+  <h3>The question, written down</h3>
+  <p>What are we actually deciding, and what would &#x27;yes&#x27; have to beat?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="tutorial-2-identification.html">
+  <p class="card-n">STEP 2</p>
+  <h3>Can the data we already have answer it?</h3>
+  <p>Is the effect identified from the panel already on hand?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="tutorial-3-the-prior.html">
+  <p class="card-n">STEP 3</p>
+  <h3>The belief we start from</h3>
+  <p>What does the observational fit say, and how much should we trust it?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="tutorial-4-design.html">
+  <p class="card-n">STEP 4</p>
+  <h3>Designing the experiment</h3>
+  <p>How big does the trial need to be, and is the answer worth its cost?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="tutorial-5-measurement.html">
+  <p class="card-n">STEP 5</p>
+  <h3>The experiment lands</h3>
+  <p>What did it measure, and does the model we already had agree?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="tutorial-6-calibration.html">
+  <p class="card-n">STEP 6</p>
+  <h3>Folding the experiment into the model</h3>
+  <p>What does the model say once it has to honour the measurement?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="tutorial-7-the-follow-up.html">
+  <p class="card-n">STEP 7</p>
+  <h3>Planning the follow-up</h3>
+  <p>Should we repeat this, when does it go stale, and what next?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="tutorial-8-the-report.html">
+  <p class="card-n">STEP 8</p>
+  <h3>The report</h3>
+  <p>How does the whole of this become a document someone can check?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Then what</p>
+      <h2>Where to go after it</h2>
+    </div>
+    <div class="prose">
+      <p>The same problem at full length, with every intermediate result and the parts
+        this path leaves out, is the notebook at
+        <code>nbs/tutorial/01-the-whole-loop.ipynb</code> — it runs in about fifteen seconds.</p>
+      <p>For the same phases taken further one at a time, the five pillar pages start at
+        <a href="identify.html">Identify</a>. For the same library in twelve other
+        fields, the <a href="examples.html">examples</a>. For two studies worked
+        end to end, <a href="case-study.html">HYPER-3</a> and
+        <a href="rutherford.html">GEIGER-1911</a>.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

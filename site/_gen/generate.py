@@ -91,8 +91,7 @@ BLURB = {
     "calibrate": "Fold a randomized result into an observational model, and log "
     "what that assumed.",
     "meta": "Pool a corpus of studies; heterogeneity, bias terms, privacy-budgeted release.",
-    "diagnose": "SBC, coverage, posterior predictive checks, refutations, "
-    "specification curves.",
+    "diagnose": "SBC, coverage, posterior predictive checks, refutations, " "specification curves.",
     "build": "Fluent builders for graphs, priors, and corpora.",
     "adapters": "Domain vocabulary — marketing is one adapter, not the core.",
     "viz": "Plot helpers for the diagnostics that have a canonical picture.",
@@ -184,6 +183,7 @@ def overview() -> Any:
         "samplers_pulled": [m for m in imported if m in {"jax", "numpyro", "pymc", "pytensor"}],
         "import_seconds": round(import_seconds, 2),
     }
+
 
 # ----------------------------------------------------------------------------------
 # api: every public symbol, with its signature and a line of real usage
@@ -310,9 +310,7 @@ def _signature(obj: Any) -> str:
     if any(p.kind is p.KEYWORD_ONLY for p in sig.parameters.values()) and not any(
         p.kind is p.VAR_POSITIONAL for p in sig.parameters.values()
     ):
-        cut = next(
-            i for i, p in enumerate(sig.parameters.values()) if p.kind is p.KEYWORD_ONLY
-        )
+        cut = next(i for i, p in enumerate(sig.parameters.values()) if p.kind is p.KEYWORD_ONLY)
         parts.insert(cut, "*")
     rendered = "(" + ", ".join(parts) + ")"
     if sig.return_annotation is not sig.empty:
@@ -402,9 +400,7 @@ def _usage(name: str, notebooks: list[Path]) -> dict[str, str] | None:
                         ln[len(pad) :] if ln.startswith(pad) else ln for ln in lines[1:]
                     ]
                     segment = "\n".join(lines)
-                defines = isinstance(
-                    stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
-                )
+                defines = isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
                 rank = (
                     0 if _invokes(stmt, name) else 1,
                     defines,
@@ -468,10 +464,7 @@ def api() -> Any:
         "n_with_usage": with_usage,
         "n_without_usage": total - with_usage,
         "without_usage": [
-            f"{p['name']}.{s['name']}"
-            for p in packages
-            for s in p["symbols"]
-            if not s["usage"]
+            f"{p['name']}.{s['name']}" for p in packages for s in p["symbols"] if not s["usage"]
         ],
     }
 
@@ -2203,6 +2196,439 @@ def rutherford() -> Any:
             "witness_share": float((per_hour_attacked[-2:] * hours[-2:]).sum() / total_attacked),
             "counts": counts,
         },
+    }
+
+
+# ----------------------------------------------------------------------------------
+# tutorial: one problem carried through all eight phases, a step at a time
+# ----------------------------------------------------------------------------------
+
+#: The tutorial's steps, in order. Each is a snippet run into the *same* namespace
+#: as the ones before it, so the page's code is the code a reader would type in
+#: sequence rather than eight disconnected demonstrations. That sharing is the
+#: whole point: the fit from step 3 is what step 6 recalibrates, and a tutorial
+#: whose steps do not carry state is a tour with numbers in it.
+#:
+#: `nbs/tutorial/01-the-whole-loop.ipynb` is the same problem at full length. This
+#: is the distilled path — one move per step, so a reader gets the shape before
+#: they get the detail.
+TUTORIAL_STEPS: list[dict[str, Any]] = [
+    {
+        "slug": "tutorial-1-the-question",
+        "title": "The question, written down",
+        "asks": "What are we actually deciding, and what would 'yes' have to beat?",
+        "lede": (
+            "A logistics operator runs 40 depots in one region and 500 nationally. "
+            "Should the standing weekly maintenance schedule go from nothing to 60 "
+            "hours per depot? Before any data is touched, the decision has to be "
+            "written down as a quantity — because the number that answers it is not "
+            "the number an experiment can most easily measure."
+        ),
+        "beat": (
+            "Two estimands, not one. The experiment can measure a first-week lift on "
+            "individual depots; the decision turns on a steady-state weekly lift "
+            "across the region. They are different windows and different levels, and "
+            "keeping them apart from the first line is what stops the report answering "
+            "the easy question and calling it the hard one."
+        ),
+        "code": """
+            from axiom.core import Intervention, Population, TimeWindow
+            from axiom.estimands import Estimand, Level, Quantity
+            from axiom.sim import DosePlan, surface_world
+            from axiom.surface import GeometricCarryover, HillKernel
+
+            DOSE, NO_DOSE = 60.0, 0.0        # maintenance hours per depot-week
+            VALUE_PER_POINT, COST_PER_HOUR = 400.0, 45.0
+            REGION_DEPOTS, MAX_LAG, SEED = 40, 4, 0
+
+            world = surface_world(
+                n_units=REGION_DEPOTS, n_periods=52, treatments=("a",),
+                kernels=HillKernel(reference_dose=50.0, amplitude_scale=10.0),
+                carryover={"a": GeometricCarryover(max_lag=MAX_LAG)},
+                doses=DosePlan(scale=50.0, spread=0.8, zero_fraction=0.05),
+                intercept="shared",
+                truth={"beta_a": 10.0, "alpha": 5.0, "k_a": 50.0, "s_a": 2.0, "lam_a": 0.5},
+                noise_sd=2.0, seed=SEED,
+            )
+            spec = world.spec
+
+            def contrast(name, window, level):
+                return Estimand(
+                    name=name, quantity=Quantity(kind="contrast"),
+                    treatment=spec.treatment("a"),
+                    intervention=Intervention(doses={"a": DOSE}),
+                    reference=Intervention(doses={"a": NO_DOSE}),
+                    outcome=spec.outcome, population=Population(name="region_depots"),
+                    window=window, level=level, dimension=spec.outcome_dimension,
+                )
+
+            experiment_estimand = contrast(
+                "first_week_lift",
+                TimeWindow(start=0, stop=1, basis="cumulative"),
+                Level(unit="individual"),
+            )
+            decision_estimand = contrast(
+                "steady_state_weekly_lift",
+                TimeWindow(start=MAX_LAG, stop=52, basis="per_period"),
+                Level(unit="cluster"),
+            )
+
+            BREAK_EVEN = DOSE * COST_PER_HOUR / VALUE_PER_POINT
+            print(f"the experiment can measure : {experiment_estimand.name}")
+            print(f"the decision turns on      : {decision_estimand.name}")
+            print()
+            print(f"{DOSE:.0f} hours at {COST_PER_HOUR:.0f} USD "
+                  f"= {DOSE * COST_PER_HOUR:,.0f} USD per depot-week")
+            print(f"break-even steady-state lift: {BREAK_EVEN:.2f} index points per depot-week")
+        """,
+    },
+    {
+        "slug": "tutorial-2-identification",
+        "title": "Can the data we already have answer it?",
+        "asks": "Is the effect identified from the panel already on hand?",
+        "lede": (
+            "The operator has a panel: depots, weeks, maintenance hours, an outcome "
+            "index. The temptation is to fit it. The question axiom asks first is "
+            "whether that panel can produce the number the decision needs at all."
+        ),
+        "beat": (
+            "It cannot. Depots that were already doing well got more maintenance hours, "
+            "and the thing that drove both was never recorded. `identify` says so and "
+            "names what it would need — which is the answer that saves the money, "
+            "because the alternative is a fitted number nobody can defend."
+        ),
+        "code": """
+            from axiom.identify import CausalGraph, identify
+
+            observed = CausalGraph.from_edges(
+                "capability -> hours, capability -> outcome, hours -> outcome",
+                unmeasured=["capability"], name="the_panel_on_hand",
+            )
+            verdict = identify(observed, "hours", "outcome")
+            print("status :", verdict.status)
+            print("route  :", verdict.route or "none available")
+            print("needs  :", sorted(verdict.unmeasured_required), "which is not recorded")
+            print()
+            for a in verdict.verdict.assumptions:
+                print(f"  [{a.state}] {a.name}")
+                print(f"     {a.statement}")
+        """,
+    },
+    {
+        "slug": "tutorial-3-the-prior",
+        "title": "The belief we start from",
+        "asks": "What does the observational fit say, and how much should we trust it?",
+        "lede": (
+            "An unidentified number is still a belief, and pretending to have none is "
+            "not neutrality. The observational fit is run — and then inflated, because "
+            "a confounded estimate that reports its nominal precision is the most "
+            "dangerous object in the analysis."
+        ),
+        "beat": (
+            "This is the number the experiment will be measured against. Write it down "
+            "now, with its inflation stated, so that later there is something for the "
+            "measurement to disagree with."
+        ),
+        "code": """
+
+            import numpy as np
+            from axiom.data import Panel
+            from axiom.estimands import realize
+            from axiom.surface import fit
+
+            # The panel the operator actually has: depots that were already in good
+            # shape got more hours, and "good shape" was never written down.
+            rng = np.random.default_rng(123)
+            frame = world.panel.frame
+            dose = frame["a"].to_numpy(dtype=np.float64)
+            standardized = (dose - dose.mean()) / dose.std()
+            condition = 0.6 * standardized + 0.8 * rng.standard_normal(dose.size)
+            observed_panel = Panel(frame.assign(y=frame["y"] + 0.8 * condition), world.panel.roles)
+            print(f"corr(hours, fleet condition) = "
+                  f"{float(np.corrcoef(dose, condition)[0, 1]):.2f}  <- the confounding")
+
+            biased = fit(spec, observed_panel, backend="laplace", draws=1000, seed=1)
+            before = realize(decision_estimand, biased, assume_identified=True, mass=0.9, seed=SEED)
+
+            # The estimand is region-level: it sums across the 40 depots. The
+            # break-even is per depot-week, so the comparison has to be made on
+            # one scale or the other -- and getting that wrong is how a decision
+            # gets made against a number forty times too big.
+            before_per_depot = before.summary.mean / REGION_DEPOTS
+            print()
+            print("the observational reading of the decision's estimand")
+            print(f"  region : {before.summary.mean:+.1f} index points per week")
+            print(f"  depot  : {before_per_depot:+.2f} index points per depot-week")
+            print(f"  break-even is {BREAK_EVEN:.2f}")
+            print(f"  -> on this reading, fund it.")
+        """,
+    },
+    {
+        "slug": "tutorial-4-design",
+        "title": "Designing the experiment",
+        "asks": "How big does the trial need to be, and is the answer worth its cost?",
+        "lede": (
+            "Four questions in order: what effect to power for, how many depots that "
+            "takes, what the answer is worth, and which concrete design buys it "
+            "cheapest. Powering for the effect you hope for is how trials get "
+            "commissioned that cannot fail informatively."
+        ),
+        "beat": (
+            "The effect worth detecting is the break-even, not the point estimate — "
+            "the experiment has to distinguish 'worth funding' from 'not', and that "
+            "boundary is where the precision has to land."
+        ),
+        "code": """
+
+            from axiom.design import DecisionSpec, ValuePerOutcome, evoi_gaussian, sample_size
+
+            from axiom.calibrate import carryover_window_factor
+            from axiom.surface import GeometricCarryover as GC
+
+            # The experiment reads a first week; the decision lives in the steady
+            # state. `carryover_window_factor` says how much of the effect has
+            # landed by then, which is what converts the break-even onto the
+            # scale the trial can actually measure.
+            lam = float(biased.posterior.flat("lam_a").mean())
+            share = carryover_window_factor(GC(max_lag=MAX_LAG), {"lam_a": lam}, 1, treatment="a")
+            threshold_first_week = BREAK_EVEN * share.counterfactual
+            print(f"{share.counterfactual:.3f} of the effect lands in the first week")
+            print(f"break-even on the experiment's scale: {threshold_first_week:.3f}")
+            print()
+
+            decision = DecisionSpec(
+                name="raise_the_schedule",
+                threshold=threshold_first_week,
+                value_per_outcome_unit=VALUE_PER_POINT * 500 * 52,
+                numeraire="USD",
+            )
+
+            sd = float(observed_panel.frame["y"].std())
+            ss = sample_size(effect=threshold_first_week, sd=sd, power=0.8, alpha=0.05)
+            print(f"powering for the boundary, not the hope: {threshold_first_week:.3f}")
+            print(f"  depots per arm : {ss.n}")
+
+            first_week = realize(
+                experiment_estimand, biased, assume_identified=True, mass=0.9, seed=SEED
+            )
+            ev = evoi_gaussian(
+                decision,
+                float(first_week.summary.mean),
+                float(first_week.summary.sd),
+                0.35,
+            )
+            print()
+            print(f"perfect information would be worth : {ev.evpi:,.0f} USD")
+            print(f"this experiment, at se=0.35        : {ev.evsi:,.0f} USD")
+        """,
+    },
+    {
+        "slug": "tutorial-5-measurement",
+        "title": "The experiment lands",
+        "asks": "What did it measure, and does the model we already had agree?",
+        "lede": (
+            "The trial runs. Its result arrives as one typed `Measurement` — the "
+            "estimand it measured, the number, the interval, and the conditions it was "
+            "measured under — rather than as a slide with a percentage on it."
+        ),
+        "beat": (
+            "Before folding it in, ask whether the old model predicted it. `agreement` "
+            "compares what the observational fit expected against what the experiment "
+            "saw, and this is where the tutorial turns: they disagree."
+        ),
+        "code": """
+
+            from axiom.calibrate import Measurement, agreement
+
+            # What the world would really have shown. The analyst does not get to
+            # see this; the experiment reads it through noise.
+            diff = world.forward({"a": DOSE}) - world.forward({"a": NO_DOSE})
+            truth_experiment = float(np.mean(diff[:, 0]))
+            se_experiment = 0.35
+            measurement = Measurement(
+                estimand=experiment_estimand,
+                estimate=truth_experiment,
+                se=se_experiment,
+                mass=0.9,
+                source="depot-maintenance-rct-2026Q2",
+            )
+            print(f"the trial read {measurement.estimate:+.3f} "
+                  f"{measurement.interval}")
+
+            says = agreement(biased, measurement, seed=SEED)
+            print()
+            print(f"the model we already had expected {says.posterior_mean:+.3f}")
+            print(f"the trial says                    {says.estimate:+.3f}")
+            print(f"agreement : {says.verdict}  (z = {says.z:.1f})")
+        """,
+    },
+    {
+        "slug": "tutorial-6-calibration",
+        "title": "Folding the experiment into the model",
+        "asks": "What does the model say once it has to honour the measurement?",
+        "lede": (
+            "Refit the surface under the constraint that it reproduce what the trial "
+            "saw. The result is a model that agrees with the experiment on the "
+            "experiment's own terms — and can then be asked the decision's question, "
+            "which the experiment never measured directly."
+        ),
+        "beat": (
+            "Every step of that transfer is written to a ledger: the window it crossed, "
+            "the level it aggregated to, the carryover it assumed. The decision's number "
+            "is reported with the ledger attached or it is not reported."
+        ),
+        "code": """
+
+            from axiom.calibrate import fit_calibrated
+
+            calibrated = fit_calibrated(
+                spec, observed_panel, [measurement], backend="laplace", draws=1000, seed=1
+            )
+            after = realize(
+                decision_estimand, calibrated, assume_identified=True, mass=0.9, seed=SEED
+            )
+
+            after_per_depot = after.summary.mean / REGION_DEPOTS
+            print("the decision's estimand, per depot-week")
+            print(f"  observational : {before_per_depot:+.2f}")
+            print(f"  calibrated    : {after_per_depot:+.2f}")
+            print(f"  break-even    : {BREAK_EVEN:+.2f}")
+            print()
+            said = "fund it" if before_per_depot > BREAK_EVEN else "do not fund it"
+            says_now = "fund it" if after_per_depot > BREAK_EVEN else "do not fund it"
+            print(f"the observational model said : {said}")
+            print(f"the experiment says          : {says_now}")
+        """,
+    },
+    {
+        "slug": "tutorial-7-the-follow-up",
+        "title": "Planning the follow-up",
+        "asks": "Should we repeat this, when does it go stale, and what next?",
+        "lede": (
+            "A decision made once is a decision that decays. The same design machinery "
+            "that sized the first trial says when this answer stops being usable and "
+            "what the next dose worth testing is."
+        ),
+        "beat": (
+            "The answer is not 'run it again annually because that is the budget "
+            "cycle'. It is a number: how long before the value of a fresh answer "
+            "exceeds what a fresh answer costs."
+        ),
+        "code": """
+
+            from axiom.design import time_to_re_experiment
+
+            timing = time_to_re_experiment(
+                posterior_sd=float(after.summary.sd) / REGION_DEPOTS,
+                half_life_periods=26.0,
+                experiment_se=se_experiment,
+                min_eig=0.5,
+            )
+            print(f"a repeat is worth running again after {timing.periods:.0f} weeks")
+            print(f"  today it would gain {timing.eig_now:.3f} nats, "
+                  f"against a bar of 0.5")
+        """,
+    },
+    {
+        "slug": "tutorial-8-the-report",
+        "title": "The report",
+        "asks": "How does the whole of this become a document someone can check?",
+        "lede": (
+            "Every number above was produced by a typed result carrying its own "
+            "provenance. `axiom-dossier` turns that record into a document: methods "
+            "from the steps, results from the quantities, limitations from the "
+            "assumptions still standing."
+        ),
+        "beat": (
+            "The point is not that a report gets written. It is that the report "
+            "cannot describe an analysis nobody ran, cannot state a number the record "
+            "does not hold, and cannot quietly omit the assumption doing the most work."
+        ),
+        "code": """
+
+            from axiom_dossier import EvidenceBuilder, build
+
+            evidence = (
+                EvidenceBuilder(
+                    "Weekly maintenance schedule",
+                    "Should the standing weekly schedule go from nothing to 60 hours a depot?",
+                )
+                .verdict(verdict, graph=observed)
+                .step(
+                    "design", "Design",
+                    what=f"{ss.n} depots an arm, powered for the break-even.",
+                    why="The boundary the decision turns on is where precision has to land.",
+                    equations=("break_even = DOSE * COST_PER_HOUR / VALUE_PER_POINT",),
+                )
+                .finding(
+                    "decision", after, label="Steady-state weekly lift, region",
+                    unit="index points", precision=1,
+                    threshold=BREAK_EVEN * REGION_DEPOTS, beneficial="higher",
+                )
+                .build()
+            )
+            built = build(evidence, style="journal", verbosity="standard")
+            print(built.summary())
+            print(f"missing context keys: {built.missing() or 'none'}")
+            print()
+            for q in evidence.findings:
+                print(f"  {q.label}: {q.stated()}  [{q.against_threshold()}]")
+        """,
+    },
+]
+
+
+@section
+def tutorial() -> Any:
+    """Run the eight steps in one namespace and keep what each of them printed.
+
+    Threading a single ``env`` through is what makes this a tutorial rather than
+    a tour: step 6 recalibrates the fit step 3 produced, and a reader following
+    along in a REPL has exactly the state the page shows.
+
+    A step that raises stops the build. That is deliberate and it is the whole
+    value of generating these pages: a tutorial that has drifted from the library
+    fails here rather than on somebody's first afternoon with it.
+    """
+    import contextlib
+    import io as _io
+    import textwrap
+
+    env: dict[str, Any] = {}
+    steps = []
+    for i, step in enumerate(TUTORIAL_STEPS, start=1):
+        code = textwrap.dedent(step["code"]).strip("\n")
+        buf = _io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf):
+                exec(compile(code, f"<tutorial:{step['slug']}>", "exec"), env)  # noqa: S102
+        except Exception as exc:
+            raise SystemExit(
+                f"tutorial step {i} ({step['slug']}) failed: {type(exc).__name__}: {exc}\n"
+                f"  output before the failure:\n{buf.getvalue()}"
+            ) from exc
+        output = buf.getvalue().rstrip("\n")
+        steps.append(
+            {
+                "n": i,
+                "slug": step["slug"],
+                "title": step["title"],
+                "asks": step["asks"],
+                "lede": step["lede"],
+                "beat": step["beat"],
+                "code": code,
+                "output": output,
+            }
+        )
+        print(f"    {i}. {step['title']}: {len(output.splitlines())} lines")
+    return {
+        "problem": (
+            "A logistics operator runs 40 distribution depots in one region and 500 "
+            "nationally. Should the standing weekly maintenance schedule go from "
+            "nothing to 60 hours per depot?"
+        ),
+        "notebook": "nbs/tutorial/01-the-whole-loop.ipynb",
+        "steps": steps,
     }
 
 
