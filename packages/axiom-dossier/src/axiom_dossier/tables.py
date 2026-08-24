@@ -19,11 +19,13 @@ placement is the renderer's business, so what these return is rows.
 
 from __future__ import annotations
 
-from axiom_dossier.evidence import Evidence, Quantity
+from axiom_dossier.evidence import Evidence, GraphRecord, Quantity
 
 __all__ = [
     "TABLE_SOURCES",
     "design_rows",
+    "graph_rows",
+    "graph_table_rows",
     "diagnostics_rows",
     "findings_rows",
     "tables_for",
@@ -95,7 +97,32 @@ def design_rows(evidence: Evidence) -> list[dict[str, str]]:
 
 #: Context key -> the function that fills it. A key is present only when its
 #: table has rows, so a section naming one can rely on it having content.
+def graph_rows(graph: GraphRecord) -> list[dict[str, str]]:
+    """The identification graph as a table of arrows — the checkable form.
+
+    A picture of a DAG needs plotly and a reader willing to squint. The edge
+    list needs neither, and it is the form in which someone can disagree with a
+    specific arrow rather than with the conclusion drawn from all of them.
+    """
+    rows = [{"From": a, "Arrow": "→", "To": b, "Kind": "direct effect"} for a, b in graph.edges]
+    rows.extend(
+        {"From": a, "Arrow": "↔", "To": b, "Kind": "unmeasured common cause"}
+        for a, b in graph.bidirected
+    )
+    for node in graph.unmeasured:
+        rows.append({"From": node, "Arrow": "", "To": "", "Kind": "unmeasured node"})
+    return rows
+
+
+def graph_table_rows(evidence: Evidence) -> list[dict[str, str]]:
+    """The identification graph as arrows, or nothing when no graph was recorded."""
+    if evidence.graph is None:
+        return []
+    return graph_rows(evidence.graph)
+
+
 TABLE_SOURCES = {
+    "graph_table": graph_table_rows,
     "design_table": design_rows,
     "findings_table": findings_rows,
     "diagnostics_table": diagnostics_rows,

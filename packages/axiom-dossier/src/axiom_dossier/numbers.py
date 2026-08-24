@@ -88,14 +88,30 @@ def strings_of(evidence: Evidence) -> list[str]:
     for q in evidence.quantities():
         parts.extend([q.label, q.unit, q.note, q.source])
     for step in evidence.steps:
-        parts.extend([step.title, step.what, step.why])
+        # Every field a section actually renders. ``instead`` and ``readout``
+        # were missing, and both are printed verbatim in the methods draft: a
+        # rejected alternative reading "it would have to be about 13 degrees
+        # wide" put a numeral on the page that this function then refused to
+        # license, so a narration that faithfully repeated the draft was thrown
+        # away and the draft kept. The check is meant to catch invented numbers,
+        # not the ones the report itself put in front of the model.
+        parts.extend([step.title, step.what, step.why, step.instead])
         parts.extend(step.detail.values())
+        parts.extend(step.readout)
+        parts.extend(step.equations)
+        parts.extend(ex.caption for ex in step.exhibits)
         for a in step.assumptions:
             parts.extend([a.statement, a.challenged_by])
     for a in evidence.assumptions:
         parts.extend([a.statement, a.challenged_by])
     for line in evidence.ledger:
         parts.append(line.statement)
+    if evidence.graph is not None:
+        # A graph may name a variable with a numeral in it -- "lag_2", "wave_1"
+        # -- and the methods section prints the edge list, so those numerals are
+        # on the page before any model sees them.
+        parts.append(evidence.graph.to_text())
+        parts.extend(evidence.graph.nodes)
     if evidence.verdict is not None:
         parts.append(evidence.verdict.reason)
         for a in evidence.verdict.assumptions:
@@ -110,7 +126,9 @@ def licensed_numbers(evidence: Evidence, *, allow: Iterable[float] = ()) -> tupl
 
     Point estimates and interval bounds and masses, plus a mass expressed as a
     percentage, plus any number already written into the evidence's own text
-    (an assumption statement that says "two pre-periods" licenses "2").
+    (an assumption statement that says "two pre-periods" licenses "2"), plus the
+    counts of the record's own parts, which the generated sections state and a
+    narration therefore repeats.
     """
     out: set[float] = set(allow)
     for q in evidence.quantities():
@@ -125,6 +143,24 @@ def licensed_numbers(evidence: Evidence, *, allow: Iterable[float] = ()) -> tupl
             out.add(abs(n))
             if 0.0 < abs(n) <= 1.0:
                 out.add(abs(n) * 100.0)
+    # A report is entitled to count what it holds. Every generated section does
+    # -- "conditional on 2 unresolved assumptions", "4 step(s) are recorded in
+    # full below" -- and none of those counts is stored in the record as a
+    # number, so a narration repeating the draft was rejected for a numeral the
+    # draft had written itself.
+    out.update(
+        float(n)
+        for n in (
+            len(evidence.findings),
+            len(evidence.diagnostics),
+            len(evidence.quantities()),
+            len(evidence.steps),
+            len(evidence.assumptions),
+            len(evidence.unresolved()),
+            len(evidence.remarks),
+            len(evidence.ledger),
+        )
+    )
     for text in strings_of(evidence):
         for lit in literals(text):
             out.add(lit.value)

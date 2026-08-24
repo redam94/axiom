@@ -36,6 +36,8 @@ __all__ = [
     "Evidence",
     "EvidenceBuilder",
     "Exhibit",
+    "GraphRecord",
+    "graph_from",
     "MethodStep",
     "Quantity",
     "quantity_from",
@@ -157,6 +159,79 @@ class Exhibit(Spec):
     caption: str = ""
 
 
+class GraphRecord(Spec):
+    """The identification graph itself: which variables, and which arrows.
+
+    A verdict says "identified via the back door adjusting for age". That is the
+    *conclusion*; this is the thing it was concluded from, and without it a
+    reader cannot check the conclusion or disagree with the graph rather than
+    with the number. It is the single most load-bearing object in a causal
+    report and it was the one thing the record did not keep.
+
+    Held structurally — nodes, edges, and the two distinctions that decide
+    whether a graph is identifiable at all — rather than as an
+    ``identify.CausalGraph``, for the same reason ``EvidenceBuilder.verdict``
+    reads a verdict structurally: reporting on a result must not require
+    importing the subpackage that produced it. Anything with ``nodes`` and
+    ``edges`` can be recorded, and the shape is exactly what
+    ``viz.causal_graph`` draws.
+    """
+
+    name: str = ""
+    nodes: tuple[str, ...] = ()
+    #: Directed arrows, ``(parent, child)``.
+    edges: tuple[tuple[str, str], ...] = ()
+    #: Unmeasured confounding, drawn as a dashed double-headed arrow.
+    bidirected: tuple[tuple[str, str], ...] = ()
+    #: Nodes that exist in the graph and not in the data. Drawn hollow, and the
+    #: reason a graph can be written down and still not be identifiable.
+    unmeasured: tuple[str, ...] = ()
+    treatment: str = ""
+    outcome: str = ""
+    #: The graph's own content hash, so a report names the graph it used rather
+    #: than a graph that looks like it.
+    graph_hash: str = ""
+
+    def to_text(self) -> str:
+        """The edge list as one line — the graph in a form that needs no plotly.
+
+        A report whose figures cannot be drawn still has to say which graph was
+        used, and an edge list is the whole of that. Bidirected edges are written
+        ``a <-> b`` because the distinction between a common cause and an arrow
+        is the distinction the identification turns on.
+        """
+        parts = [f"{a} -> {b}" for a, b in self.edges]
+        parts.extend(f"{a} <-> {b}" for a, b in self.bidirected)
+        return ", ".join(parts)
+
+
+def graph_from(graph: object, *, treatment: str = "", outcome: str = "") -> GraphRecord:
+    """A ``GraphRecord`` off anything carrying ``nodes`` and ``edges``.
+
+    Read structurally, so an ``identify.CausalGraph`` works and so does a
+    hand-built stand-in. Anything missing is simply absent from the record
+    rather than guessed at.
+    """
+    nodes = tuple(str(x) for x in getattr(graph, "nodes", ()) or ())
+    edges = tuple((str(a), str(b)) for a, b in (getattr(graph, "edges", ()) or ()) if a is not None)
+    if not nodes and not edges:
+        raise TypeError(
+            f"cannot read a graph out of {type(graph).__name__}; "
+            "pass something with .nodes and .edges"
+        )
+    hasher = getattr(graph, "content_hash", None)
+    return GraphRecord(
+        name=str(getattr(graph, "name", "") or ""),
+        nodes=nodes,
+        edges=edges,
+        bidirected=tuple((str(a), str(b)) for a, b in (getattr(graph, "bidirected", ()) or ())),
+        unmeasured=tuple(str(x) for x in (getattr(graph, "unmeasured", ()) or ())),
+        treatment=treatment,
+        outcome=outcome,
+        graph_hash=str(hasher()) if callable(hasher) else "",
+    )
+
+
 class MethodStep(Spec):
     """One thing that was done, and what it rests on.
 
@@ -175,6 +250,10 @@ class MethodStep(Spec):
       setting and putting it in ``detail`` made the design table a wall of text.
     * ``readout`` — what the step *printed*, verbatim. Terminal output is not a
       parameter either; it is shown as it was seen, in a monospaced block.
+    * ``equations`` — the mathematics the step is, written out. A methods
+      section that says "fitted by ANCOVA" and never writes the equation has
+      told the reader the name of a thing rather than the thing; these are the
+      lines a reader checks the estimator against.
     * ``exhibits`` — the figures and tables the step produced.
     """
 
@@ -186,6 +265,7 @@ class MethodStep(Spec):
     assumptions: tuple[Assumption, ...] = ()
     detail: dict[str, str] = {}
     readout: tuple[str, ...] = ()
+    equations: tuple[str, ...] = ()
     exhibits: tuple[Exhibit, ...] = ()
 
 
@@ -205,6 +285,9 @@ class Evidence(Spec):
     assumptions: tuple[Assumption, ...] = ()
     ledger: tuple[LedgerLine, ...] = ()
     verdict: Verdict | None = None
+    #: The graph the identification was read off. Without it a reader can
+    #: disagree with the verdict and not with the thing that produced it.
+    graph: GraphRecord | None = None
     #: What the analyst wrote after looking at the output, carried verbatim.
     #: Distinct from a finding, which is a number: these are sentences, they are
     #: not generated, and they are never rewritten by a model — a remark is the
@@ -404,6 +487,7 @@ class EvidenceBuilder:
         self._assumptions: list[Assumption] = []
         self._ledger: list[LedgerLine] = []
         self._verdict: Verdict | None = None
+        self._graph: GraphRecord | None = None
         self._remarks: list[str] = []
         self._provenance: dict[str, str] = {}
 
@@ -428,6 +512,7 @@ class EvidenceBuilder:
         assumptions: Iterable[Assumption] = (),
         detail: Mapping[str, str] | None = None,
         readout: Iterable[str] = (),
+        equations: Iterable[str] = (),
         exhibits: Iterable[Exhibit] = (),
     ) -> EvidenceBuilder:
         self._steps.append(
@@ -440,12 +525,20 @@ class EvidenceBuilder:
                 assumptions=tuple(assumptions),
                 detail=dict(detail or {}),
                 readout=tuple(readout),
+                equations=tuple(equations),
                 exhibits=tuple(exhibits),
             )
         )
         return self
 
-    def verdict(self, verdict: object, *, key: str = "identification") -> EvidenceBuilder:
+    def graph(self, graph: object, *, treatment: str = "", outcome: str = "") -> EvidenceBuilder:
+        """Record the identification graph. Usually reached through ``verdict``."""
+        self._graph = graph_from(graph, treatment=treatment, outcome=outcome)
+        return self
+
+    def verdict(
+        self, verdict: object, *, key: str = "identification", graph: object = None
+    ) -> EvidenceBuilder:
         """Record an identification verdict, and the step it stands for.
 
         Accepts a ``core.Verdict`` or an ``identify.IdentificationVerdict``. The
@@ -453,6 +546,11 @@ class EvidenceBuilder:
         the mediators, the instrument, the routes it rejected — because that is
         the difference between a methods section that says "the effect is
         identified" and one that says which variables were adjusted for.
+
+        ``graph`` records the graph the verdict was read off. Pass it, or pass
+        an ``IdentificationVerdict`` that carries one: a verdict without its
+        graph is a conclusion a reader cannot check, and the edge list is what
+        lets them disagree with the graph rather than with the number.
 
         Read structurally rather than by import, so this package does not need to
         depend on ``axiom.identify`` to report on its results.
@@ -473,6 +571,23 @@ class EvidenceBuilder:
         outcome = str(getattr(verdict, "outcome", "") or "")
         if treatment and outcome:
             what.insert(0, f"The target is the effect of {treatment} on {outcome}.")
+
+        # The graph, from wherever it can be had: handed in, or carried by the
+        # verdict itself. A `graph_hash` with no graph beside it names a thing
+        # the reader has no way to look at.
+        source = graph if graph is not None else getattr(verdict, "graph", None)
+        if source is not None:
+            self._graph = graph_from(source, treatment=treatment, outcome=outcome)
+        if self._graph is not None:
+            what.append(f"The graph is {self._graph.to_text()}.")
+            detail["graph"] = self._graph.to_text()
+            if self._graph.unmeasured:
+                detail["unmeasured nodes"] = ", ".join(self._graph.unmeasured)
+        graph_hash = str(getattr(verdict, "graph_hash", "") or "")
+        if graph_hash:
+            detail["graph hash"] = graph_hash[:12]
+            if self._graph is not None and not self._graph.graph_hash:
+                self._graph = self._graph.model_copy(update={"graph_hash": graph_hash})
 
         adjustment = tuple(getattr(verdict, "adjustment_set", ()) or ())
         if adjustment:
@@ -547,6 +662,7 @@ class EvidenceBuilder:
             assumptions=tuple(self._assumptions),
             ledger=tuple(self._ledger),
             verdict=self._verdict,
+            graph=self._graph,
             remarks=tuple(self._remarks),
             provenance=dict(self._provenance),
         )

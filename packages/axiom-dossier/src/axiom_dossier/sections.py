@@ -43,8 +43,11 @@ __all__ = [
     "VERBOSITY",
     "Verbosity",
     "assumption_rows",
+    "equation_text",
     "literal",
+    "plural",
     "readout_text",
+    "sentence",
     "diagnostics_section",
     "limitations_section",
     "methods_section",
@@ -111,6 +114,59 @@ def _detail(verbosity: Verbosity) -> dict[str, bool | int]:
     return VERBOSITY[verbosity]
 
 
+def sentence(text: str) -> str:
+    """Free text made into a sentence: capitalised, and closed with a stop.
+
+    A recorded ``reason`` or ``statement`` is written as a clause — "age blocks
+    the only back-door path" — because that is how it reads inside the object
+    that holds it. Every section that appends one after a full stop was printing
+    it as a sentence starting in lower case, which reads as a typo in a document
+    whose whole claim is that it was assembled carefully.
+    """
+    stripped = text.strip()
+    if not stripped:
+        return ""
+    opened = stripped[0].upper() + stripped[1:]
+    return opened if opened[-1] in ".?!" else opened + "."
+
+
+def plural(count: int, noun: str, *, verb: str = "") -> str:
+    """``2 assumptions``, ``1 assumption`` — and optionally the verb to match.
+
+    A paper does not contain "assumption(s)". The bracketed plural is a template
+    showing through, and in a document whose whole argument is that it was
+    generated from a record rather than written by a person, it is the detail
+    that makes a reader believe the rest was generated carelessly too.
+    """
+    word = noun if count == 1 else _plural_of(noun)
+    if not verb:
+        return f"{count} {word}"
+    return f"{count} {word} {verb if count == 1 else _AGREES.get(verb, verb)}"
+
+
+#: Third-person singular -> plural, for the handful of verbs these sections use.
+_AGREES = {"is": "are", "was": "were", "carries": "carry", "holds": "hold"}
+
+
+def _plural_of(noun: str) -> str:
+    """English plural for the last word of a noun phrase. Enough English for this.
+
+    "further quantity" pluralises on *quantity*, not on the phrase, and a naive
+    ``+ "s"`` produced "4 further quantitys" in the abstract of the flagship
+    sample.
+    """
+    head, _, last = noun.rpartition(" ")
+    if last.endswith("y") and last[-2:-1] not in "aeiou":
+        last = last[:-1] + "ies"
+    elif last.endswith("is"):
+        last = last[:-2] + "es"  # analysis -> analyses, basis -> bases
+    elif last.endswith(("s", "x", "z", "ch", "sh")):
+        last = last + "es"
+    else:
+        last = last + "s"
+    return f"{head} {last}".strip()
+
+
 def literal(text: str) -> str:
     """Escape braces so free prose cannot be read as a template placeholder.
 
@@ -136,6 +192,18 @@ def readout_text(lines: Sequence[str]) -> str:
     in every renderer that has a monospaced face.
     """
     return "\n".join("`" + literal(line).replace("`", "'") + "`" for line in lines)
+
+
+def equation_text(lines: Sequence[str]) -> str:
+    """Equations as their own monospaced block, one to a line.
+
+    ``report`` has no math block and the three renderers have no LaTeX between
+    them, so an equation is set the way the readouts are: fixed pitch, its own
+    line breaks, escaped. That is worse than typeset mathematics and much better
+    than the alternative the package had, which was to name the estimator and
+    never write it down.
+    """
+    return readout_text(lines)
 
 
 def assumption_rows(assumptions: tuple[Assumption, ...]) -> list[dict[str, str]]:
@@ -181,7 +249,7 @@ def methods_section(
     detail = _detail(verbosity)
     blocks: list[object] = []
     if evidence.question:
-        blocks.append(Paragraph(text=f"**Question.** {literal(evidence.question)}"))
+        blocks.append(Paragraph(text=f"Question: {literal(evidence.question)}"))
 
     for step in evidence.steps:
         blocks.append(Heading(text=literal(step.title), level=3))
@@ -189,12 +257,16 @@ def methods_section(
         if sentences:
             blocks.append(Paragraph(text=literal(" ".join(sentences))))
         if step.instead and detail["include_step_detail"]:
-            blocks.append(Paragraph(text=f"**Considered instead.** {literal(step.instead)}"))
+            blocks.append(Paragraph(text=f"Considered instead: {literal(step.instead)}"))
         if step.detail and detail["include_step_detail"]:
             # Escaped here rather than on the way in: the same value is a table
             # cell in the design table, and a cell is not a template.
             line = "; ".join(f"{k}: {literal(v)}" for k, v in sorted(step.detail.items()))
             blocks.append(Paragraph(text=line, emphasis=True))
+        # Equations before the readout: the reader wants the estimator written
+        # down before they are shown what it printed.
+        if step.equations:
+            blocks.append(Paragraph(text=equation_text(step.equations)))
         if step.readout and detail["include_step_detail"]:
             blocks.append(Paragraph(text=readout_text(step.readout)))
         for exhibit in step.exhibits:
@@ -204,6 +276,24 @@ def methods_section(
                 blocks.append(
                     Table(source=exhibit.key, caption=literal(exhibit.caption), max_rows=40)
                 )
+
+    # The graph itself, as the arrows it is made of. It goes with the methods
+    # because that is where the identification is argued, and it is a table
+    # rather than only a picture because a picture needs plotly and an arrow a
+    # reader wants to argue with needs a row.
+    if evidence.graph is not None and evidence.graph.edges:
+        blocks.append(Heading(text="The identification graph", level=3))
+        blocks.append(
+            Paragraph(
+                text=(
+                    "Every arrow below is a claim about the world that the data does not "
+                    "make on its own. The route named above is read off this graph, so a "
+                    "reader who disagrees with the conclusion should find the arrow they "
+                    "disagree with here."
+                )
+            )
+        )
+        blocks.append(Table(source="graph_table", caption="The identification graph, as arrows"))
 
     standing = standing_assumptions(evidence)
     if standing and detail["include_assumption_table"]:
@@ -245,12 +335,17 @@ def results_section(
     # discussion does use them, because there the label introduces prose.
     for q in evidence.findings:
         blocks.append(Metric(source=q.key, label=q.label, unit=q.unit, precision=q.precision))
-    lead = evidence.findings[0]
+    # A sentence for every finding, not only the lead. The metric blocks carry
+    # the numbers for a reader scanning the page; the prose carries them for the
+    # narrator, which sees the paragraphs and nothing else. A finding absent
+    # from the draft is absent from the narrated results section -- which is how
+    # four of five estimates came to be stated first in the discussion.
+    stated = " ".join(f"{q.label} is {{{q.key}_stated}}." for q in evidence.findings)
     blocks.append(
         Paragraph(
             text=(
-                f"{lead.label} is {{{lead.key}_stated}}. "
-                "Intervals are reported with the definition and mass they were computed at."
+                f"{stated} Intervals are reported with the definition and mass "
+                "they were computed at."
             )
         )
     )
@@ -288,6 +383,9 @@ def diagnostics_section(
     ]
     for q in evidence.diagnostics:
         blocks.append(Metric(source=q.key, label=q.label, unit=q.unit, precision=q.precision))
+    blocks.append(
+        Paragraph(text=" ".join(f"{q.label} is {{{q.key}_stated}}." for q in evidence.diagnostics))
+    )
     return Section(title=title, blocks=tuple(blocks))  # type: ignore[arg-type]
 
 
@@ -306,8 +404,8 @@ def limitations_section(
         blocks.append(
             Paragraph(
                 text=(
-                    f"**The effect is {evidence.verdict.status}, not identified.** "
-                    f"{evidence.verdict.reason}"
+                    f"The effect is {evidence.verdict.status}, not identified. "
+                    f"{sentence(evidence.verdict.reason)}"
                 )
             )
         )
@@ -325,7 +423,7 @@ def limitations_section(
     blocks.append(
         Paragraph(
             text=(
-                f"{len(standing)} assumption(s) below are doing work that the data does "
+                f"{plural(len(standing), 'assumption')} below do work that the data does "
                 "not do. Each is stated with what would challenge it, so disagreement can "
                 "be specific rather than general."
             )
@@ -338,8 +436,7 @@ def limitations_section(
             blocks.append(
                 Paragraph(
                     text=(
-                        f"**{a.name.replace('_', ' ')}** — {a.statement} "
-                        f"This {state}.{challenged}"
+                        f"{a.name.replace('_', ' ')}: {a.statement} " f"This {state}.{challenged}"
                     )
                 )
             )
