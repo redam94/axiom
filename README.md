@@ -37,12 +37,14 @@ Four pillars, one vocabulary:
 
 **1.0.** All fifteen subpackages are implemented, every public symbol is
 demonstrated in an executed notebook under `nbs/`, and the twelve contract
-gates plus the recovery suites are green. Start with the **case study** in
-`nbs/case-studies/hypertension/` — a sequential dose-finding trial that has to
-stop a dose arm early if it is harming people, worked end to end in six
-notebooks — then the end-to-end notebooks in `nbs/end-to-end/` and the
-subpackage series. The plan that produced the code is in `docs/plan/`, the
-decisions taken along the way in `docs/notes/`. Deferred to 1.1: a PyMC backend,
+gates plus the recovery suites are green. Start with the **tutorial** in
+`nbs/tutorial/` — one decision carried from "what are we asking" through
+identification, design, measurement, calibration and the follow-up to a written
+report — then the **case study** in `nbs/case-studies/hypertension/` (a
+sequential dose-finding trial that has to stop a dose arm early if it is harming
+people, worked end to end in six notebooks), the end-to-end notebooks in
+`nbs/end-to-end/`, and the subpackage series. The plan that produced the code is
+in `docs/plan/`, the decisions taken along the way in `docs/notes/`. Deferred to 1.1: a PyMC backend,
 block-bootstrap switchback SEs, non-parametric surfaces, and stage-wise-ordered
 estimates for a stopped sequential trial.
 

@@ -86,6 +86,19 @@ class Quantity(Spec):
         upper = f"{self.interval.upper:.{self.precision}f}"
         return f"{text} ({mass} {self.interval.definition.upper()} {lower} to {upper}{unit})"
 
+    @property
+    def mean(self) -> float:
+        """The point, under the name a report's metric block looks for it by.
+
+        ``axiom.report`` resolves a metric from an ``Interval`` by taking its
+        midpoint, and an HDI is not symmetric about the estimate it summarizes.
+        Exposing the point here — the one name ``_metric_of`` reads a summary's
+        value from — is what lets ``context`` hand over the whole quantity, so
+        the page prints the number the record holds rather than a midpoint
+        nobody computed.
+        """
+        return self.value
+
     def numbers(self) -> tuple[float, ...]:
         """Every number this quantity licenses, for the provenance check."""
         out = [self.value]
@@ -180,15 +193,18 @@ class Evidence(Spec):
         raise KeyError(f"no quantity {key!r}; have {[q.key for q in self.quantities()]}")
 
     def context(self) -> dict[str, object]:
-        """The render context: each quantity under its key, as its interval or value.
+        """The render context: each quantity under its key, whole or as a bare float.
 
-        ``axiom.report`` resolves an ``Interval`` into a metric that shows its
-        definition and mass, so handing it the interval rather than the float is
-        what keeps the uncertainty attached through rendering.
+        ``axiom.report`` resolves a metric block from anything carrying an
+        ``interval`` and a point, and shows the interval with its definition and
+        mass. Handing it the quantity itself rather than the float is what keeps
+        the uncertainty attached through rendering — and rather than the bare
+        interval, so that the point printed is the estimate and not the
+        interval's midpoint.
         """
         out: dict[str, object] = {}
         for q in self.quantities():
-            out[q.key] = q.interval if q.interval is not None else q.value
+            out[q.key] = q if q.interval is not None else q.value
             out[f"{q.key}_stated"] = q.stated()
         if self.ledger:
             out["ledger"] = list(self.ledger)
@@ -235,15 +251,18 @@ def quantity_from(
 ) -> Quantity:
     """Build a ``Quantity`` from whatever axiom handed back.
 
-    Four shapes are understood, which between them cover what axiom returns:
+    Five shapes are understood, which between them cover what axiom returns:
 
     * a plain number — a count, a share, something with no interval;
     * an ``Interval`` — the point is taken as its midpoint and the note says so;
     * a ``LinearEstimate`` and friends: ``.estimate`` plus ``.ci(mass)``, which
       is what ``identify.ols`` and the other estimators hand back, and where
       ``mass`` chooses the interval;
-    * anything carrying ``.value`` and ``.interval`` — ``estimands.EstimandResult``
-      and the posterior summaries.
+    * a ``core.Summary`` — ``.mean`` and ``.interval``, the shape a posterior
+      reports itself in;
+    * anything wrapping one of those in ``.summary`` — ``estimands.realize``
+      returns an ``EstimandResult``, and an estimand realized against a fit is
+      the usual headline finding of a report.
 
     Anything else is a ``TypeError`` naming what arrived, because guessing at an
     unfamiliar result type is how a report ends up stating the wrong field.
@@ -296,18 +315,32 @@ def quantity_from(
             threshold=threshold,
             beneficial=beneficial,
         )
+    origin = type(value).__name__
+    # ``realize`` returns an ``EstimandResult``, which keeps its point and its
+    # interval together inside a ``core.Summary`` rather than beside each other.
+    # Unwrap it, so the thing a decision is actually about can be handed to a
+    # report the same way an estimator's output can.
+    summary = getattr(value, "summary", None)
+    if summary is not None and isinstance(getattr(summary, "interval", None), Interval):
+        value = summary
     raw: object = getattr(value, "value", None)
+    if raw is None:
+        # A ``Summary`` states its point as ``mean``. Reading it is the
+        # difference between reporting the posterior mean and reporting the
+        # midpoint of an interval that need not be symmetric about it.
+        mean = getattr(value, "mean", None)
+        raw = None if callable(mean) else mean
     interval = getattr(value, "interval", None)
     if raw is None and interval is None:
         raise TypeError(
-            f"{key!r}: cannot read a quantity out of {type(value).__name__}; "
+            f"{key!r}: cannot read a quantity out of {origin}; "
             "pass a float, an Interval, or a result carrying .value / .interval"
         )
     if raw is None and isinstance(interval, Interval):
         raw = (interval.lower + interval.upper) / 2.0
     if isinstance(raw, bool) or not isinstance(raw, (int, float)):
         raise TypeError(
-            f"{key!r}: .value on {type(value).__name__} is "
+            f"{key!r}: the point read out of {origin} is "
             f"{type(raw).__name__}, which is not a number"
         )
     return Quantity(
@@ -316,7 +349,7 @@ def quantity_from(
         value=float(raw),
         unit=unit,
         interval=interval if isinstance(interval, Interval) else None,
-        source=source or type(value).__name__,
+        source=source or origin,
         note=note,
         precision=precision,
         threshold=threshold,

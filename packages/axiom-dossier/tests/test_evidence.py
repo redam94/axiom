@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import pytest
-from axiom.core import Assumption, Interval, Verdict
+from axiom.core import Assumption, Interval, Summary, Verdict
 from axiom.identify import CausalGraph, identify
 
 from axiom_dossier import Evidence, EvidenceBuilder, Quantity, quantity_from
@@ -34,6 +34,42 @@ def test_a_result_object_is_read_through_value_and_interval() -> None:
     assert (q.value, q.unit) == (2.5, "mmHg")
     assert q.interval is not None and q.interval.definition == "hdi"
     assert q.source == "Result"
+
+
+def test_a_summary_is_read_through_its_mean_and_not_its_midpoint() -> None:
+    """A posterior interval need not be symmetric; the point is the mean, not the middle."""
+    summary = Summary(
+        mean=2.5,
+        median=2.4,
+        sd=0.8,
+        interval=Interval(lower=1.5, upper=5.0, definition="hdi", mass=0.9),
+        n=1000,
+    )
+    q = quantity_from("s", summary, label="Contrast", unit="mmHg")
+    assert q.value == pytest.approx(2.5)  # not 3.25, the midpoint
+    assert q.interval is not None and q.interval.definition == "hdi"
+
+
+def test_an_estimand_result_is_unwrapped_through_its_summary() -> None:
+    """`realize` hands back an EstimandResult; a report is usually written from one."""
+
+    @dataclass
+    class Realized:
+        summary: Summary
+
+    r = Realized(
+        Summary(
+            mean=-12.4,
+            median=-12.3,
+            sd=2.6,
+            interval=Interval(lower=-16.7, upper=-8.1, definition="eti", mass=0.9),
+            n=4000,
+        )
+    )
+    q = quantity_from("r", r, label="Effect", unit="mmHg")
+    assert q.value == pytest.approx(-12.4)
+    assert q.interval is not None and q.interval.mass == 0.9
+    assert q.source == "Realized"  # the wrapper is named, not the Summary inside it
 
 
 def test_something_with_no_number_in_it_is_a_typeerror_naming_the_type() -> None:
@@ -122,7 +158,11 @@ def test_the_context_carries_intervals_rather_than_bare_points() -> None:
         .build()
     )
     ctx = evidence.context()
-    assert isinstance(ctx["c"], Interval)
+    quantity = ctx["c"]
+    assert isinstance(quantity, Quantity)
+    assert quantity.interval is not None and quantity.interval.mass == 0.9
+    # what a metric block reads: the recorded point, not the interval's midpoint
+    assert quantity.mean == quantity.value
     assert "90%" in str(ctx["c_stated"])
 
 
