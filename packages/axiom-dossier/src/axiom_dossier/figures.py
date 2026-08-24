@@ -42,8 +42,15 @@ __all__ = [
     "findings_plot",
 ]
 
-SPREAD_LIMIT = 100.0
-"""How far apart two diagnostics may be before one axis stops being honest."""
+SPREAD_LIMIT = 20.0
+"""How much of its own axis the smallest bar may give up before it stops being a bar.
+
+Twenty: a bar a twentieth of the axis is five per cent of the panel, which is
+around where a reader stops seeing a quantity and starts seeing a tick mark.
+The comparison is against the *axis*, not against the largest bar, because a
+chart with a negative value is read against a span that reaches past zero on
+both sides.
+"""
 
 #: Which side of the threshold a row fell on, and the colour that says so.
 #: Deliberately not the theme's series palette: these are *states*, not series,
@@ -181,8 +188,15 @@ def diagnostics_plot(
     # 372 is a bar of zero width next to a bar of full width, which tells a
     # reader the share is nothing. The table says it properly; refusing the
     # figure is better than drawing a misleading one.
-    magnitudes = [abs(q.value) for q in rows if q.value]
-    if magnitudes and max(magnitudes) / min(magnitudes) > SPREAD_LIMIT:
+    #
+    # The span is measured from zero, because that is where every bar starts:
+    # a z of -2.26 beside a count of 40 is read against 42 units of axis, and
+    # the 0.9 between them is a fiftieth of it whatever the ratio of the two
+    # magnitudes says.
+    values = [q.value for q in rows]
+    magnitudes = [abs(v) for v in values if v]
+    span = max(values + [0.0]) - min(values + [0.0])
+    if magnitudes and span / min(magnitudes) > SPREAD_LIMIT:
         return Unsupported(
             reason=(
                 "the diagnostics span too many orders of magnitude to share one axis; "
@@ -191,17 +205,22 @@ def diagnostics_plot(
             detail={
                 "largest": f"{max(magnitudes):g}",
                 "smallest": f"{min(magnitudes):g}",
+                "span": f"{span:g}",
                 "limit": str(SPREAD_LIMIT),
             },
         )
     figure = go.Figure(
         go.Bar(
-            x=[q.value for q in rows],
+            x=values,
             y=[q.label for q in rows],
             orientation="h",
             marker={"color": palette.colour(0)},
             text=[f"{q.value:.{q.precision}f}" for q in rows],
-            textposition="auto",
+            # Outside, always: `auto` puts the label of a short bar just past
+            # its end, which for a negative bar is on top of the row's name.
+            # `cliponaxis` is what lets a label sit in the padding below.
+            textposition="outside",
+            cliponaxis=False,
             hovertemplate="%{y}<br>%{x:.4g}<extra></extra>",
         )
     )
@@ -216,7 +235,17 @@ def diagnostics_plot(
         paper_bgcolor=palette.background_color,
         font={"family": palette.font, "size": palette.base_size, "color": palette.text_color},
     )
-    figure.update_xaxes(gridcolor=palette.rule_color, zeroline=False)
+    # Room at both ends for the labels now sitting outside the bars, and a
+    # baseline whenever there is a bar on each side of it: a diverging chart
+    # without its zero is a chart whose bars start nowhere in particular.
+    pad = max(span, 1.0) * 0.14
+    figure.update_xaxes(
+        gridcolor=palette.rule_color,
+        range=[min(values + [0.0]) - pad, max(values + [0.0]) + pad],
+        zeroline=min(values) < 0.0,
+        zerolinecolor=palette.text_color,
+        zerolinewidth=1,
+    )
     return figure
 
 
