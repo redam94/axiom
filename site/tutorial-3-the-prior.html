@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3. The belief we start from — the axiom tutorial</title>
+<meta name="description" content="Step 3 of 8: What does the observational fit say, and how much should we trust it?">
+<meta property="og:title" content="3. The belief we start from — the axiom tutorial">
+<meta property="og:description" content="Step 3 of 8: What does the observational fit say, and how much should we trust it?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Tutorial · step 3 of 8</p>
+    <h1 style="max-width:18ch">The belief we start from</h1>
+    <p class="lede prose mt">What does the observational fit say, and how much should we trust it?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>An unidentified number is still a belief, and pretending to have none is not neutrality. The observational fit is run — and then inflated, because a confounded estimate that reports its nominal precision is the most dangerous object in the analysis.</p>
+      <p><strong>This is the number the experiment will be measured against. Write it down now, with its inflation stated, so that later there is something for the measurement to disagree with.</strong></p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 3</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>import numpy as np
+from axiom.data import Panel
+from axiom.estimands import realize
+from axiom.surface import fit
+
+# The panel the operator actually has: depots that were already in good
+# shape got more hours, and &quot;good shape&quot; was never written down.
+rng = np.random.default_rng(123)
+frame = world.panel.frame
+dose = frame[&quot;a&quot;].to_numpy(dtype=np.float64)
+standardized = (dose - dose.mean()) / dose.std()
+condition = 0.6 * standardized + 0.8 * rng.standard_normal(dose.size)
+observed_panel = Panel(frame.assign(y=frame[&quot;y&quot;] + 0.8 * condition), world.panel.roles)
+print(f&quot;corr(hours, fleet condition) = &quot;
+      f&quot;{float(np.corrcoef(dose, condition)[0, 1]):.2f}  &lt;- the confounding&quot;)
+
+biased = fit(spec, observed_panel, backend=&quot;laplace&quot;, draws=1000, seed=1)
+before = realize(decision_estimand, biased, assume_identified=True, mass=0.9, seed=SEED)
+
+# The estimand is region-level: it sums across the 40 depots. The
+# break-even is per depot-week, so the comparison has to be made on
+# one scale or the other -- and getting that wrong is how a decision
+# gets made against a number forty times too big.
+before_per_depot = before.summary.mean / REGION_DEPOTS
+print()
+print(&quot;the observational reading of the decision&#x27;s estimand&quot;)
+print(f&quot;  region : {before.summary.mean:+.1f} index points per week&quot;)
+print(f&quot;  depot  : {before_per_depot:+.2f} index points per depot-week&quot;)
+print(f&quot;  break-even is {BREAK_EVEN:.2f}&quot;)
+print(f&quot;  -&gt; on this reading, fund it.&quot;)</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>corr(hours, fleet condition) = 0.59  &lt;- the confounding
+
+the observational reading of the decision&#x27;s estimand
+  region : +286.6 index points per week
+  depot  : +7.16 index points per depot-week
+  break-even is 6.75
+  -&gt; on this reading, fund it.</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="tutorial-1-the-question.html"><span class="wt-toc-n">1</span>The question, written down</a><a class="wt-toc-i" href="tutorial-2-identification.html"><span class="wt-toc-n">2</span>Can the data we already have answer it?</a><a class="wt-toc-i" href="tutorial-3-the-prior.html"><span class="wt-toc-n">3</span>The belief we start from</a><a class="wt-toc-i" href="tutorial-4-design.html"><span class="wt-toc-n">4</span>Designing the experiment</a><a class="wt-toc-i" href="tutorial-5-measurement.html"><span class="wt-toc-n">5</span>The experiment lands</a><a class="wt-toc-i" href="tutorial-6-calibration.html"><span class="wt-toc-n">6</span>Folding the experiment into the model</a><a class="wt-toc-i" href="tutorial-7-the-follow-up.html"><span class="wt-toc-n">7</span>Planning the follow-up</a><a class="wt-toc-i" href="tutorial-8-the-report.html"><span class="wt-toc-n">8</span>The report</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="tutorial-2-identification.html">&larr; 2 · Can the data we already have answer it?</a><a class="btn btn-2" href="tutorial.html">All eight steps</a><a class="btn btn-2" href="tutorial-4-design.html">4 · Designing the experiment &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

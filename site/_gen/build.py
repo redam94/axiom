@@ -36,6 +36,7 @@ WORKFLOW = [
 # HYPER-3 is an analysis story and GEIGER-1911 is a design one, and the nav should say
 # which is which rather than making a reader open both to find out.
 EXTRA = [
+    ("tutorial", "Tutorial"),
     ("examples", "Examples"),
     ("benchmarks", "Benchmarks"),
     ("case-study", "HYPER-3"),
@@ -158,8 +159,7 @@ def symbol_html(sym: dict[str, Any]) -> str:
     search = html.escape(f"{sym['name']} {sym['summary']}".lower(), quote=True)
 
     head = (
-        f'<summary><span class="sym-n">{name}</span>'
-        f'<span class="sym-t">{tag}</span></summary>'
+        f'<summary><span class="sym-n">{name}</span>' f'<span class="sym-t">{tag}</span></summary>'
     )
     body = [f'<p class="sym-sig">{name}{signature}</p>' if signature else ""]
     if summary:
@@ -518,6 +518,96 @@ def walkthrough_body(entry: dict[str, Any], prev: Any, nxt: Any, data: dict[str,
 </section>"""
 
 
+def tutorial_html(data: dict[str, Any]) -> str:
+    """The tutorial index: one card per step, in the order they have to be read.
+
+    Unlike the examples, these are not independent — step 6 recalibrates the fit
+    step 3 produced. The cards are numbered rather than tiled so the order reads
+    as the instruction it is.
+    """
+    cards = []
+    for step in data["tutorial"]["steps"]:
+        cards.append(f"""<a class="card" href="{step['slug']}.html">
+  <p class="card-n">STEP {step['n']}</p>
+  <h3>{html.escape(step['title'])}</h3>
+  <p>{html.escape(step['asks'])}</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a>""")
+    return f'<div class="cards">{"".join(cards)}</div>'
+
+
+def tutorial_body(step: dict[str, Any], prev: Any, nxt: Any, data: dict[str, Any]) -> str:
+    """One step: what it is for, the code, and exactly what that code printed.
+
+    The output is captured at build time by ``site/_gen/generate.py``, so a step
+    whose numbers have moved shows up as a changed page rather than as prose that
+    quietly stopped being true.
+    """
+    total = len(data["tutorial"]["steps"])
+    contents = "".join(
+        f'<a class="wt-toc-i" href="{s["slug"]}.html">'
+        f'<span class="wt-toc-n">{s["n"]}</span>{html.escape(s["title"])}</a>'
+        for s in data["tutorial"]["steps"]
+    )
+    nav = []
+    if prev:
+        nav.append(
+            f'<a class="btn btn-2" href="{prev["slug"]}.html">&larr; '
+            f'{prev["n"]} · {html.escape(prev["title"])}</a>'
+        )
+    nav.append('<a class="btn btn-2" href="tutorial.html">All eight steps</a>')
+    if nxt:
+        nav.append(
+            f'<a class="btn btn-2" href="{nxt["slug"]}.html">'
+            f'{nxt["n"]} · {html.escape(nxt["title"])} &rarr;</a>'
+        )
+    else:
+        nav.append('<a class="btn" href="examples.html">Twelve worked examples &rarr;</a>')
+
+    return f"""<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Tutorial · step {step['n']} of {total}</p>
+    <h1 style="max-width:18ch">{html.escape(step['title'])}</h1>
+    <p class="lede prose mt">{html.escape(step['asks'])}</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>{html.escape(step['lede'])}</p>
+      <p><strong>{html.escape(step['beat'])}</strong></p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step {step['n']}</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>{html.escape(step['code'])}</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>{html.escape(step['output'])}</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc">{contents}</div>
+    <div class="hero-cta" style="margin-top:28px">{''.join(nav)}</div>
+  </div>
+</section>"""
+
+
 def examples_html(data: dict[str, Any]) -> str:
     """The index: one card per example, each linking to its walkthrough."""
     cards = []
@@ -680,6 +770,7 @@ def main() -> int:
         meta, body = parse_meta(frag.read_text(), frag.name)
         body = body.replace("<!--API-->", api_html(data))
         body = body.replace("<!--EXAMPLES-->", examples_html(data))
+        body = body.replace("<!--TUTORIAL-->", tutorial_html(data))
         body = body.replace("<!--BENCHMARKS-->", benchmarks_html(data))
         body = substitute(body, data, frag.name)
         page = frag.stem
@@ -692,6 +783,26 @@ def main() -> int:
         )
         (SITE / f"{page}.html").write_text(out)
         print(f"  {page}.html  ({len(out) / 1024:.0f} kB)")
+
+    # One page per tutorial step. Generated rather than authored for the same
+    # reason the example walkthroughs are: the output on the page is what the
+    # code printed when the site was built.
+    steps = data["tutorial"]["steps"]
+    for i, step in enumerate(steps):
+        out = SHELL.format(
+            title=html.escape(f"{step['n']}. {step['title']} — the axiom tutorial"),
+            description=html.escape(f"Step {step['n']} of {len(steps)}: {step['asks']}"),
+            page="tutorial-step",
+            nav=nav_html("tutorial"),
+            body=tutorial_body(
+                step,
+                steps[i - 1] if i else None,
+                steps[i + 1] if i + 1 < len(steps) else None,
+                data,
+            ),
+        )
+        (SITE / f"{step['slug']}.html").write_text(out)
+        print(f"  {step['slug']}.html  ({len(out) / 1024:.0f} kB)")
 
     # One walkthrough page per example. These are generated rather than authored:
     # their content is the record the example's own run wrote, so a page cannot
