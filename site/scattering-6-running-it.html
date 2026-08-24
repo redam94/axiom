@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>5. The experiment lands — axiom tutorial</title>
-<meta name="description" content="Step 5 of 8: What did it measure, and does the model we already had agree?">
-<meta property="og:title" content="5. The experiment lands — axiom tutorial">
-<meta property="og:description" content="Step 5 of 8: What did it measure, and does the model we already had agree?">
+<title>6. Running it — axiom tutorial</title>
+<meta name="description" content="Step 6 of 6: The counts come in. What does the experiment actually say?">
+<meta property="og:title" content="6. Running it — axiom tutorial">
+<meta property="og:description" content="Step 6 of 6: The counts come in. What does the experiment actually say?">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,17 +39,17 @@
 <main id="main">
 <section class="hero">
   <div class="wrap">
-    <p class="eyebrow">One question, carried all the way · step 5 of 8</p>
-    <h1 style="max-width:18ch">The experiment lands</h1>
-    <p class="lede prose mt">What did it measure, and does the model we already had agree?</p>
+    <p class="eyebrow">Designing an experiment before there is any data · step 6 of 6</p>
+    <h1 style="max-width:18ch">Running it</h1>
+    <p class="lede prose mt">The counts come in. What does the experiment actually say?</p>
   </div>
 </section>
 
 <section>
   <div class="wrap">
     <div class="prose">
-      <p>The trial runs. Its result arrives as one typed <code>Measurement</code> — the estimand it measured, the number, the interval, and the conditions it was measured under — rather than as a slide with a percentage on it.</p>
-      <p><strong>Before folding it in, ask whether the old model predicted it. <code>agreement</code> compares what the observational fit expected against what the experiment saw, and this is where the tutorial turns: they disagree.</strong></p>
+      <p>Every station is a Poisson draw around what the apparatus would really have produced. Then the five parameters are profiled over the one the experiment is about, and the bound is read where the likelihood has climbed far enough above its minimum.</p>
+      <p><strong>It comes back one-sided, and that is the honest shape: there is no lower limit on the radius here. Everything below the bound fits the counts equally well, because the beam cannot resolve past D/2 whatever the counting time. Rutherford published 34 fm in 1911.</strong></p>
     </div>
   </div>
 </section>
@@ -57,38 +57,48 @@
 <section>
   <div class="wrap">
     <div class="code" style="max-width:var(--measure)">
-      <div class="code-h"><span>step 5</span>
+      <div class="code-h"><span>step 6</span>
         <button class="copy" type="button">Copy</button></div>
-      <pre>from axiom.calibrate import Measurement, agreement
+      <pre>import warnings
+from axiom.design import profile_likelihood
 
-# What the world would really have shown. The analyst does not get to
-# see this; the experiment reads it through noise.
-diff = world.forward({&quot;a&quot;: DOSE}) - world.forward({&quot;a&quot;: NO_DOSE})
-truth_experiment = float(np.mean(diff[:, 0]))
-se_experiment = 0.35
-measurement = Measurement(
-    estimand=experiment_estimand,
-    estimate=truth_experiment,
-    se=se_experiment,
-    mass=0.9,
-    source=&quot;depot-maintenance-rct-2026Q2&quot;,
-)
-print(f&quot;the trial read {measurement.estimate:+.3f} &quot;
-      f&quot;{measurement.interval}&quot;)
+counts = np.random.default_rng(1911).poisson(surface.counts(plan, s.HARD_CENTRE))
+measured = dict(plan)
+measured[&quot;root_count&quot;] = 2.0 * np.sqrt(counts)
 
-says = agreement(biased, measurement, seed=SEED)
+inn = [bool(st.foil) for st in s.PLAN]
+if_diffuse = surface.counts(plan, s.DIFFUSE)
+print(f&quot;at 150 degrees: {int(counts[inn][-1]):,} counts observed&quot;)
+print(f&quot;  a diffuse atom predicts {float(if_diffuse[inn][-1]):.0f}&quot;)
+print(f&quot;  that is a Poisson excess of &quot;
+      f&quot;{(counts[inn][-1] - if_diffuse[inn][-1]) / math.sqrt(counts[inn][-1]):,.0f} sd&quot;)
+
+with warnings.catch_warnings():
+    warnings.simplefilter(&quot;ignore&quot;, RuntimeWarning)
+    values, drops = profile_likelihood(
+        s.model(), measured, {**s.HARD_CENTRE, &quot;lam&quot;: 0.0},
+        &quot;lam&quot;, grid=np.linspace(-4, 4, 41),
+    )
+drops = np.asarray(drops)
+lowest = int(np.argmin(drops))
+last = int(np.where(drops[:lowest] &gt; 1.921)[0][-1])
+crossing = float(np.interp(
+    1.921, [drops[last + 1], drops[last]], [values[last + 1], values[last]]
+))
 print()
-print(f&quot;the model we already had expected {says.posterior_mean:+.3f}&quot;)
-print(f&quot;the trial says                    {says.estimate:+.3f}&quot;)
-print(f&quot;agreement : {says.verdict}  (z = {says.z:.1f})&quot;)</pre>
+print(f&quot;R &lt; {s.radius_of(crossing) * 1e15:.1f} fm   (95%, one-sided)&quot;)
+print(f&quot;the beam could not have resolved below {s.D_CLOSEST / 2 * 1e15:.1f} fm&quot;)
+print(&quot;Rutherford published 34 fm in 1911.&quot;)</pre>
     </div>
     <div class="code" style="max-width:var(--measure);margin-top:16px">
       <div class="code-h"><span>what it printed</span></div>
-      <pre>the trial read +2.906 [2.33, 3.48] (90% WALD)
+      <pre>at 150 degrees: 94,117 counts observed
+  a diffuse atom predicts 119
+  that is a Poisson excess of 306 sd
 
-the model we already had expected +4.554
-the trial says                    +2.906
-agreement : disagrees  (z = -2.2)</pre>
+R &lt; 33.5 fm   (95%, one-sided)
+the beam could not have resolved below 29.6 fm
+Rutherford published 34 fm in 1911.</pre>
     </div>
     <p class="prose mt"><small>Every line above was captured by running this code
       at build time. The steps share one namespace, so the code on this page is
@@ -98,8 +108,8 @@ agreement : disagrees  (z = -2.2)</pre>
 
 <section>
   <div class="wrap">
-    <div class="wt-toc"><a class="wt-toc-i" href="tutorial-1-the-question.html"><span class="wt-toc-n">1</span>The question, written down</a><a class="wt-toc-i" href="tutorial-2-identification.html"><span class="wt-toc-n">2</span>Can the data we already have answer it?</a><a class="wt-toc-i" href="tutorial-3-the-prior.html"><span class="wt-toc-n">3</span>The belief we start from</a><a class="wt-toc-i" href="tutorial-4-design.html"><span class="wt-toc-n">4</span>Designing the experiment</a><a class="wt-toc-i" href="tutorial-5-measurement.html"><span class="wt-toc-n">5</span>The experiment lands</a><a class="wt-toc-i" href="tutorial-6-calibration.html"><span class="wt-toc-n">6</span>Folding the experiment into the model</a><a class="wt-toc-i" href="tutorial-7-the-follow-up.html"><span class="wt-toc-n">7</span>Planning the follow-up</a><a class="wt-toc-i" href="tutorial-8-the-report.html"><span class="wt-toc-n">8</span>The report</a></div>
-    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="tutorial-4-design.html">&larr; 4 · Designing the experiment</a><a class="btn btn-2" href="tutorial.html">All 8 steps</a><a class="btn btn-2" href="tutorial-6-calibration.html">6 · Folding the experiment into the model &rarr;</a></div>
+    <div class="wt-toc"><a class="wt-toc-i" href="scattering-1-one-parameter.html"><span class="wt-toc-n">1</span>Two atoms, one number</a><a class="wt-toc-i" href="scattering-2-which-angles.html"><span class="wt-toc-n">2</span>Where to point the counter</a><a class="wt-toc-i" href="scattering-3-the-slit.html"><span class="wt-toc-n">3</span>What shape to cut the aperture</a><a class="wt-toc-i" href="scattering-4-how-long.html"><span class="wt-toc-n">4</span>How long at each, and what the plan buys</a><a class="wt-toc-i" href="scattering-5-when-to-stop.html"><span class="wt-toc-n">5</span>When to stop</a><a class="wt-toc-i" href="scattering-6-running-it.html"><span class="wt-toc-n">6</span>Running it</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="scattering-5-when-to-stop.html">&larr; 5 · When to stop</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn" href="tutorial.html">The other tutorial &rarr;</a></div>
   </div>
 </section>
 </main>

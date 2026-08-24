@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>5. The experiment lands — axiom tutorial</title>
-<meta name="description" content="Step 5 of 8: What did it measure, and does the model we already had agree?">
-<meta property="og:title" content="5. The experiment lands — axiom tutorial">
-<meta property="og:description" content="Step 5 of 8: What did it measure, and does the model we already had agree?">
+<title>4. How long at each, and what the plan buys — axiom tutorial</title>
+<meta name="description" content="Step 4 of 6: Two hundred hours. Where do they go, and what comes back?">
+<meta property="og:title" content="4. How long at each, and what the plan buys — axiom tutorial">
+<meta property="og:description" content="Step 4 of 6: Two hundred hours. Where do they go, and what comes back?">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,17 +39,17 @@
 <main id="main">
 <section class="hero">
   <div class="wrap">
-    <p class="eyebrow">One question, carried all the way · step 5 of 8</p>
-    <h1 style="max-width:18ch">The experiment lands</h1>
-    <p class="lede prose mt">What did it measure, and does the model we already had agree?</p>
+    <p class="eyebrow">Designing an experiment before there is any data · step 4 of 6</p>
+    <h1 style="max-width:18ch">How long at each, and what the plan buys</h1>
+    <p class="lede prose mt">Two hundred hours. Where do they go, and what comes back?</p>
   </div>
 </section>
 
 <section>
   <div class="wrap">
     <div class="prose">
-      <p>The trial runs. Its result arrives as one typed <code>Measurement</code> — the estimand it measured, the number, the interval, and the conditions it was measured under — rather than as a slide with a percentage on it.</p>
-      <p><strong>Before folding it in, ask whether the old model predicted it. <code>agreement</code> compares what the observational fit expected against what the experiment saw, and this is where the tutorial turns: they disagree.</strong></p>
+      <p>The plan is nine stations in four roles: anchors that pin the multiple-scattering core, a bank where the information is, witnesses whose evidence survives the core being argued with, and a foil-out run for the background. The hours are the argument.</p>
+      <p><strong>A hundred and ten of the two hundred go to 150 degrees — the opposite of what evidence-per-hour says, and right for the reason step two gave. The bound that comes back is R &lt; 33 fm, against a floor of 29.6 fm that no amount of counting can beat, because the beam energy alone sets it.</strong></p>
     </div>
   </div>
 </section>
@@ -57,38 +57,45 @@
 <section>
   <div class="wrap">
     <div class="code" style="max-width:var(--measure)">
-      <div class="code-h"><span>step 5</span>
+      <div class="code-h"><span>step 4</span>
         <button class="copy" type="button">Copy</button></div>
-      <pre>from axiom.calibrate import Measurement, agreement
-
-# What the world would really have shown. The analyst does not get to
-# see this; the experiment reads it through noise.
-diff = world.forward({&quot;a&quot;: DOSE}) - world.forward({&quot;a&quot;: NO_DOSE})
-truth_experiment = float(np.mean(diff[:, 0]))
-se_experiment = 0.35
-measurement = Measurement(
-    estimand=experiment_estimand,
-    estimate=truth_experiment,
-    se=se_experiment,
-    mass=0.9,
-    source=&quot;depot-maintenance-rct-2026Q2&quot;,
-)
-print(f&quot;the trial read {measurement.estimate:+.3f} &quot;
-      f&quot;{measurement.interval}&quot;)
-
-says = agreement(biased, measurement, seed=SEED)
+      <pre>print(f&quot;{&#x27;angle&#x27;:&gt;8} {&#x27;role&#x27;:&gt;11} {&#x27;hours&#x27;:&gt;7}&quot;)
+for st in s.PLAN:
+    where = f&quot;{st.theta_deg:.1f}d&quot; + (&quot;&quot; if st.foil else &quot; out&quot;)
+    print(f&quot;{where:&gt;8} {st.role:&gt;11} {st.hours:7.0f}&quot;)
+print(f&quot;{&#x27;&#x27;:&gt;8} {&#x27;total&#x27;:&gt;11} {sum(x.hours for x in s.PLAN):7.0f}&quot;)
 print()
-print(f&quot;the model we already had expected {says.posterior_mean:+.3f}&quot;)
-print(f&quot;the trial says                    {says.estimate:+.3f}&quot;)
-print(f&quot;agreement : {says.verdict}  (z = {says.z:.1f})&quot;)</pre>
+
+surface = s.surface()
+plan = s.plan_data()
+mu_hard = surface.counts(plan, s.HARD_CENTRE)
+radii = np.geomspace(3.0e-14, 1.0e-12, 300)
+against = np.array([
+    float(s.weight_of_evidence(
+        mu_hard, surface.counts(plan, s.truth(s.lam_of(float(r))))
+    ).sum())
+    for r in radii
+])
+bound = float(radii[np.where(against &gt; 3.0)[0][0]])
+print(f&quot;the plan can separate a charge larger than {bound * 1e15:.1f} fm&quot;)
+print(f&quot;the beam&#x27;s own floor is                    {s.D_CLOSEST / 2 * 1e15:.1f} fm&quot;)</pre>
     </div>
     <div class="code" style="max-width:var(--measure);margin-top:16px">
       <div class="code-h"><span>what it printed</span></div>
-      <pre>the trial read +2.906 [2.33, 3.48] (90% WALD)
+      <pre>   angle        role   hours
+    1.0d      anchor       5
+    2.5d      anchor       5
+    5.0d        bank      10
+   10.0d        bank      10
+   20.0d        bank      10
+   45.0d        bank      15
+   90.0d     witness      25
+  150.0d     witness     110
+90.0d out  background      10
+               total     200
 
-the model we already had expected +4.554
-the trial says                    +2.906
-agreement : disagrees  (z = -2.2)</pre>
+the plan can separate a charge larger than 32.6 fm
+the beam&#x27;s own floor is                    29.6 fm</pre>
     </div>
     <p class="prose mt"><small>Every line above was captured by running this code
       at build time. The steps share one namespace, so the code on this page is
@@ -98,8 +105,8 @@ agreement : disagrees  (z = -2.2)</pre>
 
 <section>
   <div class="wrap">
-    <div class="wt-toc"><a class="wt-toc-i" href="tutorial-1-the-question.html"><span class="wt-toc-n">1</span>The question, written down</a><a class="wt-toc-i" href="tutorial-2-identification.html"><span class="wt-toc-n">2</span>Can the data we already have answer it?</a><a class="wt-toc-i" href="tutorial-3-the-prior.html"><span class="wt-toc-n">3</span>The belief we start from</a><a class="wt-toc-i" href="tutorial-4-design.html"><span class="wt-toc-n">4</span>Designing the experiment</a><a class="wt-toc-i" href="tutorial-5-measurement.html"><span class="wt-toc-n">5</span>The experiment lands</a><a class="wt-toc-i" href="tutorial-6-calibration.html"><span class="wt-toc-n">6</span>Folding the experiment into the model</a><a class="wt-toc-i" href="tutorial-7-the-follow-up.html"><span class="wt-toc-n">7</span>Planning the follow-up</a><a class="wt-toc-i" href="tutorial-8-the-report.html"><span class="wt-toc-n">8</span>The report</a></div>
-    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="tutorial-4-design.html">&larr; 4 · Designing the experiment</a><a class="btn btn-2" href="tutorial.html">All 8 steps</a><a class="btn btn-2" href="tutorial-6-calibration.html">6 · Folding the experiment into the model &rarr;</a></div>
+    <div class="wt-toc"><a class="wt-toc-i" href="scattering-1-one-parameter.html"><span class="wt-toc-n">1</span>Two atoms, one number</a><a class="wt-toc-i" href="scattering-2-which-angles.html"><span class="wt-toc-n">2</span>Where to point the counter</a><a class="wt-toc-i" href="scattering-3-the-slit.html"><span class="wt-toc-n">3</span>What shape to cut the aperture</a><a class="wt-toc-i" href="scattering-4-how-long.html"><span class="wt-toc-n">4</span>How long at each, and what the plan buys</a><a class="wt-toc-i" href="scattering-5-when-to-stop.html"><span class="wt-toc-n">5</span>When to stop</a><a class="wt-toc-i" href="scattering-6-running-it.html"><span class="wt-toc-n">6</span>Running it</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="scattering-3-the-slit.html">&larr; 3 · What shape to cut the aperture</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="scattering-5-when-to-stop.html">5 · When to stop &rarr;</a></div>
   </div>
 </section>
 </main>

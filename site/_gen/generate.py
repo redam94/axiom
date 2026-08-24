@@ -2203,35 +2203,301 @@ def rutherford() -> Any:
 # tutorial: one problem carried through all eight phases, a step at a time
 # ----------------------------------------------------------------------------------
 
-#: The tutorial's steps, in order. Each is a snippet run into the *same* namespace
-#: as the ones before it, so the page's code is the code a reader would type in
-#: sequence rather than eight disconnected demonstrations. That sharing is the
-#: whole point: the fit from step 3 is what step 6 recalibrates, and a tutorial
-#: whose steps do not carry state is a tour with numbers in it.
-#:
-#: `nbs/tutorial/01-the-whole-loop.ipynb` is the same problem at full length. This
-#: is the distilled path — one move per step, so a reader gets the shape before
-#: they get the detail.
-TUTORIAL_STEPS: list[dict[str, Any]] = [
+#: GEIGER-1911, a step to a page. The case study's own world module does the
+#: physics (``nbs/case-studies/rutherford/scattering.py``); every step below is a
+#: decision about the apparatus, taken against it.
+SCATTERING_STEPS: list[dict[str, Any]] = [
     {
-        "slug": "tutorial-1-the-question",
-        "title": "The question, written down",
-        "asks": "What are we actually deciding, and what would 'yes' have to beat?",
+        "slug": "scattering-1-one-parameter",
+        "title": "Two atoms, one number",
+        "asks": "How do you get resolving power against a question nobody has measured?",
         "lede": (
-            "A logistics operator runs 40 depots in one region and 500 nationally. "
-            "Should the standing weekly maintenance schedule go from nothing to 60 "
-            "hours per depot? Before any data is touched, the decision has to be "
-            "written down as a quantity — because the number that answers it is not "
-            "the number an experiment can most easily measure."
+            "In 1910 there were two pictures of the atom and no experiment between "
+            "them. A hard positive centre and a charge smeared through the whole atom "
+            "both fitted everything anyone had. You cannot design against a debate — "
+            "so the first move is to find the number the two pictures disagree about."
         ),
         "beat": (
-            "Two estimands, not one. The experiment can measure a first-week lift on "
-            "individual depots; the decision turns on a steady-state weekly lift "
-            "across the region. They are different windows and different levels, and "
-            "keeping them apart from the first line is what stops the report answering "
-            "the easy question and calling it the hard one."
+            "They are one model at two values of the radius R of the positive charge, "
+            "six decades apart. An alpha stopped head-on gets no closer than D; one "
+            "scattered through an angle gets no closer than a known multiple of it; so "
+            "a charge of radius R kills the scattering past a cut-off angle. Turning "
+            "the debate into a parameter is what makes everything after this possible."
         ),
         "code": """
+            import sys
+            sys.path.insert(0, "nbs/case-studies/rutherford")
+            import scattering as s
+
+            print(f"closest approach D        : {s.D_CLOSEST * 1e15:.1f} fm")
+            print(f"a hard centre would be    : {s.R_NUCLEUS * 1e15:.1f} fm")
+            print(f"a diffuse atom would be   : {s.R_ATOM * 1e15:,.0f} fm")
+            print()
+            for name, radius in (("hard centre", s.R_NUCLEUS), ("diffuse atom", s.R_ATOM)):
+                sine = s.cutoff_sine(radius)
+                where = "no cut-off in range" if sine >= 1.0 else f"{sine:.2e}"
+                print(f"{name:14s} sin(theta_cut/2) = {where}")
+            print()
+            print("the two hypotheses are two values of one parameter, lam:")
+            print(f"  hard centre  lam = {s.LAM_HARD:+.2f}")
+            print(f"  diffuse atom lam = {s.LAM_DIFFUSE:+.2f}")
+        """,
+    },
+    {
+        "slug": "scattering-2-which-angles",
+        "title": "Where to point the counter",
+        "asks": "Which angles carry the evidence — and which carry it under attack?",
+        "lede": (
+            "Evidence per hour is easy to compute: how many nats an hour at each angle "
+            "buys, if you believe the model. Follow it and you put the whole budget "
+            "where the counts are. That is the trap this step exists to name."
+        ),
+        "beat": (
+            "Evidence-per-hour is computed *inside the model that is under attack*. An "
+            "objector who says the multiple-scattering core is wider than you fitted "
+            "takes most of it away. `surviving_evidence` asks what is left when they "
+            "do — and the answer is a different set of angles, far out in the tail."
+        ),
+        "code": """
+            import numpy as np
+
+            angles = np.array([1.0, 2.5, 5.0, 10.0, 20.0, 45.0, 90.0, 150.0])
+            omega = s.widest_aperture(angles, s.HARD_CENTRE)
+
+            believed = s.weight_of_evidence(
+                s.rate_per_steradian(angles, s.HARD_CENTRE) * omega * 3600.0,
+                s.rate_per_steradian(angles, s.DIFFUSE) * omega * 3600.0,
+            )
+            attacked, _ = s.surviving_evidence(angles, omega, 3600.0)
+
+            print(f"{'angle':>8} {'nats/h believed':>18} {'nats/h attacked':>18}")
+            for a, b, k in zip(angles, believed, attacked):
+                print(f"{a:7.1f}d {b:18,.0f} {k:18,.1f}")
+            print()
+            best_believed = angles[int(np.argmax(believed))]
+            best_attacked = angles[int(np.argmax(attacked))]
+            print(f"believe the model, and the best angle is {best_believed:.1f} degrees")
+            print(f"let it be attacked, and it is       {best_attacked:.1f} degrees")
+        """,
+    },
+    {
+        "slug": "scattering-3-the-slit",
+        "title": "What shape to cut the aperture",
+        "asks": "Same solid angle, same counts — does the shape matter?",
+        "lede": (
+            "A counter needs a hole to look through, and a bigger hole means more "
+            "counts. The obvious hole is round. The scattering does not depend on "
+            "azimuth, though, which means the two directions of a hole are not "
+            "equivalent at all."
+        ),
+        "beat": (
+            "Only the radial half-width smears the angle; azimuth is free resolution. "
+            "So hold the radial width at the workshop's floor and take every extra "
+            "steradian out in arc. A round hole of the same area at 90 degrees would "
+            "have to be many degrees wide and would report a rate belonging to no "
+            "angle in particular — the same counts, at a fraction of the resolution."
+        ),
+        "code": """
+            print(f"{'angle':>7} {'radial':>9} {'arc':>9} {'slot bias':>11} {'hole bias':>11}")
+            for theta in (5.0, 45.0, 90.0, 150.0):
+                omega_here = float(s.widest_aperture([theta], s.HARD_CENTRE)[0])
+                half, arc = s.slit_for(theta, omega_here)
+                slot = 100.0 * s.aperture_bias(theta, half, arc, s.HARD_CENTRE)
+                # a round hole of the same solid angle: equal in both directions
+                hole = np.degrees(np.sqrt(omega_here / np.pi))
+                hole_bias = 100.0 * s.aperture_bias(theta, hole, 2 * hole, s.HARD_CENTRE)
+                print(f"{theta:6.1f}d {half:8.2f}d {arc:8.1f}d "
+                      f"{slot:10.3f}% {hole_bias:10.2f}%")
+            print()
+            print("same solid angle, same counts. the slot reports the angle it is at;")
+            print("the hole reports an average over everything it can see.")
+        """,
+    },
+    {
+        "slug": "scattering-4-how-long",
+        "title": "How long at each, and what the plan buys",
+        "asks": "Two hundred hours. Where do they go, and what comes back?",
+        "lede": (
+            "The plan is nine stations in four roles: anchors that pin the "
+            "multiple-scattering core, a bank where the information is, witnesses whose "
+            "evidence survives the core being argued with, and a foil-out run for the "
+            "background. The hours are the argument."
+        ),
+        "beat": (
+            "A hundred and ten of the two hundred go to 150 degrees — the opposite of "
+            "what evidence-per-hour says, and right for the reason step two gave. The "
+            "bound that comes back is R < 33 fm, against a floor of 29.6 fm that no "
+            "amount of counting can beat, because the beam energy alone sets it."
+        ),
+        "code": """
+            print(f"{'angle':>8} {'role':>11} {'hours':>7}")
+            for st in s.PLAN:
+                where = f"{st.theta_deg:.1f}d" + ("" if st.foil else " out")
+                print(f"{where:>8} {st.role:>11} {st.hours:7.0f}")
+            print(f"{'':>8} {'total':>11} {sum(x.hours for x in s.PLAN):7.0f}")
+            print()
+
+            surface = s.surface()
+            plan = s.plan_data()
+            mu_hard = surface.counts(plan, s.HARD_CENTRE)
+            radii = np.geomspace(3.0e-14, 1.0e-12, 300)
+            against = np.array([
+                float(s.weight_of_evidence(
+                    mu_hard, surface.counts(plan, s.truth(s.lam_of(float(r))))
+                ).sum())
+                for r in radii
+            ])
+            bound = float(radii[np.where(against > 3.0)[0][0]])
+            print(f"the plan can separate a charge larger than {bound * 1e15:.1f} fm")
+            print(f"the beam's own floor is                    {s.D_CLOSEST / 2 * 1e15:.1f} fm")
+        """,
+    },
+    {
+        "slug": "scattering-5-when-to-stop",
+        "title": "When to stop",
+        "asks": "The witness runs for 110 hours. Do you have to wait?",
+        "lede": (
+            "A hundred and ten hours at one angle is a long time to learn nothing you "
+            "could not have learned in thirty. The same sequential machinery that stops "
+            "a clinical trial early applies here: look at the witness on a schedule, "
+            "against a boundary that spends the error rate across the looks."
+        ),
+        "beat": (
+            "The boundary is what makes looking legitimate. Peeking at a running count "
+            "and stopping when it looks good is how you manufacture a discovery; an "
+            "O'Brien-Fleming boundary is the price of being allowed to look at all."
+        ),
+        "code": """
+            import math
+            from axiom.design import (
+                LookSchedule, StoppingRule, information_fractions,
+                obrien_fleming, operating_characteristics,
+            )
+
+            look_hours = (5.0, 15.0, 30.0, 60.0, 110.0)
+            looks = LookSchedule(
+                labels=tuple(f"{h:g} h" for h in look_hours),
+                information=information_fractions(look_hours),
+            )
+            boundary = obrien_fleming(0.05, looks, side="upper", kind="efficacy")
+            rule = StoppingRule(name="witness_150", looks=looks, boundaries=(boundary,))
+
+            print(f"{'look':>8} {'information':>12} {'stop above z':>13}")
+            for label, frac, z in zip(looks.labels, looks.information, boundary.z):
+                print(f"{label:>8} {frac:12.2f} {z:13.3f}")
+
+            signal = float(
+                s.rate_per_steradian([150.0], s.HARD_CENTRE)[0] - s.BACKGROUND_DENSITY
+            ) * s.OMEGA_MAX
+            background = s.BACKGROUND_DENSITY * s.OMEGA_MAX
+            full = 110 * 3600.0
+            print()
+            for factor in (1.0, 1e-3, 1e-4):
+                drift = signal * factor * full / math.sqrt((signal * factor + background) * full)
+                oc = operating_characteristics(rule, drift=drift)
+                print(f"a source {factor:7.0e} of the modelled one: "
+                      f"P(stop) = {oc.crossings.stop_probability:.3f}")
+        """,
+    },
+    {
+        "slug": "scattering-6-running-it",
+        "title": "Running it",
+        "asks": "The counts come in. What does the experiment actually say?",
+        "lede": (
+            "Every station is a Poisson draw around what the apparatus would really "
+            "have produced. Then the five parameters are profiled over the one the "
+            "experiment is about, and the bound is read where the likelihood has "
+            "climbed far enough above its minimum."
+        ),
+        "beat": (
+            "It comes back one-sided, and that is the honest shape: there is no lower "
+            "limit on the radius here. Everything below the bound fits the counts "
+            "equally well, because the beam cannot resolve past D/2 whatever the "
+            "counting time. Rutherford published 34 fm in 1911."
+        ),
+        "code": """
+            import warnings
+            from axiom.design import profile_likelihood
+
+            counts = np.random.default_rng(1911).poisson(surface.counts(plan, s.HARD_CENTRE))
+            measured = dict(plan)
+            measured["root_count"] = 2.0 * np.sqrt(counts)
+
+            inn = [bool(st.foil) for st in s.PLAN]
+            if_diffuse = surface.counts(plan, s.DIFFUSE)
+            print(f"at 150 degrees: {int(counts[inn][-1]):,} counts observed")
+            print(f"  a diffuse atom predicts {float(if_diffuse[inn][-1]):.0f}")
+            print(f"  that is a Poisson excess of "
+                  f"{(counts[inn][-1] - if_diffuse[inn][-1]) / math.sqrt(counts[inn][-1]):,.0f} sd")
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+                values, drops = profile_likelihood(
+                    s.model(), measured, {**s.HARD_CENTRE, "lam": 0.0},
+                    "lam", grid=np.linspace(-4, 4, 41),
+                )
+            drops = np.asarray(drops)
+            lowest = int(np.argmin(drops))
+            last = int(np.where(drops[:lowest] > 1.921)[0][-1])
+            crossing = float(np.interp(
+                1.921, [drops[last + 1], drops[last]], [values[last + 1], values[last]]
+            ))
+            print()
+            print(f"R < {s.radius_of(crossing) * 1e15:.1f} fm   (95%, one-sided)")
+            print(f"the beam could not have resolved below {s.D_CLOSEST / 2 * 1e15:.1f} fm")
+            print("Rutherford published 34 fm in 1911.")
+        """,
+    },
+]
+
+
+#: The tutorial series. Each is one problem carried through every phase it has
+#: to survive, a step to a page, and each step's snippet runs into the *same*
+#: namespace as the ones before it in its own series. That sharing is the whole
+#: point: a tutorial whose steps do not carry state is a tour with numbers in it.
+#:
+#: Two of them, because the two shapes of causal work read differently. The depot
+#: problem is an *analysis* story — the data is already there and the question is
+#: whether it can answer anything. GEIGER-1911 is a *design* story: there is no
+#: data at all, and every decision is about what to go and measure.
+TUTORIALS: list[dict[str, Any]] = [
+    {
+        "key": "depot",
+        "title": "One question, carried all the way",
+        "kind": "An analysis story",
+        "asks": "The data is already here. Can it answer anything?",
+        "problem": (
+            "A logistics operator runs 40 distribution depots in one region and 500 "
+            "nationally. Should the standing weekly maintenance schedule go from "
+            "nothing to 60 hours per depot?"
+        ),
+        "lede": (
+            "Identification refuses the panel on hand, so an experiment is designed, "
+            "sized against the boundary the decision turns on, and run. Its answer is "
+            "folded back into the model — and it reverses the decision the "
+            "observational fit would have made."
+        ),
+        "notebook": "nbs/tutorial/01-the-whole-loop.ipynb",
+        "steps": [
+            {
+                "slug": "tutorial-1-the-question",
+                "title": "The question, written down",
+                "asks": "What are we actually deciding, and what would 'yes' have to beat?",
+                "lede": (
+                    "A logistics operator runs 40 depots in one region and 500 nationally. "
+                    "Should the standing weekly maintenance schedule go from nothing to 60 "
+                    "hours per depot? Before any data is touched, the decision has to be "
+                    "written down as a quantity — because the number that answers it is not "
+                    "the number an experiment can most easily measure."
+                ),
+                "beat": (
+                    "Two estimands, not one. The experiment can measure a first-week lift on "
+                    "individual depots; the decision turns on a steady-state weekly lift "
+                    "across the region. They are different windows and different levels, and "
+                    "keeping them apart from the first line is what stops the report answering "
+                    "the easy question and calling it the hard one."
+                ),
+                "code": """
             from axiom.core import Intervention, Population, TimeWindow
             from axiom.estimands import Estimand, Level, Quantity
             from axiom.sim import DosePlan, surface_world
@@ -2281,23 +2547,23 @@ TUTORIAL_STEPS: list[dict[str, Any]] = [
                   f"= {DOSE * COST_PER_HOUR:,.0f} USD per depot-week")
             print(f"break-even steady-state lift: {BREAK_EVEN:.2f} index points per depot-week")
         """,
-    },
-    {
-        "slug": "tutorial-2-identification",
-        "title": "Can the data we already have answer it?",
-        "asks": "Is the effect identified from the panel already on hand?",
-        "lede": (
-            "The operator has a panel: depots, weeks, maintenance hours, an outcome "
-            "index. The temptation is to fit it. The question axiom asks first is "
-            "whether that panel can produce the number the decision needs at all."
-        ),
-        "beat": (
-            "It cannot. Depots that were already doing well got more maintenance hours, "
-            "and the thing that drove both was never recorded. `identify` says so and "
-            "names what it would need — which is the answer that saves the money, "
-            "because the alternative is a fitted number nobody can defend."
-        ),
-        "code": """
+            },
+            {
+                "slug": "tutorial-2-identification",
+                "title": "Can the data we already have answer it?",
+                "asks": "Is the effect identified from the panel already on hand?",
+                "lede": (
+                    "The operator has a panel: depots, weeks, maintenance hours, an outcome "
+                    "index. The temptation is to fit it. The question axiom asks first is "
+                    "whether that panel can produce the number the decision needs at all."
+                ),
+                "beat": (
+                    "It cannot. Depots that were already doing well got more maintenance hours, "
+                    "and the thing that drove both was never recorded. `identify` says so and "
+                    "names what it would need — which is the answer that saves the money, "
+                    "because the alternative is a fitted number nobody can defend."
+                ),
+                "code": """
             from axiom.identify import CausalGraph, identify
 
             observed = CausalGraph.from_edges(
@@ -2313,23 +2579,23 @@ TUTORIAL_STEPS: list[dict[str, Any]] = [
                 print(f"  [{a.state}] {a.name}")
                 print(f"     {a.statement}")
         """,
-    },
-    {
-        "slug": "tutorial-3-the-prior",
-        "title": "The belief we start from",
-        "asks": "What does the observational fit say, and how much should we trust it?",
-        "lede": (
-            "An unidentified number is still a belief, and pretending to have none is "
-            "not neutrality. The observational fit is run — and then inflated, because "
-            "a confounded estimate that reports its nominal precision is the most "
-            "dangerous object in the analysis."
-        ),
-        "beat": (
-            "This is the number the experiment will be measured against. Write it down "
-            "now, with its inflation stated, so that later there is something for the "
-            "measurement to disagree with."
-        ),
-        "code": """
+            },
+            {
+                "slug": "tutorial-3-the-prior",
+                "title": "The belief we start from",
+                "asks": "What does the observational fit say, and how much should we trust it?",
+                "lede": (
+                    "An unidentified number is still a belief, and pretending to have none is "
+                    "not neutrality. The observational fit is run — and then inflated, because "
+                    "a confounded estimate that reports its nominal precision is the most "
+                    "dangerous object in the analysis."
+                ),
+                "beat": (
+                    "This is the number the experiment will be measured against. Write it down "
+                    "now, with its inflation stated, so that later there is something for the "
+                    "measurement to disagree with."
+                ),
+                "code": """
 
             import numpy as np
             from axiom.data import Panel
@@ -2362,23 +2628,23 @@ TUTORIAL_STEPS: list[dict[str, Any]] = [
             print(f"  break-even is {BREAK_EVEN:.2f}")
             print(f"  -> on this reading, fund it.")
         """,
-    },
-    {
-        "slug": "tutorial-4-design",
-        "title": "Designing the experiment",
-        "asks": "How big does the trial need to be, and is the answer worth its cost?",
-        "lede": (
-            "Four questions in order: what effect to power for, how many depots that "
-            "takes, what the answer is worth, and which concrete design buys it "
-            "cheapest. Powering for the effect you hope for is how trials get "
-            "commissioned that cannot fail informatively."
-        ),
-        "beat": (
-            "The effect worth detecting is the break-even, not the point estimate — "
-            "the experiment has to distinguish 'worth funding' from 'not', and that "
-            "boundary is where the precision has to land."
-        ),
-        "code": """
+            },
+            {
+                "slug": "tutorial-4-design",
+                "title": "Designing the experiment",
+                "asks": "How big does the trial need to be, and is the answer worth its cost?",
+                "lede": (
+                    "Four questions in order: what effect to power for, how many depots that "
+                    "takes, what the answer is worth, and which concrete design buys it "
+                    "cheapest. Powering for the effect you hope for is how trials get "
+                    "commissioned that cannot fail informatively."
+                ),
+                "beat": (
+                    "The effect worth detecting is the break-even, not the point estimate — "
+                    "the experiment has to distinguish 'worth funding' from 'not', and that "
+                    "boundary is where the precision has to land."
+                ),
+                "code": """
 
             from axiom.design import DecisionSpec, ValuePerOutcome, evoi_gaussian, sample_size
 
@@ -2421,22 +2687,22 @@ TUTORIAL_STEPS: list[dict[str, Any]] = [
             print(f"perfect information would be worth : {ev.evpi:,.0f} USD")
             print(f"this experiment, at se=0.35        : {ev.evsi:,.0f} USD")
         """,
-    },
-    {
-        "slug": "tutorial-5-measurement",
-        "title": "The experiment lands",
-        "asks": "What did it measure, and does the model we already had agree?",
-        "lede": (
-            "The trial runs. Its result arrives as one typed `Measurement` — the "
-            "estimand it measured, the number, the interval, and the conditions it was "
-            "measured under — rather than as a slide with a percentage on it."
-        ),
-        "beat": (
-            "Before folding it in, ask whether the old model predicted it. `agreement` "
-            "compares what the observational fit expected against what the experiment "
-            "saw, and this is where the tutorial turns: they disagree."
-        ),
-        "code": """
+            },
+            {
+                "slug": "tutorial-5-measurement",
+                "title": "The experiment lands",
+                "asks": "What did it measure, and does the model we already had agree?",
+                "lede": (
+                    "The trial runs. Its result arrives as one typed `Measurement` — the "
+                    "estimand it measured, the number, the interval, and the conditions it was "
+                    "measured under — rather than as a slide with a percentage on it."
+                ),
+                "beat": (
+                    "Before folding it in, ask whether the old model predicted it. `agreement` "
+                    "compares what the observational fit expected against what the experiment "
+                    "saw, and this is where the tutorial turns: they disagree."
+                ),
+                "code": """
 
             from axiom.calibrate import Measurement, agreement
 
@@ -2461,23 +2727,23 @@ TUTORIAL_STEPS: list[dict[str, Any]] = [
             print(f"the trial says                    {says.estimate:+.3f}")
             print(f"agreement : {says.verdict}  (z = {says.z:.1f})")
         """,
-    },
-    {
-        "slug": "tutorial-6-calibration",
-        "title": "Folding the experiment into the model",
-        "asks": "What does the model say once it has to honour the measurement?",
-        "lede": (
-            "Refit the surface under the constraint that it reproduce what the trial "
-            "saw. The result is a model that agrees with the experiment on the "
-            "experiment's own terms — and can then be asked the decision's question, "
-            "which the experiment never measured directly."
-        ),
-        "beat": (
-            "Every step of that transfer is written to a ledger: the window it crossed, "
-            "the level it aggregated to, the carryover it assumed. The decision's number "
-            "is reported with the ledger attached or it is not reported."
-        ),
-        "code": """
+            },
+            {
+                "slug": "tutorial-6-calibration",
+                "title": "Folding the experiment into the model",
+                "asks": "What does the model say once it has to honour the measurement?",
+                "lede": (
+                    "Refit the surface under the constraint that it reproduce what the trial "
+                    "saw. The result is a model that agrees with the experiment on the "
+                    "experiment's own terms — and can then be asked the decision's question, "
+                    "which the experiment never measured directly."
+                ),
+                "beat": (
+                    "Every step of that transfer is written to a ledger: the window it crossed, "
+                    "the level it aggregated to, the carryover it assumed. The decision's number "
+                    "is reported with the ledger attached or it is not reported."
+                ),
+                "code": """
 
             from axiom.calibrate import fit_calibrated
 
@@ -2499,22 +2765,22 @@ TUTORIAL_STEPS: list[dict[str, Any]] = [
             print(f"the observational model said : {said}")
             print(f"the experiment says          : {says_now}")
         """,
-    },
-    {
-        "slug": "tutorial-7-the-follow-up",
-        "title": "Planning the follow-up",
-        "asks": "Should we repeat this, when does it go stale, and what next?",
-        "lede": (
-            "A decision made once is a decision that decays. The same design machinery "
-            "that sized the first trial says when this answer stops being usable and "
-            "what the next dose worth testing is."
-        ),
-        "beat": (
-            "The answer is not 'run it again annually because that is the budget "
-            "cycle'. It is a number: how long before the value of a fresh answer "
-            "exceeds what a fresh answer costs."
-        ),
-        "code": """
+            },
+            {
+                "slug": "tutorial-7-the-follow-up",
+                "title": "Planning the follow-up",
+                "asks": "Should we repeat this, when does it go stale, and what next?",
+                "lede": (
+                    "A decision made once is a decision that decays. The same design machinery "
+                    "that sized the first trial says when this answer stops being usable and "
+                    "what the next dose worth testing is."
+                ),
+                "beat": (
+                    "The answer is not 'run it again annually because that is the budget "
+                    "cycle'. It is a number: how long before the value of a fresh answer "
+                    "exceeds what a fresh answer costs."
+                ),
+                "code": """
 
             from axiom.design import time_to_re_experiment
 
@@ -2528,23 +2794,23 @@ TUTORIAL_STEPS: list[dict[str, Any]] = [
             print(f"  today it would gain {timing.eig_now:.3f} nats, "
                   f"against a bar of 0.5")
         """,
-    },
-    {
-        "slug": "tutorial-8-the-report",
-        "title": "The report",
-        "asks": "How does the whole of this become a document someone can check?",
-        "lede": (
-            "Every number above was produced by a typed result carrying its own "
-            "provenance. `axiom-dossier` turns that record into a document: methods "
-            "from the steps, results from the quantities, limitations from the "
-            "assumptions still standing."
-        ),
-        "beat": (
-            "The point is not that a report gets written. It is that the report "
-            "cannot describe an analysis nobody ran, cannot state a number the record "
-            "does not hold, and cannot quietly omit the assumption doing the most work."
-        ),
-        "code": """
+            },
+            {
+                "slug": "tutorial-8-the-report",
+                "title": "The report",
+                "asks": "How does the whole of this become a document someone can check?",
+                "lede": (
+                    "Every number above was produced by a typed result carrying its own "
+                    "provenance. `axiom-dossier` turns that record into a document: methods "
+                    "from the steps, results from the quantities, limitations from the "
+                    "assumptions still standing."
+                ),
+                "beat": (
+                    "The point is not that a report gets written. It is that the report "
+                    "cannot describe an analysis nobody ran, cannot state a number the record "
+                    "does not hold, and cannot quietly omit the assumption doing the most work."
+                ),
+                "code": """
 
             from axiom_dossier import EvidenceBuilder, build
 
@@ -2574,17 +2840,39 @@ TUTORIAL_STEPS: list[dict[str, Any]] = [
             for q in evidence.findings:
                 print(f"  {q.label}: {q.stated()}  [{q.against_threshold()}]")
         """,
+            },
+        ],
+    },
+    {
+        "key": "scattering",
+        "title": "Designing an experiment before there is any data",
+        "kind": "A design story",
+        "asks": "There is no data. What should we go and measure?",
+        "problem": (
+            "Is the positive charge of an atom concentrated in a small hard centre, or "
+            "spread through the whole atom? Both models fit everything known in 1910. "
+            "What experiment would tell them apart — and specifically, which scattering "
+            "angles, what shape of aperture, and for how long?"
+        ),
+        "lede": (
+            "Nothing here is an analysis. Every step decides what to go and measure, "
+            "and the whole argument turns on noticing that the two rival atoms are one "
+            "model at two values of one number. That is what gives the experiment a "
+            "resolving power, a sensitivity curve, and a rule for when to stop."
+        ),
+        "notebook": "nbs/case-studies/rutherford/",
+        "steps": SCATTERING_STEPS,
     },
 ]
 
 
 @section
 def tutorial() -> Any:
-    """Run the eight steps in one namespace and keep what each of them printed.
+    """Run every series, a step at a time, and keep what each step printed.
 
-    Threading a single ``env`` through is what makes this a tutorial rather than
-    a tour: step 6 recalibrates the fit step 3 produced, and a reader following
-    along in a REPL has exactly the state the page shows.
+    Each series gets its own ``env``, and every step inside it runs into that
+    one: step 6 of the depot tutorial recalibrates the fit step 3 produced, and
+    a reader following along in a REPL has exactly the state the page shows.
 
     A step that raises stops the build. That is deliberate and it is the whole
     value of generating these pages: a tutorial that has drifted from the library
@@ -2594,42 +2882,39 @@ def tutorial() -> Any:
     import io as _io
     import textwrap
 
-    env: dict[str, Any] = {}
-    steps = []
-    for i, step in enumerate(TUTORIAL_STEPS, start=1):
-        code = textwrap.dedent(step["code"]).strip("\n")
-        buf = _io.StringIO()
-        try:
-            with contextlib.redirect_stdout(buf):
-                exec(compile(code, f"<tutorial:{step['slug']}>", "exec"), env)  # noqa: S102
-        except Exception as exc:
-            raise SystemExit(
-                f"tutorial step {i} ({step['slug']}) failed: {type(exc).__name__}: {exc}\n"
-                f"  output before the failure:\n{buf.getvalue()}"
-            ) from exc
-        output = buf.getvalue().rstrip("\n")
-        steps.append(
-            {
-                "n": i,
-                "slug": step["slug"],
-                "title": step["title"],
-                "asks": step["asks"],
-                "lede": step["lede"],
-                "beat": step["beat"],
-                "code": code,
-                "output": output,
-            }
-        )
-        print(f"    {i}. {step['title']}: {len(output.splitlines())} lines")
-    return {
-        "problem": (
-            "A logistics operator runs 40 distribution depots in one region and 500 "
-            "nationally. Should the standing weekly maintenance schedule go from "
-            "nothing to 60 hours per depot?"
-        ),
-        "notebook": "nbs/tutorial/01-the-whole-loop.ipynb",
-        "steps": steps,
-    }
+    series = []
+    for spec in TUTORIALS:
+        env: dict[str, Any] = {}
+        steps = []
+        print(f"    [{spec['key']}]")
+        for i, step in enumerate(spec["steps"], start=1):
+            code = textwrap.dedent(step["code"]).strip("\n")
+            buf = _io.StringIO()
+            try:
+                with contextlib.redirect_stdout(buf):
+                    exec(compile(code, f"<tutorial:{step['slug']}>", "exec"), env)  # noqa: S102
+            except Exception as exc:
+                raise SystemExit(
+                    f"tutorial step {i} ({step['slug']}) failed: "
+                    f"{type(exc).__name__}: {exc}\n"
+                    f"  output before the failure:\n{buf.getvalue()}"
+                ) from exc
+            output = buf.getvalue().rstrip("\n")
+            steps.append(
+                {
+                    "n": i,
+                    "slug": step["slug"],
+                    "title": step["title"],
+                    "asks": step["asks"],
+                    "lede": step["lede"],
+                    "beat": step["beat"],
+                    "code": code,
+                    "output": output,
+                }
+            )
+            print(f"      {i}. {step['title']}: {len(output.splitlines())} lines")
+        series.append({k: v for k, v in spec.items() if k != "steps"} | {"steps": steps})
+    return {"series": series, "n": len(series)}
 
 
 # ----------------------------------------------------------------------------------
