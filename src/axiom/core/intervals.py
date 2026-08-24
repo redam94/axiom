@@ -15,6 +15,7 @@ import numpy as np
 import numpy.typing as npt
 from pydantic import field_validator
 
+from axiom.core.rounding import format_interval, format_measured
 from axiom.core.spec import Spec
 
 __all__ = [
@@ -58,12 +59,36 @@ class Interval(Spec):
     def width(self) -> float:
         return self.upper - self.lower
 
+    @property
+    def half_width(self) -> float:
+        """The ``±`` a reader converts the interval to, and its resolution.
+
+        This is what every printed form of the interval — and of the estimate
+        it belongs to — rounds against: digits below it distinguish nothing.
+        """
+        return 0.5 * (self.upper - self.lower)
+
     def contains(self, x: float) -> bool:
         return self.lower <= x <= self.upper
 
-    def __str__(self) -> str:
+    def text(self, uncertainty: float | None = None) -> str:
+        """The bounds at the precision the width supports, then what it means.
+
+        Six digits of a bound whose half-width is half a unit invited a reader
+        to compare two intervals on digits that were arithmetic; the definition
+        and mass stay, because gate 6 is that an interval never prints without
+        them.
+
+        ``uncertainty`` is for a caller that knows a finer scale than the band —
+        the standard error the band was built from — and is showing the two side
+        by side, where one resolution for both is the only readable choice.
+        """
         pct = int(round(self.mass * 100))
-        return f"[{self.lower:.6g}, {self.upper:.6g}] ({pct}% {self.definition.upper()})"
+        bounds = format_interval(self.lower, self.upper, uncertainty=uncertainty)
+        return f"{bounds} ({pct}% {self.definition.upper()})"
+
+    def __str__(self) -> str:
+        return self.text()
 
 
 class Summary(Spec):
@@ -74,6 +99,18 @@ class Summary(Spec):
     sd: float
     interval: Interval
     n: int
+
+    def __str__(self) -> str:
+        """``mean ± sd`` and the interval, all at the resolution ``sd`` states.
+
+        The mean of four thousand draws is a number with fifteen digits and two
+        of them are the posterior; printing the rest reads as precision the
+        draws do not contain.
+        """
+        return (
+            f"{format_measured(self.mean, self.sd)} ± {format_measured(self.sd, self.sd)} "
+            f"{self.interval} from {self.n} draws"
+        )
 
 
 def _draws_1d(draws: npt.ArrayLike) -> npt.NDArray[np.float64]:

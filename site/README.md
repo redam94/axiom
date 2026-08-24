@@ -1,9 +1,15 @@
 # site/ — the axiom marketing and demonstration site
 
-A static site, hostable on GitHub Pages with no build step at serve time. Ten
+A static site, hostable on GitHub Pages with no build step at serve time. Eleven
 authored pages -- a landing page, one per pillar, the examples index, the
-benchmarks, the HYPER-3 case study and a searchable API map -- plus one generated
+benchmarks, two case studies and a searchable API map -- plus one generated
 walkthrough page per example in `examples/`.
+
+The two case studies are deliberately opposite shapes. **HYPER-3** is an analysis
+story: a trial runs and a stopping rule fires. **GEIGER-1911** is a design one --
+nothing is fitted until the last section, because the deliverable is a set of
+angles, an aperture geometry, a time allocation and a stopping rule, all produced
+before an apparatus exists.
 
 The rule the site is built on is the library's own fourth rule — **every number
 carries its provenance.** Nothing here is typed by hand. Every figure and every
@@ -16,7 +22,7 @@ the call that made it.
 site/
   index.html  identify.html  design.html  calibrate.html  surface.html
   meta.html  examples.html  benchmarks.html              <- generated; committed
-  case-study.html  api.html
+  case-study.html  rutherford.html  api.html
   example-01-....html ... example-12-....html            <- one per walkthrough,
                                                             generated from data
   _src/*.html          content fragments (edit these)
@@ -41,9 +47,34 @@ python site/_gen/generate.py identify design
 # 2. re-render the pages from the fragments
 python site/_gen/build.py
 
-# 3. look at it
+# 3. check that the charts actually draw (renders all 64 headlessly; exits 1 on a problem)
+node site/_gen/check.js
+
+# 4. look at it
 python -m http.server 8000 --directory site
 ```
+
+## Checking the charts
+
+`build.py` verifies that a chart's data *path* resolves. It cannot verify that the
+picture comes out right, because the drawing happens in the reader's browser.
+`check.js` closes that gap: a DOM stub thin enough to run `assets/charts.js`
+unmodified, three assertions over the SVG it produces, and a non-zero exit.
+
+It catches what a browser would show and nothing else would:
+
+- **A mark painted outside the plot.** `.chart svg` is `overflow: visible` and an
+  SVG group paints wherever its coordinates say, so a chart whose geometry is not
+  derived from its own domain paints across the page. A funnel's contours are
+  computed from the pooled estimate and the largest standard error, not from the
+  studies — they ran 306px past the left edge of a 630px plot and over the prose
+  beside it. `frame()` now hands out a clipped `marks` layer for geometry that can
+  exceed its domain; annotations stay in `g`, because a direct series label
+  belongs outside the plot rectangle on purpose.
+- **An axis with one tick.** `ticks()` returned `[lo]` whenever `hi < lo`, so a
+  descending domain — a funnel's standard error, which grows downward — drew a
+  single meaningless label and no gridlines.
+- **Anything that throws.**
 
 ## Where the API page comes from
 

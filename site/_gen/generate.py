@@ -1826,6 +1826,32 @@ def casestudy() -> Any:
             "challenged_by": jsonable(line.assumption.challenged_by),
         },
         "operating_characteristics": oc_rows,
+        # -- the same numbers, shaped for the charts that draw them ---------------------
+        # The rule's power curve: how often it fires against how much harm is really
+        # there. The table states five points of it; the chart is the shape between them,
+        # which is what says whether the rule is trigger-happy or asleep.
+        "oc_curve": {
+            "drift": [row["drift"] for row in oc_rows],
+            "stop_probability": [row["stop_probability"] for row in oc_rows],
+            "expected_looks": [row["expected_looks"] for row in oc_rows],
+        },
+        # Every contrast the trial monitors, by the lowest Z it ever showed. One of the
+        # twelve reaches its boundary; the pooled arms never come close, which is the
+        # whole case study in one picture.
+        "contrasts": [
+            {
+                "label": f"{row['arm_label']} · {row['stratum_label']}",
+                "value": row["lowest_z_seen"],
+                "colour": "boundary" if row["decision"].startswith("stop") else "ink-3",
+                "display": f"{row['lowest_z_seen']:+.2f}",
+                "note": (
+                    f"stopped at week {row['stopped_week']}"
+                    if row["decision"].startswith("stop")
+                    else f"never fired in {row['looks_taken']} looks"
+                ),
+            }
+            for row in sorted(monitoring, key=lambda r: r["lowest_z_seen"])
+        ],
         "truth": {
             "doses": doses.tolist(),
             "curves": curves,
@@ -1842,6 +1868,340 @@ def casestudy() -> Any:
                 "pooled_itt": pooled_itt[20],
                 "by_stratum": {s: curves[i]["itt"][20] for i, s in enumerate(h.STRATA)},
             },
+        },
+    }
+
+
+# ----------------------------------------------------------------------------------
+# rutherford: GEIGER-1911, the experiment designed before it is run
+# ----------------------------------------------------------------------------------
+
+
+@section
+def rutherford() -> Any:
+    """Run the GEIGER-1911 plan and emit what the page draws.
+
+    Everything here comes out of ``nbs/case-studies/rutherford/scattering.py`` —
+    the same module the five notebooks share — so the page and the notebooks
+    cannot disagree about a number.
+
+    Two encoding notes. The site's charts have a linear scale, and the rates
+    here span fourteen orders of magnitude, so the series are emitted as
+    ``log10`` and the axes say so. And ``jsonable`` rounds to six decimals,
+    which would turn a 5.9e-9 steradian aperture into zero, so anything that
+    small travels as a log or as a preformatted string.
+    """
+    import math
+
+    sys.path.insert(0, str(ROOT / "nbs" / "case-studies" / "rutherford"))
+    import scattering as s
+
+    from axiom.design import (
+        FisherInformation,
+        LookSchedule,
+        StoppingRule,
+        expected_posterior_sd,
+        fisher_information,
+        information_fractions,
+        obrien_fleming,
+        operating_characteristics,
+    )
+
+    surface = s.surface()
+    floor_m = s.D_CLOSEST / 2.0
+
+    def log10(values: Any) -> Any:
+        return [float(np.log10(max(float(v), 1e-30))) for v in np.atleast_1d(values)]
+
+    # -- what the two atoms predict, per steradian per second --------------------------
+    grid = np.geomspace(0.4, 175.0, 90)
+    curve = {
+        "angles": [float(a) for a in grid],
+        "log10_hard": log10(s.rate_per_steradian(grid, s.HARD_CENTRE)),
+        "log10_diffuse": log10(s.rate_per_steradian(grid, s.DIFFUSE)),
+        "log10_background": float(np.log10(s.BACKGROUND_DENSITY)),
+    }
+
+    # -- an hour at each angle, believed and then argued with ---------------------------
+    aperture = s.widest_aperture(grid, s.HARD_CENTRE)
+    believed = s.weight_of_evidence(
+        s.rate_per_steradian(grid, s.HARD_CENTRE) * aperture * 3600.0,
+        s.rate_per_steradian(grid, s.DIFFUSE) * aperture * 3600.0,
+    )
+    attacked, _ = s.surviving_evidence(grid, aperture, 3600.0)
+    peak = int(np.argmax(believed))
+    evidence = {
+        "angles": [float(a) for a in grid],
+        "log10_believed": log10(believed),
+        "log10_attacked": log10(attacked),
+        "peak_deg": float(grid[peak]),
+        "peak_nats": float(believed[peak]),
+        "at_150_believed": float(np.interp(150.0, grid, believed)),
+        "at_150_attacked": float(np.interp(150.0, grid, attacked)),
+    }
+
+    # -- station by station, and what each keeps ---------------------------------------
+    stations = [st for st in s.PLAN if st.foil]
+    angles = np.array([st.theta_deg for st in stations])
+    omega = s.widest_aperture(angles, s.HARD_CENTRE)
+    hours = np.array([st.hours for st in stations])
+    per_hour_believed = s.weight_of_evidence(
+        s.rate_per_steradian(angles, s.HARD_CENTRE) * omega * 3600.0,
+        s.rate_per_steradian(angles, s.DIFFUSE) * omega * 3600.0,
+    )
+    per_hour_attacked, worst = s.surviving_evidence(angles, omega, 3600.0)
+    total_attacked = float((per_hour_attacked * hours).sum())
+
+    plan = []
+    for st, ap, hb, ha, wf in zip(
+        stations, omega, per_hour_believed, per_hour_attacked, worst, strict=True
+    ):
+        half, arc = s.slit_for(st.theta_deg, float(ap))
+        plan.append(
+            {
+                "angle": st.theta_deg,
+                "role": st.role,
+                "hours": st.hours,
+                "omega_text": f"{ap:.3g}",
+                "log10_omega": float(np.log10(ap)),
+                "half_width": round(half, 3),
+                "arc": round(arc, 1),
+                "bias_pct": 100.0 * s.aperture_bias(st.theta_deg, half, arc, s.HARD_CENTRE),
+                "nats_per_hour_believed": float(hb),
+                "nats_per_hour_attacked": float(ha),
+                "kept": float(ha / hb),
+                "worst_core": float(wf),
+                "share_of_surviving": float(ha * st.hours / total_attacked),
+            }
+        )
+
+    # -- how far back the witness has to sit, against a wider and wider core ------------
+    scan = np.geomspace(2.0, 179.0, 240)
+    scan_ap = s.widest_aperture(scan, s.HARD_CENTRE)
+    scan_believed = s.weight_of_evidence(
+        s.rate_per_steradian(scan, s.HARD_CENTRE) * scan_ap * 3600.0,
+        s.rate_per_steradian(scan, s.DIFFUSE) * scan_ap * 3600.0,
+    )
+    immunity = []
+    for cap in (3.0, 5.0, 10.0, 20.0, 30.0):
+        keeps, _ = s.surviving_evidence(scan, scan_ap, 3600.0, factors=np.geomspace(0.3, cap, 48))
+        breached = np.where(keeps / scan_believed <= 0.99)[0]
+        beyond = (
+            None
+            if breached.size and breached[-1] + 1 >= scan.size
+            else float(scan[breached[-1] + 1] if breached.size else scan[0])
+        )
+        immunity.append(
+            {
+                "allowance": cap,
+                "rms_deg": math.degrees(s.CORE_WIDTH * cap),
+                "beyond_deg": beyond,
+            }
+        )
+
+    # -- the slit: the same solid angle bought two ways ---------------------------------
+    from scipy.optimize import brentq
+
+    slit = []
+    for st, ap in zip(stations, omega, strict=True):
+        if st.theta_deg < 5.0:
+            continue  # a pinhole either way; the shape argument has nothing to say
+        half, arc = s.slit_for(st.theta_deg, float(ap))
+        hole = brentq(
+            lambda d, a=st.theta_deg, o=float(ap): s.slit_solid_angle(a, d, 2 * d) - o,
+            1e-7,
+            min(st.theta_deg * 0.98, 60.0),
+        )
+        slit.append(
+            {
+                "angle": st.theta_deg,
+                "slot_half": round(half, 3),
+                "slot_arc": round(arc, 1),
+                "slot_bias_pct": 100.0 * s.aperture_bias(st.theta_deg, half, arc, s.HARD_CENTRE),
+                "hole_half": round(hole, 3),
+                "hole_bias_pct": 100.0
+                * s.aperture_bias(st.theta_deg, hole, 2 * hole, s.HARD_CENTRE),
+            }
+        )
+
+    # -- what the plan expects to know, and the bound it reports ------------------------
+    info = fisher_information(surface, s.plan_data(), s.truth(math.log(0.30)), 1.0, method="finite")
+    assert isinstance(info, FisherInformation)
+    posterior_sds = expected_posterior_sd(s.PRIOR_SDS, info)
+    assert isinstance(posterior_sds, dict)
+
+    seconds = np.array([st.seconds for st in stations])
+    plan_data = s.station(angles, omega, seconds)
+    mu_hard = surface.counts(plan_data, s.HARD_CENTRE)
+    radii = np.geomspace(3.0e-14, 1.0e-12, 300)
+    against = np.array(
+        [
+            float(
+                s.weight_of_evidence(
+                    mu_hard, surface.counts(plan_data, s.truth(s.lam_of(float(r))))
+                ).sum()
+            )
+            for r in radii
+        ]
+    )
+    crossed = np.where(against > 3.0)[0]
+    bound_m = float(radii[crossed[0]])
+
+    # -- the witness, watched --------------------------------------------------------
+    look_hours = (5.0, 15.0, 30.0, 60.0, 110.0)
+    looks = LookSchedule(
+        labels=tuple(f"{h:g} h" for h in look_hours),
+        information=information_fractions(look_hours),
+    )
+    boundary = obrien_fleming(0.05, looks, side="upper", kind="efficacy")
+    rule = StoppingRule(name="witness_150", looks=looks, boundaries=(boundary,))
+    signal = (
+        float(s.rate_per_steradian([150.0], s.HARD_CENTRE)[0] - s.BACKGROUND_DENSITY) * s.OMEGA_MAX
+    )
+    background = s.BACKGROUND_DENSITY * s.OMEGA_MAX
+    full = 110 * 3600.0
+    sources = []
+    for factor in (1.0, 1e-2, 1e-3, 3e-4, 1e-4):
+        drift = signal * factor * full / math.sqrt((signal * factor + background) * full)
+        oc = operating_characteristics(rule, drift=drift)
+        sources.append(
+            {
+                "factor_text": f"{factor:g}",
+                "log10_factor": float(np.log10(factor)),
+                "drift": float(drift),
+                "stop_probability": float(oc.crossings.stop_probability),
+                "expected_hours": float(oc.expected_information * 110.0),
+            }
+        )
+
+    # -- the witness, actually watched -------------------------------------------------
+    # A source a thousand times weaker than the modelled one, so the crossing is a real
+    # event partway through rather than a foregone conclusion at the first look. The
+    # chart wants the same panel shape the HYPER-3 monitoring uses.
+    weak = 1e-3
+    elapsed = np.array(look_hours) * 3600.0
+    drawn = np.random.default_rng(1911).poisson(
+        np.diff(np.concatenate([[0.0], (signal * weak + background) * elapsed]))
+    )
+    cumulative = np.cumsum(drawn)
+    z_path = (cumulative - background * elapsed) / np.sqrt(np.maximum(cumulative, 1))
+    crossing = next(
+        (i for i, (zz, th) in enumerate(zip(z_path, boundary.z, strict=True)) if zz >= th), None
+    )
+    taken = len(z_path) if crossing is None else crossing + 1
+    witness_panel = {
+        "stratum": "witness_150",
+        "label": f"150° · a source {weak:g} times the modelled one",
+        "information": list(looks.information),
+        "boundary": [float(z) for z in boundary.z],
+        "z": [float(v) for v in z_path],
+        "looks_taken": taken,
+        "weeks": [float(h) for h in look_hours],
+        "stopped": crossing is not None,
+        "stop_information": None if crossing is None else float(looks.information[crossing]),
+        "stop_z": None if crossing is None else float(z_path[crossing]),
+        "stop_week": None if crossing is None else float(look_hours[crossing]),
+        "effects": [float(c - background * t) for c, t in zip(cumulative, elapsed, strict=True)],
+        "ses": [float(np.sqrt(max(c, 1))) for c in cumulative],
+    }
+
+    # -- one run of it ----------------------------------------------------------------
+    observed = np.random.default_rng(1911).poisson(surface.counts(s.plan_data(), s.HARD_CENTRE))
+    if_diffuse = surface.counts(s.plan_data(), s.DIFFUSE)
+    counts = [
+        {
+            "angle": st.theta_deg,
+            "foil": bool(st.foil),
+            "role": st.role,
+            "hours": st.hours,
+            "observed": int(n),
+            "if_diffuse_text": f"{d:,.0f}",
+        }
+        for st, n, d in zip(s.PLAN, observed, if_diffuse, strict=True)
+    ]
+
+    return {
+        "apparatus": {
+            "energy_mev": s.E_ALPHA,
+            "foil_um": s.FOIL_THICKNESS * 1e6,
+            "beam_rate": s.BEAM_RATE,
+            "atoms_crossed": s.n_encounters(),
+            "max_count_rate": s.MAX_COUNT_RATE,
+            "max_per_minute": s.MAX_COUNT_RATE * 60.0,
+            "hours": sum(st.hours for st in s.PLAN),
+            "d_closest_fm": s.D_CLOSEST * 1e15,
+            "floor_fm": floor_m * 1e15,
+            "slit_min_half": s.SLIT_MIN_HALF_WIDTH,
+        },
+        "atoms": {
+            "diffuse": {
+                "radius_fm": s.R_ATOM * 1e15,
+                "radius_text": f"{s.R_ATOM:.3g}",
+                "cutoff_deg": math.degrees(2 * math.asin(math.exp(s.LAM_DIFFUSE))),
+            },
+            "hard": {
+                "radius_fm": s.R_NUCLEUS * 1e15,
+                "radius_text": f"{s.R_NUCLEUS:.3g}",
+                "decades_apart": (s.LAM_HARD - s.LAM_DIFFUSE) / math.log(10),
+            },
+        },
+        "curve": curve,
+        "evidence": evidence,
+        "plan": plan,
+        "immunity": immunity,
+        "slit": slit,
+        # -- the same numbers, shaped for the charts that draw them ---------------------
+        # Evidence spans five orders of magnitude across the stations, so the paired
+        # comparison is drawn in log10; the point of the picture is the *gap*, and a
+        # linear axis would put every station but one on the baseline.
+        "station_evidence": [
+            {
+                "label": f"{row['angle']:.1f}°  {row['role']}",
+                "a": float(np.log10(max(row["nats_per_hour_believed"], 1e-3))),
+                "b": float(np.log10(max(row["nats_per_hour_attacked"], 1e-3))),
+            }
+            for row in plan
+        ],
+        "slit_compare": [
+            {"label": f"{row['angle']:.0f}°", "a": row["hole_bias_pct"], "b": row["slot_bias_pct"]}
+            for row in slit
+        ],
+        "immunity_curve": {
+            "allowance": [row["allowance"] for row in immunity],
+            "beyond": [row["beyond_deg"] for row in immunity],
+            "rms": [row["rms_deg"] for row in immunity],
+        },
+        "counts_compare": [
+            {
+                "label": f"{st.theta_deg:.1f}°",
+                # The diffuse atom predicts exactly zero at several stations. Floored at a
+                # tenth of a count so the axis stays finite; the caption says so.
+                "a": float(np.log10(max(float(d), 0.1))),
+                "b": float(np.log10(max(float(n), 0.1))),
+            }
+            for st, n, d in zip(s.PLAN, observed, if_diffuse, strict=True)
+            if st.foil
+        ],
+        "panels": [witness_panel],
+        "sequential": {
+            "look_hours": list(look_hours),
+            "information": list(looks.information),
+            "thresholds": [float(z) for z in boundary.z],
+            "sources": sources,
+            "signal_per_hour": signal * 3600.0,
+            "background_per_hour": background * 3600.0,
+        },
+        "answer": {
+            "bound_fm": bound_m * 1e15,
+            "bound_text": f"{bound_m:.3g}",
+            "floor_fm": floor_m * 1e15,
+            "rutherford_1911_fm": 34.0,
+            "gap_pct": 100.0 * (bound_m - floor_m) / floor_m,
+            "posterior_sds": {k: float(v) for k, v in posterior_sds.items()},
+            "evidence_believed": float((per_hour_believed * hours).sum()),
+            "evidence_attacked": total_attacked,
+            "witness_share": float((per_hour_attacked[-2:] * hours[-2:]).sum() / total_attacked),
+            "counts": counts,
         },
     }
 

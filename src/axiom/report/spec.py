@@ -157,7 +157,14 @@ class Metric(Spec):
     source: NonEmptyStr
     label: NonEmptyStr
     unit: str = ""
-    precision: int = Field(default=2, ge=0, le=12)
+    precision: int | None = Field(default=None, ge=0, le=12)
+    """Decimal places, or ``None`` to take them from the interval.
+
+    ``None`` is the default because a metric that carries an interval already
+    states its own resolution, and a fixed two places either invents digits the
+    interval does not support or drops digits it does. Set a number when a house
+    style needs a column all at one width.
+    """
 
     def sources(self) -> tuple[str, ...]:
         return (self.source,)

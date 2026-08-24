@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="axiom.report">
+<meta name="axiom-report-hash" content="46b4bf6892ada059464418c09e76128d849e160466ec4c83ce4b04fa365f4a74">
+<title>What study twenty-one will actually find</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 64.0pt;
+  background: #ffffff; color: #111111;
+  font-family: Times-Roman, Georgia, "Times New Roman", Times, serif;
+  font-size: 10.5pt; line-height: 1.55;
+}
+main { max-width: 952.0pt; margin: 0 auto; }
+h1 { font-size: 19.0pt; margin: 0 0 .15em; letter-spacing: -.01em; }
+h2 { font-size: 13.5pt; margin: 1.6em 0 .4em;
+      padding-bottom: .25em; border-bottom: 1px solid #c9c9c9; }
+h3 { font-size: 11.5pt; margin: 1.2em 0 .3em; }
+h4 { font-size: 10.5pt; margin: 1em 0 .3em; }
+p { margin: .5em 0; }
+p.emphasis { font-size: 11.760000000000002pt; color: #1a1a1a; }
+.subtitle { color: #555555; font-size: 12.075pt;
+             margin: 0 0 1.4em; }
+.summary { color: #555555; margin: 0 0 .8em; }
+code { font-family: Courier, ui-monospace, monospace;
+        background: rgba(0,0,0,.05); padding: .08em .3em; border-radius: 3px; }
+figure { margin: 1.1em 0; }
+figcaption { color: #555555; font-size: 9.66pt; margin-top: .3em; }
+table { border-collapse: collapse; width: 100%; margin: .8em 0;
+         font-size: 9.975pt; }
+th, td { text-align: left; padding: .35em .6em; border-bottom: 1px solid #c9c9c9; }
+th { font-weight: 600; border-bottom: 2px solid #c9c9c9; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.metrics { display: flex; flex-wrap: wrap; gap: 1.4em; margin: 1em 0; }
+.metric { min-width: 12em; }
+.metric .label { color: #555555; font-size: 9.450000000000001pt;
+                  text-transform: uppercase; letter-spacing: .04em; }
+.metric .value { font-size: 15.579999999999998pt; font-weight: 600;
+                  color: #1a1a1a; font-variant-numeric: tabular-nums; }
+.metric .interval { color: #555555; font-size: 9.450000000000001pt;
+                     font-variant-numeric: tabular-nums; }
+.ledger { border-left: 3px solid #c9c9c9; padding-left: .9em; margin: 1em 0; }
+.ledger .line { margin: .55em 0; }
+.ledger .kind { color: #1a1a1a; font-family: Courier, monospace;
+                 font-size: 8.924999999999999pt; }
+.ledger .assumption { color: #555555; font-size: 9.450000000000001pt; }
+hr { border: 0; border-top: 1px solid #c9c9c9; margin: 1.4em 0; }
+footer { margin-top: 2.5em; padding-top: .8em; border-top: 1px solid #c9c9c9;
+          color: #555555; font-size: 8.924999999999999pt; }
+@media print { body { padding: 0; } h2 { break-before: page; } }
+</style>
+</head><body><main>
+<h1>What study twenty-one will actually find</h1>
+<p class="subtitle">Twenty published studies test the same nudge and disagree with each other. Pooling them gives a number. The question is whether that number is the one a replication team should power against.</p>
+<h2>Abstract</h2>
+<p><strong>Objective.</strong> Twenty published studies test the same nudge and disagree with each other. Pooling them gives a number. The question is whether that number is the one a replication team should power against. <strong>Methods.</strong> Build the corpus through a vocabulary that refuses the wrong pool. 6 step(s) are recorded in full below. <strong>Results.</strong> Reported as one number this literature says the nudge works: 0.17, interval comfortably clear of zero. Reported honestly it says something more useful and less quotable. <strong>Conclusions.</strong> No assumptions were recorded for this run, which is not the same as none being required.</p>
+<h2>1. Introduction</h2>
+<p>This report addresses one question: Twenty published studies test the same nudge and disagree with each other. Pooling them gives a number. The question is whether that number is the one a replication team should power against.</p>
+<h2>2. Methods</h2>
+<p><strong>Question.</strong> Twenty published studies test the same nudge and disagree with each other. Pooling them gives a number. The question is whether that number is the one a replication team should power against.</p>
+<h4>Build the corpus through a vocabulary that refuses the wrong pool</h4>
+<p>&#x27;standardized_contrast&#x27; is not free text: poolable quantities are a controlled vocabulary, so two reviews cannot quietly pool an odds ratio with a standardized mean difference. Pass something outside the vocabulary and the record refuses to be built, at collection time rather than at interpretation time.</p>
+<p class="emphasis">considered instead: A dataframe of estimates and standard errors. It pools anything you put in it, including things that are not the same kind of number, and the mistake surfaces — if it ever does — in review.; readout: corpus   : nudge-replication, k = 20 studies; quantity : standardized_contrast; effects  : 0.05 to 0.51; n        : 54 to 2,510</p>
+<h4>Pool it three ways, because the estimators disagree</h4>
+<p>The between-study variance has to be estimated, and DerSimonian-Laird, Paule-Mandel and REML do it differently. When they agree, quoting one is fine. When they do not, the disagreement is information about how much of the answer is coming from the tau estimator rather than from the studies — and it is worth knowing before quoting any of them.</p>
+<p class="emphasis">considered instead: Using DerSimonian-Laird because it is the default in most software. It is known to understate tau-squared when heterogeneity is high, which is exactly the regime this literature is in.; readout: DerSimonian-Laird      0.1731  se 0.0204  tau2 0.00338   [0.133, 0.213]; Paule-Mandel           0.1784  se 0.0228  tau2 0.00488   [0.134, 0.223]; REML                   0.1736  se 0.0206  tau2 0.00350   [0.133, 0.214]</p>
+<h4>Draw all twenty, because the pooled number hides them</h4>
+<p>An I-squared of 54% means most of the variation between these studies is real disagreement rather than sampling noise. The pooled mean is a summary of a distribution, not an estimate of one shared number — and that distinction is what the next two steps are about. A forest plot is not decoration. The pooled mean is a summary of a distribution, and the only way to see whether that distribution has a centre worth summarising is to look at the studies. Here the effects run from 0.05 to 0.51 and the small studies sit systematically to the right.</p>
+<p class="emphasis">considered instead: Reporting the pooled estimate and I-squared as two numbers. I-squared of 70% and I-squared of 70% look identical in a table and can mean a tidy spread or two distinct clusters, which imply completely different next steps.; readout: Q  = 41.1 on 19 df (p = 0.0023); I2 = 54%; pooled (REML, Knapp-Hartung) = 0.1736 [0.128, 0.219]</p>
+<h4>Then compute the number a replication team actually needs</h4>
+<p>The interval on the mean says where the average of this literature sits. The prediction interval says where a NEW study would land, and it includes the between-study variance rather than averaging it away. When heterogeneity is real these are very different numbers, and only the second one predicts replication.</p>
+<p class="emphasis">considered instead: Powering the replication off the pooled mean. It is the single most common way a replication ends up underpowered for the effect it actually meets: the mean is the centre of a distribution the new study is drawn from, not the value it will take.; readout: pooled mean        0.1736  [0.128, 0.219]; NEXT study lands in           [0.041, 0.306]; the prediction interval is 2.9x wider</p>
+<h4>Check whether the small studies are telling a different story</h4>
+<p>Egger&#x27;s test asks whether effect size is associated with precision. A non-zero intercept means the imprecise studies report systematically larger effects — the signature of publication bias. The funnel plot is the same question drawn, and it shows the asymmetry rather than compressing it into a p-value.</p>
+<p class="emphasis">considered instead: Treating a significant Egger test as proof of publication bias. It is not: real heterogeneity correlated with study size looks identical. Small studies often run more intensive versions of an intervention, and that would produce the same picture with nobody hiding anything.; readout: Egger intercept +1.822 +/- 0.474; t = +3.84 on 18 df, p = 0.0012</p>
+<h4>And ask which studies are carrying the answer</h4>
+<p>Leave-one-out says how far the pooled estimate moves when each study is dropped; the Baujat plot separates two different reasons a study matters — contributing heterogeneity, and influencing the result. A study high on both axes is one whose inclusion decision is doing real work and should be argued for rather than defaulted into.</p>
+<p class="emphasis">considered instead: Running a sensitivity analysis that drops studies by quality rating. Quality ratings are largely uncorrelated with influence, so that procedure removes studies that do not matter and keeps the ones that do.; readout: largest contributor to heterogeneity: s16 (Q share 8.21)</p>
+<figure><table><thead><tr><th class="">Step</th><th class="">Parameter</th><th class="">Value</th></tr></thead><tbody><tr><td class="">Build the corpus through a vocabulary that refuses the wrong pool</td><td class="">considered instead</td><td class="">A dataframe of estimates and standard errors. It pools anything you put in it, including things that are not the same kind of number, and the mistake surfaces — if it ever does — in review.</td></tr><tr><td class="">Build the corpus through a vocabulary that refuses the wrong pool</td><td class="">readout</td><td class="">corpus   : nudge-replication, k = 20 studies; quantity : standardized_contrast; effects  : 0.05 to 0.51; n        : 54 to 2,510</td></tr><tr><td class="">Pool it three ways, because the estimators disagree</td><td class="">considered instead</td><td class="">Using DerSimonian-Laird because it is the default in most software. It is known to understate tau-squared when heterogeneity is high, which is exactly the regime this literature is in.</td></tr><tr><td class="">Pool it three ways, because the estimators disagree</td><td class="">readout</td><td class="">DerSimonian-Laird      0.1731  se 0.0204  tau2 0.00338   [0.133, 0.213]; Paule-Mandel           0.1784  se 0.0228  tau2 0.00488   [0.134, 0.223]; REML                   0.1736  se 0.0206  tau2 0.00350   [0.133, 0.214]</td></tr><tr><td class="">Draw all twenty, because the pooled number hides them</td><td class="">considered instead</td><td class="">Reporting the pooled estimate and I-squared as two numbers. I-squared of 70% and I-squared of 70% look identical in a table and can mean a tidy spread or two distinct clusters, which imply completely different next steps.</td></tr><tr><td class="">Draw all twenty, because the pooled number hides them</td><td class="">readout</td><td class="">Q  = 41.1 on 19 df (p = 0.0023); I2 = 54%; pooled (REML, Knapp-Hartung) = 0.1736 [0.128, 0.219]</td></tr><tr><td class="">Then compute the number a replication team actually needs</td><td class="">considered instead</td><td class="">Powering the replication off the pooled mean. It is the single most common way a replication ends up underpowered for the effect it actually meets: the mean is the centre of a distribution the new study is drawn from, not the value it will take.</td></tr><tr><td class="">Then compute the number a replication team actually needs</td><td class="">readout</td><td class="">pooled mean        0.1736  [0.128, 0.219]; NEXT study lands in           [0.041, 0.306]; the prediction interval is 2.9x wider</td></tr><tr><td class="">Check whether the small studies are telling a different story</td><td class="">considered instead</td><td class="">Treating a significant Egger test as proof of publication bias. It is not: real heterogeneity correlated with study size looks identical. Small studies often run more intensive versions of an intervention, and that would produce the same picture with nobody hiding anything.</td></tr><tr><td class="">Check whether the small studies are telling a different story</td><td class="">readout</td><td class="">Egger intercept +1.822 +/- 0.474; t = +3.84 on 18 df, p = 0.0012</td></tr><tr><td class="">And ask which studies are carrying the answer</td><td class="">considered instead</td><td class="">Running a sensitivity analysis that drops studies by quality rating. Quality ratings are largely uncorrelated with influence, so that procedure removes studies that do not matter and keeps the ones that do.</td></tr><tr><td class="">And ask which studies are carrying the answer</td><td class="">readout</td><td class="">largest contributor to heterogeneity: s16 (Q share 8.21)</td></tr></tbody></table><figcaption>Table 1. The design, as recorded parameters</figcaption></figure>
+<h2>3. Results</h2>
+<p>No findings were recorded.</p>
+<h2>4. What the run showed</h2>
+<p class="emphasis">Written by the analyst after seeing the output, and reproduced unchanged. Nothing in this section is generated.</p>
+<p>Reported as one number this literature says the nudge works: 0.17, interval comfortably clear of zero. Reported honestly it says something more useful and less quotable.</p>
+<p>The studies genuinely disagree — 54% of the variation is real rather than sampling — effect size tracks precision in a way consistent with publication bias (p = 0.0012), and study twenty-one could land anywhere in [0.04, 0.31]. The bottom of that range is about a quarter of the pooled mean and small enough that a replication powered off 0.17 would miss it.</p>
+<p>None of that needed a different estimator. It needed the three quantities that usually end up in an appendix: heterogeneity, the prediction interval, and a small-study check — plus two plots, because I-squared and an Egger p-value are summaries of pictures and the pictures are where the shape is.</p>
+<h2>5. Model checking</h2>
+<p>No diagnostics were recorded. An analysis with no model checking is not therefore sound; it is unexamined.</p>
+<h2>6. Discussion</h2>
+<p>There are no findings to interpret.</p>
+<h2>7. Conclusions</h2>
+<p><strong>Twenty published studies test the same nudge and disagree with each other. Pooling them gives a number. The question is whether that number is the one a replication team should power against.</strong></p>
+<p>No finding was recorded, so no conclusion follows.</p>
+<h2>8. Limitations</h2>
+<p>No assumption in the record is left unresolved. That is a statement about the record, not a guarantee about the world.</p>
+<h2>9. Provenance</h2>
+<p>Every number in this document resolves to a quantity in the evidence record below. Prose was checked against that record: any numeral not traceable to it, and any claim the record does not itself make, is reported rather than published.</p>
+<figure><table><thead><tr><th class="">Field</th><th class="">Value</th></tr></thead><tbody><tr><td class="">field</td><td class="">Behavioural science</td></tr><tr><td class="">source</td><td class="">examples/ walkthrough record</td></tr><tr><td class="">steps</td><td class="">6</td></tr><tr><td class="">evidence hash</td><td class="">b9d5e998e3c6b5bfa5b5c8bb67bf36acf903f645c2f026cd33118879225d320a</td></tr></tbody></table><figcaption>Table 2. Run</figcaption></figure>
+
+</main></body></html>

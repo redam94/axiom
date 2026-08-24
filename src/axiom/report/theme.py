@@ -48,6 +48,11 @@ class Theme(Spec):
 
     name: NonEmptyStr = "axiom"
     font: NonEmptyStr = "Helvetica"
+    #: What HTML falls back to when ``font`` is not a family a browser knows.
+    #: PDF and PPTX name the face directly, but ``Times-Roman`` is a PostScript
+    #: name rather than a CSS family, so a serif theme needs to say what it means
+    #: or it renders sans-serif in the one format that guesses.
+    font_fallback: NonEmptyStr = "system-ui, -apple-system, sans-serif"
     mono_font: NonEmptyStr = "Courier"
     base_size: float = Field(default=11.0, gt=0)
     title_size: float = Field(default=24.0, gt=0)

@@ -30,7 +30,7 @@
     <a class="brand" href="index.html">
       <span class="brand-mark" aria-hidden="true"></span>axiom</a>
     <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
-    <nav class="navx-wrap" aria-label="More"><a class="navx" href="examples.html">Examples</a><a class="navx navx-on" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">Case study</a><a class="navx" href="api.html">API</a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx" href="examples.html">Examples</a><a class="navx navx-on" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
     <button class="theme" type="button" aria-label="Switch between light and dark">
       <span class="theme-ico" aria-hidden="true"></span>
     </button>
@@ -41,16 +41,16 @@
 
 <section class="hero">
   <div class="wrap">
-    <p class="eyebrow">Benchmarks · 21 published values</p>
+    <p class="eyebrow">Benchmarks · 12 published values</p>
     <h1 style="max-width:17ch">Numbers other people published</h1>
     <p class="lede prose mt">Every other test in this repository checks axiom against a
       world axiom made up. That is the right way to ask whether an estimator recovers a
       truth, and it is circular in one respect: the data-generating process and the
       likelihood are the same code.</p>
     <p class="lede prose">These close the loop from outside — four datasets collected by
-      other people, and 21 results computed by other software before
+      other people, and 12 results computed by other software before
       this library existed. Largest relative disagreement anywhere:
-      <strong>5.8e-03</strong>.</p>
+      <strong>3.3e-04</strong>.</p>
   </div>
 </section>
 
@@ -373,204 +373,6 @@ Reading it
     What axiom adds beyond the certified numbers is the last table: NIST reports
     two parameters and their standard deviations, and axiom will also tell you what
     the curve does at a pressure of 1200 and how sure it is.</pre>
-      </div>
-    </div>
-  </details>
-</article>
-<article class="ex" id="darfur">
-  <div class="ex-head">
-    <p class="ex-n">POLITICAL SCIENCE / CONFLICT &middot; identify + diagnose</p>
-    <h3>Darfurian refugees in eastern Chad: violence and attitudes to peace</h3>
-    <p class="ex-q">Checked against <strong>Cinelli &amp; Hazlett (2020)</strong> &mdash;
-      1,276 respondents, 486 villages.</p>
-    <div class="ex-meta"><span class="tag is-warn">fetch to run</span>
-      <span class="pkg">6 published values</span>
-      <span class="pkg">worst relative error 5.8e-03</span></div>
-  </div>
-  <div class="ex-body" style="padding-top:16px">
-    <div class="tbl-wrap">
-      <table class="t">
-        <caption>Cinelli, C., &amp; Hazlett, C. (2020). Making sense of sensitivity: extending omitted variable bias. Journal of the Royal Statistical Society B, 82(1), 39-67. Data collected by Hazlett (2019).</caption>
-        <thead><tr><th>quantity</th><th>axiom</th><th>published</th>
-          <th>relative error</th><th></th></tr></thead>
-        <tbody><tr><td>coefficient</td><td>0.0973</td><td>0.0973</td><td>1.6e-04</td><td class="num-good">match</td></tr><tr><td>standard error</td><td>0.0233</td><td>0.0232</td><td>2.4e-03</td><td class="num-good">match</td></tr><tr><td>residual df</td><td>783</td><td>783</td><td>0.0e+00</td><td class="num-good">match</td></tr><tr><td>robustness value</td><td>0.139</td><td>0.139</td><td>1.6e-03</td><td class="num-good">match</td></tr><tr><td>RV at alpha = 0.05</td><td>0.076</td><td>0.076</td><td>3.4e-03</td><td class="num-good">match</td></tr><tr><td>partial R^2</td><td>0.022</td><td>0.022</td><td>5.8e-03</td><td class="num-good">match</td></tr></tbody>
-      </table>
-    </div>
-    <p class="stamp"><b>licence</b> &middot; Ships inside the GPL-3 R package sensemakr. Not redistributed here: fetched on request, under the upstream package&#x27;s terms.</p>
-  </div>
-  <details class="ex-more">
-    <summary>Read the full run</summary>
-    <div class="ex-body">
-      <div class="out">
-        <div class="out-h">benchmarks/case_darfur.py</div>
-        <pre>Darfurian refugees in eastern Chad: violence and attitudes to peace
-  Cinelli, C., &amp; Hazlett, C. (2020). Making sense of sensitivity: extending omitted variable bias. Journal of the Royal Statistical Society B, 82(1), 39-67. Data collected by Hazlett (2019).
-  licence: Ships inside the GPL-3 R package sensemakr. Not redistributed here: fetched on request, under the upstream package&#x27;s terms.
-
-  sha256 : e72476e5dfae734444507ab639f172ea...
-  1,276 respondents, 486 villages
-  529 directly harmed (41.5%), 747 not
-
-identification status : identified via backdoor
-condition on          : [&#x27;female&#x27;, &#x27;village&#x27;]
-  That verdict is only as good as the graph. The whole point of what
-  follows is that the graph is a claim, not a finding.
-
-regression: peacefactor ~ directlyharmed + 6 covariates + 485 village effects
-
-quantity                     axiom   published   difference
-coefficient                 0.0973      0.0973     1.58e-05
-standard error              0.0233      0.0232     5.65e-05
-residual df               783.0000    783.0000     0.00e+00
-n                        1276.0000   1276.0000     0.00e+00
-
-effect of being directly harmed on pro-peace attitudes:
-  0.0973  [0.0517, 0.1429]  (95% Wald)
-  Positive: people who were injured report MORE pro-peace attitudes, not less.
-  That is the finding, and it is the one worth stress-testing.
-
-sensitivity                    axiom   published
-robustness value               0.139       0.139
-RV at alpha = 0.05             0.076       0.076
-partial R2 of treatment        0.022       0.022
-
-  An unmeasured confounder would have to explain 13.9% of the residual
-  variance in BOTH being harmed and attitudes to bring the effect to zero.
-  Only 7.6% is needed to make it statistically insignificant.
-
-  a confounder 1x as strong as being female:
-    adjusted estimate +0.0750 (se 0.0219, t 3.43)
-
-  a confounder 2x as strong as being female:
-    adjusted estimate +0.0525 (se 0.0203, t 2.58)
-
-  a confounder 3x as strong as being female:
-    adjusted estimate +0.0298 (se 0.0186, t 1.60)
-
-  Gender is one of the strongest predictors in this survey, and a confounder
-  three times stronger still does not overturn the sign. That is a much more
-  useful sentence than a p-value, and it is falsifiable: name such a variable.
-
-specification                       estimate       se
-no covariates at all                  0.0634   0.0197
-covariates, no village effects        0.0489   0.0184
-published specification               0.0973   0.0233
-  The village effects are doing real work. Which specification is right is
-  a question about the world -- were attacks indiscriminate WITHIN villages? --
-  and no amount of fitting settles it.
-
-Reading it
-    The published coefficient and standard error come back from the raw survey to
-    four decimal places, and the sensitivity numbers built on them match the paper.
-    That is the end-to-end claim: not that a formula is implemented correctly, but
-    that the whole path from 1,276 rows to a published sensitivity analysis runs
-    through this library and arrives in the same place.
-
-    The substantive point is the one Cinelli and Hazlett were making. This design
-    cannot rule out confounding, and no design of this kind can. What it can do is
-    state precisely how strong a confounder would have to be, benchmark that
-    against a variable everyone can picture, and let a reader decide. That is a
-    claim someone can argue with, which is more than significance offers.</pre>
-      </div>
-    </div>
-  </details>
-</article>
-<article class="ex" id="lalonde_nsw">
-  <div class="ex-head">
-    <p class="ex-n">LABOUR ECONOMICS &middot; identify + design</p>
-    <h3>National Supported Work: a randomized job training programme</h3>
-    <p class="ex-q">Checked against <strong>Dehejia &amp; Wahba (1999)</strong> &mdash;
-      445 randomized, 2,490 PSID comparison.</p>
-    <div class="ex-meta"><span class="tag is-warn">fetch to run</span>
-      <span class="pkg">3 published values</span>
-      <span class="pkg">worst relative error 1.9e-04</span></div>
-  </div>
-  <div class="ex-body" style="padding-top:16px">
-    <div class="tbl-wrap">
-      <table class="t">
-        <caption>LaLonde, R. (1986). Evaluating the econometric evaluations of training programs. American Economic Review, 76(4), 604-620. Subsample and reanalysis: Dehejia, R., &amp; Wahba, S. (1999). JASA, 94(448), 1053-1062.</caption>
-        <thead><tr><th>quantity</th><th>axiom</th><th>published</th>
-          <th>relative error</th><th></th></tr></thead>
-        <tbody><tr><td>experimental effect (USD)</td><td>1794</td><td>1794</td><td>1.9e-04</td><td class="num-good">match</td></tr><tr><td>n</td><td>445</td><td>445</td><td>0.0e+00</td><td class="num-good">match</td></tr><tr><td>n treated</td><td>185</td><td>185</td><td>0.0e+00</td><td class="num-good">match</td></tr></tbody>
-      </table>
-    </div>
-    <p class="stamp"><b>licence</b> &middot; CC BY-NC: attributable NON-COMMERCIAL use. This repository is proprietary, so the data is not vendored here -- fetch it yourself and observe the licence.</p>
-  </div>
-  <details class="ex-more">
-    <summary>Read the full run</summary>
-    <div class="ex-body">
-      <div class="out">
-        <div class="out-h">benchmarks/case_lalonde.py</div>
-        <pre>National Supported Work: a randomized job training programme
-  LaLonde, R. (1986). Evaluating the econometric evaluations of training programs. American Economic Review, 76(4), 604-620. Subsample and reanalysis: Dehejia, R., &amp; Wahba, S. (1999). JASA, 94(448), 1053-1062.
-  licence: CC BY-NC: attributable NON-COMMERCIAL use. This repository is proprietary, so the data is not vendored here -- fetch it yourself and observe the licence.
-
-  randomized sample : 445 people (185 treated, 260 control)
-  PSID comparison   : 2,490 survey respondents, none in the programme
-
-EXPERIMENTAL BENCHMARK (randomization does the work)
-  effect on 1978 earnings  $1,794  [$554, $3,035]
-  published                $1,794
-  difference               $0.34
-
-  adjusting for covariates anyway: $1,676 (se 639)
-  Barely moves, which is what randomization is supposed to buy: the
-  covariates were already balanced, so conditioning on them changes little.
-
-covariate balance:
-               treated  randomized control  PSID comparison
-age          25.799999           25.100000        34.900002
-education    10.300000           10.100000        12.100000
-black         0.800000            0.800000         0.300000
-hispanic      0.100000            0.100000         0.000000
-married       0.200000            0.200000         0.900000
-nodegree      0.700000            0.800000         0.300000
-re74       2095.600098         2107.000000     19428.699219
-re75       1532.099976         1266.900024     19063.300781
-  The randomized arms match. The PSID group is a different population:
-  older, better educated, and earning an order of magnitude more before
-  the programme even started.
-
-OBSERVATIONAL VERSION: 185 treated vs 2,490 PSID controls
-
-specification                               estimate        se    vs truth
-experimental benchmark                         1,794       633           0
-PSID controls, no adjustment                 -15,205     1,155     -16,999
-PSID controls, 8 covariates                      752       915      -1,042
-
-  The unadjusted observational estimate says the programme destroyed
-  earnings. Controlling for everything available recovers some of it and
-  still misses the benchmark badly. Both regressions are correctly
-  computed; both answer a question other than the one asked.
-
-What the identification layer says, from the graph alone:
-  randomized   : identified via backdoor, adjust for nothing
-  observational: downgraded (backdoor_unmeasured), needs [&#x27;motivation&#x27;] which is not in the file
-  &#x27;motivation&#x27; stands for whatever led a person to enrol. It is not a
-  variable anyone collected, and it is the whole problem.
-
-sensitivity of the observational estimate ($752):
-  to bring it to zero, a confounder needs partial R2 of 1.6% in both
-  to move it the $1,042 to the benchmark, it needs 2.2%
-  Here we happen to know the answer, because the experiment was run. In
-  every real application you do not, which is why the number to report is
-  the strength required rather than the estimate alone.
-
-Reading it
-    axiom reproduces the experimental benchmark to the dollar: $1,794
-    against a published $1,794. That is the part this file
-    checks.
-
-    The part it demonstrates is older and more important. Two analyses of the same
-    treated people, differing only in who they were compared against, disagree by
-    thousands of dollars and in sign. No diagnostic run on the observational data
-    flags it, because nothing is wrong with the arithmetic. The randomized
-    benchmark is the only reason anyone knows which answer was wrong -- and it
-    exists here only because somebody ran the experiment.
-
-    That is the argument for the whole first pillar: decide whether the data can
-    answer the question BEFORE fitting, because afterwards it looks fine either
-    way.</pre>
       </div>
     </div>
   </details>

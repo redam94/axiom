@@ -100,6 +100,13 @@ from axiom.core.protocols import (
     missing_capabilities,
 )
 from axiom.core.result import Blocked, Failure, NonEmptyStr, Unsupported, Unverified, is_failure
+from axiom.core.rounding import (
+    DIGITS,
+    decimals_for,
+    format_interval,
+    format_measured,
+    round_to,
+)
 from axiom.core.spec import (
     SchemaVersionError,
     Spec,
@@ -121,6 +128,7 @@ from axiom.core.verdict import Assumption, LedgerLine, Verdict
 __all__ = [
     "BASES",
     "D",
+    "DIGITS",
     "PRIOR_HYPER",
     "UNITS",
     "AcceptanceRegion",
@@ -200,11 +208,14 @@ __all__ = [
     "compile_log_density",
     "constrain",
     "data_names",
+    "decimals_for",
     "dimension",
     "dimension_of",
     "dimensionless",
     "effective_sample_size",
     "eti",
+    "format_interval",
+    "format_measured",
     "free_parameters",
     "hdi",
     "interval",
@@ -222,6 +233,7 @@ __all__ = [
     "node_path",
     "params",
     "require_jax",
+    "round_to",
     "spec_type_name",
     "summarize",
     "unconstrain",

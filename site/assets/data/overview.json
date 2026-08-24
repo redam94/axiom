@@ -2,7 +2,7 @@
  "packages": [
   {
    "name": "core",
-   "n": 110,
+   "n": 115,
    "symbols": [
     "AcceptanceRegion",
     "Add",
@@ -18,6 +18,7 @@
     "Convolve",
     "Covariate",
     "D",
+    "DIGITS",
     "Data",
     "DesignMatrix",
     "Dimension",
@@ -85,11 +86,14 @@
     "compile_log_density",
     "constrain",
     "data_names",
+    "decimals_for",
     "dimension",
     "dimension_of",
     "dimensionless",
     "effective_sample_size",
     "eti",
+    "format_interval",
+    "format_measured",
     "free_parameters",
     "hdi",
     "interval",
@@ -107,6 +111,7 @@
     "node_path",
     "params",
     "require_jax",
+    "round_to",
     "spec_type_name",
     "summarize",
     "unconstrain",
@@ -890,16 +895,18 @@
   },
   {
    "name": "adapters",
-   "n": 15,
+   "n": 17,
    "symbols": [
     "Channel",
     "EXPOSURE",
     "Geo",
     "KPI",
     "MarketingRoles",
+    "agronomy",
     "contribution",
     "impressions",
     "marginal_roas",
+    "marketing",
     "marketing_spec",
     "panel_from_marketing_frame",
     "panel_from_mff",
@@ -913,17 +920,27 @@
   },
   {
    "name": "viz",
-   "n": 9,
+   "n": 19,
    "symbols": [
     "available",
     "backtest_plot",
+    "boundary",
+    "causal_graph",
+    "convergence",
+    "corrections",
     "coverage_plot",
     "forest",
     "funnel",
+    "intervals",
     "marginal_curve",
+    "panel_coverage",
+    "recovery",
     "response_curve",
     "sbc_ranks",
-    "spec_curve_plot"
+    "spec_curve_plot",
+    "stability",
+    "transfer",
+    "unrolled"
    ],
    "blurb": "Plot helpers for the diagnostics that have a canonical picture.",
    "layer": "composition"
@@ -974,7 +991,7 @@
  "by_name": {
   "core": {
    "name": "core",
-   "n": 110,
+   "n": 115,
    "symbols": [
     "AcceptanceRegion",
     "Add",
@@ -990,6 +1007,7 @@
     "Convolve",
     "Covariate",
     "D",
+    "DIGITS",
     "Data",
     "DesignMatrix",
     "Dimension",
@@ -1057,11 +1075,14 @@
     "compile_log_density",
     "constrain",
     "data_names",
+    "decimals_for",
     "dimension",
     "dimension_of",
     "dimensionless",
     "effective_sample_size",
     "eti",
+    "format_interval",
+    "format_measured",
     "free_parameters",
     "hdi",
     "interval",
@@ -1079,6 +1100,7 @@
     "node_path",
     "params",
     "require_jax",
+    "round_to",
     "spec_type_name",
     "summarize",
     "unconstrain",
@@ -1862,16 +1884,18 @@
   },
   "adapters": {
    "name": "adapters",
-   "n": 15,
+   "n": 17,
    "symbols": [
     "Channel",
     "EXPOSURE",
     "Geo",
     "KPI",
     "MarketingRoles",
+    "agronomy",
     "contribution",
     "impressions",
     "marginal_roas",
+    "marketing",
     "marketing_spec",
     "panel_from_marketing_frame",
     "panel_from_mff",
@@ -1885,17 +1909,27 @@
   },
   "viz": {
    "name": "viz",
-   "n": 9,
+   "n": 19,
    "symbols": [
     "available",
     "backtest_plot",
+    "boundary",
+    "causal_graph",
+    "convergence",
+    "corrections",
     "coverage_plot",
     "forest",
     "funnel",
+    "intervals",
     "marginal_curve",
+    "panel_coverage",
+    "recovery",
     "response_curve",
     "sbc_ranks",
-    "spec_curve_plot"
+    "spec_curve_plot",
+    "stability",
+    "transfer",
+    "unrolled"
    ],
    "blurb": "Plot helpers for the diagnostics that have a canonical picture.",
    "layer": "composition"
@@ -1943,7 +1977,7 @@
    "layer": "composition"
   }
  },
- "total_symbols": 826,
+ "total_symbols": 843,
  "n_packages": 18,
  "import_workload": "import axiom.identify, axiom.design, axiom.surface, axiom.meta, axiom.estimands",
  "import_pulls": [
@@ -1953,5 +1987,5 @@
   "scipy"
  ],
  "samplers_pulled": [],
- "import_seconds": 0.77
+ "import_seconds": 0.78
 }

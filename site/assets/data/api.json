@@ -2,7 +2,7 @@
  "packages": [
   {
    "name": "core",
-   "n": 110,
+   "n": 115,
    "layer": "foundation",
    "blurb": "Specs, dimensions, intervals, expressions \u2014 the vocabulary everything else is written in.",
    "symbols": [
@@ -117,6 +117,14 @@
      "summary": "The declarable set of base dimensions.",
      "usage": "print(D.currency, D.time, D.outcome, D.entity)",
      "notebook": "nbs/core/01-dimensions.ipynb"
+    },
+    {
+     "name": "DIGITS",
+     "kind": "value",
+     "signature": "",
+     "summary": "int([x]) -> integer int(x, base=10) -> integer",
+     "usage": "print(\"digits kept of the uncertainty:\", DIGITS)",
+     "notebook": "nbs/core/05-intervals-verdicts-and-failures.ipynb"
     },
     {
      "name": "Data",
@@ -655,6 +663,14 @@
      "notebook": "nbs/core/03-expression-tree.ipynb"
     },
     {
+     "name": "decimals_for",
+     "kind": "function",
+     "signature": "(uncertainty: float, *, digits: int = 2) -> int",
+     "summary": "Decimal places warranted by ``uncertainty``, for ``round`` and ``format``.",
+     "usage": "print(f\"12.3456789 \u00b1 {u:<6} -> {format_measured(12.3456789, u):>8}   \"\n      f\"decimals={decimals_for(u)}\")",
+     "notebook": "nbs/core/05-intervals-verdicts-and-failures.ipynb"
+    },
+    {
      "name": "dimension",
      "kind": "function",
      "signature": "(model: Model, path: str = '') -> Dimension",
@@ -692,6 +708,22 @@
      "signature": "(draws: ArrayLike, mass: float) -> Interval",
      "summary": "Equal-tailed interval: the ``(1-mass)/2`` and ``1-(1-mass)/2`` quantiles.",
      "usage": "e = eti(draws, 0.9)",
+     "notebook": "nbs/core/05-intervals-verdicts-and-failures.ipynb"
+    },
+    {
+     "name": "format_interval",
+     "kind": "function",
+     "signature": "(lower: float, upper: float, *, uncertainty: float | None = None, digits: int = 2, fallback: int = 6, group: bool = False) -> str",
+     "summary": "``[lower, upper]`` with both bounds at the precision the width supports.",
+     "usage": "print(format_interval(h.lower, h.upper), \"from a half-width of\", round(h.half_width, 4))",
+     "notebook": "nbs/core/05-intervals-verdicts-and-failures.ipynb"
+    },
+    {
+     "name": "format_measured",
+     "kind": "function",
+     "signature": "(value: float, uncertainty: float | None = None, *, digits: int = 2, fallback: int = 6, group: bool = False) -> str",
+     "summary": "``value`` as text, carrying only the digits ``uncertainty`` supports.",
+     "usage": "print(\"no stated uncertainty ->\", format_measured(12.3456789))",
      "notebook": "nbs/core/05-intervals-verdicts-and-failures.ipynb"
     },
     {
@@ -829,6 +861,14 @@
      "summary": "",
      "usage": "print(\"jax available:\", jax_available(), \"|\", require_jax())",
      "notebook": "nbs/core/07-model-spec-and-jax.ipynb"
+    },
+    {
+     "name": "round_to",
+     "kind": "function",
+     "signature": "(value: float, uncertainty: float, *, digits: int = 2) -> float",
+     "summary": "``value`` rounded to the place ``uncertainty`` reaches.",
+     "usage": "print(round_to(s.mean, s.sd), \"vs the stored\", s.mean)",
+     "notebook": "nbs/core/05-intervals-verdicts-and-failures.ipynb"
     },
     {
      "name": "spec_type_name",
@@ -2427,7 +2467,7 @@
      "kind": "spec",
      "signature": "(doses: dict[str, float], expected_outcome: float, budget: float, objective: Literal['mean', 'quantile'], q: float = 0.5, method: str, status: Literal['converged'] = 'converged', seed: int | None = None, detail: dict[str, float] = {})",
      "summary": "One allocation: a dose per treatment and the objective it achieves.",
-     "usage": "if isinstance(alloc, Allocation):\n    print(alloc.doses, round(alloc.expected_outcome, 3), alloc.status, round(alloc.total_dose, 3))\nelse:\n    print(alloc)",
+     "usage": "if isinstance(alloc, Allocation):\n    print(alloc.doses, round(alloc.expected_outcome, 3), alloc.status, round(alloc.total_dose, 3))\nelse:\n    show(alloc)",
      "notebook": "nbs/surface/05-ascent-and-optimize.ipynb"
     },
     {
@@ -2467,7 +2507,7 @@
      "kind": "spec",
      "signature": "(treatments: tuple[str, ...], points: tuple[tuple[float, ...], ...], values: tuple[float, ...], stop: Literal['decrease', 'converged', 'boundary', 'n_steps'])",
      "summary": "The visited points of a steepest-ascent walk and the surface value at each.",
-     "usage": "if isinstance(path, AscentPath):\n    print(path.n, path.stop, path.best(), round(path.values[-1], 3))\nelse:\n    print(path)",
+     "usage": "if isinstance(path, AscentPath):\n    print(path.n, path.stop, path.best(), round(path.values[-1], 3))\nelse:\n    show(path)",
      "notebook": "nbs/surface/05-ascent-and-optimize.ipynb"
     },
     {
@@ -2587,7 +2627,7 @@
      "kind": "spec",
      "signature": "(budgets: tuple[float, ...], outcomes: tuple[float, ...], allocations: tuple[Allocation, ...])",
      "summary": "Optimal outcome per budget: ``budgets`` ascend; ``allocations[i]`` reaches ``outcomes[i]``.",
-     "usage": "if isinstance(fr, Frontier):\n    print(fr.as_frame())\n    print(\"shadow prices:\", np.round(fr.shadow_prices(), 4))\nelse:\n    print(fr)",
+     "usage": "if isinstance(fr, Frontier):\n    print(fr.as_frame())\n    print(\"shadow prices:\", np.round(fr.shadow_prices(), 4))\nelse:\n    show(fr)",
      "notebook": "nbs/surface/05-ascent-and-optimize.ipynb"
     },
     {
@@ -6281,7 +6321,7 @@
   },
   {
    "name": "adapters",
-   "n": 15,
+   "n": 17,
    "layer": "composition",
    "blurb": "Domain vocabulary \u2014 marketing is one adapter, not the core.",
    "symbols": [
@@ -6326,6 +6366,14 @@
      "notebook": "nbs/adapters/01-marketing.ipynb"
     },
     {
+     "name": "agronomy",
+     "kind": "value",
+     "signature": "",
+     "summary": "The agronomy adapter: plot / rate / yield / optimum over the general core.",
+     "usage": "print(\"agronomy's public surface:\", len(agronomy.__all__), \"names\")",
+     "notebook": "nbs/adapters/02-agronomy.ipynb"
+    },
+    {
      "name": "contribution",
      "kind": "function",
      "signature": "(result: FitResult, channel: str, window: TimeWindow | tuple[int, int] | None = None, *, mass: float = 0.9, definition: IntervalDefinition = 'hdi', seed: int | None = None) -> EstimandResult | Unsupported | Blocked",
@@ -6348,6 +6396,14 @@
      "summary": "The derivative of the window's KPI with respect to a common shift of the channel's observed spend (the ``marginal`` estimand). Needs a currency-valued KPI.",
      "usage": "windowed = marginal_roas(res, \"tv\", window=(2, 8))",
      "notebook": "nbs/adapters/01-marketing.ipynb"
+    },
+    {
+     "name": "marketing",
+     "kind": "value",
+     "signature": "",
+     "summary": "The marketing adapter: channel / spend / geo / KPI over the general core.",
+     "usage": "print(\" \", marketing.roas.__doc__.strip().splitlines()[0])",
+     "notebook": "nbs/adapters/02-agronomy.ipynb"
     },
     {
      "name": "marketing_spec",
@@ -6406,11 +6462,11 @@
      "notebook": "nbs/adapters/01-marketing.ipynb"
     }
    ],
-   "n_notebooks": 1
+   "n_notebooks": 2
   },
   {
    "name": "viz",
-   "n": 9,
+   "n": 19,
    "layer": "composition",
    "blurb": "Plot helpers for the diagnostics that have a canonical picture.",
    "symbols": [
@@ -6428,6 +6484,38 @@
      "signature": "(backtest: Any) -> Any | Unsupported",
      "summary": "Per-horizon scores of a rolling-origin backtest \u2014 MAE, RMSE, CRPS \u2014 and the interval coverage against the nominal mass.",
      "usage": "fig = backtest_plot(bt)",
+     "notebook": "nbs/viz/01-figures.ipynb"
+    },
+    {
+     "name": "boundary",
+     "kind": "function",
+     "signature": "(rule: Any, *, height: float = 360.0) -> Any | Unsupported",
+     "summary": "The stopping threshold at each look, which is the protocol sentence. (``design``)",
+     "usage": "boundary(rule)",
+     "notebook": "nbs/viz/01-figures.ipynb"
+    },
+    {
+     "name": "causal_graph",
+     "kind": "function",
+     "signature": "(graph: Any, *, height: float = 420.0) -> Any | Unsupported",
+     "summary": "The graph itself: nodes, directed edges, and the bidirected ones.",
+     "usage": "figure = causal_graph(graph)",
+     "notebook": "nbs/viz/01-figures.ipynb"
+    },
+    {
+     "name": "convergence",
+     "kind": "function",
+     "signature": "(report: Any, *, height: float = 380.0) -> Any | Unsupported",
+     "summary": "R-hat per parameter against the threshold that decides the run. (``infer``)",
+     "usage": "convergence(report)",
+     "notebook": "nbs/viz/01-figures.ipynb"
+    },
+    {
+     "name": "corrections",
+     "kind": "function",
+     "signature": "(applied: Sequence[Any], *, height: float = 360.0) -> Any | Unsupported",
+     "summary": "What each correction did to the number, in order. (``calibrate``)",
+     "usage": "corrections(applied)",
      "notebook": "nbs/viz/01-figures.ipynb"
     },
     {
@@ -6455,11 +6543,35 @@
      "notebook": "nbs/viz/01-figures.ipynb"
     },
     {
+     "name": "intervals",
+     "kind": "function",
+     "signature": "(named: Any, *, height: float = 360.0, unit: str = '') -> Any | Unsupported",
+     "summary": "Several named intervals on one axis. (``core``)",
+     "usage": "intervals(\n    {\n        \"40 mg\": Interval(lower=-16.7, upper=-8.1, definition=\"eti\", mass=0.9),\n        \"20 mg\": Interval(lower=-6.2, upper=-3.4, definition=\"eti\", mass=0.9),\n        \"10 mg\": Interval(lower=-2.1, upper=1.4, definition=\"eti\", mass=0.9),\n    },\n    unit=\"mmHg\",\n)",
+     "notebook": "nbs/viz/01-figures.ipynb"
+    },
+    {
      "name": "marginal_curve",
      "kind": "function",
      "signature": "(result: Any, treatment: str = '', *, n_grid: int = 25, mass: float = 0.9, definition: IntervalDefinition = 'eti', window: TimeWindow | None = None, seed: int | None = None) -> Any | Unsupported",
      "summary": "``d outcome / d dose`` against dose, with its posterior band.",
      "usage": "slope = marginal_curve(res, \"a\", n_grid=8, mass=0.8)",
+     "notebook": "nbs/viz/01-figures.ipynb"
+    },
+    {
+     "name": "panel_coverage",
+     "kind": "function",
+     "signature": "(panel: Any, *, height: float = 400.0, max_units: int = 60) -> Any | Unsupported",
+     "summary": "Which unit was observed in which period. (``data``)",
+     "usage": "panel_coverage(panel)",
+     "notebook": "nbs/viz/01-figures.ipynb"
+    },
+    {
+     "name": "recovery",
+     "kind": "function",
+     "signature": "(truth: Any, estimated: Any, *, height: float = 400.0) -> Any | Unsupported",
+     "summary": "Estimated against true, for a world where the truth is known. (``sim``)",
+     "usage": "recovery(truth, estimated)",
      "notebook": "nbs/viz/01-figures.ipynb"
     },
     {
@@ -6484,6 +6596,30 @@
      "signature": "(curve: Any) -> Any | Unsupported",
      "summary": "The specification curve: estimates sorted with their intervals, coloured by whether the interval excludes zero; failed specifications are omitted and counted in the title.",
      "usage": "print(\"spec_curve_plot traces:\", len(spec_curve_plot(curve).data))",
+     "notebook": "nbs/viz/01-figures.ipynb"
+    },
+    {
+     "name": "stability",
+     "kind": "function",
+     "signature": "(report: Any, *, height: float = 380.0) -> Any | Unsupported",
+     "summary": "How often each edge came back, split by which way it pointed.",
+     "usage": "stability(report)",
+     "notebook": "nbs/viz/01-figures.ipynb"
+    },
+    {
+     "name": "transfer",
+     "kind": "function",
+     "signature": "(plan: Any, *, height: float = 320.0) -> Any | Unsupported",
+     "summary": "Which facets differ between source and target, and what that costs. (``estimands``)",
+     "usage": "transfer(plan)",
+     "notebook": "nbs/viz/01-figures.ipynb"
+    },
+    {
+     "name": "unrolled",
+     "kind": "function",
+     "signature": "(system: Any, *, height: float = 420.0) -> Any | Unsupported",
+     "summary": "A dynamic system after unrolling, laid out so depth is time. (``dynamics``)",
+     "usage": "unrolled(unroll(system, periods=4))",
      "notebook": "nbs/viz/01-figures.ipynb"
     }
    ],
@@ -6562,7 +6698,7 @@
     {
      "name": "Metric",
      "kind": "spec",
-     "signature": "(block: Literal['metric'] = 'metric', source: str, label: str, unit: str = '', precision: int = 2)",
+     "signature": "(block: Literal['metric'] = 'metric', source: str, label: str, unit: str = '', precision: int | None = None)",
      "summary": "One number, with its interval when it has one.",
      "usage": "blocks: tuple[AnyBlock, ...] = (\n    Heading(text=\"Per-arm detail\", level=2),\n    Paragraph(text=\"One page per arm, generated in a loop.\", emphasis=True),\n    Metric(source=\"contrast\", label=\"Effect\", unit=\"units\"),\n    Table(source=\"arms\"),\n    Divider(),\n    PageBreak(),\n    LedgerBlock(source=\"ledger\"),\n)",
      "notebook": "nbs/report/01-templates.ipynb"
@@ -6690,7 +6826,7 @@
     {
      "name": "Theme",
      "kind": "spec",
-     "signature": "(name: str = 'axiom', font: str = 'Helvetica', mono_font: str = 'Courier', base_size: float = 11.0, title_size: float = 24.0, heading_sizes: tuple[float, float, float] = (18.0, 14.0, 12.0), text_color: str = '#1c1c1c', muted_color: str = '#5b6472', accent_color: str = '#2f7fd1', background_color: str = '#ffffff', rule_color: str = '#d8dbe0', palette: tuple[str, ...] = ..., ... and 5 more fields)",
+     "signature": "(name: str = 'axiom', font: str = 'Helvetica', font_fallback: str = 'system-ui, -apple-system, sans-serif', mono_font: str = 'Courier', base_size: float = 11.0, title_size: float = 24.0, heading_sizes: tuple[float, float, float] = (18.0, 14.0, 12.0), text_color: str = '#1c1c1c', muted_color: str = '#5b6472', accent_color: str = '#2f7fd1', background_color: str = '#ffffff', rule_color: str = '#d8dbe0', ... and 6 more fields)",
      "summary": "Fonts, colours and geometry for a rendered report.",
      "usage": "house = Theme(\n    name=\"house\", font=\"Helvetica\", accent_color=\"#b5453b\", muted_color=\"#6b7280\",\n    palette=(\"#b5453b\", \"#2f7fd1\", \"#3aa17e\"), base_size=10.5, title_size=26.0,\n    page=\"a4\", slide=\"standard\", figure_height=280.0,\n)",
      "notebook": "nbs/report/01-templates.ipynb"
@@ -6771,9 +6907,9 @@
    "n_notebooks": 1
   }
  ],
- "total_symbols": 826,
+ "total_symbols": 843,
  "n_packages": 18,
- "n_with_usage": 821,
+ "n_with_usage": 838,
  "n_without_usage": 5,
  "without_usage": [
   "dynamics.DynamicEquation",

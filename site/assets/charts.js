@@ -17,6 +17,7 @@
   var cache = {};
   var registry = {};
   var mounted = [];
+  var uid = 0;
 
   /* -- tiny helpers -------------------------------------------------------- */
 
@@ -76,6 +77,11 @@
   }
 
   function ticks(lo, hi, n) {
+    /* A descending domain is a real axis, not an empty one: a funnel plot's
+       standard error grows downward, so its yDomain arrives as [max, 0]. Sort
+       the ends and let the scale place the values — returning [lo] here is why
+       an inverted axis used to draw one meaningless label and no gridlines. */
+    if (hi < lo) { var swap = lo; lo = hi; hi = swap; }
     var span = hi - lo;
     if (span <= 0) return [lo];
     var step = Math.pow(10, Math.floor(Math.log10(span / n)));
@@ -133,6 +139,20 @@
     var iw = w - m.l - m.r, ih = h - m.t - m.b;
     var g = el("g", { transform: "translate(" + m.l + "," + m.t + ")" }, svg);
 
+    /* Marks that can run past their own domain go in `marks`, which is clipped to
+       the plot rectangle. Annotations stay in `g`, because several of them sit
+       outside it on purpose — a direct series label to the right of its last
+       point, an hline caption, the axis titles.
+
+       Without this an SVG group paints wherever its coordinates say, and a chart
+       whose geometry is not derived from its domain paints across the page: a
+       funnel's contours are computed from the pooled estimate and the largest
+       standard error, not from the studies, so they ran 340px past the left edge
+       of a 700px plot and over the prose beside it. */
+    var cid = "axclip" + ++uid;
+    el("rect", { x: 0, y: 0, width: iw, height: ih }, el("clipPath", { id: cid }, svg));
+    var marks = el("g", { "clip-path": "url(#" + cid + ")" }, g);
+
     var x = scale(o.xDomain, [0, iw]);
     var y = scale(o.yDomain, [ih, 0]);
 
@@ -185,7 +205,7 @@
         "font-family": "var(--f-ui)", "font-size": 11
       }, g).textContent = o.yLabel;
     }
-    return { svg: svg, g: g, x: x, y: y, iw: iw, ih: ih, m: m };
+    return { svg: svg, g: g, marks: marks, x: x, y: y, iw: iw, ih: ih, m: m };
   }
 
   /* -- tooltip ------------------------------------------------------------- */
@@ -260,13 +280,17 @@
     wrap.style.gridTemplateColumns = "repeat(" + cols + ", minmax(0, 1fr))";
     wrap.style.gap = "18px";
     root.appendChild(wrap);
-    var tip = tipFor(root);
     var yDom = o.yDomain || [-5, 4];
 
     panels.forEach(function (pan) {
       var cell = document.createElement("div");
       cell.style.position = "relative";
       wrap.appendChild(cell);
+      /* One tooltip per panel, anchored to the panel. It used to be a single tip on
+         the chart root while the coordinates handed to showTip were relative to the
+         cell, so in a grid of panels every tooltip but the top-left one appeared
+         offset by that cell's position in the grid. */
+      var tip = tipFor(cell);
 
       var ttl = document.createElement("div");
       ttl.style.cssText = "font-family:var(--f-ui);font-size:.82rem;font-weight:600;" +
@@ -324,7 +348,7 @@
         el("path", {
           d: path(rest), fill: "none", stroke: colour, "stroke-width": 1.6,
           "stroke-dasharray": "2 4", opacity: .45
-        }, f.g);
+        }, f.marks);
         for (var q = taken; q < pan.information.length; q++) {
           el("circle", {
             cx: f.x(pan.information[q]), cy: f.y(pan.z[q]), r: 2.6, fill: colour,
@@ -336,7 +360,7 @@
       var line = el("path", {
         d: path(seen), fill: "none", stroke: colour, "stroke-width": 2.4,
         "stroke-linejoin": "round", "stroke-linecap": "round"
-      }, f.g);
+      }, f.marks);
 
       /* A path with a single point has no length and would draw nothing — which is
          exactly the case when a rule fires at the very first look. */
@@ -709,7 +733,7 @@
       el("path", {
         d: path(pts) + "Z", fill: p.accent, opacity: .06 + ci * 0.03, stroke: p.rule,
         "stroke-width": 1
-      }, f.g);
+      }, f.marks);
     });
 
     el("line", {

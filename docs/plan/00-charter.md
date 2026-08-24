@@ -155,9 +155,19 @@ the facet table. The other seven rows are settled by the graph and the ledger.
 Permanently, not "later":
 
 - Any web application, HTTP API, or frontend.
-- Any LLM or agent framework.
+- Any LLM or agent framework. *(See the note below on `packages/`.)*
 - A report generator. `axiom` returns typed results; rendering is someone
   else's job. (`axiom.viz` is a thin optional figure helper, not a report engine.)
+
+  Two amendments, both recorded rather than quietly taken. `axiom.report` shipped
+  in Phase 9 and **is** a report engine — templates plus HTML/PPTX/PDF renderers;
+  note [0007](../notes/0007-uncertainty-and-reports.md) describes it. And a
+  language model writing report prose lives in `packages/axiom-dossier`, which
+  depends on `axiom` and which `axiom` never imports; note
+  [0015](../notes/0015-report-narration-addon.md) records why. Anything under
+  `packages/` is a separate distribution outside this charter's scope: the twelve
+  gates walk `axiom.__path__` and cannot see it, and `pip install axiom` does not
+  install it. The rules above bind `src/axiom`.
 - Authentication, tenancy, sessions, job queues, object stores.
 - A marketing-mix model as such. The MMM is a *configuration* of
   `axiom.surface` + `axiom.adapters.marketing`, not a class in this repo.

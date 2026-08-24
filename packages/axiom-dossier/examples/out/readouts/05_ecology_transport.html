@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="axiom.report">
+<meta name="axiom-report-hash" content="7cbdc806ba7de65363251aaf5a29cbcce5a2f1da73048b1683453c7bf6f3f9bb">
+<title>Borrowing an answer from a reserve you did not study</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 64.0pt;
+  background: #ffffff; color: #111111;
+  font-family: Times-Roman, Georgia, "Times New Roman", Times, serif;
+  font-size: 10.5pt; line-height: 1.55;
+}
+main { max-width: 952.0pt; margin: 0 auto; }
+h1 { font-size: 19.0pt; margin: 0 0 .15em; letter-spacing: -.01em; }
+h2 { font-size: 13.5pt; margin: 1.6em 0 .4em;
+      padding-bottom: .25em; border-bottom: 1px solid #c9c9c9; }
+h3 { font-size: 11.5pt; margin: 1.2em 0 .3em; }
+h4 { font-size: 10.5pt; margin: 1em 0 .3em; }
+p { margin: .5em 0; }
+p.emphasis { font-size: 11.760000000000002pt; color: #1a1a1a; }
+.subtitle { color: #555555; font-size: 12.075pt;
+             margin: 0 0 1.4em; }
+.summary { color: #555555; margin: 0 0 .8em; }
+code { font-family: Courier, ui-monospace, monospace;
+        background: rgba(0,0,0,.05); padding: .08em .3em; border-radius: 3px; }
+figure { margin: 1.1em 0; }
+figcaption { color: #555555; font-size: 9.66pt; margin-top: .3em; }
+table { border-collapse: collapse; width: 100%; margin: .8em 0;
+         font-size: 9.975pt; }
+th, td { text-align: left; padding: .35em .6em; border-bottom: 1px solid #c9c9c9; }
+th { font-weight: 600; border-bottom: 2px solid #c9c9c9; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.metrics { display: flex; flex-wrap: wrap; gap: 1.4em; margin: 1em 0; }
+.metric { min-width: 12em; }
+.metric .label { color: #555555; font-size: 9.450000000000001pt;
+                  text-transform: uppercase; letter-spacing: .04em; }
+.metric .value { font-size: 15.579999999999998pt; font-weight: 600;
+                  color: #1a1a1a; font-variant-numeric: tabular-nums; }
+.metric .interval { color: #555555; font-size: 9.450000000000001pt;
+                     font-variant-numeric: tabular-nums; }
+.ledger { border-left: 3px solid #c9c9c9; padding-left: .9em; margin: 1em 0; }
+.ledger .line { margin: .55em 0; }
+.ledger .kind { color: #1a1a1a; font-family: Courier, monospace;
+                 font-size: 8.924999999999999pt; }
+.ledger .assumption { color: #555555; font-size: 9.450000000000001pt; }
+hr { border: 0; border-top: 1px solid #c9c9c9; margin: 1.4em 0; }
+footer { margin-top: 2.5em; padding-top: .8em; border-top: 1px solid #c9c9c9;
+          color: #555555; font-size: 8.924999999999999pt; }
+@media print { body { padding: 0; } h2 { break-before: page; } }
+</style>
+</head><body><main>
+<h1>Borrowing an answer from a reserve you did not study</h1>
+<p class="subtitle">A grazing-exclusion trial worked in one reserve. A second reserve, with different rainfall and a different herbivore community, wants to know what to expect. Does the first reserve&#x27;s number apply, and if not, what has to be measured before it can?</p>
+<h2>Abstract</h2>
+<p><strong>Objective.</strong> A grazing-exclusion trial worked in one reserve. A second reserve, with different rainfall and a different herbivore community, wants to know what to expect. Does the first reserve&#x27;s number apply, and if not, what has to be measured before it can? <strong>Methods.</strong> Say where the two populations differ, not just that they do. 5 step(s) are recorded in full below. <strong>Results.</strong> The source reserve&#x27;s adjusted estimate was 2.004 and the target&#x27;s true effect was 2.000. The transfer worked, and it worked because the mechanism is shared and only Z&#x27;s distribution differs — which is a claim about ecology that the diagram records and no amount of data from either reserve could establish. <strong>Conclusions.</strong> No assumptions were recorded for this run, which is not the same as none being required.</p>
+<h2>1. Introduction</h2>
+<p>This report addresses one question: A grazing-exclusion trial worked in one reserve. A second reserve, with different rainfall and a different herbivore community, wants to know what to expect. Does the first reserve&#x27;s number apply, and if not, what has to be measured before it can?</p>
+<h2>2. Methods</h2>
+<p><strong>Question.</strong> A grazing-exclusion trial worked in one reserve. A second reserve, with different rainfall and a different herbivore community, wants to know what to expect. Does the first reserve&#x27;s number apply, and if not, what has to be measured before it can?</p>
+<h4>Say where the two populations differ, not just that they do</h4>
+<p>A selection diagram is the ordinary causal graph with one extra piece of information: which mechanisms differ between the populations. Here the S-node points into Z — the reserves have different herbivore communities, but grazing exclusion works the same way in both. That distinction, between differing in who is in the population and differing in how the world works, is the entire question, and no dataset contains it.</p>
+<p class="emphasis">considered instead: Pooling the two reserves and adding a site indicator. That estimates a blend of two populations, which is not the target reserve&#x27;s answer and is not the source reserve&#x27;s either. It also cannot represent the case that matters most: the mechanism itself differing.; readout: source reserve : X -&gt; Y, Z -&gt; X, Z -&gt; Y; target reserve : X -&gt; Y, Z -&gt; X, Z -&gt; Y; S-node on      : [&#x27;Z&#x27;]; selection diagram : S[Z] -&gt; Z, X -&gt; Y, Z -&gt; X, Z -&gt; Y</p>
+<h4>Ask the three transport questions, before collecting anything</h4>
+<p>Read the middle row carefully: trivially transportable is True, which says the target could answer this from its own data — if it ran its own trial. It has not, and that is the whole reason the question is being asked. The verdict&#x27;s route is &#x27;s_admissible_adjustment&#x27;: borrow the source, re-weighted on a set the target must measure. Transport is what you use when the target has covariates but no experiment. They are increasingly demanding and each has a different consequence. Directly transportable would mean the source number is the target number untouched. Trivially transportable would mean the target&#x27;s own data suffices and the source is irrelevant. The general verdict is the interesting middle: transportable, but only after re-weighting on a specific set.</p>
+<p class="emphasis">considered instead: Running the analysis in the source, then arguing about external validity in the discussion section. By then the target&#x27;s data collection has already happened, and the covariates that would have licensed the transfer were not on the form.; readout: transport verdict : identified;   route   : s_admissible_adjustment</p>
+<h4>Turn the verdict into a shopping list for the second reserve</h4>
+<p>The S-admissible sets are the useful output of this entire example. They say which covariates must be measured in the TARGET so the source effect can be re-weighted onto it. That is a decision about a field protocol, made before anyone flies out, and it is the thing a discussion-section paragraph about generalisability never delivers.</p>
+<p class="emphasis">considered instead: Measuring everything. Field time in a remote reserve is the binding constraint, and &#x27;collect all covariates&#x27; is how the two that mattered end up recorded badly alongside forty that did not.; readout: S-admissible sets : [[&#x27;Z&#x27;]]; Measure these in the target and the source effect can be re-weighted onto; the target population. Anything else is optional.</p>
+<h4>Check the borrowed number against the target&#x27;s own</h4>
+<p>The transfer is licensed by the diagram, but this is a synthetic pair, so the claim can also be checked: estimate in the source, estimate in the target, and compare both to the target&#x27;s true effect. In a real study only the first of those three exists, which is why the diagram had to carry the argument.</p>
+<p class="emphasis">considered instead: Treating agreement here as the evidence that transport works. It is not — it is a check that the implementation matches the theorem. The evidence that transport works is the S-node claim, and that is an ecological judgement.; readout: source, unadjusted    2.721 +/- 0.015  [ 2.692,  2.751]; source, adjusted      2.004 +/- 0.013  [ 1.979,  2.029]; target, adjusted      2.002 +/- 0.013  [ 1.976,  2.027]; target truth          2.000</p>
+<h4>Move the S-node onto the mechanism and watch the route change</h4>
+<p>The status is still &#x27;identified&#x27;, which is easy to misread as &#x27;nothing changed&#x27;. The route is what changed: from &#x27;s_admissible_adjustment&#x27; to &#x27;trivial&#x27;. &#x27;Trivial&#x27; means the effect is identifiable from the target&#x27;s own data and the source contributes nothing — which is the correct answer, and an expensive one. Once the mechanism differs, the first reserve&#x27;s trial is no longer evidence about the second, and the second has to run its own. Everything above rests on where the populations differ. Put the S-node on Y as well — the reserves now respond to exclusion differently, rather than merely containing different herbivores — and the same call on the same data comes back by a different route. The answer tracks the ecology, not the sample size.</p>
+<p class="emphasis">considered instead: Assuming a difference in outcomes implies a difference in mechanism. The first chart in this walkthrough shows Y differing between the reserves while the mechanism is identical. Outcome differences are what a population shift looks like; they are not evidence about the mechanism either way.; readout: S-node on          : [&#x27;Y&#x27;, &#x27;Z&#x27;]; transport verdict  : identified;   route   : trivial; directly transportable : False</p>
+<figure><table><thead><tr><th class="">Step</th><th class="">Parameter</th><th class="">Value</th></tr></thead><tbody><tr><td class="">Say where the two populations differ, not just that they do</td><td class="">considered instead</td><td class="">Pooling the two reserves and adding a site indicator. That estimates a blend of two populations, which is not the target reserve&#x27;s answer and is not the source reserve&#x27;s either. It also cannot represent the case that matters most: the mechanism itself differing.</td></tr><tr><td class="">Say where the two populations differ, not just that they do</td><td class="">readout</td><td class="">source reserve : X -&gt; Y, Z -&gt; X, Z -&gt; Y; target reserve : X -&gt; Y, Z -&gt; X, Z -&gt; Y; S-node on      : [&#x27;Z&#x27;]; selection diagram : S[Z] -&gt; Z, X -&gt; Y, Z -&gt; X, Z -&gt; Y</td></tr><tr><td class="">Ask the three transport questions, before collecting anything</td><td class="">considered instead</td><td class="">Running the analysis in the source, then arguing about external validity in the discussion section. By then the target&#x27;s data collection has already happened, and the covariates that would have licensed the transfer were not on the form.</td></tr><tr><td class="">Ask the three transport questions, before collecting anything</td><td class="">readout</td><td class="">transport verdict : identified;   route   : s_admissible_adjustment</td></tr><tr><td class="">Turn the verdict into a shopping list for the second reserve</td><td class="">considered instead</td><td class="">Measuring everything. Field time in a remote reserve is the binding constraint, and &#x27;collect all covariates&#x27; is how the two that mattered end up recorded badly alongside forty that did not.</td></tr><tr><td class="">Turn the verdict into a shopping list for the second reserve</td><td class="">readout</td><td class="">S-admissible sets : [[&#x27;Z&#x27;]]; Measure these in the target and the source effect can be re-weighted onto; the target population. Anything else is optional.</td></tr><tr><td class="">Check the borrowed number against the target&#x27;s own</td><td class="">considered instead</td><td class="">Treating agreement here as the evidence that transport works. It is not — it is a check that the implementation matches the theorem. The evidence that transport works is the S-node claim, and that is an ecological judgement.</td></tr><tr><td class="">Check the borrowed number against the target&#x27;s own</td><td class="">readout</td><td class="">source, unadjusted    2.721 +/- 0.015  [ 2.692,  2.751]; source, adjusted      2.004 +/- 0.013  [ 1.979,  2.029]; target, adjusted      2.002 +/- 0.013  [ 1.976,  2.027]; target truth          2.000</td></tr><tr><td class="">Move the S-node onto the mechanism and watch the route change</td><td class="">considered instead</td><td class="">Assuming a difference in outcomes implies a difference in mechanism. The first chart in this walkthrough shows Y differing between the reserves while the mechanism is identical. Outcome differences are what a population shift looks like; they are not evidence about the mechanism either way.</td></tr><tr><td class="">Move the S-node onto the mechanism and watch the route change</td><td class="">readout</td><td class="">S-node on          : [&#x27;Y&#x27;, &#x27;Z&#x27;]; transport verdict  : identified;   route   : trivial; directly transportable : False</td></tr></tbody></table><figcaption>Table 1. The design, as recorded parameters</figcaption></figure>
+<h2>3. Results</h2>
+<p>No findings were recorded.</p>
+<h2>4. What the run showed</h2>
+<p class="emphasis">Written by the analyst after seeing the output, and reproduced unchanged. Nothing in this section is generated.</p>
+<p>The source reserve&#x27;s adjusted estimate was 2.004 and the target&#x27;s true effect was 2.000. The transfer worked, and it worked because the mechanism is shared and only Z&#x27;s distribution differs — which is a claim about ecology that the diagram records and no amount of data from either reserve could establish.</p>
+<p>The useful output is not that number. It is the list [[&#x27;Z&#x27;]]: measure that in the target and the borrowed effect is licensed. Decided before the field season, it is a line on a protocol. Decided afterwards, it is a limitation.</p>
+<p>And the call is not automatic. Adding an S-node on the mechanism moved the route from &#x27;s_admissible_adjustment&#x27; to &#x27;trivial&#x27; with no change to the data at all — from &#x27;borrow the source, re-weighted&#x27; to &#x27;the source tells you nothing, run your own trial&#x27;. The same three lines of code give opposite operational advice depending on a claim an ecologist makes about the two reserves, which is exactly where that decision belongs.</p>
+<h2>5. Model checking</h2>
+<p>No diagnostics were recorded. An analysis with no model checking is not therefore sound; it is unexamined.</p>
+<h2>6. Discussion</h2>
+<p>There are no findings to interpret.</p>
+<h2>7. Conclusions</h2>
+<p><strong>A grazing-exclusion trial worked in one reserve. A second reserve, with different rainfall and a different herbivore community, wants to know what to expect. Does the first reserve&#x27;s number apply, and if not, what has to be measured before it can?</strong></p>
+<p>No finding was recorded, so no conclusion follows.</p>
+<h2>8. Limitations</h2>
+<p>No assumption in the record is left unresolved. That is a statement about the record, not a guarantee about the world.</p>
+<h2>9. Provenance</h2>
+<p>Every number in this document resolves to a quantity in the evidence record below. Prose was checked against that record: any numeral not traceable to it, and any claim the record does not itself make, is reported rather than published.</p>
+<figure><table><thead><tr><th class="">Field</th><th class="">Value</th></tr></thead><tbody><tr><td class="">field</td><td class="">Conservation ecology</td></tr><tr><td class="">source</td><td class="">examples/ walkthrough record</td></tr><tr><td class="">steps</td><td class="">5</td></tr><tr><td class="">evidence hash</td><td class="">17d49daabe637149c7e4ebf0852641dec2d8b2be800740431d5e2a14e2923a59</td></tr></tbody></table><figcaption>Table 2. Run</figcaption></figure>
+
+</main></body></html>

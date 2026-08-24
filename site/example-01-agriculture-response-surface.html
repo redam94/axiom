@@ -30,7 +30,7 @@
     <a class="brand" href="index.html">
       <span class="brand-mark" aria-hidden="true"></span>axiom</a>
     <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
-    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">Case study</a><a class="navx" href="api.html">API</a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
     <button class="theme" type="button" aria-label="Switch between light and dark">
       <span class="theme-ico" aria-hidden="true"></span>
     </button>
@@ -45,8 +45,8 @@
     <div class="ex-meta"><a class="pkg" href="surface.html">Surface</a>
       <span class="pkg">7 steps</span>
       <span class="pkg">6 figures</span>
-      <span class="pkg">450 lines</span>
-      <span class="pkg">runs in 6.9s</span></div>
+      <span class="pkg">453 lines</span>
+      <span class="pkg">runs in 7.2s</span></div>
     <div class="hero-cta">
       <a class="btn btn-1" href="#step-1">Start the walkthrough</a>
       <a class="btn btn-2" href="https://github.com/redam94/axiom/blob/main/examples/01_agriculture_response_surface.py">The whole file on GitHub &rarr;</a>
@@ -245,7 +245,10 @@ noise sd   : 0.35 t/ha, against a yield range of about 3 to 9</pre></div>
 posterior = result.posterior
 theta = {name: float(posterior.summary(name).mean) for name in posterior.names()}
 w.out(f&quot;converged : {result.converged}&quot;)
-w.out(f&quot;parameters: {&#x27;, &#x27;.join(posterior.names())}&quot;)
+# sorted, because `names()` is a frozenset: joined unsorted it prints in a
+# different order on every run, which makes this walkthrough -- and the page and
+# the report generated from it -- differ from itself between builds.
+w.out(f&quot;parameters: {&#x27;, &#x27;.join(sorted(posterior.names()))}&quot;)
 
 shown = (&quot;beta_nitrogen&quot;, &quot;k_nitrogen&quot;, &quot;beta_irrigation&quot;, &quot;k_irrigation&quot;)
 rows, chart_rows = [], []
@@ -292,7 +295,7 @@ w.figure(
 )</pre>
 </div>
       <div class="out"><div class="out-h">what it printed</div><pre>converged : True
-parameters: sigma, beta_irrigation, s_irrigation, beta_nitrogen, k_irrigation, alpha, k_nitrogen, s_nitrogen</pre></div>
+parameters: alpha, beta_irrigation, beta_nitrogen, k_irrigation, k_nitrogen, s_irrigation, s_nitrogen, sigma</pre></div>
 <div class="tbl-wrap"><table class="t"><thead><tr><th>parameter</th><th>truth</th><th>posterior mean</th><th>90% HDI</th><th>contains truth</th></tr></thead><tbody><tr><td>beta_nitrogen</td><td>4.2</td><td>5.1</td><td>[3.9, 6.3]</td><td>yes</td></tr><tr><td>k_nitrogen</td><td>90.0</td><td>108.2</td><td>[75.6, 137.4]</td><td>yes</td></tr><tr><td>beta_irrigation</td><td>2.6</td><td>2.9</td><td>[1.6, 4.1]</td><td>yes</td></tr><tr><td>k_irrigation</td><td>45.0</td><td>76.4</td><td>[43.6, 106.2]</td><td>yes</td></tr></tbody></table></div>
 <figure class="fig" id="01_agriculture_response_surface-recovery">
   <div class="fig-head"><p class="fig-t">Parameter recovery, every parameter on one axis</p><p class="fig-s">Each interval is scaled by its own true value, which is the only way to put a half-saturation dose in kg/ha and an amplitude in t/ha on the same picture. An interval that misses the dashed line is a recovery failure and would be drawn in red.</p></div>
@@ -724,7 +727,10 @@ result = fit(field.spec, field.panel, backend=&quot;laplace&quot;, draws=2000, s
 posterior = result.posterior
 theta = {name: float(posterior.summary(name).mean) for name in posterior.names()}
 w.out(f&quot;converged : {result.converged}&quot;)
-w.out(f&quot;parameters: {&#x27;, &#x27;.join(posterior.names())}&quot;)
+# sorted, because `names()` is a frozenset: joined unsorted it prints in a
+# different order on every run, which makes this walkthrough -- and the page and
+# the report generated from it -- differ from itself between builds.
+w.out(f&quot;parameters: {&#x27;, &#x27;.join(sorted(posterior.names()))}&quot;)
 
 shown = (&quot;beta_nitrogen&quot;, &quot;k_nitrogen&quot;, &quot;beta_irrigation&quot;, &quot;k_irrigation&quot;)
 rows, chart_rows = [], []
@@ -1094,7 +1100,7 @@ STEP 4  Fit once, and check the truth is inside the interval
   catches that.
 
   converged : True
-  parameters: sigma, beta_irrigation, s_irrigation, beta_nitrogen, k_irrigation, alpha, k_nitrogen, s_nitrogen
+  parameters: alpha, beta_irrigation, beta_nitrogen, k_irrigation, k_nitrogen, s_irrigation, s_nitrogen, sigma
   parameter        truth  posterior mean  90% HDI        contains truth
   ---------------  -----  --------------  -------------  --------------
   beta_nitrogen    4.2    5.1             [3.9, 6.3]     yes

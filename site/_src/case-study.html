@@ -198,6 +198,23 @@ path = <span class="f">monitor</span>(rule, observed_z, effects=effects, ses=ses
         </tbody>
       </table>
     </div>
+    <figure class="fig mt-lg">
+      <div class="fig-head">
+        <p class="fig-t">The rule's power curve</p>
+        <p class="fig-s">How often the rule stops an arm, against how much harm is genuinely
+          there. The table states five points; this is the shape between them, which is what
+          says whether a rule is trigger-happy or asleep.</p>
+      </div>
+      <div class="chart" data-chart="lines" data-file="casestudy"
+           data-opt='{"series":[
+             {"label":"P(stop)","x":"oc_curve.drift","y":"oc_curve.stop_probability","colour":"boundary"}],
+             "xLabel":"true drift (standardized harm; 0 = no harm)",
+             "yLabel":"probability the rule stops the arm","yPct":true,
+             "height":300,"rightPad":68}'></div>
+      <p class="stamp"><b>axiom.design.operating_characteristics</b>(rule, drift) at each
+        drift — computed exactly, not simulated</p>
+    </figure>
+
     <p class="small muted mt">Under no harm at all the rule fires
       {{casestudy.operating_characteristics[0].stop_probability:.1%}} of the time — a low
       false-stop rate is what buys the right to look six times. Under severe harm it fires
@@ -304,6 +321,21 @@ path = <span class="f">monitor</span>(rule, observed_z, effects=effects, ses=ses
     <div class="mt-lg">
       <h3>Every monitored contrast</h3>
       <p class="prose muted small">Twelve contrasts, six reviews each. Exactly one fired.</p>
+
+      <figure class="fig mt">
+        <div class="fig-head">
+          <p class="fig-t">The lowest Z each contrast ever reached</p>
+          <p class="fig-s">Sorted worst first. Eleven of the twelve never leave the middle of
+            the range; the one in red is the 40 mg arm inside the oldest band, and it is the
+            reason the trial has a stratum-level rule at all.</p>
+        </div>
+        <div class="chart" data-chart="bars" data-file="casestudy"
+             data-opt='{"rows":"contrasts","xLabel":"lowest Z seen","labelWidth":168,
+                        "rowHeight":34,"labelHead":"contrast"}'></div>
+        <p class="stamp"><b>axiom.design.monitor</b>(rule, z, effects, ses) per contrast ·
+          hover a row for what it did</p>
+      </figure>
+
       <div class="tbl-wrap mt">
         <table class="t">
           <caption>Lowest Z reached by each contrast over the reviews it took. Lower is

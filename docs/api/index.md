@@ -23,6 +23,7 @@ meta
 diagnose
 build
 adapters
+display
 viz
 report
 ```

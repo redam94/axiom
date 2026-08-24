@@ -28,3 +28,8 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0012 | [Beyond DAGs: which alternative frameworks axiom implements, and which it does not](0012-beyond-dags.md) | decision |
 | 0013 | [What the data can orient, and at what granularity](0013-discovery-and-granularity.md) | decision |
 | 0014 | [Refuting the graph, resampling the search, and dropping sufficiency](0014-refutation-stability-and-latents.md) | decision |
+| 0015 | [The report generator the charter refuses, as a package beside it](0015-report-narration-addon.md) | decision |
+| 0016 | [Showing a result, and drawing the structure](0016-display-and-plots.md) | decision |
+| 0017 | [A printed number stops where its uncertainty stops](0017-significant-digits.md) | decision |
+| 0018 | [GEIGER-1911: designing an experiment, and what robustness costs](0018-case-study-rutherford.md) | progress |
+| 0019 | [Writing an adapter: the seam, the five parts, and where things actually go](0019-writing-an-adapter.md) | decision + progress |

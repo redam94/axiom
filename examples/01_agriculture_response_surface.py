@@ -172,7 +172,10 @@ result = fit(field.spec, field.panel, backend="laplace", draws=2000, seed=SEED)
 posterior = result.posterior
 theta = {name: float(posterior.summary(name).mean) for name in posterior.names()}
 w.out(f"converged : {result.converged}")
-w.out(f"parameters: {', '.join(posterior.names())}")
+# sorted, because `names()` is a frozenset: joined unsorted it prints in a
+# different order on every run, which makes this walkthrough -- and the page and
+# the report generated from it -- differ from itself between builds.
+w.out(f"parameters: {', '.join(sorted(posterior.names()))}")
 
 shown = ("beta_nitrogen", "k_nitrogen", "beta_irrigation", "k_irrigation")
 rows, chart_rows = [], []

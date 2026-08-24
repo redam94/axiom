@@ -328,6 +328,45 @@ def test_pdf_is_paged_and_embeds_its_figures(
     assert raw.count(b"/Subtype /Image") + raw.count(b"/Subtype/Image") >= 1
 
 
+@static
+def test_pdf_table_cells_wrap_instead_of_running_over_the_next_column(
+    tmp_path,
+) -> None:  # type: ignore[no-untyped-def]
+    """reportlab does not wrap a bare string: it draws it at full width.
+
+    A table of sentences -- an assumption ledger, a provenance appendix -- was
+    rendered as overlapping text, each column smeared across the next. Cells are
+    ``Paragraph`` s now, so a long cell grows downwards instead.
+
+    The observable consequence, without needing a PDF parser: a table of long
+    sentences is much taller than the same table of short ones, and overflows
+    onto further pages. Unwrapped, every row is one line and it never would.
+    """
+
+    def pages(rows: list[dict[str, str]], name: str) -> int:
+        report = Report(
+            name="t",
+            title="Wrapping",
+            sections=(Section(title="Assumptions", blocks=(Table(source="rows"),)),),
+        )
+        out = write(report, {"rows": rows}, str(tmp_path / name))
+        assert isinstance(out, str), out
+        raw = (tmp_path / name).read_bytes()
+        return raw.count(b"/Type /Page") + raw.count(b"/Type/Page")
+
+    long_row = {
+        "Assumption": "no unmeasured confounding",
+        "Statement": "age is the only common cause of dose and systolic pressure in "
+        "the population the trial enrolled from",
+        "Challenged by": "a sensitivity analysis at plausible confounder strength, "
+        "reported on the decision scale rather than the coefficient scale",
+    }
+    short_row = {"Assumption": "a", "Statement": "b", "Challenged by": "c"}
+
+    assert pages([short_row] * 30, "short.pdf") <= 2
+    assert pages([long_row] * 30, "long.pdf") > 2, "long cells did not wrap"
+
+
 def test_write_infers_the_format_and_refuses_a_suffix_it_cannot(
     template: Report, context: dict[str, object], tmp_path
 ) -> None:  # type: ignore[no-untyped-def]

@@ -981,7 +981,7 @@
    "sigma": 0.099669
   },
   "kind": "prior_from_pool",
-  "statement": "lognormal prior on predictive of 'standardized_contrast' in family 'fertilizer': moment-matched to mean 0.62708, sd 0.0626557",
+  "statement": "lognormal prior on predictive of 'standardized_contrast' in family 'fertilizer': moment-matched to mean 0.627, sd 0.063",
   "prior_mean": 0.62708
  },
  "privacy": {
