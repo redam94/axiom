@@ -41,9 +41,10 @@ jobs:
           walkthroughs=$(ls site/example-*.html 2>/dev/null | wc -l)
           test "$walkthroughs" -eq 12 || {
             echo "expected 12 example walkthroughs, found $walkthroughs"; exit 1; }
-          steps=$(ls site/tutorial-*.html site/scattering-*.html 2>/dev/null | wc -l)
-          test "$steps" -eq 14 || {
-            echo "expected 14 tutorial steps, found $steps"; exit 1; }
+          steps=$(ls site/porting-*.html site/tutorial-*.html site/scattering-*.html \
+            2>/dev/null | wc -l)
+          test "$steps" -eq 20 || {
+            echo "expected 20 tutorial steps, found $steps"; exit 1; }
           echo "$(ls site/assets/data/*.json | wc -l) data files, $(ls site/*.html | wc -l) pages"
 
       - uses: actions/configure-pages@v5

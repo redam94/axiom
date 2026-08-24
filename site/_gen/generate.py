@@ -2203,6 +2203,271 @@ def rutherford() -> Any:
 # tutorial: one problem carried through all eight phases, a step at a time
 # ----------------------------------------------------------------------------------
 
+#: Porting your own problem. The other two series both start from a world that
+#: already exists — ``surface_world(...)`` in one and ``import scattering`` in the
+#: other — which is convenient for telling a story and useless if what you have
+#: is a dataframe. Nothing below imports ``axiom.sim``. Every object a user has
+#: to author is authored on the page: the roles, the entities and their
+#: dimensions, the spec, the estimand.
+PORTING_STEPS: list[dict[str, Any]] = [
+    {
+        "slug": "porting-1-your-data",
+        "title": "Start from the dataframe you already have",
+        "asks": "What does axiom need to know about your table?",
+        "lede": (
+            "Long format: one row per unit per period, a column for the treatment "
+            "and a column for the outcome. That is the whole data requirement, and "
+            "it is deliberately the shape almost everyone already has."
+        ),
+        "beat": (
+            "What axiom will not do is guess which column is which. A `RoleMap` "
+            "names the unit, the time, the outcome and every treatment explicitly. "
+            "Column-name conventions are how a spend column gets read as an outcome "
+            "in somebody's third refactor, and the map is five lines against that."
+        ),
+        "code": """
+            import numpy as np
+            import pandas as pd
+
+            # Whatever produced your table. This one is 24 stores over 40 weeks:
+            # leaflet spend, and footfall that responds to it with diminishing
+            # returns. Substitute your own read_csv here -- nothing below cares.
+            rng = np.random.default_rng(7)
+            rows = []
+            for store in range(24):
+                base = 40.0 + rng.normal(0, 6)          # stores differ
+                for week in range(40):
+                    spend = float(max(0.0, rng.normal(300, 160)))
+                    rows.append({
+                        "store": f"s{store:02d}",
+                        "week": week,
+                        "leaflets": spend,
+                        "footfall": base + 9.0 * spend / (spend + 250.0)
+                                    + rng.normal(0, 2),
+                    })
+            frame = pd.DataFrame(rows)
+            print(frame.head(3).to_string(index=False))
+            print(f"\\n{len(frame)} rows, {frame['store'].nunique()} stores, "
+                  f"{frame['week'].nunique()} weeks")
+        """,
+    },
+    {
+        "slug": "porting-2-entities",
+        "title": "Say what the columns mean",
+        "asks": "Why does a column need a dimension and a unit?",
+        "lede": (
+            "A `Treatment` and an `Outcome` are not labels. They carry a dimension "
+            "and a unit, and those travel with every number derived from them — "
+            "into the estimand, into the transfer ledger, onto the report."
+        ),
+        "beat": (
+            "This is what stops dollars being added to visits four steps later, in "
+            "a function nobody is reading at the time. `D.currency` and `D.outcome` "
+            "are different dimensions, and axiom refuses the arithmetic that would "
+            "mix them rather than returning a number with no meaning."
+        ),
+        "code": """
+            from axiom.core import D, Outcome, Treatment
+            from axiom.data import Panel, RoleMap
+
+            leaflets = Treatment(
+                name="leaflets",
+                dimension=D.currency,
+                unit="USD/store-week",
+                description="leaflet spend delivered to the store's catchment",
+            )
+            footfall = Outcome(
+                name="footfall",
+                dimension=D.outcome,
+                unit="visits/week",
+                description="counted entries through the door",
+                aggregation="mean",
+            )
+
+            roles = RoleMap(
+                unit="store",
+                time="week",
+                outcome=("footfall", footfall),
+                treatments={"leaflets": leaflets},
+            )
+            panel = Panel(frame, roles)
+
+            print(f"unit column      : {roles.unit}")
+            print(f"time column      : {roles.time}")
+            print(f"outcome column   : {roles.outcome[0]}  [{footfall.dimension}]")
+            print(f"treatment columns: {list(roles.treatments)}  "
+                  f"[{leaflets.dimension}]")
+            print()
+            print(f"the two dimensions are different objects: "
+                  f"{D.currency != D.outcome}")
+        """,
+    },
+    {
+        "slug": "porting-3-the-spec",
+        "title": "Write the spec",
+        "asks": "What shape do you believe the response has, and how sure are you?",
+        "lede": (
+            "A `SurfaceSpec` is the model, and it is the object most worth "
+            "understanding rather than copying. One kernel per treatment says what "
+            "shape the dose-response is allowed to take; the intercept says what "
+            "the units are allowed to differ by; the scales are your priors."
+        ),
+        "beat": (
+            "None of these is a default you can skip past. `HillKernel` says "
+            "saturating with a half-way point near the reference dose — say that "
+            "and a linear response can no longer be fitted, which is the point of "
+            "saying it. The spec hashes, so the model that produced a number is "
+            "identifiable later by more than a filename."
+        ),
+        "code": """
+            from axiom.surface import HillKernel, SurfaceSpec
+
+            spec = SurfaceSpec(
+                name="leaflets_footfall",
+                treatments=(leaflets,),
+                outcome=footfall,
+                # saturating, with the half-way point expected near 250 USD and
+                # a lift of order 10 visits at saturation
+                kernels={"leaflets": HillKernel(
+                    reference_dose=250.0, amplitude_scale=10.0,
+                )},
+                intercept="shared",
+                unit_column="store",
+                time_column="week",
+                intercept_scale=8.0,
+                noise_scale=3.0,
+            )
+            print(f"model      : {spec.name}")
+            print(f"content hash: {spec.content_hash()[:16]}")
+            print(f"treatments : {[t.name for t in spec.treatments]}")
+            print(f"intercept  : {spec.intercept}")
+            print()
+            print("`shared` says the stores share one baseline. They do not -- the")
+            print("next step shows what that costs, and it is visible in sigma.")
+        """,
+    },
+    {
+        "slug": "porting-4-fit-it",
+        "title": "Fit it, and read what came back",
+        "asks": "Did the model find the response, and what did the spec cost you?",
+        "lede": (
+            "`fit` takes the spec and the panel and nothing else. The posterior "
+            "comes back with one named parameter per thing the spec declared, so "
+            "there is no positional unpacking and no guessing which column of an "
+            "array is the amplitude."
+        ),
+        "beat": (
+            "Look at `sigma` before anything else. The stores really do differ by "
+            "about 6 visits, and a shared intercept has nowhere to put that, so it "
+            "lands in the residual. The fit is not wrong — it is answering the "
+            "question the spec asked. Changing `intercept` is how you ask a "
+            "different one."
+        ),
+        "code": """
+            from axiom.surface import fit
+
+            result = fit(spec, panel, backend="laplace", draws=800, seed=0)
+
+            print(f"{'parameter':16s}{'posterior mean':>16}")
+            for name in result.posterior.names():
+                mean = float(result.posterior.flat(name).mean())
+                print(f"{name:16s}{mean:>16.2f}")
+            print()
+            print("the world that produced the data used:")
+            print("  baseline  ~40      amplitude 9.0     half-way 250")
+            print("  within-store noise 2.0, between-store spread 6.0")
+            print()
+            print("beta and k came back close. sigma did not -- it is carrying the")
+            print("between-store spread the shared intercept could not.")
+        """,
+    },
+    {
+        "slug": "porting-5-the-estimand",
+        "title": "Declare what you want to know",
+        "asks": "How do you get a decision's number out of a fitted surface?",
+        "lede": (
+            "A fitted surface is not an answer. The answer is a specific "
+            "comparison, over a specific population, in a specific window, at a "
+            "specific level — and axiom makes you write that down as an `Estimand` "
+            "before it will produce a number for it."
+        ),
+        "beat": (
+            "That looks like ceremony until the day the window in your head and the "
+            "window in the fit disagree. `realize` compares them and carries a "
+            "ledger of every step it took to cross between them; the ledger is the "
+            "part you show someone who has to trust the number."
+        ),
+        "code": """
+            from axiom.core import Intervention, Population, TimeWindow
+            from axiom.estimands import Estimand, Level, Quantity, realize
+
+            lift = Estimand(
+                name="lift_at_400_per_week",
+                quantity=Quantity(kind="contrast"),
+                treatment=leaflets,
+                intervention=Intervention(doses={"leaflets": 400.0}),
+                reference=Intervention(doses={"leaflets": 0.0}),
+                outcome=footfall,
+                population=Population(name="the_24_stores"),
+                window=TimeWindow(start=0, stop=1, basis="per_period"),
+                level=Level(unit="individual"),
+                dimension=D.outcome,
+            )
+            got = realize(lift, result, assume_identified=True, mass=0.9, seed=0)
+
+            print(f"{lift.name}")
+            print(f"  {got.summary.mean:+.2f} {footfall.unit}  {got.summary.interval}")
+            print(f"  status : {got.status}")
+            print()
+            for line in got.ledger:
+                print(f"  [{line.kind}] {line.statement}")
+        """,
+    },
+    {
+        "slug": "porting-6-what-is-missing",
+        "title": "What you have not done yet",
+        "asks": "The number came back downgraded. Why, and what fixes it?",
+        "lede": (
+            "`assume_identified=True` is the flag that got a number out, and the "
+            "status says exactly what it cost: `downgraded`. Nothing above argued "
+            "that leaflet spend is unconfounded with footfall. Stores that were "
+            "already busy may well have been given more leaflets."
+        ),
+        "beat": (
+            "This is the honest end of a porting exercise, not a failure of one. "
+            "You now have a model of your own data that produces a decision's "
+            "number with its provenance attached — and a precise statement of the "
+            "one thing standing between it and a causal claim. That is where the "
+            "first tutorial starts."
+        ),
+        "code": """
+            from axiom.identify import CausalGraph, identify
+
+            # Write down what you actually believe about how the spend was set.
+            world = CausalGraph.from_edges(
+                "busyness -> leaflets, busyness -> footfall, leaflets -> footfall",
+                unmeasured=["busyness"],
+                name="how_the_spend_was_really_set",
+            )
+            verdict = identify(world, "leaflets", "footfall")
+            print(f"the graph says : {verdict.status}")
+            print(f"it would need  : {sorted(verdict.unmeasured_required)}, "
+                  f"which nobody recorded")
+            print()
+            print("so the `downgraded` in step 5 was not a formality. What you have")
+            print("is a description of 24 stores, not the effect of leaflets on")
+            print("footfall -- and the difference is the whole subject of axiom.")
+            print()
+            print("two honest ways forward, and no third:")
+            print("  measure it   -- record what drove the spend, and adjust")
+            print("  randomize it -- assign the leaflets, and the arrow disappears")
+            print()
+            print("both are the subject of the other two tutorials.")
+        """,
+    },
+]
+
+
 #: GEIGER-1911, a step to a page. The case study's own world module does the
 #: physics (``nbs/case-studies/rutherford/scattering.py``); every step below is a
 #: decision about the apparatus, taken against it.
@@ -2223,6 +2488,13 @@ SCATTERING_STEPS: list[dict[str, Any]] = [
             "scattered through an angle gets no closer than a known multiple of it; so "
             "a charge of radius R kills the scattering past a cut-off angle. Turning "
             "the debate into a parameter is what makes everything after this possible."
+            "\n\n"
+            "`scattering.py` is the case study's own module and it holds the physics: "
+            "the mean expression, the parameters and their priors, the detector "
+            "geometry. It is a hand-built `ModelSpec` rather than anything axiom "
+            "generates, which is what a problem with real physics in it looks like. "
+            "The porting tutorial builds the easier kind, a `SurfaceSpec`, from "
+            "scratch."
         ),
         "code": """
             import sys
@@ -2462,6 +2734,26 @@ SCATTERING_STEPS: list[dict[str, Any]] = [
 #: data at all, and every decision is about what to go and measure.
 TUTORIALS: list[dict[str, Any]] = [
     {
+        "key": "porting",
+        "title": "Bringing your own problem",
+        "kind": "A porting story",
+        "asks": "You have a dataframe. How do you get it into axiom at all?",
+        "problem": (
+            "Twenty-four stores, forty weeks, leaflet spend and footfall. How do you "
+            "turn a table you already have into a model axiom can fit, an estimand it "
+            "can read, and a number you could defend?"
+        ),
+        "lede": (
+            "The other two series start from a world that already exists — a simulator "
+            "in one, a physics module in the other — which is fine for telling a story "
+            "and no help at all when what you have is a CSV. Nothing in this one "
+            "imports axiom.sim. Every object you would have to write is written on the "
+            "page: the roles, the entities and their dimensions, the spec, the estimand."
+        ),
+        "notebook": "nbs/surface/",
+        "steps": PORTING_STEPS,
+    },
+    {
         "key": "depot",
         "title": "One question, carried all the way",
         "kind": "An analysis story",
@@ -2495,7 +2787,11 @@ TUTORIALS: list[dict[str, Any]] = [
                     "individual depots; the decision turns on a steady-state weekly lift "
                     "across the region. They are different windows and different levels, and "
                     "keeping them apart from the first line is what stops the report answering "
-                    "the easy question and calling it the hard one."
+                    "the easy question and calling it the hard one.\n\n"
+                    "`surface_world` is a simulator, and it hands back the `spec` for "
+                    "free so this story can get moving. With your own data there is no "
+                    "simulator and the spec is the first thing you write -- the porting "
+                    "tutorial does exactly that, from a dataframe, with nothing hidden."
                 ),
                 "code": """
             from axiom.core import Intervention, Population, TimeWindow

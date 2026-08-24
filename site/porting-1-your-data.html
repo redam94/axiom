@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>1. Two atoms, one number — axiom tutorial</title>
-<meta name="description" content="Step 1 of 6: How do you get resolving power against a question nobody has measured?">
-<meta property="og:title" content="1. Two atoms, one number — axiom tutorial">
-<meta property="og:description" content="Step 1 of 6: How do you get resolving power against a question nobody has measured?">
+<title>1. Start from the dataframe you already have — axiom tutorial</title>
+<meta name="description" content="Step 1 of 6: What does axiom need to know about your table?">
+<meta property="og:title" content="1. Start from the dataframe you already have — axiom tutorial">
+<meta property="og:description" content="Step 1 of 6: What does axiom need to know about your table?">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,17 +39,17 @@
 <main id="main">
 <section class="hero">
   <div class="wrap">
-    <p class="eyebrow">Designing an experiment before there is any data · step 1 of 6</p>
-    <h1 style="max-width:18ch">Two atoms, one number</h1>
-    <p class="lede prose mt">How do you get resolving power against a question nobody has measured?</p>
+    <p class="eyebrow">Bringing your own problem · step 1 of 6</p>
+    <h1 style="max-width:18ch">Start from the dataframe you already have</h1>
+    <p class="lede prose mt">What does axiom need to know about your table?</p>
   </div>
 </section>
 
 <section>
   <div class="wrap">
     <div class="prose">
-      <p>In 1910 there were two pictures of the atom and no experiment between them. A hard positive centre and a charge smeared through the whole atom both fitted everything anyone had. You cannot design against a debate — so the first move is to find the number the two pictures disagree about.</p>
-      <p><strong>They are one model at two values of the radius R of the positive charge, six decades apart. An alpha stopped head-on gets no closer than D; one scattered through an angle gets no closer than a known multiple of it; so a charge of radius R kills the scattering past a cut-off angle. Turning the debate into a parameter is what makes everything after this possible.</strong></p><p><strong><code>scattering.py</code> is the case study&#x27;s own module and it holds the physics: the mean expression, the parameters and their priors, the detector geometry. It is a hand-built <code>ModelSpec</code> rather than anything axiom generates, which is what a problem with real physics in it looks like. The porting tutorial builds the easier kind, a <code>SurfaceSpec</code>, from scratch.</strong></p>
+      <p>Long format: one row per unit per period, a column for the treatment and a column for the outcome. That is the whole data requirement, and it is deliberately the shape almost everyone already has.</p>
+      <p><strong>What axiom will not do is guess which column is which. A <code>RoleMap</code> names the unit, the time, the outcome and every treatment explicitly. Column-name conventions are how a spend column gets read as an outcome in somebody&#x27;s third refactor, and the map is five lines against that.</strong></p>
     </div>
   </div>
 </section>
@@ -59,35 +59,38 @@
     <div class="code" style="max-width:var(--measure)">
       <div class="code-h"><span>step 1</span>
         <button class="copy" type="button">Copy</button></div>
-      <pre>import sys
-sys.path.insert(0, &quot;nbs/case-studies/rutherford&quot;)
-import scattering as s
+      <pre>import numpy as np
+import pandas as pd
 
-print(f&quot;closest approach D        : {s.D_CLOSEST * 1e15:.1f} fm&quot;)
-print(f&quot;a hard centre would be    : {s.R_NUCLEUS * 1e15:.1f} fm&quot;)
-print(f&quot;a diffuse atom would be   : {s.R_ATOM * 1e15:,.0f} fm&quot;)
-print()
-for name, radius in ((&quot;hard centre&quot;, s.R_NUCLEUS), (&quot;diffuse atom&quot;, s.R_ATOM)):
-    sine = s.cutoff_sine(radius)
-    where = &quot;no cut-off in range&quot; if sine &gt;= 1.0 else f&quot;{sine:.2e}&quot;
-    print(f&quot;{name:14s} sin(theta_cut/2) = {where}&quot;)
-print()
-print(&quot;the two hypotheses are two values of one parameter, lam:&quot;)
-print(f&quot;  hard centre  lam = {s.LAM_HARD:+.2f}&quot;)
-print(f&quot;  diffuse atom lam = {s.LAM_DIFFUSE:+.2f}&quot;)</pre>
+# Whatever produced your table. This one is 24 stores over 40 weeks:
+# leaflet spend, and footfall that responds to it with diminishing
+# returns. Substitute your own read_csv here -- nothing below cares.
+rng = np.random.default_rng(7)
+rows = []
+for store in range(24):
+    base = 40.0 + rng.normal(0, 6)          # stores differ
+    for week in range(40):
+        spend = float(max(0.0, rng.normal(300, 160)))
+        rows.append({
+            &quot;store&quot;: f&quot;s{store:02d}&quot;,
+            &quot;week&quot;: week,
+            &quot;leaflets&quot;: spend,
+            &quot;footfall&quot;: base + 9.0 * spend / (spend + 250.0)
+                        + rng.normal(0, 2),
+        })
+frame = pd.DataFrame(rows)
+print(frame.head(3).to_string(index=False))
+print(f&quot;\n{len(frame)} rows, {frame[&#x27;store&#x27;].nunique()} stores, &quot;
+      f&quot;{frame[&#x27;week&#x27;].nunique()} weeks&quot;)</pre>
     </div>
     <div class="code" style="max-width:var(--measure);margin-top:16px">
       <div class="code-h"><span>what it printed</span></div>
-      <pre>closest approach D        : 59.2 fm
-a hard centre would be    : 7.3 fm
-a diffuse atom would be   : 135,000 fm
+      <pre>store  week   leaflets  footfall
+  s00     0 347.799286 44.695300
+  s00     1 157.505306 42.576639
+  s00     2 141.336551 43.378141
 
-hard centre    sin(theta_cut/2) = no cut-off in range
-diffuse atom   sin(theta_cut/2) = 2.19e-04
-
-the two hypotheses are two values of one parameter, lam:
-  hard centre  lam = +6.91
-  diffuse atom lam = -8.42</pre>
+960 rows, 24 stores, 40 weeks</pre>
     </div>
     <p class="prose mt"><small>Every line above was captured by running this code
       at build time. The steps share one namespace, so the code on this page is
@@ -97,8 +100,8 @@ the two hypotheses are two values of one parameter, lam:
 
 <section>
   <div class="wrap">
-    <div class="wt-toc"><a class="wt-toc-i" href="scattering-1-one-parameter.html"><span class="wt-toc-n">1</span>Two atoms, one number</a><a class="wt-toc-i" href="scattering-2-which-angles.html"><span class="wt-toc-n">2</span>Where to point the counter</a><a class="wt-toc-i" href="scattering-3-the-slit.html"><span class="wt-toc-n">3</span>What shape to cut the aperture</a><a class="wt-toc-i" href="scattering-4-how-long.html"><span class="wt-toc-n">4</span>How long at each, and what the plan buys</a><a class="wt-toc-i" href="scattering-5-when-to-stop.html"><span class="wt-toc-n">5</span>When to stop</a><a class="wt-toc-i" href="scattering-6-running-it.html"><span class="wt-toc-n">6</span>Running it</a></div>
-    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="scattering-2-which-angles.html">2 · Where to point the counter &rarr;</a></div>
+    <div class="wt-toc"><a class="wt-toc-i" href="porting-1-your-data.html"><span class="wt-toc-n">1</span>Start from the dataframe you already have</a><a class="wt-toc-i" href="porting-2-entities.html"><span class="wt-toc-n">2</span>Say what the columns mean</a><a class="wt-toc-i" href="porting-3-the-spec.html"><span class="wt-toc-n">3</span>Write the spec</a><a class="wt-toc-i" href="porting-4-fit-it.html"><span class="wt-toc-n">4</span>Fit it, and read what came back</a><a class="wt-toc-i" href="porting-5-the-estimand.html"><span class="wt-toc-n">5</span>Declare what you want to know</a><a class="wt-toc-i" href="porting-6-what-is-missing.html"><span class="wt-toc-n">6</span>What you have not done yet</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="porting-2-entities.html">2 · Say what the columns mean &rarr;</a></div>
   </div>
 </section>
 </main>

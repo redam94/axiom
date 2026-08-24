@@ -1,6 +1,77 @@
 {
  "series": [
   {
+   "key": "porting",
+   "title": "Bringing your own problem",
+   "kind": "A porting story",
+   "asks": "You have a dataframe. How do you get it into axiom at all?",
+   "problem": "Twenty-four stores, forty weeks, leaflet spend and footfall. How do you turn a table you already have into a model axiom can fit, an estimand it can read, and a number you could defend?",
+   "lede": "The other two series start from a world that already exists \u2014 a simulator in one, a physics module in the other \u2014 which is fine for telling a story and no help at all when what you have is a CSV. Nothing in this one imports axiom.sim. Every object you would have to write is written on the page: the roles, the entities and their dimensions, the spec, the estimand.",
+   "notebook": "nbs/surface/",
+   "steps": [
+    {
+     "n": 1,
+     "slug": "porting-1-your-data",
+     "title": "Start from the dataframe you already have",
+     "asks": "What does axiom need to know about your table?",
+     "lede": "Long format: one row per unit per period, a column for the treatment and a column for the outcome. That is the whole data requirement, and it is deliberately the shape almost everyone already has.",
+     "beat": "What axiom will not do is guess which column is which. A `RoleMap` names the unit, the time, the outcome and every treatment explicitly. Column-name conventions are how a spend column gets read as an outcome in somebody's third refactor, and the map is five lines against that.",
+     "code": "import numpy as np\nimport pandas as pd\n\n# Whatever produced your table. This one is 24 stores over 40 weeks:\n# leaflet spend, and footfall that responds to it with diminishing\n# returns. Substitute your own read_csv here -- nothing below cares.\nrng = np.random.default_rng(7)\nrows = []\nfor store in range(24):\n    base = 40.0 + rng.normal(0, 6)          # stores differ\n    for week in range(40):\n        spend = float(max(0.0, rng.normal(300, 160)))\n        rows.append({\n            \"store\": f\"s{store:02d}\",\n            \"week\": week,\n            \"leaflets\": spend,\n            \"footfall\": base + 9.0 * spend / (spend + 250.0)\n                        + rng.normal(0, 2),\n        })\nframe = pd.DataFrame(rows)\nprint(frame.head(3).to_string(index=False))\nprint(f\"\\n{len(frame)} rows, {frame['store'].nunique()} stores, \"\n      f\"{frame['week'].nunique()} weeks\")",
+     "output": "store  week   leaflets  footfall\n  s00     0 347.799286 44.695300\n  s00     1 157.505306 42.576639\n  s00     2 141.336551 43.378141\n\n960 rows, 24 stores, 40 weeks"
+    },
+    {
+     "n": 2,
+     "slug": "porting-2-entities",
+     "title": "Say what the columns mean",
+     "asks": "Why does a column need a dimension and a unit?",
+     "lede": "A `Treatment` and an `Outcome` are not labels. They carry a dimension and a unit, and those travel with every number derived from them \u2014 into the estimand, into the transfer ledger, onto the report.",
+     "beat": "This is what stops dollars being added to visits four steps later, in a function nobody is reading at the time. `D.currency` and `D.outcome` are different dimensions, and axiom refuses the arithmetic that would mix them rather than returning a number with no meaning.",
+     "code": "from axiom.core import D, Outcome, Treatment\nfrom axiom.data import Panel, RoleMap\n\nleaflets = Treatment(\n    name=\"leaflets\",\n    dimension=D.currency,\n    unit=\"USD/store-week\",\n    description=\"leaflet spend delivered to the store's catchment\",\n)\nfootfall = Outcome(\n    name=\"footfall\",\n    dimension=D.outcome,\n    unit=\"visits/week\",\n    description=\"counted entries through the door\",\n    aggregation=\"mean\",\n)\n\nroles = RoleMap(\n    unit=\"store\",\n    time=\"week\",\n    outcome=(\"footfall\", footfall),\n    treatments={\"leaflets\": leaflets},\n)\npanel = Panel(frame, roles)\n\nprint(f\"unit column      : {roles.unit}\")\nprint(f\"time column      : {roles.time}\")\nprint(f\"outcome column   : {roles.outcome[0]}  [{footfall.dimension}]\")\nprint(f\"treatment columns: {list(roles.treatments)}  \"\n      f\"[{leaflets.dimension}]\")\nprint()\nprint(f\"the two dimensions are different objects: \"\n      f\"{D.currency != D.outcome}\")",
+     "output": "unit column      : store\ntime column      : week\noutcome column   : footfall  [Y]\ntreatment columns: ['leaflets']  [$]\n\nthe two dimensions are different objects: True"
+    },
+    {
+     "n": 3,
+     "slug": "porting-3-the-spec",
+     "title": "Write the spec",
+     "asks": "What shape do you believe the response has, and how sure are you?",
+     "lede": "A `SurfaceSpec` is the model, and it is the object most worth understanding rather than copying. One kernel per treatment says what shape the dose-response is allowed to take; the intercept says what the units are allowed to differ by; the scales are your priors.",
+     "beat": "None of these is a default you can skip past. `HillKernel` says saturating with a half-way point near the reference dose \u2014 say that and a linear response can no longer be fitted, which is the point of saying it. The spec hashes, so the model that produced a number is identifiable later by more than a filename.",
+     "code": "from axiom.surface import HillKernel, SurfaceSpec\n\nspec = SurfaceSpec(\n    name=\"leaflets_footfall\",\n    treatments=(leaflets,),\n    outcome=footfall,\n    # saturating, with the half-way point expected near 250 USD and\n    # a lift of order 10 visits at saturation\n    kernels={\"leaflets\": HillKernel(\n        reference_dose=250.0, amplitude_scale=10.0,\n    )},\n    intercept=\"shared\",\n    unit_column=\"store\",\n    time_column=\"week\",\n    intercept_scale=8.0,\n    noise_scale=3.0,\n)\nprint(f\"model      : {spec.name}\")\nprint(f\"content hash: {spec.content_hash()[:16]}\")\nprint(f\"treatments : {[t.name for t in spec.treatments]}\")\nprint(f\"intercept  : {spec.intercept}\")\nprint()\nprint(\"`shared` says the stores share one baseline. They do not -- the\")\nprint(\"next step shows what that costs, and it is visible in sigma.\")",
+     "output": "model      : leaflets_footfall\ncontent hash: 3079cac0db4889ac\ntreatments : ['leaflets']\nintercept  : shared\n\n`shared` says the stores share one baseline. They do not -- the\nnext step shows what that costs, and it is visible in sigma."
+    },
+    {
+     "n": 4,
+     "slug": "porting-4-fit-it",
+     "title": "Fit it, and read what came back",
+     "asks": "Did the model find the response, and what did the spec cost you?",
+     "lede": "`fit` takes the spec and the panel and nothing else. The posterior comes back with one named parameter per thing the spec declared, so there is no positional unpacking and no guessing which column of an array is the amplitude.",
+     "beat": "Look at `sigma` before anything else. The stores really do differ by about 6 visits, and a shared intercept has nowhere to put that, so it lands in the residual. The fit is not wrong \u2014 it is answering the question the spec asked. Changing `intercept` is how you ask a different one.",
+     "code": "from axiom.surface import fit\n\nresult = fit(spec, panel, backend=\"laplace\", draws=800, seed=0)\n\nprint(f\"{'parameter':16s}{'posterior mean':>16}\")\nfor name in result.posterior.names():\n    mean = float(result.posterior.flat(name).mean())\n    print(f\"{name:16s}{mean:>16.2f}\")\nprint()\nprint(\"the world that produced the data used:\")\nprint(\"  baseline  ~40      amplitude 9.0     half-way 250\")\nprint(\"  within-store noise 2.0, between-store spread 6.0\")\nprint()\nprint(\"beta and k came back close. sigma did not -- it is carrying the\")\nprint(\"between-store spread the shared intercept could not.\")",
+     "output": "parameter         posterior mean\nbeta_leaflets               8.31\nalpha                      38.27\nsigma                       7.23\nk_leaflets                244.79\ns_leaflets                  2.74\n\nthe world that produced the data used:\n  baseline  ~40      amplitude 9.0     half-way 250\n  within-store noise 2.0, between-store spread 6.0\n\nbeta and k came back close. sigma did not -- it is carrying the\nbetween-store spread the shared intercept could not."
+    },
+    {
+     "n": 5,
+     "slug": "porting-5-the-estimand",
+     "title": "Declare what you want to know",
+     "asks": "How do you get a decision's number out of a fitted surface?",
+     "lede": "A fitted surface is not an answer. The answer is a specific comparison, over a specific population, in a specific window, at a specific level \u2014 and axiom makes you write that down as an `Estimand` before it will produce a number for it.",
+     "beat": "That looks like ceremony until the day the window in your head and the window in the fit disagree. `realize` compares them and carries a ledger of every step it took to cross between them; the ledger is the part you show someone who has to trust the number.",
+     "code": "from axiom.core import Intervention, Population, TimeWindow\nfrom axiom.estimands import Estimand, Level, Quantity, realize\n\nlift = Estimand(\n    name=\"lift_at_400_per_week\",\n    quantity=Quantity(kind=\"contrast\"),\n    treatment=leaflets,\n    intervention=Intervention(doses={\"leaflets\": 400.0}),\n    reference=Intervention(doses={\"leaflets\": 0.0}),\n    outcome=footfall,\n    population=Population(name=\"the_24_stores\"),\n    window=TimeWindow(start=0, stop=1, basis=\"per_period\"),\n    level=Level(unit=\"individual\"),\n    dimension=D.outcome,\n)\ngot = realize(lift, result, assume_identified=True, mass=0.9, seed=0)\n\nprint(f\"{lift.name}\")\nprint(f\"  {got.summary.mean:+.2f} {footfall.unit}  {got.summary.interval}\")\nprint(f\"  status : {got.status}\")\nprint()\nfor line in got.ledger:\n    print(f\"  [{line.kind}] {line.statement}\")",
+     "output": "lift_at_400_per_week\n  +5.78 visits/week  [2.9, 8.5] (90% HDI)\n  status : downgraded\n\n  [assume_identified] proceeded with 'lift_at_400_per_week' under assume_identified=True; the verdict was not supplied"
+    },
+    {
+     "n": 6,
+     "slug": "porting-6-what-is-missing",
+     "title": "What you have not done yet",
+     "asks": "The number came back downgraded. Why, and what fixes it?",
+     "lede": "`assume_identified=True` is the flag that got a number out, and the status says exactly what it cost: `downgraded`. Nothing above argued that leaflet spend is unconfounded with footfall. Stores that were already busy may well have been given more leaflets.",
+     "beat": "This is the honest end of a porting exercise, not a failure of one. You now have a model of your own data that produces a decision's number with its provenance attached \u2014 and a precise statement of the one thing standing between it and a causal claim. That is where the first tutorial starts.",
+     "code": "from axiom.identify import CausalGraph, identify\n\n# Write down what you actually believe about how the spend was set.\nworld = CausalGraph.from_edges(\n    \"busyness -> leaflets, busyness -> footfall, leaflets -> footfall\",\n    unmeasured=[\"busyness\"],\n    name=\"how_the_spend_was_really_set\",\n)\nverdict = identify(world, \"leaflets\", \"footfall\")\nprint(f\"the graph says : {verdict.status}\")\nprint(f\"it would need  : {sorted(verdict.unmeasured_required)}, \"\n      f\"which nobody recorded\")\nprint()\nprint(\"so the `downgraded` in step 5 was not a formality. What you have\")\nprint(\"is a description of 24 stores, not the effect of leaflets on\")\nprint(\"footfall -- and the difference is the whole subject of axiom.\")\nprint()\nprint(\"two honest ways forward, and no third:\")\nprint(\"  measure it   -- record what drove the spend, and adjust\")\nprint(\"  randomize it -- assign the leaflets, and the arrow disappears\")\nprint()\nprint(\"both are the subject of the other two tutorials.\")",
+     "output": "the graph says : downgraded\nit would need  : ['busyness'], which nobody recorded\n\nso the `downgraded` in step 5 was not a formality. What you have\nis a description of 24 stores, not the effect of leaflets on\nfootfall -- and the difference is the whole subject of axiom.\n\ntwo honest ways forward, and no third:\n  measure it   -- record what drove the spend, and adjust\n  randomize it -- assign the leaflets, and the arrow disappears\n\nboth are the subject of the other two tutorials."
+    }
+   ]
+  },
+  {
    "key": "depot",
    "title": "One question, carried all the way",
    "kind": "An analysis story",
@@ -15,7 +86,7 @@
      "title": "The question, written down",
      "asks": "What are we actually deciding, and what would 'yes' have to beat?",
      "lede": "A logistics operator runs 40 depots in one region and 500 nationally. Should the standing weekly maintenance schedule go from nothing to 60 hours per depot? Before any data is touched, the decision has to be written down as a quantity \u2014 because the number that answers it is not the number an experiment can most easily measure.",
-     "beat": "Two estimands, not one. The experiment can measure a first-week lift on individual depots; the decision turns on a steady-state weekly lift across the region. They are different windows and different levels, and keeping them apart from the first line is what stops the report answering the easy question and calling it the hard one.",
+     "beat": "Two estimands, not one. The experiment can measure a first-week lift on individual depots; the decision turns on a steady-state weekly lift across the region. They are different windows and different levels, and keeping them apart from the first line is what stops the report answering the easy question and calling it the hard one.\n\n`surface_world` is a simulator, and it hands back the `spec` for free so this story can get moving. With your own data there is no simulator and the spec is the first thing you write -- the porting tutorial does exactly that, from a dataframe, with nothing hidden.",
      "code": "from axiom.core import Intervention, Population, TimeWindow\nfrom axiom.estimands import Estimand, Level, Quantity\nfrom axiom.sim import DosePlan, surface_world\nfrom axiom.surface import GeometricCarryover, HillKernel\n\nDOSE, NO_DOSE = 60.0, 0.0        # maintenance hours per depot-week\nVALUE_PER_POINT, COST_PER_HOUR = 400.0, 45.0\nREGION_DEPOTS, MAX_LAG, SEED = 40, 4, 0\n\nworld = surface_world(\n    n_units=REGION_DEPOTS, n_periods=52, treatments=(\"a\",),\n    kernels=HillKernel(reference_dose=50.0, amplitude_scale=10.0),\n    carryover={\"a\": GeometricCarryover(max_lag=MAX_LAG)},\n    doses=DosePlan(scale=50.0, spread=0.8, zero_fraction=0.05),\n    intercept=\"shared\",\n    truth={\"beta_a\": 10.0, \"alpha\": 5.0, \"k_a\": 50.0, \"s_a\": 2.0, \"lam_a\": 0.5},\n    noise_sd=2.0, seed=SEED,\n)\nspec = world.spec\n\ndef contrast(name, window, level):\n    return Estimand(\n        name=name, quantity=Quantity(kind=\"contrast\"),\n        treatment=spec.treatment(\"a\"),\n        intervention=Intervention(doses={\"a\": DOSE}),\n        reference=Intervention(doses={\"a\": NO_DOSE}),\n        outcome=spec.outcome, population=Population(name=\"region_depots\"),\n        window=window, level=level, dimension=spec.outcome_dimension,\n    )\n\nexperiment_estimand = contrast(\n    \"first_week_lift\",\n    TimeWindow(start=0, stop=1, basis=\"cumulative\"),\n    Level(unit=\"individual\"),\n)\ndecision_estimand = contrast(\n    \"steady_state_weekly_lift\",\n    TimeWindow(start=MAX_LAG, stop=52, basis=\"per_period\"),\n    Level(unit=\"cluster\"),\n)\n\nBREAK_EVEN = DOSE * COST_PER_HOUR / VALUE_PER_POINT\nprint(f\"the experiment can measure : {experiment_estimand.name}\")\nprint(f\"the decision turns on      : {decision_estimand.name}\")\nprint()\nprint(f\"{DOSE:.0f} hours at {COST_PER_HOUR:.0f} USD \"\n      f\"= {DOSE * COST_PER_HOUR:,.0f} USD per depot-week\")\nprint(f\"break-even steady-state lift: {BREAK_EVEN:.2f} index points per depot-week\")",
      "output": "the experiment can measure : first_week_lift\nthe decision turns on      : steady_state_weekly_lift\n\n60 hours at 45 USD = 2,700 USD per depot-week\nbreak-even steady-state lift: 6.75 index points per depot-week"
     },
@@ -106,7 +177,7 @@
      "title": "Two atoms, one number",
      "asks": "How do you get resolving power against a question nobody has measured?",
      "lede": "In 1910 there were two pictures of the atom and no experiment between them. A hard positive centre and a charge smeared through the whole atom both fitted everything anyone had. You cannot design against a debate \u2014 so the first move is to find the number the two pictures disagree about.",
-     "beat": "They are one model at two values of the radius R of the positive charge, six decades apart. An alpha stopped head-on gets no closer than D; one scattered through an angle gets no closer than a known multiple of it; so a charge of radius R kills the scattering past a cut-off angle. Turning the debate into a parameter is what makes everything after this possible.",
+     "beat": "They are one model at two values of the radius R of the positive charge, six decades apart. An alpha stopped head-on gets no closer than D; one scattered through an angle gets no closer than a known multiple of it; so a charge of radius R kills the scattering past a cut-off angle. Turning the debate into a parameter is what makes everything after this possible.\n\n`scattering.py` is the case study's own module and it holds the physics: the mean expression, the parameters and their priors, the detector geometry. It is a hand-built `ModelSpec` rather than anything axiom generates, which is what a problem with real physics in it looks like. The porting tutorial builds the easier kind, a `SurfaceSpec`, from scratch.",
      "code": "import sys\nsys.path.insert(0, \"nbs/case-studies/rutherford\")\nimport scattering as s\n\nprint(f\"closest approach D        : {s.D_CLOSEST * 1e15:.1f} fm\")\nprint(f\"a hard centre would be    : {s.R_NUCLEUS * 1e15:.1f} fm\")\nprint(f\"a diffuse atom would be   : {s.R_ATOM * 1e15:,.0f} fm\")\nprint()\nfor name, radius in ((\"hard centre\", s.R_NUCLEUS), (\"diffuse atom\", s.R_ATOM)):\n    sine = s.cutoff_sine(radius)\n    where = \"no cut-off in range\" if sine >= 1.0 else f\"{sine:.2e}\"\n    print(f\"{name:14s} sin(theta_cut/2) = {where}\")\nprint()\nprint(\"the two hypotheses are two values of one parameter, lam:\")\nprint(f\"  hard centre  lam = {s.LAM_HARD:+.2f}\")\nprint(f\"  diffuse atom lam = {s.LAM_DIFFUSE:+.2f}\")",
      "output": "closest approach D        : 59.2 fm\na hard centre would be    : 7.3 fm\na diffuse atom would be   : 135,000 fm\n\nhard centre    sin(theta_cut/2) = no cut-off in range\ndiffuse atom   sin(theta_cut/2) = 2.19e-04\n\nthe two hypotheses are two values of one parameter, lam:\n  hard centre  lam = +6.91\n  diffuse atom lam = -8.42"
     },
@@ -163,5 +234,5 @@
    ]
   }
  ],
- "n": 2
+ "n": 3
 }

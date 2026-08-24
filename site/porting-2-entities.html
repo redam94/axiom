@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>1. Two atoms, one number — axiom tutorial</title>
-<meta name="description" content="Step 1 of 6: How do you get resolving power against a question nobody has measured?">
-<meta property="og:title" content="1. Two atoms, one number — axiom tutorial">
-<meta property="og:description" content="Step 1 of 6: How do you get resolving power against a question nobody has measured?">
+<title>2. Say what the columns mean — axiom tutorial</title>
+<meta name="description" content="Step 2 of 6: Why does a column need a dimension and a unit?">
+<meta property="og:title" content="2. Say what the columns mean — axiom tutorial">
+<meta property="og:description" content="Step 2 of 6: Why does a column need a dimension and a unit?">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,17 +39,17 @@
 <main id="main">
 <section class="hero">
   <div class="wrap">
-    <p class="eyebrow">Designing an experiment before there is any data · step 1 of 6</p>
-    <h1 style="max-width:18ch">Two atoms, one number</h1>
-    <p class="lede prose mt">How do you get resolving power against a question nobody has measured?</p>
+    <p class="eyebrow">Bringing your own problem · step 2 of 6</p>
+    <h1 style="max-width:18ch">Say what the columns mean</h1>
+    <p class="lede prose mt">Why does a column need a dimension and a unit?</p>
   </div>
 </section>
 
 <section>
   <div class="wrap">
     <div class="prose">
-      <p>In 1910 there were two pictures of the atom and no experiment between them. A hard positive centre and a charge smeared through the whole atom both fitted everything anyone had. You cannot design against a debate — so the first move is to find the number the two pictures disagree about.</p>
-      <p><strong>They are one model at two values of the radius R of the positive charge, six decades apart. An alpha stopped head-on gets no closer than D; one scattered through an angle gets no closer than a known multiple of it; so a charge of radius R kills the scattering past a cut-off angle. Turning the debate into a parameter is what makes everything after this possible.</strong></p><p><strong><code>scattering.py</code> is the case study&#x27;s own module and it holds the physics: the mean expression, the parameters and their priors, the detector geometry. It is a hand-built <code>ModelSpec</code> rather than anything axiom generates, which is what a problem with real physics in it looks like. The porting tutorial builds the easier kind, a <code>SurfaceSpec</code>, from scratch.</strong></p>
+      <p>A <code>Treatment</code> and an <code>Outcome</code> are not labels. They carry a dimension and a unit, and those travel with every number derived from them — into the estimand, into the transfer ledger, onto the report.</p>
+      <p><strong>This is what stops dollars being added to visits four steps later, in a function nobody is reading at the time. <code>D.currency</code> and <code>D.outcome</code> are different dimensions, and axiom refuses the arithmetic that would mix them rather than returning a number with no meaning.</strong></p>
     </div>
   </div>
 </section>
@@ -57,37 +57,50 @@
 <section>
   <div class="wrap">
     <div class="code" style="max-width:var(--measure)">
-      <div class="code-h"><span>step 1</span>
+      <div class="code-h"><span>step 2</span>
         <button class="copy" type="button">Copy</button></div>
-      <pre>import sys
-sys.path.insert(0, &quot;nbs/case-studies/rutherford&quot;)
-import scattering as s
+      <pre>from axiom.core import D, Outcome, Treatment
+from axiom.data import Panel, RoleMap
 
-print(f&quot;closest approach D        : {s.D_CLOSEST * 1e15:.1f} fm&quot;)
-print(f&quot;a hard centre would be    : {s.R_NUCLEUS * 1e15:.1f} fm&quot;)
-print(f&quot;a diffuse atom would be   : {s.R_ATOM * 1e15:,.0f} fm&quot;)
+leaflets = Treatment(
+    name=&quot;leaflets&quot;,
+    dimension=D.currency,
+    unit=&quot;USD/store-week&quot;,
+    description=&quot;leaflet spend delivered to the store&#x27;s catchment&quot;,
+)
+footfall = Outcome(
+    name=&quot;footfall&quot;,
+    dimension=D.outcome,
+    unit=&quot;visits/week&quot;,
+    description=&quot;counted entries through the door&quot;,
+    aggregation=&quot;mean&quot;,
+)
+
+roles = RoleMap(
+    unit=&quot;store&quot;,
+    time=&quot;week&quot;,
+    outcome=(&quot;footfall&quot;, footfall),
+    treatments={&quot;leaflets&quot;: leaflets},
+)
+panel = Panel(frame, roles)
+
+print(f&quot;unit column      : {roles.unit}&quot;)
+print(f&quot;time column      : {roles.time}&quot;)
+print(f&quot;outcome column   : {roles.outcome[0]}  [{footfall.dimension}]&quot;)
+print(f&quot;treatment columns: {list(roles.treatments)}  &quot;
+      f&quot;[{leaflets.dimension}]&quot;)
 print()
-for name, radius in ((&quot;hard centre&quot;, s.R_NUCLEUS), (&quot;diffuse atom&quot;, s.R_ATOM)):
-    sine = s.cutoff_sine(radius)
-    where = &quot;no cut-off in range&quot; if sine &gt;= 1.0 else f&quot;{sine:.2e}&quot;
-    print(f&quot;{name:14s} sin(theta_cut/2) = {where}&quot;)
-print()
-print(&quot;the two hypotheses are two values of one parameter, lam:&quot;)
-print(f&quot;  hard centre  lam = {s.LAM_HARD:+.2f}&quot;)
-print(f&quot;  diffuse atom lam = {s.LAM_DIFFUSE:+.2f}&quot;)</pre>
+print(f&quot;the two dimensions are different objects: &quot;
+      f&quot;{D.currency != D.outcome}&quot;)</pre>
     </div>
     <div class="code" style="max-width:var(--measure);margin-top:16px">
       <div class="code-h"><span>what it printed</span></div>
-      <pre>closest approach D        : 59.2 fm
-a hard centre would be    : 7.3 fm
-a diffuse atom would be   : 135,000 fm
+      <pre>unit column      : store
+time column      : week
+outcome column   : footfall  [Y]
+treatment columns: [&#x27;leaflets&#x27;]  [$]
 
-hard centre    sin(theta_cut/2) = no cut-off in range
-diffuse atom   sin(theta_cut/2) = 2.19e-04
-
-the two hypotheses are two values of one parameter, lam:
-  hard centre  lam = +6.91
-  diffuse atom lam = -8.42</pre>
+the two dimensions are different objects: True</pre>
     </div>
     <p class="prose mt"><small>Every line above was captured by running this code
       at build time. The steps share one namespace, so the code on this page is
@@ -97,8 +110,8 @@ the two hypotheses are two values of one parameter, lam:
 
 <section>
   <div class="wrap">
-    <div class="wt-toc"><a class="wt-toc-i" href="scattering-1-one-parameter.html"><span class="wt-toc-n">1</span>Two atoms, one number</a><a class="wt-toc-i" href="scattering-2-which-angles.html"><span class="wt-toc-n">2</span>Where to point the counter</a><a class="wt-toc-i" href="scattering-3-the-slit.html"><span class="wt-toc-n">3</span>What shape to cut the aperture</a><a class="wt-toc-i" href="scattering-4-how-long.html"><span class="wt-toc-n">4</span>How long at each, and what the plan buys</a><a class="wt-toc-i" href="scattering-5-when-to-stop.html"><span class="wt-toc-n">5</span>When to stop</a><a class="wt-toc-i" href="scattering-6-running-it.html"><span class="wt-toc-n">6</span>Running it</a></div>
-    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="scattering-2-which-angles.html">2 · Where to point the counter &rarr;</a></div>
+    <div class="wt-toc"><a class="wt-toc-i" href="porting-1-your-data.html"><span class="wt-toc-n">1</span>Start from the dataframe you already have</a><a class="wt-toc-i" href="porting-2-entities.html"><span class="wt-toc-n">2</span>Say what the columns mean</a><a class="wt-toc-i" href="porting-3-the-spec.html"><span class="wt-toc-n">3</span>Write the spec</a><a class="wt-toc-i" href="porting-4-fit-it.html"><span class="wt-toc-n">4</span>Fit it, and read what came back</a><a class="wt-toc-i" href="porting-5-the-estimand.html"><span class="wt-toc-n">5</span>Declare what you want to know</a><a class="wt-toc-i" href="porting-6-what-is-missing.html"><span class="wt-toc-n">6</span>What you have not done yet</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="porting-1-your-data.html">&larr; 1 · Start from the dataframe you already have</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="porting-3-the-spec.html">3 · Write the spec &rarr;</a></div>
   </div>
 </section>
 </main>

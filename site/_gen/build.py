@@ -610,7 +610,8 @@ def tutorial_body(step: dict[str, Any], series: dict[str, Any], data: dict[str, 
   <div class="wrap">
     <div class="prose">
       <p>{inline_html(step['lede'])}</p>
-      <p><strong>{inline_html(step['beat'])}</strong></p>
+      {"".join(f"<p><strong>{inline_html(part)}</strong></p>"
+               for part in step["beat"].split("\n\n"))}
     </div>
   </div>
 </section>

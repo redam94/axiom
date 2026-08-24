@@ -6,7 +6,7 @@
 <section class="hero">
   <div class="wrap">
     <p class="eyebrow">Tutorials · {{tutorial.n}} problems</p>
-    <h1 style="max-width:16ch">Worked all the way through</h1>
+    <h1 style="max-width:18ch">Worked all the way through</h1>
     <p class="lede prose mt">Most library tours show you a subpackage at a time. These
       take a single problem and carry it through every phase it actually has to survive —
       because the hard part of causal work is not any one phase, it is that they have to
@@ -17,11 +17,17 @@
 <section>
   <div class="wrap">
     <div class="prose">
-      <p>They are deliberately the two different shapes the work comes in. In the first,
+      <p>Start with <strong>the porting one</strong> if you have a table and want to
+        know what it takes to get it into axiom at all. It imports no simulator: every
+        object you would have to write yourself is written on the page — the column
+        roles, the treatment and outcome with their dimensions, the model spec, the
+        estimand — and it ends where an honest porting exercise ends, with a number and
+        a precise statement of the one thing standing between it and a causal claim.</p>
+      <p>The other two are the two shapes the work itself comes in. In one,
         <strong>the data already exists</strong> and the question is whether it can
         answer anything — it cannot, so an experiment gets designed, and its answer
         reverses the decision the existing data would have supported.</p>
-      <p>In the second there is <strong>no data at all</strong>. Every step is a decision
+      <p>In the other there is <strong>no data at all</strong>. Every step is a decision
         about what to go and measure: which angles, what shape of aperture, how long at
         each, and when you are allowed to stop. It is the older discipline and the one
         that is easier to get wrong, because nothing pushes back until the money is
@@ -40,9 +46,11 @@
       <h2>Where to go after them</h2>
     </div>
     <div class="prose">
-      <p>Both problems exist at full length as notebooks, with every intermediate result
-        the site's path leaves out: <code>nbs/tutorial/</code> for the first and
-        <code>nbs/case-studies/rutherford/</code> for the second.</p>
+      <p>The two worked problems exist at full length as notebooks, with every
+        intermediate result the site's path leaves out: <code>nbs/tutorial/</code> and
+        <code>nbs/case-studies/rutherford/</code>. For the porting path, every symbol it
+        uses is demonstrated on its own in <code>nbs/surface/</code> and
+        <code>nbs/estimands/</code>.</p>
       <p>For the same phases taken further one at a time, the five pillar pages start at
         <a href="identify.html">Identify</a>. For the same library in twelve other
         fields, the <a href="examples.html">examples</a>. For the scattering study
