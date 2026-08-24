@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="axiom.report">
+<meta name="axiom-report-hash" content="79af4bf3635306bfd0bf9771bd0185e4320be7545723d3934a51c35cb28ad3af">
+<title>GEIGER-1911</title>
+<style>
+:root {
+  color-scheme: light;
+  --ink: #000000;
+  --muted: #000000;
+  --accent: #000000;
+  --bg: #ffffff;
+  --rule: #ffffff;
+  --tint: rgba(0,0,0,0.055);
+  --wash: rgba(0,0,0,0.032);
+  --serif: Times-Roman, "Times New Roman", Times, Georgia, serif;
+  --mono: Courier, ui-monospace, SFMono-Regular, Menlo, monospace;
+  --size-title: 12.0pt;
+  --size-h2: 12.0pt;
+  --size-h3: 12.0pt;
+  --size-h4: 12.0pt;
+  --measure: 34em;
+  --wide: 46em;
+  --rail: 12.5em;
+  --gutter: clamp(1.15rem, 4vw, 72.0pt);
+}
+html { font-size: 12.0pt; }
+@page { margin: 72.0pt; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  padding: var(--gutter) var(--gutter) calc(var(--gutter) * 1.6);
+  background: var(--bg); color: var(--ink);
+  font-family: var(--serif); font-size: 1rem; line-height: 1.62;
+  font-kerning: normal; text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- the page: the article centred, a contents rail in the left margin --- */
+.paper { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+main { width: 100%; max-width: var(--wide); margin-inline: auto; min-width: 0; }
+@media (min-width: 68em) {
+  /* Out of the flow, so the rail cannot pull the article off centre: a reader
+     navigating by contents and one reading straight through see the same page. */
+  .toc {
+    position: fixed; top: var(--gutter); width: var(--rail);
+    left: max(var(--gutter), calc(50% - var(--wide) / 2 - var(--rail) - 2.5em));
+    max-height: calc(100vh - 2 * var(--gutter)); overflow: auto;
+  }
+}
+
+.toc { font-size: .8em; line-height: 1.4; }
+.toc-title {
+  margin: 0 0 .7em; padding: 0; border: 0; font-size: 1em; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .11em; color: var(--muted);
+}
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc a {
+  display: flex; gap: .5em; padding: .32em .7em; color: var(--muted);
+  text-decoration: none; border-left: 2px solid var(--rule);
+}
+.toc a:hover, .toc a:focus-visible {
+  color: var(--ink); border-left-color: var(--accent); background: var(--wash);
+}
+.toc .n { flex: 0 0 .9em; text-align: right; font-variant-numeric: tabular-nums; opacity: .75; }
+@media (max-width: 67.99em) {
+  .toc {
+    border: 1px solid var(--rule); padding: 1em 1.2em;
+    width: 100%; max-width: var(--wide); margin-inline: auto;
+  }
+  .toc ol { columns: 2 11em; column-gap: 2em; }
+  .toc a { border-left: 0; padding: .22em 0; }
+  .toc a:hover, .toc a:focus-visible { background: none; }
+}
+
+/* --- title block --- */
+.titleblock {
+  text-align: center; margin: 0 0 2.6em;
+  padding-bottom: 1.4em; border-bottom: 1px solid var(--rule);
+}
+h1 {
+  font-size: var(--size-title); line-height: 1.18; font-weight: 700;
+  letter-spacing: -.008em; margin: 0 0 .4em; text-wrap: balance;
+}
+.subtitle {
+  color: var(--muted); font-size: 1.06em; font-style: italic; line-height: 1.45;
+  margin: 0 auto; max-width: 32em; text-align: center; text-wrap: pretty;
+}
+
+/* --- sections: prose on the measure, figures wider than it --- */
+.section {
+  display: grid;
+  grid-template-columns:
+    [wide-start] minmax(0, 1fr)
+    [text-start] minmax(0, var(--measure))
+    [text-end] minmax(0, 1fr) [wide-end];
+}
+.section > * { grid-column: text; min-width: 0; }
+.section > figure, .section > .metrics { grid-column: wide; }
+.section.abstract { font-size: .96em; }
+.section.abstract > h2 {
+  text-align: center; border: 0; padding: 0; font-size: 1em; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .12em; margin: 0 0 .5em;
+}
+.section.abstract > * { grid-column: text; }
+
+h2, h3, h4 { break-after: avoid; scroll-margin-top: 1.2rem; text-wrap: balance; }
+h2 {
+  font-size: var(--size-h2); font-weight: 700; line-height: 1.25;
+  letter-spacing: -.005em; margin: 2.3em 0 .55em;
+  padding-bottom: .28em; border-bottom: 1px solid var(--rule);
+}
+.section:first-of-type h2 { margin-top: .4em; }
+h3 { font-size: var(--size-h3); font-weight: 700; margin: 1.9em 0 .35em; }
+h4 { font-size: var(--size-h4); font-weight: 700; margin: 1.7em 0 .3em; }
+h2 .anchor, h3 .anchor {
+  float: right; margin-left: .5em; color: var(--rule); text-decoration: none;
+  font-size: .72em; font-weight: 400; opacity: 0; transition: opacity .12s;
+}
+h2:hover .anchor, h3:hover .anchor, .anchor:focus-visible { opacity: 1; color: var(--accent); }
+
+p { margin: 0 0 .8em; text-align: justify; hyphens: auto; }
+p:last-child { margin-bottom: 0; }
+.summary { color: var(--muted); margin: 0 0 1.1em; }
+a { color: var(--accent); text-underline-offset: .16em; text-decoration-thickness: .06em; }
+strong { font-weight: 700; }
+/* `white-space: pre-wrap` is not a detail: a readout is column-aligned output,
+   and HTML collapses the columns away without it. */
+code {
+  font-family: var(--mono); font-size: .86em; background: var(--wash);
+  border-radius: 2px; padding: .1em .35em; white-space: pre-wrap;
+}
+hr { border: 0; border-top: 1px solid var(--rule); margin: 2em 0; }
+
+/* A pulled-out line: the parameters a step ran with, or a remark on a number. */
+p.emphasis {
+  margin: 1em 0 1.1em; padding: .6em .95em; text-align: left;
+  border-left: 2px solid var(--accent); background: var(--tint);
+  font-size: .95em; line-height: 1.5;
+}
+
+/* --- figures and tables --- */
+figure { margin: 1.9em 0; padding: 0; }
+figcaption {
+  color: var(--muted); font-size: .85em; line-height: 1.45;
+  margin-top: .75em; text-align: left;
+}
+figcaption .label { color: var(--ink); font-weight: 700; }
+.table-figure { overflow-x: auto; }
+/* A table is read from its caption down; a figure is read up to it. */
+.table-figure > figcaption:first-child { margin: 0 0 .6em; }
+table {
+  border-collapse: collapse; width: 100%; margin: 0;
+  font-size: .88em; line-height: 1.42; font-variant-numeric: tabular-nums;
+}
+thead th {
+  text-align: left; font-weight: 700; padding: .5em .7em; vertical-align: bottom;
+  border-top: 1.5px solid var(--ink); border-bottom: 1px solid var(--ink);
+}
+tbody td { padding: .42em .7em; vertical-align: top; border: 0; }
+tbody tr:nth-child(even) { background: var(--wash); }
+tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
+td.num, th.num { text-align: right; }
+
+/* --- the numbers, as a panel of hairline-separated cells --- */
+.metrics {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(12em, 1fr));
+  gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+  margin: 1.7em 0;
+}
+.metric {
+  background: var(--bg); padding: .8em .95em;
+  display: flex; flex-direction: column;
+}
+.metric .label { color: var(--muted); font-size: .8em; font-weight: 600; line-height: 1.35; }
+.metric .value {
+  font-size: 1.22em; font-weight: 600; line-height: 1.28; margin-top: .3em;
+  color: var(--accent); font-variant-numeric: tabular-nums; text-wrap: balance;
+}
+/* The interval sits on the floor of its cell, so a row of them reads as a row
+   however differently the values above them wrap. */
+.metric .interval {
+  color: var(--muted); font-size: .8em; line-height: 1.35; margin-top: auto;
+  padding-top: .25em; font-variant-numeric: tabular-nums;
+}
+.metric .interval:empty { display: none; }
+
+/* --- the assumption trail --- */
+.ledger {
+  margin: 1.7em 0; padding: .9em 1.1em;
+  background: var(--wash); border-left: 2px solid var(--accent);
+  font-size: .93em; line-height: 1.5;
+}
+.ledger > figcaption:first-child {
+  margin: 0 0 .7em; color: var(--ink); font-weight: 700;
+  font-size: .88em; text-transform: uppercase; letter-spacing: .07em;
+}
+.ledger .line { margin: 0 0 .75em; }
+.ledger .line:last-child { margin-bottom: 0; }
+.ledger .kind {
+  display: inline-block; font-family: var(--mono); font-size: .78em;
+  color: var(--muted); background: var(--bg); border: 1px solid var(--rule);
+  border-radius: 2px; padding: .05em .4em; margin-right: .4em;
+  vertical-align: baseline;
+}
+.ledger .assumption { color: var(--muted); font-size: .93em; margin-top: .25em; }
+.ledger .assumption code { font-size: .95em; }
+
+footer {
+  margin-top: 3em; padding-top: .9em; border-top: 1px solid var(--rule);
+  color: var(--muted); font-size: .82em; line-height: 1.5;
+}
+
+@media print {
+  html { scroll-behavior: auto; }
+  body { padding: 0; }
+  .toc, .anchor { display: none !important; }
+  .paper { display: block; }
+  main { max-width: none; }
+  .section { display: block; }
+  a { color: inherit; text-decoration: none; }
+  /* An article flows: a section does not start a fresh sheet, it starts where
+     the last one ended, and only the things that break badly are held together. */
+  p { orphans: 3; widows: 3; }
+  figure, .metrics, .ledger { break-inside: avoid; }
+  thead { display: table-header-group; }
+}
+</style>
+</head><body><div class="paper">
+<nav class="toc" aria-label="Contents"><div class="toc-title">Contents</div><ol><li><a href="#section-1"><span>Author Note</span></a></li><li><a href="#section-2"><span>Abstract</span></a></li><li><a href="#section-3"><span>Introduction</span></a></li><li><a href="#section-4"><span>Methods</span></a></li><li><a href="#section-5"><span>Results</span></a></li><li><a href="#section-6"><span>What the run showed</span></a></li><li><a href="#section-7"><span>Model checking</span></a></li><li><a href="#section-8"><span>Discussion</span></a></li><li><a href="#section-9"><span>Conclusions</span></a></li><li><a href="#section-10"><span>Limitations</span></a></li><li><a href="#section-11"><span>Provenance</span></a></li><li><a href="#section-12"><span>Tables</span></a></li><li><a href="#section-13"><span>Figures</span></a></li></ol></nav>
+<main>
+<header class="titleblock">
+<h1>GEIGER-1911</h1>
+<p class="subtitle">Matthew Reda · axiom</p>
+</header>
+<section id="section-1" class="section">
+<h2><a class="anchor" href="#section-1" aria-hidden="true">§</a>Author Note</h2>
+<p>To determine whether the positive charge of a gold atom is concentrated in a centre far smaller than the atom itself, the upper limit on the radius of the positive charge of gold is estimated at 33.5 fm (95% WALD 0.0 to 33.5 fm) against a decision threshold of 135000.0 fm. Across all nine stations, 466849 total counts were recorded over 200 observing hours, with 135 hours allocated to wide-angle witness stations including 110 hours at 150 degrees. At 150 degrees with the foil in, 94117 counts were observed where a diffuse atom model predicts 118.8 counts, alongside 11 counts recorded during the background run at 90 degrees with the foil out. Identification is downgraded via profile likelihood on the counts through one forward route, where single scattering is asserted from foil thickness while remaining model assumptions were measured by designated stations. The profile likelihood bottoms at a radius of 32.3 fm, compared to the 29.6 fm radius that beam energy alone could resolve.</p>
+</section>
+<section id="section-2" class="section abstract">
+<h2><a class="anchor" href="#section-2" aria-hidden="true">§</a>Abstract</h2>
+<p>The radius of the positive charge of a gold atom was studied. The inquiry asked whether the positive charge of a gold atom is concentrated in a centre far smaller than the atom itself. This was answered by determining an upper limit on the radius of the positive charge of gold against a decision threshold. The effect is downgraded via the profile likelihood on the counts, through one forward route, with the single-scattering assumption asserted from the foil thickness rather than measured, and every other assumption the bound leans on measured by a station the design bought for that purpose. The analysis yielded an upper limit on the radius of the positive charge of gold settled below the threshold, on the favourable side. This indicates that the positive charge is concentrated in a centre far smaller than the atom itself.</p>
+<p class="emphasis">Reported quantities: Upper limit on the radius of the positive charge of gold</p>
+</section>
+<section id="section-3" class="section">
+<h2><a class="anchor" href="#section-3" aria-hidden="true">§</a>Introduction</h2>
+<p>This report examines whether the positive charge of a gold atom is concentrated in a centre far smaller than the atom itself. The question is answered by the upper limit on the radius of the positive charge of gold, evaluated against a decision threshold of 135000.0 fm. The decision turns on the position of the interval relative to this threshold. An interval lying wholly on one side of 135000.0 fm settles the question. An interval that spans 135000.0 fm leaves the question unsettled. Identification for this analysis is downgraded. The report describes the empirical measurements obtained under this setting. The methods, results, and limitations appear in the sections below.</p>
+</section>
+<section id="section-4" class="section">
+<h2><a class="anchor" href="#section-4" aria-hidden="true">§</a>Methods</h2>
+<p>Identification is downgraded via the profile likelihood on the counts through one forward() route. The single-scattering assumption is asserted from the foil thickness rather than measured, whereas every other assumption the bound leans on was measured by a station the design bought for that purpose. Because a head-on alpha of this energy stops at 59.2 fm and a trajectory scattered through an angle theta approaches no closer than half that value multiplied by one plus the reciprocal of sin(theta/2), a positive charge of radius R eliminates scattering past a cut-off angle, spanning about 7.3 fm against 135000 fm between the two atoms. Rather than treating the two atoms as separate models without a continuous sensitivity curve to guide angle or exposure choice, parameterizing the cut-off provides the resolving power needed to design the experiment. Nine stations serve four distinct roles in the design recorded in Table 1: anchors at 1° and 2.5° to pin the multiple-scattering core, an information bank at 5°, 10°, 20°, and 45°, witnesses at 90° and 150° whose evidence survives an attack on the core model, and a foil-out run at 90° for background. Rather than spending every hour where evidence-per-hour is highest inside the contested core model, the witness stations are retained because their evidence does not depend on that model. Apertures are cut as annular slots rather than round holes, holding the radial half-width at the workshop floor and taking every extra steradian in azimuth because scattering is independent of azimuth; a round hole of equal area at 90° would span about plus or minus 13° and shift the reported rate five per cent high, whereas the slot records it to a part in four thousand. Across 200 total observing hours, 135 hours go to the witnesses and 110 hours to 150° alone to reach past what a core thirty times too wide could influence, rejecting an evidence-per-hour allocation that would concentrate time in the bank. The five parameters are profiled over the cut-off, setting the 95 % one-sided limit where the log-likelihood climbs 1.921 above its minimum on the informative side. A point estimate at the profile minimum is rejected because all values below the bound fit the counts equally well, leaving one side of the profile level to within a fluctuation. The analysis rests on three unresolved assumptions: single scattering, that the counter is linear below its rate cap, and that the two atoms differ only in the radius of the positive charge.</p>
+<h4>The two atoms as one parameter</h4>
+<p><code>D        = 2 z Z e^2 / (4 pi eps0 E)          closest approach, head-on</code><br><code>r_min(t) = (D/2) (1 + 1/sin(t/2))             closest approach at angle t</code><br><code>sin(t_cut/2) = 1 / (2R/D - 1)                 where a charge of radius R</code><br><code>                                              kills the scattering</code><br><code>lam      = log sin(t_cut/2)                   the fitted parameter</code></p>
+<h4>What shape to cut the aperture</h4>
+<p><code>Omega(t, d, phi) = phi * 2 sin(t) sin(d)      an annular slot subtends</code><br><code>  phi = azimuthal arc, d = radial half-width</code><br><code>  only d smears the angle; phi is free resolution</code></p>
+<h4>How long at each</h4>
+<p><code>N(t) ~ Poisson( Omega * T * [ f_tail(t) + f_core(t) + b ] )</code><br><code>  f_tail(t) = exp(log_a) / sin^4(t/2)         single scattering</code><br><code>  f_core(t) = exp(log_c) exp(-t^2 / 2 exp(log_w)^2)   multiple scattering</code><br><code>  b         = exp(log_b)                      counter background</code><br><code>  the tail is cut off above t_cut(lam)</code></p>
+<h4>Reading the bound off the counts</h4>
+<p><code>R_95 : 2 [ l(lam_hat) - l(lam) ] = 1.921     one-sided, one parameter</code><br><code>  l(.)  = the Poisson log-likelihood over all stations</code><br><code>  R     = (D/2) (1 + 1/exp(lam))               radius from the cut-off</code></p>
+<h4>Assumptions this analysis rests on</h4>
+<figure class="table-figure"><figcaption><em>Table 1</em>. Standing assumptions</figcaption><table><thead><tr><th class="">Assumption</th><th class="">Statement</th><th class="">Status</th><th class="">Challenged by</th></tr></thead><tbody><tr><td class="">single scattering</td><td class="">a wide-angle count is one close encounter, not several</td><td class="">was asserted without a check</td><td class="">a thicker foil, where two encounters would compound</td></tr><tr><td class="">the counter is linear below its rate cap</td><td class="">every aperture is opened only as wide as keeps the rate under 1.5 counts per second, where the counter does not miss particles</td><td class="">was asserted without a check</td><td class="">a station run wide enough to pile up, which would under-report the busiest angles</td></tr><tr><td class="">the two atoms differ only in the radius of the positive charge</td><td class="">a hard centre and a charge spread through the atom are one model at two values of one number, the radius R of the positive charge</td><td class="">was asserted without a check</td><td class="">any difference between the two atoms that is not a matter of extent</td></tr></tbody></table></figure>
+<figure class="ledger"><figcaption>Assumption ledger</figcaption><div class="line"><span class="kind">assumption</span> The witness stations were bought so that the wide-angle evidence does not rest on the model of the multiple-scattering core. They are the reason the bound survives that model being wrong.<div class="assumption">assumes <em>single_scattering</em> (asserted): a wide-angle count is one close encounter, not several</div></div><div class="line"><span class="kind">assumption</span> The bound is reported against the radius a diffuse atom would have, not against zero: this experiment excludes an atom, it does not measure a nucleus.<div class="assumption">assumes <em>the_two_atoms_differ_only_in_the_radius_of_the_positive_charge</em> (asserted): a hard centre and a charge spread through the atom are one model at two values of one number, the radius R of the positive charge</div></div></figure>
+</section>
+<section id="section-5" class="section">
+<h2><a class="anchor" href="#section-5" aria-hidden="true">§</a>Results</h2>
+<p>The comparison addresses the physical extent of the charge relative to the decision threshold identified in the introduction. Following the design and assumptions set out in the methods, the estimated quantities are reported alongside their thresholds in Table 2. The upper limit on the radius of the positive charge of gold is 33.5 fm (95% WALD 0.0 to 33.5 fm). These quantities and intervals appear in Figure 1, where the dashed rule marks the decision threshold.</p>
+<div class="metrics"><div class="metric"><div class="label">Upper limit on the radius of the positive charge of gold</div><div class="value">33.5 fm</div><div class="interval">[0, 33] (95% WALD)</div></div></div>
+</section>
+<section id="section-6" class="section">
+<h2><a class="anchor" href="#section-6" aria-hidden="true">§</a>What the run showed</h2>
+<p class="emphasis">Written by the analyst after seeing the output, and reproduced unchanged. Nothing in this section is generated.</p>
+<p>At 150 degrees the counter recorded 94,117 particles where a diffuse atom predicts 119 — a Poisson excess of 306 standard errors. There is no version of this that is a fluctuation.</p>
+<p>The hours went where the argument was weakest rather than where the information was densest, and that is what the bound is made of. Dropping the 150 degree witness and keeping every other station loses most of it.</p>
+</section>
+<section id="section-7" class="section">
+<h2><a class="anchor" href="#section-7" aria-hidden="true">§</a>Model checking</h2>
+<p>Model checking evaluates whether the observed counts and likelihood profiles are consistent with the model fit. A check of this kind can lower confidence in an estimate and can never establish one. These recorded diagnostics are reported in Table 3. Across the entire run, counts recorded across every station were 466849. At 150 degrees with the foil in, the count was 94117. In contrast, the counts a diffuse atom predicts at 150 degrees is 118.8. With the foil out, counts at 90 degrees were 11. In the profile likelihood analysis, the radius at which the profile likelihood bottoms is 32.3 fm. The radius the beam energy alone could never resolve past is 29.6 fm. These checks examine background levels, wide-angle counts, and profile minimums against resolution limits, leaving the remaining assumptions identified in earlier sections unexamined.</p>
+<div class="metrics"><div class="metric"><div class="label">Radius at which the profile likelihood bottoms</div><div class="value">32.3 fm</div><div class="interval"></div></div><div class="metric"><div class="label">Radius the beam energy alone could never resolve past</div><div class="value">29.6 fm</div><div class="interval"></div></div><div class="metric"><div class="label">Counts at 150 degrees, foil in</div><div class="value">94,117</div><div class="interval"></div></div><div class="metric"><div class="label">Counts a diffuse atom predicts at 150 degrees</div><div class="value">118.8</div><div class="interval"></div></div><div class="metric"><div class="label">Counts at 90 degrees with the foil out</div><div class="value">11</div><div class="interval"></div></div><div class="metric"><div class="label">Counts recorded across every station</div><div class="value">466,849</div><div class="interval"></div></div></div>
+</section>
+<section id="section-8" class="section">
+<h2><a class="anchor" href="#section-8" aria-hidden="true">§</a>Discussion</h2>
+<p>The upper limit on the radius of the positive charge of gold settled below the threshold, on the favourable side. This indicates that the positive charge is concentrated in a centre far smaller than the atom itself. The estimate resolves the primary question in the direction favorable to a concentrated central charge. What these findings license, however, is bounded by how the effect is identified. The identification is downgraded via profile likelihood on the counts, through one forward step. The single-scattering assumption is asserted from the foil thickness rather than measured. In contrast, every other assumption the bound leans on was measured by a station the design bought for that purpose. Taking the bound as an empirical fact about the atom therefore depends on an assertion that was not directly verified in the run. The entire reading remains conditional on three unresolved assumptions, and what each one claims is stated in the limitations section. From this analysis, we learn that the count data place the charge radius below the threshold if the foil behaves as asserted. That result raises the question of whether single scattering can be verified by direct measurement rather than asserted from foil thickness.</p>
+</section>
+<section id="section-9" class="section">
+<h2><a class="anchor" href="#section-9" aria-hidden="true">§</a>Conclusions</h2>
+<p>The positive charge of a gold atom is concentrated in a centre far smaller than the atom itself. The upper limit on the radius of the positive charge of gold settles on the favourable side of the threshold at 33.5 fm (95% WALD 0.0 to 33.5 fm). Identification is downgraded. The result remains conditional on three unresolved assumptions detailed in the limitations section: single scattering, that the counter is linear below its rate cap, and that the two atoms differ only in the radius of the positive charge.</p>
+</section>
+<section id="section-10" class="section">
+<h2><a class="anchor" href="#section-10" aria-hidden="true">§</a>Limitations</h2>
+<p>Identification is downgraded, leaving three standing assumptions that do work the data does not do. The first assumption is single scattering, which asserts that a wide-angle count is one close encounter rather than several. This licenses treating each observed deflection as an isolated event. The claim would be challenged by a thicker foil, where two encounters would compound. The second assumption asserts that the counter is linear below its rate cap. Under this claim, every aperture is opened only as wide as keeps the rate under 1.5 counts per second, where the counter does not miss particles. This licenses the observed tallies across detector stations without adjustment for missed counts. The claim would be challenged by a station run wide enough to pile up, which would under-report the busiest angles. The third assumption asserts that the two atoms differ only in the radius of the positive charge. It claims that a hard centre and a charge spread through the atom are one model at two values of one number, the radius R of the positive charge. This licenses evaluating structural differences strictly through variations in spatial extent. The claim would be challenged by any difference between the two atoms that is not a matter of extent.</p>
+</section>
+<section id="section-11" class="section">
+<h2><a class="anchor" href="#section-11" aria-hidden="true">§</a>Provenance</h2>
+<p>Every number in this document resolves to a quantity in the evidence record below. Prose was checked against that record: any numeral not traceable to it, and any claim the record does not itself make, is reported rather than published.</p>
+<figure class="table-figure"><figcaption><em>Table 2</em>. Quantities and their sources</figcaption><table><thead><tr><th class="">Quantity</th><th class="">Key</th><th class="">Value</th><th class="">Produced by</th></tr></thead><tbody><tr><td class="">Upper limit on the radius of the positive charge of gold</td><td class="">radius</td><td class="">33.5 fm (95% WALD 0.0 to 33.5 fm)</td><td class="">design.profile_likelihood on lam</td></tr><tr><td class="">Radius at which the profile likelihood bottoms</td><td class="">profile_min</td><td class="">32.3 fm</td><td class="">—</td></tr><tr><td class="">Radius the beam energy alone could never resolve past</td><td class="">floor</td><td class="">29.6 fm</td><td class="">—</td></tr><tr><td class="">Counts at 150 degrees, foil in</td><td class="">witness_counts</td><td class="">94117</td><td class="">—</td></tr><tr><td class="">Counts a diffuse atom predicts at 150 degrees</td><td class="">witness_if_diffuse</td><td class="">118.8</td><td class="">—</td></tr><tr><td class="">Counts at 90 degrees with the foil out</td><td class="">background_counts</td><td class="">11</td><td class="">—</td></tr><tr><td class="">Counts recorded across every station</td><td class="">total_counts</td><td class="">466849</td><td class="">—</td></tr></tbody></table></figure>
+<figure class="table-figure"><figcaption><em>Table 3</em>. Run</figcaption><table><thead><tr><th class="">Field</th><th class="">Value</th></tr></thead><tbody><tr><td class="">estimator</td><td class="">profile likelihood on lam, one-sided</td></tr><tr><td class="">interval_mass</td><td class="">95%</td></tr><tr><td class="">observing_hours</td><td class="">200</td></tr><tr><td class="">seed</td><td class="">1911</td></tr><tr><td class="">world</td><td class="">nbs/case-studies/rutherford/scattering.py</td></tr><tr><td class="">evidence hash</td><td class="">e8f37b522ca34db4d0bfd8bebb94b492fca1ffcc356a5dac330b4370d7de1efc</td></tr><tr><td class="">narration: abstract</td><td class="">gemini-3.5-flash-lite — verified</td></tr><tr><td class="">narration: title_page</td><td class="">gemini-3.7-flash — verified</td></tr><tr><td class="">narration: introduction</td><td class="">gemini-3.7-flash — verified</td></tr><tr><td class="">narration: methods</td><td class="">gemini-3.7-flash — verified</td></tr><tr><td class="">narration: results</td><td class="">gemini-3.7-flash — verified</td></tr><tr><td class="">narration: diagnostics</td><td class="">gemini-3.7-flash — verified</td></tr><tr><td class="">narration: discussion</td><td class="">gemini-3.7-flash — verified</td></tr><tr><td class="">narration: conclusions</td><td class="">gemini-3.7-flash — verified</td></tr><tr><td class="">narration: limitations</td><td class="">gemini-3.7-flash — verified</td></tr></tbody></table></figure>
+</section>
+<section id="section-12" class="section">
+<h2><a class="anchor" href="#section-12" aria-hidden="true">§</a>Tables</h2>
+<h4><em>Table 1</em>. The design, as recorded parameters.</h4>
+<figure class="table-figure"><table><thead><tr><th class="">Step</th><th class="">Parameter</th><th class="">Value</th></tr></thead><tbody><tr><td class="">Identification</td><td class="">route</td><td class="">profile likelihood on the counts, through one forward()</td></tr><tr><td class="">Identification</td><td class="">status</td><td class="">downgraded</td></tr><tr><td class="">The two atoms as one parameter</td><td class="">beam energy (MeV)</td><td class="">7.68</td></tr><tr><td class="">The two atoms as one parameter</td><td class="">closest approach D (fm)</td><td class="">59.25</td></tr><tr><td class="">The two atoms as one parameter</td><td class="">diffuse atom R (fm)</td><td class="">135000</td></tr><tr><td class="">The two atoms as one parameter</td><td class="">foil areal density (atoms/m²)</td><td class="">2.36e+22</td></tr><tr><td class="">The two atoms as one parameter</td><td class="">hard centre R (fm)</td><td class="">7.3</td></tr><tr><td class="">Where to point the counter</td><td class="">anchor</td><td class="">1°, 2.5° (10 h)</td></tr><tr><td class="">Where to point the counter</td><td class="">background</td><td class="">90°, foil out (10 h)</td></tr><tr><td class="">Where to point the counter</td><td class="">bank</td><td class="">5°, 10°, 20°, 45° (45 h)</td></tr><tr><td class="">Where to point the counter</td><td class="">stations</td><td class="">9</td></tr><tr><td class="">Where to point the counter</td><td class="">witness</td><td class="">90°, 150° (135 h)</td></tr><tr><td class="">What shape to cut the aperture</td><td class="">beam rate (alphas/s)</td><td class="">2e+05</td></tr><tr><td class="">What shape to cut the aperture</td><td class="">rate cap (counts/s)</td><td class="">1.5</td></tr><tr><td class="">What shape to cut the aperture</td><td class="">widest aperture (sr)</td><td class="">0.2</td></tr><tr><td class="">How long at each</td><td class="">hours at 150°</td><td class="">110</td></tr><tr><td class="">How long at each</td><td class="">seed</td><td class="">1911</td></tr><tr><td class="">How long at each</td><td class="">total hours</td><td class="">200</td></tr><tr><td class="">Reading the bound off the counts</td><td class="">drop at 95% one-sided</td><td class="">1.921</td></tr><tr><td class="">Reading the bound off the counts</td><td class="">grid</td><td class="">41 points over lam in [-4, 4]</td></tr><tr><td class="">Reading the bound off the counts</td><td class="">nuisance parameters</td><td class="">log_a, log_c, log_w, log_b</td></tr><tr><td class="">Reading the bound off the counts</td><td class="">profiled parameter</td><td class="">lam</td></tr></tbody></table></figure>
+<h4><em>Table 2</em>. Estimated quantities with their intervals and thresholds.</h4>
+<figure class="table-figure"><table><thead><tr><th class="">Quantity</th><th class="num">Estimate</th><th class="">Unit</th><th class="">Interval</th><th class="num">Threshold</th><th class="">Relative to threshold</th></tr></thead><tbody><tr><td class="">Upper limit on the radius of the positive charge of gold</td><td class="num">33.5</td><td class="">fm</td><td class="">0.0 to 33.5 (95% WALD)</td><td class="num">135000.0</td><td class="">below threshold</td></tr></tbody></table></figure>
+<h4><em>Table 3</em>. Recorded diagnostics.</h4>
+<figure class="table-figure"><table><thead><tr><th class="">Check</th><th class="num">Value</th><th class="">Unit</th><th class="">Interval</th></tr></thead><tbody><tr><td class="">Radius at which the profile likelihood bottoms</td><td class="num">32.3</td><td class="">fm</td><td class="">—</td></tr><tr><td class="">Radius the beam energy alone could never resolve past</td><td class="num">29.6</td><td class="">fm</td><td class="">—</td></tr><tr><td class="">Counts at 150 degrees, foil in</td><td class="num">94117</td><td class="">—</td><td class="">—</td></tr><tr><td class="">Counts a diffuse atom predicts at 150 degrees</td><td class="num">118.8</td><td class="">—</td><td class="">—</td></tr><tr><td class="">Counts at 90 degrees with the foil out</td><td class="num">11</td><td class="">—</td><td class="">—</td></tr><tr><td class="">Counts recorded across every station</td><td class="num">466849</td><td class="">—</td><td class="">—</td></tr></tbody></table></figure>
+</section>
+<section id="section-13" class="section">
+<h2><a class="anchor" href="#section-13" aria-hidden="true">§</a>Figures</h2>
+<figure><div style="height:300.0px; width:100%;">                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.7.0.min.js" integrity="sha256-jvTGqxNp8AGWEcvNLVuKr+8j5dGe9Yw51LQkmDH+IYA=" crossorigin="anonymous"></script>                <div id="2d63b209-cc47-4690-a442-62b4e50bc80f" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("2d63b209-cc47-4690-a442-62b4e50bc80f")) {                    Plotly.newPlot(                        "2d63b209-cc47-4690-a442-62b4e50bc80f",                        [{"error_x":{"array":[0.0],"arrayminus":[33.46958714396646],"color":"#000000","symmetric":false,"thickness":1.4,"type":"data","width":6},"hovertemplate":"%{y}\u003cbr\u003e%{x:.3g}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":["#2f7d4f"],"size":11,"symbol":"square"},"mode":"markers","showlegend":false,"x":[33.46958714396646],"y":["Upper limit on the radius of the positive charge of gold"],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"shapes":[{"line":{"color":"#000000","dash":"dash","width":1.2},"type":"line","x0":135000.0,"x1":135000.0,"xref":"x","y0":0,"y1":1,"yref":"y domain"}],"annotations":[{"font":{"size":10.2},"showarrow":false,"text":"threshold 135000","x":135000.0,"xanchor":"center","xref":"x","y":1,"yanchor":"bottom","yref":"y domain"}],"yaxis":{"title":{"text":""},"autorange":"reversed","gridcolor":"#ffffff","automargin":true},"font":{"family":"Times-Roman, \"Times New Roman\", Times, Georgia, serif","size":12.0,"color":"#000000"},"title":{"text":""},"xaxis":{"title":{"text":"fm"},"gridcolor":"#ffffff","zeroline":false,"automargin":true},"showlegend":false,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","margin":{"l":55,"r":25,"t":12,"b":45},"height":300.0,"colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"]},                        {"responsive": true}                    )                };            </script>        </div><figcaption><em>Figure 1</em>. Estimated quantities with their intervals. The dashed rule marks the decision threshold; a row whose interval crosses it is unsettled rather than null.</figcaption></figure>
+</section>
+
+</main>
+</div></body></html>
