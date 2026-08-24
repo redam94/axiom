@@ -232,6 +232,28 @@ PILLAR_LABEL = {
 GITHUB = "https://github.com/redam94/axiom/blob/main/examples"
 
 
+_INLINE_CODE = re.compile(r"`(.+?)`")
+_INLINE_EM = re.compile(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)")
+
+
+def inline_html(text: str) -> str:
+    """Escape, then allow ``\u0060code\u0060`` and ``*emphasis*`` — and nothing else.
+
+    Generated prose is plain text everywhere else on the site, which is right for
+    text a run wrote. The tutorial steps are authored, and an author naming
+    ``surviving_evidence`` wants it set as code rather than printed with its
+    backticks showing.
+
+    Emphasis is applied **outside code spans only**. A code span is literal; the
+    same function in ``axiom.report`` had this exact bug, where the italic pass
+    ran across the substituted output and ate the asterisks of an equation.
+    """
+    parts = _INLINE_CODE.split(html.escape(text))
+    for i, part in enumerate(parts):
+        parts[i] = f"<code>{part}</code>" if i % 2 else _INLINE_EM.sub(r"<em>\1</em>", part)
+    return "".join(parts)
+
+
 def para_html(text: str, cls: str = "") -> str:
     attr = f' class="{cls}"' if cls else ""
     return f"<p{attr}>{html.escape(text)}</p>"
@@ -519,37 +541,47 @@ def walkthrough_body(entry: dict[str, Any], prev: Any, nxt: Any, data: dict[str,
 
 
 def tutorial_html(data: dict[str, Any]) -> str:
-    """The tutorial index: one card per step, in the order they have to be read.
+    """The tutorial index: one block per series, one card per step.
 
-    Unlike the examples, these are not independent — step 6 recalibrates the fit
-    step 3 produced. The cards are numbered rather than tiled so the order reads
-    as the instruction it is.
+    Unlike the examples, the steps inside a series are not independent — step 6
+    of the depot tutorial recalibrates the fit step 3 produced. The cards are
+    numbered rather than tiled so the order reads as the instruction it is.
     """
-    cards = []
-    for step in data["tutorial"]["steps"]:
-        cards.append(f"""<a class="card" href="{step['slug']}.html">
+    blocks = []
+    for series in data["tutorial"]["series"]:
+        cards = "".join(f"""<a class="card" href="{step['slug']}.html">
   <p class="card-n">STEP {step['n']}</p>
   <h3>{html.escape(step['title'])}</h3>
   <p>{html.escape(step['asks'])}</p>
   <div class="card-f">
     <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
   </div>
-</a>""")
-    return f'<div class="cards">{"".join(cards)}</div>'
+</a>""" for step in series["steps"])
+        blocks.append(f"""<div class="section-head" style="margin-top:48px">
+  <p class="eyebrow">{html.escape(series['kind'])} · {len(series['steps'])} steps</p>
+  <h2>{html.escape(series['title'])}</h2>
+  <p>{html.escape(series['problem'])}</p>
+</div>
+<div class="prose" style="margin-bottom:24px"><p>{html.escape(series['lede'])}</p></div>
+<div class="cards">{cards}</div>""")
+    return "".join(blocks)
 
 
-def tutorial_body(step: dict[str, Any], prev: Any, nxt: Any, data: dict[str, Any]) -> str:
+def tutorial_body(step: dict[str, Any], series: dict[str, Any], data: dict[str, Any]) -> str:
     """One step: what it is for, the code, and exactly what that code printed.
 
     The output is captured at build time by ``site/_gen/generate.py``, so a step
     whose numbers have moved shows up as a changed page rather than as prose that
     quietly stopped being true.
     """
-    total = len(data["tutorial"]["steps"])
+    steps = series["steps"]
+    i = step["n"] - 1
+    prev = steps[i - 1] if i else None
+    nxt = steps[i + 1] if i + 1 < len(steps) else None
     contents = "".join(
-        f'<a class="wt-toc-i" href="{s["slug"]}.html">'
-        f'<span class="wt-toc-n">{s["n"]}</span>{html.escape(s["title"])}</a>'
-        for s in data["tutorial"]["steps"]
+        f'<a class="wt-toc-i" href="{t["slug"]}.html">'
+        f'<span class="wt-toc-n">{t["n"]}</span>{html.escape(t["title"])}</a>'
+        for t in steps
     )
     nav = []
     if prev:
@@ -557,18 +589,18 @@ def tutorial_body(step: dict[str, Any], prev: Any, nxt: Any, data: dict[str, Any
             f'<a class="btn btn-2" href="{prev["slug"]}.html">&larr; '
             f'{prev["n"]} · {html.escape(prev["title"])}</a>'
         )
-    nav.append('<a class="btn btn-2" href="tutorial.html">All eight steps</a>')
+    nav.append(f'<a class="btn btn-2" href="tutorial.html">All {len(steps)} steps</a>')
     if nxt:
         nav.append(
             f'<a class="btn btn-2" href="{nxt["slug"]}.html">'
             f'{nxt["n"]} · {html.escape(nxt["title"])} &rarr;</a>'
         )
     else:
-        nav.append('<a class="btn" href="examples.html">Twelve worked examples &rarr;</a>')
+        nav.append('<a class="btn" href="tutorial.html">The other tutorial &rarr;</a>')
 
     return f"""<section class="hero">
   <div class="wrap">
-    <p class="eyebrow">Tutorial · step {step['n']} of {total}</p>
+    <p class="eyebrow">{html.escape(series['title'])} · step {step['n']} of {len(steps)}</p>
     <h1 style="max-width:18ch">{html.escape(step['title'])}</h1>
     <p class="lede prose mt">{html.escape(step['asks'])}</p>
   </div>
@@ -577,8 +609,8 @@ def tutorial_body(step: dict[str, Any], prev: Any, nxt: Any, data: dict[str, Any
 <section>
   <div class="wrap">
     <div class="prose">
-      <p>{html.escape(step['lede'])}</p>
-      <p><strong>{html.escape(step['beat'])}</strong></p>
+      <p>{inline_html(step['lede'])}</p>
+      <p><strong>{inline_html(step['beat'])}</strong></p>
     </div>
   </div>
 </section>
@@ -784,25 +816,21 @@ def main() -> int:
         (SITE / f"{page}.html").write_text(out)
         print(f"  {page}.html  ({len(out) / 1024:.0f} kB)")
 
-    # One page per tutorial step. Generated rather than authored for the same
-    # reason the example walkthroughs are: the output on the page is what the
-    # code printed when the site was built.
-    steps = data["tutorial"]["steps"]
-    for i, step in enumerate(steps):
-        out = SHELL.format(
-            title=html.escape(f"{step['n']}. {step['title']} — the axiom tutorial"),
-            description=html.escape(f"Step {step['n']} of {len(steps)}: {step['asks']}"),
-            page="tutorial-step",
-            nav=nav_html("tutorial"),
-            body=tutorial_body(
-                step,
-                steps[i - 1] if i else None,
-                steps[i + 1] if i + 1 < len(steps) else None,
-                data,
-            ),
-        )
-        (SITE / f"{step['slug']}.html").write_text(out)
-        print(f"  {step['slug']}.html  ({len(out) / 1024:.0f} kB)")
+    # One page per tutorial step, in every series. Generated rather than
+    # authored for the same reason the example walkthroughs are: the output on
+    # the page is what the code printed when the site was built.
+    for series in data["tutorial"]["series"]:
+        steps = series["steps"]
+        for step in steps:
+            out = SHELL.format(
+                title=html.escape(f"{step['n']}. {step['title']} — axiom tutorial"),
+                description=html.escape(f"Step {step['n']} of {len(steps)}: {step['asks']}"),
+                page="tutorial-step",
+                nav=nav_html("tutorial"),
+                body=tutorial_body(step, series, data),
+            )
+            (SITE / f"{step['slug']}.html").write_text(out)
+            print(f"  {step['slug']}.html  ({len(out) / 1024:.0f} kB)")
 
     # One walkthrough page per example. These are generated rather than authored:
     # their content is the record the example's own run wrote, so a page cannot

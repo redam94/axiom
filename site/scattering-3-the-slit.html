@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>5. The experiment lands — axiom tutorial</title>
-<meta name="description" content="Step 5 of 8: What did it measure, and does the model we already had agree?">
-<meta property="og:title" content="5. The experiment lands — axiom tutorial">
-<meta property="og:description" content="Step 5 of 8: What did it measure, and does the model we already had agree?">
+<title>3. What shape to cut the aperture — axiom tutorial</title>
+<meta name="description" content="Step 3 of 6: Same solid angle, same counts — does the shape matter?">
+<meta property="og:title" content="3. What shape to cut the aperture — axiom tutorial">
+<meta property="og:description" content="Step 3 of 6: Same solid angle, same counts — does the shape matter?">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,17 +39,17 @@
 <main id="main">
 <section class="hero">
   <div class="wrap">
-    <p class="eyebrow">One question, carried all the way · step 5 of 8</p>
-    <h1 style="max-width:18ch">The experiment lands</h1>
-    <p class="lede prose mt">What did it measure, and does the model we already had agree?</p>
+    <p class="eyebrow">Designing an experiment before there is any data · step 3 of 6</p>
+    <h1 style="max-width:18ch">What shape to cut the aperture</h1>
+    <p class="lede prose mt">Same solid angle, same counts — does the shape matter?</p>
   </div>
 </section>
 
 <section>
   <div class="wrap">
     <div class="prose">
-      <p>The trial runs. Its result arrives as one typed <code>Measurement</code> — the estimand it measured, the number, the interval, and the conditions it was measured under — rather than as a slide with a percentage on it.</p>
-      <p><strong>Before folding it in, ask whether the old model predicted it. <code>agreement</code> compares what the observational fit expected against what the experiment saw, and this is where the tutorial turns: they disagree.</strong></p>
+      <p>A counter needs a hole to look through, and a bigger hole means more counts. The obvious hole is round. The scattering does not depend on azimuth, though, which means the two directions of a hole are not equivalent at all.</p>
+      <p><strong>Only the radial half-width smears the angle; azimuth is free resolution. So hold the radial width at the workshop&#x27;s floor and take every extra steradian out in arc. A round hole of the same area at 90 degrees would have to be many degrees wide and would report a rate belonging to no angle in particular — the same counts, at a fraction of the resolution.</strong></p>
     </div>
   </div>
 </section>
@@ -57,38 +57,32 @@
 <section>
   <div class="wrap">
     <div class="code" style="max-width:var(--measure)">
-      <div class="code-h"><span>step 5</span>
+      <div class="code-h"><span>step 3</span>
         <button class="copy" type="button">Copy</button></div>
-      <pre>from axiom.calibrate import Measurement, agreement
-
-# What the world would really have shown. The analyst does not get to
-# see this; the experiment reads it through noise.
-diff = world.forward({&quot;a&quot;: DOSE}) - world.forward({&quot;a&quot;: NO_DOSE})
-truth_experiment = float(np.mean(diff[:, 0]))
-se_experiment = 0.35
-measurement = Measurement(
-    estimand=experiment_estimand,
-    estimate=truth_experiment,
-    se=se_experiment,
-    mass=0.9,
-    source=&quot;depot-maintenance-rct-2026Q2&quot;,
-)
-print(f&quot;the trial read {measurement.estimate:+.3f} &quot;
-      f&quot;{measurement.interval}&quot;)
-
-says = agreement(biased, measurement, seed=SEED)
+      <pre>print(f&quot;{&#x27;angle&#x27;:&gt;7} {&#x27;radial&#x27;:&gt;9} {&#x27;arc&#x27;:&gt;9} {&#x27;slot bias&#x27;:&gt;11} {&#x27;hole bias&#x27;:&gt;11}&quot;)
+for theta in (5.0, 45.0, 90.0, 150.0):
+    omega_here = float(s.widest_aperture([theta], s.HARD_CENTRE)[0])
+    half, arc = s.slit_for(theta, omega_here)
+    slot = 100.0 * s.aperture_bias(theta, half, arc, s.HARD_CENTRE)
+    # a round hole of the same solid angle: equal in both directions
+    hole = np.degrees(np.sqrt(omega_here / np.pi))
+    hole_bias = 100.0 * s.aperture_bias(theta, hole, 2 * hole, s.HARD_CENTRE)
+    print(f&quot;{theta:6.1f}d {half:8.2f}d {arc:8.1f}d &quot;
+          f&quot;{slot:10.3f}% {hole_bias:10.2f}%&quot;)
 print()
-print(f&quot;the model we already had expected {says.posterior_mean:+.3f}&quot;)
-print(f&quot;the trial says                    {says.estimate:+.3f}&quot;)
-print(f&quot;agreement : {says.verdict}  (z = {says.z:.1f})&quot;)</pre>
+print(&quot;same solid angle, same counts. the slot reports the angle it is at;&quot;)
+print(&quot;the hole reports an average over everything it can see.&quot;)</pre>
     </div>
     <div class="code" style="max-width:var(--measure);margin-top:16px">
       <div class="code-h"><span>what it printed</span></div>
-      <pre>the trial read +2.906 [2.33, 3.48] (90% WALD)
+      <pre>  angle    radial       arc   slot bias   hole bias
+   5.0d     0.05d      2.0d      0.020%       0.04%
+  45.0d     0.20d    360.0d      0.004%       3.46%
+  90.0d     0.91d    360.0d      0.025%       6.64%
+ 150.0d     1.82d    360.0d      0.054%       3.48%
 
-the model we already had expected +4.554
-the trial says                    +2.906
-agreement : disagrees  (z = -2.2)</pre>
+same solid angle, same counts. the slot reports the angle it is at;
+the hole reports an average over everything it can see.</pre>
     </div>
     <p class="prose mt"><small>Every line above was captured by running this code
       at build time. The steps share one namespace, so the code on this page is
@@ -98,8 +92,8 @@ agreement : disagrees  (z = -2.2)</pre>
 
 <section>
   <div class="wrap">
-    <div class="wt-toc"><a class="wt-toc-i" href="tutorial-1-the-question.html"><span class="wt-toc-n">1</span>The question, written down</a><a class="wt-toc-i" href="tutorial-2-identification.html"><span class="wt-toc-n">2</span>Can the data we already have answer it?</a><a class="wt-toc-i" href="tutorial-3-the-prior.html"><span class="wt-toc-n">3</span>The belief we start from</a><a class="wt-toc-i" href="tutorial-4-design.html"><span class="wt-toc-n">4</span>Designing the experiment</a><a class="wt-toc-i" href="tutorial-5-measurement.html"><span class="wt-toc-n">5</span>The experiment lands</a><a class="wt-toc-i" href="tutorial-6-calibration.html"><span class="wt-toc-n">6</span>Folding the experiment into the model</a><a class="wt-toc-i" href="tutorial-7-the-follow-up.html"><span class="wt-toc-n">7</span>Planning the follow-up</a><a class="wt-toc-i" href="tutorial-8-the-report.html"><span class="wt-toc-n">8</span>The report</a></div>
-    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="tutorial-4-design.html">&larr; 4 · Designing the experiment</a><a class="btn btn-2" href="tutorial.html">All 8 steps</a><a class="btn btn-2" href="tutorial-6-calibration.html">6 · Folding the experiment into the model &rarr;</a></div>
+    <div class="wt-toc"><a class="wt-toc-i" href="scattering-1-one-parameter.html"><span class="wt-toc-n">1</span>Two atoms, one number</a><a class="wt-toc-i" href="scattering-2-which-angles.html"><span class="wt-toc-n">2</span>Where to point the counter</a><a class="wt-toc-i" href="scattering-3-the-slit.html"><span class="wt-toc-n">3</span>What shape to cut the aperture</a><a class="wt-toc-i" href="scattering-4-how-long.html"><span class="wt-toc-n">4</span>How long at each, and what the plan buys</a><a class="wt-toc-i" href="scattering-5-when-to-stop.html"><span class="wt-toc-n">5</span>When to stop</a><a class="wt-toc-i" href="scattering-6-running-it.html"><span class="wt-toc-n">6</span>Running it</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="scattering-2-which-angles.html">&larr; 2 · Where to point the counter</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="scattering-4-how-long.html">4 · How long at each, and what the plan buys &rarr;</a></div>
   </div>
 </section>
 </main>
