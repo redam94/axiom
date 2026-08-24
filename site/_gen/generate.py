@@ -1826,6 +1826,32 @@ def casestudy() -> Any:
             "challenged_by": jsonable(line.assumption.challenged_by),
         },
         "operating_characteristics": oc_rows,
+        # -- the same numbers, shaped for the charts that draw them ---------------------
+        # The rule's power curve: how often it fires against how much harm is really
+        # there. The table states five points of it; the chart is the shape between them,
+        # which is what says whether the rule is trigger-happy or asleep.
+        "oc_curve": {
+            "drift": [row["drift"] for row in oc_rows],
+            "stop_probability": [row["stop_probability"] for row in oc_rows],
+            "expected_looks": [row["expected_looks"] for row in oc_rows],
+        },
+        # Every contrast the trial monitors, by the lowest Z it ever showed. One of the
+        # twelve reaches its boundary; the pooled arms never come close, which is the
+        # whole case study in one picture.
+        "contrasts": [
+            {
+                "label": f"{row['arm_label']} · {row['stratum_label']}",
+                "value": row["lowest_z_seen"],
+                "colour": "boundary" if row["decision"].startswith("stop") else "ink-3",
+                "display": f"{row['lowest_z_seen']:+.2f}",
+                "note": (
+                    f"stopped at week {row['stopped_week']}"
+                    if row["decision"].startswith("stop")
+                    else f"never fired in {row['looks_taken']} looks"
+                ),
+            }
+            for row in sorted(monitoring, key=lambda r: r["lowest_z_seen"])
+        ],
         "truth": {
             "doses": doses.tolist(),
             "curves": curves,
@@ -2048,6 +2074,37 @@ def rutherford() -> Any:
             }
         )
 
+    # -- the witness, actually watched -------------------------------------------------
+    # A source a thousand times weaker than the modelled one, so the crossing is a real
+    # event partway through rather than a foregone conclusion at the first look. The
+    # chart wants the same panel shape the HYPER-3 monitoring uses.
+    weak = 1e-3
+    elapsed = np.array(look_hours) * 3600.0
+    drawn = np.random.default_rng(1911).poisson(
+        np.diff(np.concatenate([[0.0], (signal * weak + background) * elapsed]))
+    )
+    cumulative = np.cumsum(drawn)
+    z_path = (cumulative - background * elapsed) / np.sqrt(np.maximum(cumulative, 1))
+    crossing = next(
+        (i for i, (zz, th) in enumerate(zip(z_path, boundary.z, strict=True)) if zz >= th), None
+    )
+    taken = len(z_path) if crossing is None else crossing + 1
+    witness_panel = {
+        "stratum": "witness_150",
+        "label": f"150° · a source {weak:g} times the modelled one",
+        "information": list(looks.information),
+        "boundary": [float(z) for z in boundary.z],
+        "z": [float(v) for v in z_path],
+        "looks_taken": taken,
+        "weeks": [float(h) for h in look_hours],
+        "stopped": crossing is not None,
+        "stop_information": None if crossing is None else float(looks.information[crossing]),
+        "stop_z": None if crossing is None else float(z_path[crossing]),
+        "stop_week": None if crossing is None else float(look_hours[crossing]),
+        "effects": [float(c - background * t) for c, t in zip(cumulative, elapsed, strict=True)],
+        "ses": [float(np.sqrt(max(c, 1))) for c in cumulative],
+    }
+
     # -- one run of it ----------------------------------------------------------------
     observed = np.random.default_rng(1911).poisson(surface.counts(s.plan_data(), s.HARD_CENTRE))
     if_diffuse = surface.counts(s.plan_data(), s.DIFFUSE)
@@ -2093,6 +2150,39 @@ def rutherford() -> Any:
         "plan": plan,
         "immunity": immunity,
         "slit": slit,
+        # -- the same numbers, shaped for the charts that draw them ---------------------
+        # Evidence spans five orders of magnitude across the stations, so the paired
+        # comparison is drawn in log10; the point of the picture is the *gap*, and a
+        # linear axis would put every station but one on the baseline.
+        "station_evidence": [
+            {
+                "label": f"{row['angle']:.1f}°  {row['role']}",
+                "a": float(np.log10(max(row["nats_per_hour_believed"], 1e-3))),
+                "b": float(np.log10(max(row["nats_per_hour_attacked"], 1e-3))),
+            }
+            for row in plan
+        ],
+        "slit_compare": [
+            {"label": f"{row['angle']:.0f}°", "a": row["hole_bias_pct"], "b": row["slot_bias_pct"]}
+            for row in slit
+        ],
+        "immunity_curve": {
+            "allowance": [row["allowance"] for row in immunity],
+            "beyond": [row["beyond_deg"] for row in immunity],
+            "rms": [row["rms_deg"] for row in immunity],
+        },
+        "counts_compare": [
+            {
+                "label": f"{st.theta_deg:.1f}°",
+                # The diffuse atom predicts exactly zero at several stations. Floored at a
+                # tenth of a count so the axis stays finite; the caption says so.
+                "a": float(np.log10(max(float(d), 0.1))),
+                "b": float(np.log10(max(float(n), 0.1))),
+            }
+            for st, n, d in zip(s.PLAN, observed, if_diffuse, strict=True)
+            if st.foil
+        ],
+        "panels": [witness_panel],
         "sequential": {
             "look_hours": list(look_hours),
             "information": list(looks.information),

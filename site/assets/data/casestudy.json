@@ -539,6 +539,115 @@
    "expected_looks": 2.602081
   }
  ],
+ "oc_curve": {
+  "drift": [
+   0.0,
+   -1.0,
+   -2.0,
+   -3.0,
+   -4.0
+  ],
+  "stop_probability": [
+   0.009746,
+   0.060293,
+   0.242631,
+   0.582482,
+   0.874243
+  ],
+  "expected_looks": [
+   5.9594,
+   5.778156,
+   5.177774,
+   3.983341,
+   2.602081
+  ]
+ },
+ "contrasts": [
+  {
+   "label": "40 mg \u00b7 51+",
+   "value": -3.220608,
+   "colour": "boundary",
+   "display": "-3.22",
+   "note": "stopped at week 12"
+  },
+  {
+   "label": "20 mg \u00b7 51+",
+   "value": -0.133278,
+   "colour": "ink-3",
+   "display": "-0.13",
+   "note": "never fired in 6 looks"
+  },
+  {
+   "label": "10 mg \u00b7 51+",
+   "value": 0.328287,
+   "colour": "ink-3",
+   "display": "+0.33",
+   "note": "never fired in 6 looks"
+  },
+  {
+   "label": "40 mg \u00b7 all units",
+   "value": 0.452379,
+   "colour": "ink-3",
+   "display": "+0.45",
+   "note": "never fired in 6 looks"
+  },
+  {
+   "label": "20 mg \u00b7 36-50",
+   "value": 1.044172,
+   "colour": "ink-3",
+   "display": "+1.04",
+   "note": "never fired in 6 looks"
+  },
+  {
+   "label": "40 mg \u00b7 36-50",
+   "value": 1.075978,
+   "colour": "ink-3",
+   "display": "+1.08",
+   "note": "never fired in 6 looks"
+  },
+  {
+   "label": "20 mg \u00b7 25-35",
+   "value": 1.118797,
+   "colour": "ink-3",
+   "display": "+1.12",
+   "note": "never fired in 6 looks"
+  },
+  {
+   "label": "10 mg \u00b7 36-50",
+   "value": 1.285712,
+   "colour": "ink-3",
+   "display": "+1.29",
+   "note": "never fired in 6 looks"
+  },
+  {
+   "label": "10 mg \u00b7 25-35",
+   "value": 1.308635,
+   "colour": "ink-3",
+   "display": "+1.31",
+   "note": "never fired in 6 looks"
+  },
+  {
+   "label": "20 mg \u00b7 all units",
+   "value": 1.554611,
+   "colour": "ink-3",
+   "display": "+1.55",
+   "note": "never fired in 6 looks"
+  },
+  {
+   "label": "40 mg \u00b7 25-35",
+   "value": 1.857744,
+   "colour": "ink-3",
+   "display": "+1.86",
+   "note": "never fired in 6 looks"
+  },
+  {
+   "label": "10 mg \u00b7 all units",
+   "value": 1.907804,
+   "colour": "ink-3",
+   "display": "+1.91",
+   "note": "never fired in 6 looks"
+  }
+ ],
  "truth": {
   "doses": [
    0.0,

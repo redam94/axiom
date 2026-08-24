@@ -262,6 +262,22 @@
       </table>
     </div>
 
+    <figure class="fig mt-lg">
+      <div class="fig-head">
+        <p class="fig-t">What each station is worth, before and after the argument</p>
+        <p class="fig-s">Grey is the evidence an hour buys if the model of the core is
+          believed; green is what survives the opposition choosing its own. The rule joining
+          them is what the argument costs that station. Drawn in log₁₀ because the range
+          across stations is five orders of magnitude.</p>
+      </div>
+      <div class="chart" data-chart="dumbbell" data-file="rutherford"
+           data-opt='{"rows":"station_evidence","xLabel":"log₁₀ nats per hour",
+                      "aLabel":"model believed","bLabel":"model attacked",
+                      "labelWidth":150,"rowHeight":38}'></div>
+      <p class="stamp"><b>scattering.surviving_evidence</b>(angles, aperture, 3600) against
+        <b>weight_of_evidence</b>(mu_hard, mu_diffuse)</p>
+    </figure>
+
     <p class="prose mt">Which is why the plan spends
       <b>110 of its 200 hours</b>
       at a hundred and fifty degrees — the opposite of what the evidence-per-hour calculation
@@ -308,6 +324,23 @@
         </tbody>
       </table>
     </div>
+
+    <figure class="fig mt-lg">
+      <div class="fig-head">
+        <p class="fig-t">The witness angle, as a function of how wrong the core may be</p>
+        <p class="fig-s">Concede more to the opposition and the station has to move further
+          round the apparatus. The curve is the specification; the table above is five
+          points on it.</p>
+      </div>
+      <div class="chart" data-chart="lines" data-file="rutherford"
+           data-opt='{"series":[
+             {"label":"immune beyond","x":"immunity_curve.allowance","y":"immunity_curve.beyond","colour":"s3"}],
+             "xLabel":"widest core the opposition may claim (× the fitted width)",
+             "yLabel":"immune beyond (degrees)","height":300,"rightPad":96,
+             "hline":150,"hlineLabel":"where the plan puts its witness"}'></div>
+      <p class="stamp"><b>scattering.surviving_evidence</b>(..., factors=geomspace(0.3, cap))
+        at five allowances</p>
+    </figure>
 
     <p class="prose mt">To be immune against a core thirty times the fitted one, the witness
       has to sit past 130 degrees. Which is, to within
@@ -380,6 +413,21 @@
       </table>
     </div>
 
+    <figure class="fig mt-lg">
+      <div class="fig-head">
+        <p class="fig-t">The same solid angle, bought two ways</p>
+        <p class="fig-s">Every pair admits identical counts at identical stations. The only
+          difference is the shape of the brass — and the slot is the one that reports a rate
+          belonging to the angle it is pointed at.</p>
+      </div>
+      <div class="chart" data-chart="dumbbell" data-file="rutherford"
+           data-opt='{"rows":"slit_compare","xLabel":"smearing error (per cent of the reported rate)",
+                      "aLabel":"round hole","bLabel":"annular slot",
+                      "labelWidth":92,"rowHeight":38,"truth":0,"truthLabel":"no smearing"}'></div>
+      <p class="stamp"><b>scattering.aperture_bias</b>(theta, half_width, arc, world) —
+        <code>forward()</code> integrated across the opening against its value at the centre</p>
+    </figure>
+
     <p class="prose mt">At ninety degrees the two openings admit exactly the same
       0.2 steradians. The slot is ±0.91° wide and reports the
       rate to a part in four thousand. The hole is ±12.9°
@@ -449,6 +497,25 @@
         </tbody>
       </table>
     </div>
+
+    <figure class="fig mt-lg">
+      <div class="fig-head">
+        <p class="fig-t">One of those weaker campaigns, watched</p>
+        <p class="fig-s">A source a thousand times the modelled one is weak enough that the
+          crossing is an event rather than a foregone conclusion. The boundary falls as
+          information accumulates — an early look has to clear a much higher bar, which is
+          what buys the right to look at all.</p>
+      </div>
+      <div class="legend">
+        <span><i class="dash" style="--k:var(--boundary)"></i>O’Brien–Fleming boundary</span>
+        <span><i style="--k:var(--ink-2)"></i>counts against the measured background</span>
+      </div>
+      <div class="chart" data-chart="sequential" data-file="rutherford"
+           data-opt='{"panels":[0],"panelHeight":250,"showContinuation":true,
+                      "yDomain":[-1,9],"animate":true,"xLabel":"information fraction"}'></div>
+      <p class="stamp"><b>axiom.design.obrien_fleming</b>(0.05, looks, side="upper") ·
+        <b>monitor</b>(rule, z) on one simulated path</p>
+    </figure>
 
     <p class="prose mt">A source a thousand times weaker than this one still settles the
       question with certainty, in about forty of the hundred and ten hours. That is roughly
@@ -553,6 +620,13 @@
             </tbody>
           </table>
         </div>
+        <div class="chart" data-chart="dumbbell" data-file="rutherford"
+             data-opt='{"rows":"counts_compare","xLabel":"log₁₀ counts over the whole run",
+                        "aLabel":"the diffuse atom said","bLabel":"the counter recorded",
+                        "labelWidth":78,"rowHeight":34}'></div>
+        <p class="small muted">The diffuse atom predicts exactly zero at four of the eight
+          stations; the chart floors it at a tenth of a count so the axis stays finite. Every
+          gap you can see is a lower bound on the real one.</p>
         <p class="small muted">Ninety-four thousand flashes at a hundred and fifty degrees
           where the diffuse atom accounts for a hundred and nineteen, every one of them
           background. There is no version of that which is a fluctuation.</p>
