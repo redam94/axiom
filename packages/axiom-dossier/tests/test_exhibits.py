@@ -302,3 +302,77 @@ def test_the_library_can_be_left_out_of_the_html(tmp_path) -> None:
     built.write(str(tmp_path / "big.html"))
     built.write(str(tmp_path / "small.html"), inline_plotly=False)
     assert (tmp_path / "small.html").stat().st_size < (tmp_path / "big.html").stat().st_size
+
+
+# -- the identification graph, and the equations -----------------------------------------
+
+
+def _graph_evidence():
+    """A record whose verdict was read off a graph with an unmeasured node."""
+    from axiom.identify import CausalGraph, identify
+
+    graph = CausalGraph.from_edges(
+        "u -> x, u -> y, x -> y, z -> x",
+        unmeasured=["u"],
+        name="confounded",
+    )
+    return (
+        EvidenceBuilder("G", "does x move y?")
+        .verdict(identify(graph, "x", "y"), graph=graph)
+        .step(
+            "fit",
+            "Fit",
+            what="Least squares.",
+            equations=("y = a + b * x + e", "  b = the contrast reported"),
+        )
+        .build()
+    )
+
+
+def test_the_graph_the_verdict_was_read_off_is_kept() -> None:
+    """A route with no graph beside it is a conclusion a reader cannot check."""
+    ev = _graph_evidence()
+    assert ev.graph is not None
+    assert ("x", "y") in ev.graph.edges
+    assert "u" in ev.graph.unmeasured
+    assert ev.graph.treatment == "x" and ev.graph.outcome == "y"
+    assert ev.graph.graph_hash, "the graph is named by a hash the reader can compare"
+    assert "x -> y" in ev.graph.to_text()
+
+
+def test_the_graph_reaches_the_methods_section_as_prose_and_as_a_table() -> None:
+    from axiom_dossier import build
+
+    ev = _graph_evidence()
+    built = build(ev, style="journal")
+    methods = next(s for s in built.report.sections if "Methods" in s.title)
+    text = " ".join(getattr(b, "text", "") for b in methods.blocks)
+    assert "x -> y" in text, "the edge list is not stated anywhere"
+    assert any(getattr(b, "source", "") == "graph_table" for b in methods.blocks)
+    rows = built.context["graph_table"]
+    assert any(r["From"] == "u" and r["Kind"] == "unmeasured node" for r in rows)
+    assert built.missing() == ()
+
+
+def test_the_equations_are_rendered_and_keep_their_asterisks() -> None:
+    """An equation naming a multiplication must survive into the page."""
+    from axiom_dossier import build
+
+    ev = _graph_evidence()
+    built = build(ev, style="journal")
+    methods = next(s for s in built.report.sections if "Methods" in s.title)
+    text = " ".join(getattr(b, "text", "") for b in methods.blocks)
+    assert "y = a + b * x + e" in text
+
+
+def test_a_record_with_no_graph_renders_no_graph_blocks() -> None:
+    """A designed physics experiment has no DAG, and must not grow an empty one."""
+    from axiom_dossier import build
+
+    ev = EvidenceBuilder("N", "q?").step("s", "Step", what="Did a thing.").build()
+    built = build(ev, style="journal")
+    for section in built.report.sections:
+        for block in section.blocks:
+            assert getattr(block, "source", "") != "graph_table"
+            assert getattr(block, "source", "") != "graph_figure"
+    assert built.missing() == ()

@@ -71,10 +71,17 @@ def _escape(text: str) -> str:
     import re
 
     out = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    out = re.sub(r"`(.+?)`", r"<font face='Courier'>\1</font>", out)
-    out = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", out)
-    out = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<i>\1</i>", out)
-    return out.replace("\n", "<br/>")
+    # Emphasis outside code spans only, for the reason given in the HTML
+    # renderer's ``_inline``: a code span is literal, and an equation set in one
+    # was losing the asterisks of its own multiplications to the italic pass.
+    parts = re.split(r"`(.+?)`", out)
+    for i, part in enumerate(parts):
+        if i % 2:
+            parts[i] = f"<font face='Courier'>{part}</font>"
+        else:
+            part = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", part)
+            parts[i] = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<i>\1</i>", part)
+    return "".join(parts).replace("\n", "<br/>")
 
 
 def render_pdf(resolved: ResolvedReport) -> bytes | Unsupported:

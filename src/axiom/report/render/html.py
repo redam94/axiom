@@ -52,12 +52,24 @@ _SECTION_NUMBER = re.compile(r"^\s*(\d+(?:\.\d+)*)[.)]?\s+")
 
 
 def _inline(text: str) -> str:
-    """Escape, then apply the three inline marks the template language allows."""
+    """Escape, then apply the three inline marks the template language allows.
+
+    Emphasis is applied **outside code spans only**. A code span is literal —
+    that is the whole of what it is for — and running the italic pass across
+    the substituted output turned the two asterisks of
+    ``beta0 + tau * treated_i + beta1 * baseline_i`` into an ``<em>`` and
+    deleted them from the equation.
+    """
     out = _html.escape(text)
-    out = _CODE.sub(r"<code>\1</code>", out)
-    out = _BOLD.sub(r"<strong>\1</strong>", out)
-    out = _ITALIC.sub(r"<em>\1</em>", out)
-    return out.replace("\n", "<br>")
+    # split on a capturing group: odd indices are the contents of code spans.
+    parts = _CODE.split(out)
+    for i, part in enumerate(parts):
+        if i % 2:
+            parts[i] = f"<code>{part}</code>"
+        else:
+            part = _BOLD.sub(r"<strong>\1</strong>", part)
+            parts[i] = _ITALIC.sub(r"<em>\1</em>", part)
+    return "".join(parts).replace("\n", "<br>")
 
 
 def _rgba(colour: str, alpha: float) -> str:

@@ -7,7 +7,7 @@ Every file here is overwritten in place by re-running the example that made it.
 ## `hyper3-apa.{pdf,html,pptx}` — an APA manuscript
 
 ```bash
-python examples/hypertension.py --apa --full --narrate
+python examples/hypertension.py --apa --narrate
 ```
 
 The HYPER-3 trial in APA manuscript form, following the UCSD Psychology guide
@@ -25,7 +25,7 @@ of numbers.
 ## `hyper3-full.{pdf,html,pptx}` — the same trial, journal style
 
 ```bash
-python examples/hypertension.py --journal --full --narrate
+python examples/hypertension.py --narrate
 ```
 
 Numbered sections, exhibits embedded beside the prose that discusses them
@@ -56,6 +56,54 @@ README) are consolidated into the report's remarks.
 Figures here come from three places and the report does not pretend otherwise:
 the ones the notebooks drew, the ones this package generates from the evidence,
 and the one or two the agent wrote code to add.
+
+## `geiger-{full,apa}.{pdf,html,pptx}` — an experiment designed, run, and read
+
+```bash
+python examples/rutherford.py --narrate
+python examples/rutherford.py --apa --narrate
+```
+
+GEIGER-1911 from `nbs/case-studies/rutherford/`: alpha particles on a gold foil,
+to decide whether the positive charge of an atom is concentrated or spread. The
+station plan, the hours and the apertures come from `scattering.py`; the counts
+are one Poisson draw at each station; the bound is
+`design.profile_likelihood` against those counts. It comes back **R < 33 fm**,
+against a floor of 29.6 fm that no amount of counting can beat because the beam
+energy sets it. Rutherford published 34 fm in 1911.
+
+Worth opening for two things this shape has and a trial does not. **The methods
+section is most of the document**, because in a designed experiment the argument
+*is* the design — an angle chosen for the wrong reason cannot be fixed by the
+analysis, and each step carries the alternative it was chosen over. And **the
+finding is a one-sided bound**: there is no lower limit on the radius here, and
+the report states that rather than printing a point estimate that reads like one.
+
+## `tutor60-{full,apa}.{pdf,html,pptx}` — one decision, from the budget to the memo
+
+```bash
+python examples/tutor60.py --narrate
+python examples/tutor60.py --apa --narrate
+```
+
+TUTOR-60 from `nbs/case-studies/tutoring/`: nine million dollars, twelve thousand
+students reading behind, and two treatments sold by the weekly minute and the
+weekly message. It fits the trial through PyMC, so it takes a minute or two.
+
+The recommendation is thirty-five weekly minutes and five messages for the whole
+cohort, not the pilot's ninety minutes for the fraction the same money reaches —
+ahead by **13,838 cohort reading points**, about 19 million dollars at the
+department's own valuation, in 99.7% of the posterior.
+
+What it shows that the other two do not: **the finding is a comparison between
+two things you could buy**, paired inside every posterior draw so the uncertainty
+common to both cancels. That is what a decision report has instead of a headline
+effect, and it is why the question is written as the one the comparison settles
+rather than as "how much should we buy" — a how-much question has no threshold,
+and a conclusions section cannot answer it.
+
+The example is `tutor60.py` rather than `tutoring.py` because the case study's own
+world module is `tutoring.py` and the two must not shadow each other.
 
 ## `readouts/*.{pdf,html}` — one per axiom example
 
@@ -91,11 +139,30 @@ instead of 4.8 MB. That is a choice made for the repository, not the default:
 `Dossier.write` bundles by default, because a report you email should not need
 a CDN to draw its own figures. `--standalone` writes that version.
 
+## The provenance appendix
+
+Every file here ends with one, and until recently none of them did. `build`
+decided which context keys a section could name an exhibit from by looking only
+at the figures and tables it had drawn, so the three that come from the evidence
+record itself — the standing assumptions, the quantities and their sources, and
+the run — were dropped from every report. A package whose fourth rule is that
+every number carries its provenance was rendering that section as a lone
+paragraph. See `docs/notes/0023`.
+
 ## Regenerating everything
 
 ```bash
 cd packages/axiom-dossier
-python examples/hypertension.py --apa --full --narrate    # needs GEMINI_API_KEY
-python examples/hypertension.py --journal --full          # no key, generated prose
-python examples/readouts.py
+python examples/hypertension.py --apa --narrate            # needs GEMINI_API_KEY
+python examples/hypertension.py --narrate                  # needs GEMINI_API_KEY
+python examples/hypertension_agent.py --model --execute    # needs GEMINI_API_KEY
+python examples/rutherford.py --narrate                    # needs GEMINI_API_KEY
+python examples/rutherford.py --apa --narrate              # needs GEMINI_API_KEY
+python examples/tutor60.py --narrate                       # needs GEMINI_API_KEY, fits a model
+python examples/tutor60.py --apa --narrate                 # needs GEMINI_API_KEY, fits a model
+python examples/readouts.py                                # no key, generated prose
 ```
+
+All but the last are narrated and the wording changes on every run; the numbers
+do not. `readouts.py` needs no key at all, which is the point of it: it is what
+the package produces with no language model involved.

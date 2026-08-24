@@ -88,6 +88,11 @@ checking all opened by re-describing the design and the estimate. Nothing failed
 `SECTION_INSTRUCTION` now tells each section what it is for and what belongs to
 its neighbours. It was caught by rendering the PDF and looking at it.
 
+**Superseded by [0023](0023-what-each-section-may-say.md).** Telling a section
+what belongs to its neighbours, while still showing it the whole study, did not
+hold: the same phrases came back in six sections of the narrated HYPER-3 report.
+Each section is now *shown* only the facts it may state.
+
 ## D15.5 — A bug in axiom that this work found
 
 `report/render/pdf.py` passed **bare strings** as reportlab table cells.

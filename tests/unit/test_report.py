@@ -467,3 +467,31 @@ def test_dimensions_are_untouched_by_reporting(band: ResponseBand) -> None:
     out = resolve(report, {"b": band})
     assert not isinstance(out, Unsupported)
     assert band.dimension == D.outcome
+
+
+def test_a_code_span_is_literal_and_emphasis_does_not_reach_inside_it() -> None:
+    """An equation set in a code span keeps its own asterisks.
+
+    ``_inline`` substituted the code span first and then ran the bold and italic
+    passes across the whole result, so the two multiplications in
+    ``beta0 + tau * treated_i + beta1 * baseline_i`` were read as one italic run
+    and the asterisks were deleted from the equation. A code span is literal.
+    """
+    from axiom.report.render.html import _inline
+    from axiom.report.render.pdf import _escape
+
+    equation = "`y = a * x + b * z`"
+    assert _inline(equation) == "<code>y = a * x + b * z</code>"
+    assert "<em>" not in _inline(equation)
+    assert "<i>" not in _escape(equation)
+    assert "a * x + b * z" in _escape(equation)
+
+    # And emphasis outside a code span still works, in both renderers.
+    assert _inline("plain *stress* here") == "plain <em>stress</em> here"
+    assert "<i>stress</i>" in _escape("plain *stress* here")
+    assert _inline("**loud**") == "<strong>loud</strong>"
+
+    # Mixed: marks outside are applied, the span between them is untouched.
+    mixed = _inline("*before* `a * b` *after*")
+    assert mixed.count("<em>") == 2
+    assert "<code>a * b</code>" in mixed

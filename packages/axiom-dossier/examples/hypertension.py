@@ -112,7 +112,10 @@ def evidence():
         "Which of three daily doses should go into phase III, and is any of them "
         "harming the people taking it?",
     )
-    builder.verdict(verdict)
+    # The graph goes in with the verdict. A report that states a route and not
+    # the graph it was read off has told the reader the conclusion and withheld
+    # the thing to disagree with.
+    builder.verdict(verdict, graph=graph)
 
     # -- the experimental design, as method steps --------------------------------------
     allocation = ":".join(str(v) for v in h.ALLOCATION.values())
@@ -127,6 +130,10 @@ def evidence():
         why=(
             "The question is which dose to take forward, so the design has to estimate "
             "three contrasts against a shared control rather than one against another."
+        ),
+        equations=(
+            "arm_i ~ blocked randomization within age band, allocation "
+            + ":".join(str(v) for v in h.ALLOCATION.values()),
         ),
         detail={
             "arms": ", ".join(h.ARMS),
@@ -174,6 +181,12 @@ def evidence():
             "precision; adjusting for anything measured afterwards would forfeit the "
             "identification the randomization provided."
         ),
+        equations=(
+            "change_i = beta0 + tau * treated_i + beta1 * baseline_i + eps_i",
+            "  pooled, add:  + sum_b gamma_b * 1[age_band_i = b]",
+            "  change_i   = mean(SBP_i, weeks 9-12) - SBP_i(baseline)",
+            "  tau        = the contrast reported; treated_i = 1 for the dose arm",
+        ),
         detail={
             "estimator": "ANCOVA (OLS on change, baseline-adjusted)",
             "pooled covariates": ", ".join(h.ancova_covariates(None)),
@@ -195,6 +208,11 @@ def evidence():
             "A dose that helps on average can still harm one band. Pre-specifying the "
             "bands as monitored contrasts is what makes that visible before the trial "
             "ends; no estimator applied at closeout would have found it earlier."
+        ),
+        equations=(
+            "stop for harm at look k when",
+            "  P(tau_g > delta | data_k) > b_k     for any monitored contrast g",
+            "  delta = the clinical margin; b_k = the boundary at look k",
         ),
         detail={
             "monitored contrasts": "12",

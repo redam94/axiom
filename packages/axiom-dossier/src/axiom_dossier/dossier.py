@@ -51,7 +51,7 @@ from axiom_dossier.journal import (
     introduction_section,
     numbered,
 )
-from axiom_dossier.narrate import Narration, Narrator
+from axiom_dossier.narrate import ESTABLISHED, Narration, Narrator
 from axiom_dossier.sections import (
     Verbosity,
     assumption_rows,
@@ -158,7 +158,16 @@ def context_for(evidence: Evidence, narrations: Sequence[Narration] = ()) -> dic
 #: the figure it tabulates. Keys absent from the context are skipped, so a
 #: report without plotly loses its figures and keeps its tables.
 _EXHIBITS: dict[str, tuple[tuple[str, str, str], ...]] = {
-    "methods": (("table", "design_table", "The design, as recorded parameters."),),
+    "methods": (
+        (
+            "figure",
+            "graph_figure",
+            "The identification graph. A hollow node was not measured and a dashed "
+            "edge is an unmeasured common cause; those two are what decide whether "
+            "the effect is identifiable at all.",
+        ),
+        ("table", "design_table", "The design, as recorded parameters."),
+    ),
     "results": (
         ("figure", "findings_figure", "Estimated quantities with their intervals."),
         ("table", "findings_table", "Estimated quantities."),
@@ -172,12 +181,22 @@ _EXHIBITS: dict[str, tuple[tuple[str, str, str], ...]] = {
 
 #: The order exhibits appear in when gathered, and how each is described.
 #: Tables before figures, matching the manuscript order the guide specifies.
+#: ``graph_table`` is deliberately absent: ``methods_section`` places it itself,
+#: beside the paragraph that says what the arrows mean, the way it places the
+#: standing assumptions. The graph is part of the identification argument rather
+#: than an exhibit of it, and gathering it at the back separates a claim from
+#: the sentence that explains how to read it.
 _GATHERED_TABLES = (
     ("design_table", "The design, as recorded parameters."),
     ("findings_table", "Estimated quantities with their intervals and thresholds."),
     ("diagnostics_table", "Recorded diagnostics."),
 )
 _GATHERED_FIGURES = (
+    (
+        "graph_figure",
+        "The identification graph. A hollow node was not measured and a dashed edge "
+        "is an unmeasured common cause.",
+    ),
     (
         "findings_figure",
         "Estimated quantities with their intervals. The dashed rule marks the "
@@ -234,12 +253,19 @@ _SELF_NUMBERED = ("Tables", "Figures")
 
 def _number_captions(
     sections: tuple[Section, ...], *, style: Style = "journal"
-) -> tuple[Section, ...]:
+) -> tuple[tuple[Section, ...], dict[int, list[tuple[str, str]]]]:
     """``Table 1.`` / ``Figure 1.`` in front of every caption, in document order.
 
     A paper refers to its exhibits by number; a caption that does not carry one
     cannot be referred to at all. APA italicises the label and number and leaves
     the description roman, which is what ``apa_caption`` produces.
+
+    Returns the numbering as well, as ``section index -> [(label, description)]``.
+    That is what lets the narrator be told "Figure 2 belongs to this section;
+    name it" — and it is why this runs *before* narration rather than after.
+    A report whose prose never names its own figures is one whose reader never
+    looks at them, and the guide asks for the sentence by name: "These results
+    are displayed in Figure 1."
     """
 
     def caption_for(kind: str, n: int, description: str) -> str:
@@ -249,32 +275,67 @@ def _number_captions(
 
     tables = figures = 0
     out: list[Section] = []
-    for section in sections:
+    cited: dict[int, list[tuple[str, str]]] = {}
+    for index, section in enumerate(sections):
         if section.title in _SELF_NUMBERED:
             out.append(section)
             continue
         blocks: list[object] = []
         for block in section.blocks:
-            if isinstance(block, Table):
-                tables += 1
+            if isinstance(block, Table | Figure):
+                kind = "Table" if isinstance(block, Table) else "Figure"
+                if kind == "Table":
+                    tables += 1
+                    number = tables
+                else:
+                    figures += 1
+                    number = figures
+                cited.setdefault(index, []).append((f"{kind} {number}", block.caption))
                 blocks.append(
-                    block.model_copy(
-                        update={"caption": caption_for("Table", tables, block.caption)}
-                    )
-                )
-            elif isinstance(block, Figure):
-                figures += 1
-                blocks.append(
-                    block.model_copy(
-                        update={"caption": caption_for("Figure", figures, block.caption)}
-                    )
+                    block.model_copy(update={"caption": caption_for(kind, number, block.caption)})
                 )
             else:
                 blocks.append(block)
         out.append(
             Section(title=section.title, blocks=tuple(blocks), summary=section.summary)  # type: ignore[arg-type]
         )
-    return tuple(out)
+    return tuple(out), cited
+
+
+def _gathered_citations(
+    chosen: tuple[str, ...], available: set[str], *, style: Style = "apa"
+) -> dict[int, list[tuple[str, str]]]:
+    """Which body section should point at each gathered exhibit, by its number.
+
+    A gathered exhibit sits on its own page after the text, so nothing in the
+    body carries it and ``_number_captions`` never sees it. Its number still has
+    to reach the prose: an exhibit page nobody is sent to is an exhibit nobody
+    reads, and the guide orders the pages by *when the text refers to them*,
+    which presumes a reference exists.
+
+    Ownership comes from ``_EXHIBITS`` — the same table that decides where an
+    exhibit would have been embedded decides which section cites it when it is
+    not.
+    """
+    _ = style
+    owner = {source: key for key, entries in _EXHIBITS.items() for _kind, source, _desc in entries}
+    numbered_exhibits: list[tuple[str, str, str]] = []
+    for n, (source, description) in enumerate(
+        [pair for pair in _GATHERED_TABLES if pair[0] in available], start=1
+    ):
+        numbered_exhibits.append((source, f"Table {n}", description))
+    for n, (source, description) in enumerate(
+        [pair for pair in _GATHERED_FIGURES if pair[0] in available], start=1
+    ):
+        numbered_exhibits.append((source, f"Figure {n}", description))
+
+    out: dict[int, list[tuple[str, str]]] = {}
+    for source, label, description in numbered_exhibits:
+        key = owner.get(source)
+        if key is None or key not in chosen:
+            continue
+        out.setdefault(chosen.index(key), []).append((label, description))
+    return out
 
 
 @dataclass
@@ -420,8 +481,19 @@ def build(
         for key, (figure, description) in (extra_figures or {}).items():
             exhibit_context[key] = figure
             extra_captions.append((key, description))
-    available = set(exhibit_context)
+    # Everything the render context will hold, which is the union of the two
+    # halves ``Dossier`` is built from. Counting only ``exhibit_context`` here
+    # silently dropped the three tables ``context_for`` supplies -- the standing
+    # assumptions, the provenance appendix and the run -- so a report rendered
+    # its provenance section as a lone paragraph and rule 4 went unenforced in
+    # the one section that exists to enforce it.
+    available = set(exhibit_context) | set(context_for(evidence))
 
+    # Pass one: build every section and attach its exhibits. Nothing is
+    # narrated yet, because narration needs two things that only exist once the
+    # whole document is laid out -- the exhibit numbers, so prose can say
+    # "Figure 2", and the order, so a section can be told what the ones before
+    # it established.
     built: list[Section] = []
     for key in chosen:
         if key == "title_page":
@@ -441,11 +513,7 @@ def build(
             section = _BUILDERS[key](evidence, verbosity=verbosity)
         if exhibits == "embedded":
             section = _with_exhibits(section, key, available)
-        section = _without_missing_exhibits(section, available)
-        if narrator is not None and key not in _NEVER_NARRATED and key != "abstract":
-            section, narration = narrator.section(section, evidence, key=key, verbosity=verbosity)
-            narrations.append(narration)
-        built.append(section)
+        built.append(_without_missing_exhibits(section, available))
 
     if exhibits == "gathered":
         built.extend(
@@ -459,17 +527,49 @@ def build(
             )
         )
 
+    shaped = tuple(built)
+    cited: dict[int, list[tuple[str, str]]] = {}
+    if style in ("journal", "apa"):
+        shaped, cited = _number_captions(shaped, style=style)
+    if exhibits == "gathered":
+        # A gathered exhibit sits in the Tables or Figures section at the end,
+        # but the sentence that should point at it is in the body. The guide is
+        # explicit that exhibits go "in the order they are referenced in the
+        # text", which presumes the text references them.
+        cited = _gathered_citations(chosen, available, style=style)
+
+    # Pass two: narrate, in document order, each section knowing what the ones
+    # before it put on the record and which exhibits it owns.
+    if narrator is not None:
+        narrated: list[Section] = list(shaped)
+        established: list[str] = []
+        for index, key in enumerate(chosen):
+            if key in _NEVER_NARRATED or key == "abstract" or index >= len(narrated):
+                if key in ESTABLISHED:
+                    established.append(key)
+                continue
+            section, narration = narrator.section(
+                narrated[index],
+                evidence,
+                key=key,
+                verbosity=verbosity,
+                established=tuple(established),
+                exhibits=tuple(cited.get(index, ())),
+            )
+            narrated[index] = section
+            narrations.append(narration)
+            if key in ESTABLISHED:
+                established.append(key)
+        shaped = tuple(narrated)
+
+    if style == "journal":
+        shaped = numbered(shaped)
+
     # APA puts the author block under the title; every other style puts the
     # question there, because a readout has no authors and does have a question.
     chosen_subtitle = subtitle or (
         title_block(authors, affiliation) if style == "apa" else evidence.question
     )
-
-    shaped = tuple(built)
-    if style in ("journal", "apa"):
-        shaped = _number_captions(shaped, style=style)
-    if style == "journal":
-        shaped = numbered(shaped)
 
     report = Report(
         name=name,

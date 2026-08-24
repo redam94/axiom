@@ -60,6 +60,34 @@ def evidence_with(threshold: float | None, *, lower: float, upper: float, identi
     return builder.build()
 
 
+def contested_evidence():
+    """Four findings on the good side of the threshold and one on the bad side.
+
+    The shape that matters: a record whose findings disagree, so that answering
+    from ``findings[0]`` would quote a benefit while a harm sits two rows down.
+    """
+    builder = EvidenceBuilder("HYPER-3", "Which dose, and is any of them harming anyone?")
+    builder.verdict(Verdict(status="identified", reason="randomised", route="backdoor"))
+    for key, label, lower, upper in (
+        ("d10", "10 mg vs control, pooled", -6.63, -3.91),
+        ("d20", "20 mg vs control, pooled", -6.17, -3.44),
+        ("d40", "40 mg vs control, pooled", -2.97, -0.10),
+        ("d40_young", "40 mg vs control, age 25-35", -8.17, -2.36),
+        ("d40_old", "40 mg vs control, age 51+", 3.98, 8.42),
+    ):
+        builder.finding(
+            key,
+            Interval(lower=lower, upper=upper, definition="wald", mass=0.9),
+            label=label,
+            unit="mmHg",
+            precision=2,
+            threshold=0.0,
+            beneficial="lower",
+        )
+    builder.assume(STANDING)
+    return builder.build()
+
+
 # -- interpretation ----------------------------------------------------------------------
 
 
@@ -87,13 +115,23 @@ def test_with_no_threshold_it_reports_the_estimate_and_stops() -> None:
     assert "stops short" in text
 
 
-def test_an_unidentified_effect_is_read_as_a_difference_not_an_effect() -> None:
+def test_an_unidentified_quantity_is_read_as_an_estimate_not_an_effect() -> None:
     ev = evidence_with(0.0, lower=-16.7, upper=-8.1, identified=False)
     section = discussion_section(ev)
     text = " ".join(getattr(b, "text", "") for b in section.blocks)
     assert "not identified" in text
     assert "requires an assumption this analysis does not supply" in text
-    assert "the observed difference" in text
+    # The reading itself must not call the quantity an effect. The preamble may,
+    # and has to: the sentence that refuses the causal reading names what is
+    # being refused.
+    assert "for the estimate" in text
+    assert "for the effect" not in text
+
+
+def test_an_identified_effect_is_read_as_an_effect() -> None:
+    ev = evidence_with(0.0, lower=-16.7, upper=-8.1, identified=True)
+    text = " ".join(getattr(b, "text", "") for b in discussion_section(ev).blocks)
+    assert "for the effect" in text
 
 
 def test_the_conclusion_answers_the_question_and_names_its_conditions() -> None:
@@ -193,13 +231,30 @@ def test_an_unknown_style_is_refused() -> None:
 
 
 def test_the_abstract_falls_back_to_a_generated_one_with_no_model() -> None:
+    """Every part of the five-question abstract, as prose rather than as labels."""
     ev = evidence_with(0.0, lower=-16.7, upper=-8.1)
     built = build(ev, style="journal")
     abstract = built.report.sections[0]
     text = " ".join(getattr(b, "text", "") for b in abstract.blocks)
-    for label in ("Objective", "Methods", "Results", "Conclusions"):
-        assert label in text
+    assert "Does 40 mg lower systolic pressure?" in text  # what was asked
+    assert "identified" in text  # how it was answered
+    assert "-16.7" in text and "-8.1" in text  # what was found, with its interval
+    assert "assumption" in text  # what that tells us, and under what
+    assert "**" not in text, "the abstract is emphasised, which the guide forbids"
     assert built.missing() == ()
+
+
+def test_the_abstract_states_one_quantity_and_names_the_rest() -> None:
+    """An abstract that lists every finding has become the results table."""
+    ev = contested_evidence()
+    text = " ".join(
+        getattr(b, "text", "") for b in build(ev, style="journal").report.sections[0].blocks
+    )
+    # The finding the answer turns on is the harmful one, and it is the only
+    # one that arrives with an interval attached.
+    assert "6.20" in text
+    assert "-5.27" not in text and "-4.80" not in text
+    assert "pooled" in text  # the others are named, not restated
 
 
 def test_the_introduction_states_the_threshold_that_decides_the_question() -> None:
@@ -258,3 +313,68 @@ def test_narration_is_rejected_for_an_unlicensed_claim(tmp_path) -> None:  # typ
         assert n.overclaimed
         assert "definitive" in n.overclaimed or "proves" in n.overclaimed
         assert "unlicensed claim" in n.summary()
+
+
+# -- the discussion says agreement once --------------------------------------------------
+
+
+def _prose(section) -> str:
+    return " ".join(getattr(b, "text", "") for b in section.blocks)
+
+
+def test_the_discussion_does_not_reprint_the_results_table() -> None:
+    """The guide asks this section to repeat the results "without referring to stats"."""
+    ev = contested_evidence()
+    text = _prose(discussion_section(ev, verbosity="full"))
+    for number in ("-6.63", "-6.17", "-2.97", "-8.17", "8.42"):
+        assert number not in text, f"{number} is stated twice, once here and once in Results"
+    # It still reads every finding: what each one settled is there in words.
+    assert "favourable side" in text and "unfavourable side" in text
+
+
+def test_findings_that_agree_are_read_once_and_the_odd_one_out_in_full() -> None:
+    """Four identically shaped sentences is what made this section unreadable."""
+    ev = contested_evidence()
+    paragraphs = [
+        b.text for b in discussion_section(ev, verbosity="full").blocks if hasattr(b, "text")
+    ]
+    grouped = [p for p in paragraphs if "every one of those questions is settled" in p]
+    assert grouped, "the four agreeing findings were not collapsed into one reading"
+    assert "10 mg vs control, pooled" in grouped[0] and "20 mg vs control, pooled" in grouped[0]
+    # The finding that disagrees is read on its own, at length.
+    alone = [p for p in paragraphs if p.startswith("40 mg vs control, age 51+:")]
+    assert alone and "unfavourable side" in alone[0]
+
+
+def test_the_conclusions_state_one_number_and_name_the_rest() -> None:
+    """Answer the question, say what it rests on, stop — not list the findings again."""
+    ev = contested_evidence()
+    text = _prose(conclusions_section(ev))
+    assert "6.20" in text, "the finding the answer turns on keeps its magnitude"
+    for number in ("-5.27", "-4.80", "-1.53", "-5.26"):
+        assert number not in text, f"{number} is restated in the conclusions"
+    assert "10 mg vs control, pooled" in text, "the other findings are named"
+    assert "**" not in text, "the conclusions are emphasised, which the guide forbids"
+
+
+def test_no_generated_section_uses_emphasis_outside_a_heading() -> None:
+    """ "Do not emphasize things with boldface (except headings)" — the guide's FAQ."""
+    ev = contested_evidence()
+    built = build(ev, style="journal", verbosity="full")
+    for section in built.report.sections:
+        for block in section.blocks:
+            text = getattr(block, "text", "")
+            if isinstance(block, Heading):
+                continue
+            assert "**" not in text, f"{section.title} sets prose in bold: {text[:80]}"
+
+
+def test_no_generated_prose_contains_a_bracketed_plural() -> None:
+    """A paper does not contain "assumption(s)"; that is a template showing through."""
+    for ev in (contested_evidence(), evidence_with(0.0, lower=-16.7, upper=-8.1)):
+        for verbosity in ("brief", "standard", "full"):
+            built = build(ev, style="journal", verbosity=verbosity)
+            for section in built.report.sections:
+                for block in section.blocks:
+                    text = getattr(block, "text", "")
+                    assert "(s)" not in text, f"{section.title}: {text[:90]}"

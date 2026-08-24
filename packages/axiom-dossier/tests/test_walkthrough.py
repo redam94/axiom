@@ -186,12 +186,20 @@ def test_a_record_with_no_quantities_still_renders(tmp_path) -> None:  # type: i
     assert (tmp_path / "r.pdf").read_bytes().startswith(b"%PDF")
 
 
-def test_the_abstract_does_not_print_empty_headings() -> None:
-    """A structured abstract whose labels stand alone is worse than a short one."""
+def test_the_abstract_covers_every_part_it_has_material_for() -> None:
+    """One flowing paragraph, and no part written as a bare label.
+
+    The UCSD guide asks for "a one-paragraph summary of the whole study" and
+    forbids emphasis outside a heading, so the abstract carries no ``Objective.``
+    / ``Results.`` labels to leave stranded. What it must still not do is skip a
+    part it has the material for: this record has no quantities, so its result
+    comes from the analyst's own remark.
+    """
     built = build(evidence_from_record(RECORD), style="journal")
     text = " ".join(getattr(b, "text", "") for b in built.report.sections[0].blocks)
-    assert "Methods. Conclusions." not in text
-    assert "Results." in text and "OLS overstates" in text
+    assert "**" not in text, "the abstract is emphasised, which the guide forbids"
+    assert "raise earnings?" in text
+    assert "OLS overstates" in text
     # no assumptions were recorded, which is not the same as none being needed
     assert "not the same as none being required" in text
 

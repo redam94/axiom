@@ -23,7 +23,15 @@ from __future__ import annotations
 from axiom.report import Heading, Paragraph, Section, Theme
 
 from axiom_dossier.evidence import Evidence
-from axiom_dossier.sections import VERBOSITY, Verbosity, literal, standing_assumptions
+from axiom_dossier.interpret import pivotal
+from axiom_dossier.sections import (
+    VERBOSITY,
+    Verbosity,
+    literal,
+    plural,
+    sentence,
+    standing_assumptions,
+)
 
 __all__ = [
     "JOURNAL_SECTIONS",
@@ -95,50 +103,64 @@ def numbered(
 def _fallback_abstract(evidence: Evidence) -> str:
     """An abstract assembled from the record, for when no model is narrating.
 
-    Structured the way a journal asks for one — objective, methods, results,
-    conclusion — because that is also the order in which the record holds it.
+    Answers the five questions the UCSD guide asks of an abstract — what was
+    studied, what was asked, how it was answered, what was found, and what that
+    tells us — as one paragraph of continuous prose. No labels and no bold: the
+    guide is explicit that an abstract is a one-paragraph summary and that
+    nothing outside a heading is emphasised.
+
+    It states **one** quantity with its interval, the one the answer turns on,
+    and names the others. An abstract that lists every finding has become the
+    results table, and a reader who wanted the table would have turned to it.
     """
     parts: list[str] = []
     if evidence.question:
-        parts.append(f"**Objective.** {literal(evidence.question)}")
+        asked = literal(evidence.question).strip()
+        parts.append(asked if asked[-1:] in ".?!" else asked + ".")
 
-    # Each heading is written only when there is something under it. A structured
-    # abstract whose labels stand alone -- "Methods. Conclusions." -- is worse
-    # than a shorter one, and a record without findings is a real case: an
-    # example that narrates its results in prose has steps but no quantities.
+    # Each sentence is written only when there is something to put in it. A
+    # structured abstract whose labels stand alone -- "Methods. Conclusions." --
+    # is worse than a shorter one, and a record without findings is a real case:
+    # an example that narrates its results in prose has steps but no quantities.
     if evidence.verdict is not None:
         route = evidence.verdict.route or "the recorded route"
-        parts.append(
-            f"**Methods.** The effect is {evidence.verdict.status} via {route}. "
-            f"{evidence.verdict.reason}"
-        )
+        # A verdict may carry no reason, and appending an empty one leaves the
+        # sentence trailing a space before the next.
+        because = f" {sentence(evidence.verdict.reason)}" if evidence.verdict.reason else ""
+        parts.append(f"The effect is {evidence.verdict.status} via {route}.{because}")
     elif evidence.steps:
         opening = (evidence.steps[0].what or evidence.steps[0].title).rstrip(". ") + "."
-        parts.append(
-            f"**Methods.** {opening} " f"{len(evidence.steps)} step(s) are recorded in full below."
-        )
+        recorded = plural(len(evidence.steps), "step", verb="is")
+        parts.append(f"{opening} {recorded} recorded in full below.")
 
     if evidence.findings:
-        stated = "; ".join(f"{q.label} {q.stated()}" for q in evidence.findings)
-        parts.append(f"**Results.** {stated}.")
+        lead = pivotal(evidence) or evidence.findings[0]
+        others = [q.label for q in evidence.findings if q.key != lead.key]
+        parts.append(f"{lead.label} is {lead.stated()}.")
+        if others:
+            # Semicolons: a finding's label may itself contain a comma
+            # ("40 mg vs control, pooled"), and a comma-joined list of them
+            # reads as twice as many findings as the record holds.
+            counted = plural(len(others), "further quantity", verb="is")
+            parts.append(f"{counted} reported: {'; '.join(others)}.")
     elif evidence.remarks:
-        parts.append(f"**Results.** {literal(evidence.remarks[0])}")
+        parts.append(literal(evidence.remarks[0]))
 
     standing = evidence.unresolved()
     if standing:
         parts.append(
-            "**Conclusions.** The reading above holds under "
-            f"{len(standing)} unresolved assumption(s): "
-            f"{', '.join(n.replace('_', ' ') for n in standing)}."
+            "The reading above holds under "
+            f"{plural(len(standing), 'unresolved assumption')}: "
+            f"{'; '.join(n.replace('_', ' ') for n in standing)}."
         )
     elif evidence.assumptions or evidence.verdict is not None:
-        parts.append("**Conclusions.** No assumption in the record is left unresolved.")
+        parts.append("No assumption in the record is left unresolved.")
     else:
         # Saying "none unresolved" when none were recorded would read as a
         # clean bill of health for a record that never took the examination.
         parts.append(
-            "**Conclusions.** No assumptions were recorded for this run, which is "
-            "not the same as none being required."
+            "No assumptions were recorded for this run, which is not the same as "
+            "none being required."
         )
     return " ".join(parts)
 
@@ -157,9 +179,7 @@ def abstract_section(
     blocks: list[object] = [Paragraph(text=body)]
     keywords = [q.label for q in evidence.findings][:4]
     if keywords:
-        blocks.append(
-            Paragraph(text=f"*Reported quantities:* {'; '.join(keywords)}", emphasis=False)
-        )
+        blocks.append(Paragraph(text=f"Reported quantities: {'; '.join(keywords)}", emphasis=True))
     return Section(title=title, blocks=tuple(blocks))  # type: ignore[arg-type]
 
 
@@ -215,7 +235,8 @@ def introduction_section(
                 Paragraph(
                     text=(
                         "The answer is conditional throughout. "
-                        f"{len(standing)} assumption(s) carry it, and each is stated in "
+                        f"{plural(len(standing), 'assumption', verb='carries')} it, "
+                        "and each is stated in "
                         "the methods and again in the limitations."
                     )
                 )
@@ -227,7 +248,7 @@ def introduction_section(
         blocks.append(
             Paragraph(
                 text=(
-                    f"The effect is **{evidence.verdict.status}**, not identified. "
+                    f"The effect is {evidence.verdict.status}, not identified. "
                     "Everything below describes what was measured; it does not establish "
                     "what the treatment does."
                 )

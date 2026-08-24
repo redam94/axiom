@@ -39,6 +39,7 @@ __all__ = [
     "available",
     "diagnostics_plot",
     "figures_for",
+    "graph_plot",
     "findings_plot",
 ]
 
@@ -249,6 +250,29 @@ def diagnostics_plot(
     return figure
 
 
+def graph_plot(evidence: Evidence, *, theme: Theme | None = None) -> Any | Unsupported:
+    """The identification graph, drawn. Delegated to ``axiom.viz.causal_graph``.
+
+    axiom already knows how to draw a DAG — hollow nodes for the unmeasured,
+    dashed edges for the bidirected, which are the two things that decide
+    whether a graph is identifiable. Redrawing it here would be a second
+    implementation of the one picture the package must not get wrong, so the
+    ``GraphRecord`` is handed over as-is: it carries exactly the four attributes
+    ``causal_graph`` reads.
+    """
+    _ = theme
+    if evidence.graph is None or not evidence.graph.edges:
+        return Unsupported(reason="no identification graph was recorded")
+    go = _graph_objects()
+    if isinstance(go, Unsupported):
+        return go
+    try:
+        from axiom.viz import causal_graph
+    except ModuleNotFoundError as exc:  # pragma: no cover - viz ships with axiom
+        return Unsupported(reason=f"axiom.viz is unavailable: {exc}")
+    return causal_graph(evidence.graph)
+
+
 def figures_for(evidence: Evidence, *, theme: Theme | None = None) -> dict[str, Any]:
     """Every figure this evidence can support, keyed for the render context.
 
@@ -258,6 +282,7 @@ def figures_for(evidence: Evidence, *, theme: Theme | None = None) -> dict[str, 
     """
     out: dict[str, Any] = {}
     for key, drawing in (
+        ("graph_figure", graph_plot(evidence, theme=theme)),
         ("findings_figure", findings_plot(evidence, theme=theme)),
         ("diagnostics_figure", diagnostics_plot(evidence, theme=theme)),
     ):
