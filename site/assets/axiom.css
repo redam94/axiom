@@ -202,7 +202,14 @@ code { font-family: var(--f-mono); font-size: .87em; }
   border: 1.6px solid var(--ink); box-sizing: border-box;
 }
 
-@media (max-width: 900px) {
+/* The chain drops to its own row once the brand, five pillars, the secondary links
+   and the theme button stop fitting on one. That happens sooner than it used to:
+   naming the two case studies separately ("HYPER-3", "GEIGER-1911") in place of a
+   single "Case study" adds a fifth secondary link and roughly a hundred pixels, so
+   the breakpoint moves out with it. Everything here is `flex: none` above 560px and
+   cannot give, so a breakpoint that is too low overflows the viewport rather than
+   crowding. */
+@media (max-width: 1024px) {
   .chain { order: 3; flex-basis: 100%; padding-bottom: 8px; }
   .topbar-in { flex-wrap: wrap; padding-top: 8px; }
   .step-link { width: 8px; }
@@ -347,7 +354,12 @@ section + section { border-top: 1px solid var(--rule-2); }
   transition: opacity .1s ease; background: var(--panel); color: var(--ink);
   border: 1px solid var(--rule); border-radius: 8px; padding: 9px 11px;
   font-family: var(--f-mono); font-size: .74rem; line-height: 1.55;
-  box-shadow: var(--shadow); max-width: 260px; white-space: nowrap;
+  box-shadow: var(--shadow); max-width: 260px;
+  /* No `white-space: nowrap` here. It contradicts the max-width — a study label
+     longer than 260px cannot wrap, so it runs out through the border instead of
+     growing the box downward. The <br>s in every tooltip already decide where the
+     lines break; wrapping is only ever the fallback for one long label. */
+  overflow-wrap: anywhere;
 }
 .tip.on { opacity: 1; }
 .tip b { color: var(--ink); font-weight: 600; }

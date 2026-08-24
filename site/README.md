@@ -47,9 +47,34 @@ python site/_gen/generate.py identify design
 # 2. re-render the pages from the fragments
 python site/_gen/build.py
 
-# 3. look at it
+# 3. check that the charts actually draw (renders all 64 headlessly; exits 1 on a problem)
+node site/_gen/check.js
+
+# 4. look at it
 python -m http.server 8000 --directory site
 ```
+
+## Checking the charts
+
+`build.py` verifies that a chart's data *path* resolves. It cannot verify that the
+picture comes out right, because the drawing happens in the reader's browser.
+`check.js` closes that gap: a DOM stub thin enough to run `assets/charts.js`
+unmodified, three assertions over the SVG it produces, and a non-zero exit.
+
+It catches what a browser would show and nothing else would:
+
+- **A mark painted outside the plot.** `.chart svg` is `overflow: visible` and an
+  SVG group paints wherever its coordinates say, so a chart whose geometry is not
+  derived from its own domain paints across the page. A funnel's contours are
+  computed from the pooled estimate and the largest standard error, not from the
+  studies — they ran 306px past the left edge of a 630px plot and over the prose
+  beside it. `frame()` now hands out a clipped `marks` layer for geometry that can
+  exceed its domain; annotations stay in `g`, because a direct series label
+  belongs outside the plot rectangle on purpose.
+- **An axis with one tick.** `ticks()` returned `[lo]` whenever `hi < lo`, so a
+  descending domain — a funnel's standard error, which grows downward — drew a
+  single meaningless label and no gridlines.
+- **Anything that throws.**
 
 ## Where the API page comes from
 
