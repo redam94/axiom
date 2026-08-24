@@ -165,6 +165,48 @@ def test_comparable_diagnostics_do_get_drawn() -> None:
 
 
 @needs_plotly
+def test_a_diagnostic_is_measured_against_the_axis_not_the_largest_bar() -> None:
+    """A z of -2.26 beside 40 depots: 44x by ratio, 47x of the axis it is drawn on."""
+    builder = EvidenceBuilder("T")
+    builder.finding("c", 1.0, label="C")
+    builder.diagnostic("z", -2.26, label="Agreement z")
+    builder.diagnostic("power", 0.9, label="Power")
+    builder.diagnostic("units", 40.0, label="Depots randomized")
+    out = diagnostics_plot(builder.build())
+    assert isinstance(out, Unsupported), "a bar of a fiftieth of the axis is not a bar"
+    assert out.detail["span"] == "42.26"
+
+
+@needs_plotly
+def test_a_negative_diagnostic_is_drawn_against_a_baseline_with_its_label_clear() -> None:
+    """Two z-scores are commensurable; what they need is a zero to be read against."""
+    builder = EvidenceBuilder("T")
+    builder.finding("c", 1.0, label="C")
+    builder.diagnostic("before", -2.26, label="Agreement z, observational fit")
+    builder.diagnostic("after", -1.01, label="Agreement z, calibrated fit")
+    figure = diagnostics_plot(builder.build())
+    assert not isinstance(figure, Unsupported), figure
+    assert figure.layout.xaxis.zeroline, "a bar drawn leftwards from nothing starts nowhere"
+    assert figure.data[0].textposition == "outside"
+    assert figure.data[0].cliponaxis is False
+    low, high = figure.layout.xaxis.range
+    assert low < -2.26 and high > 0.0, "no room for the label of the longest bar"
+
+
+@needs_plotly
+def test_diagnostics_that_are_all_positive_keep_the_axis_at_zero() -> None:
+    builder = EvidenceBuilder("T")
+    builder.finding("c", 1.0, label="C")
+    builder.diagnostic("a", 0.94, label="Coverage")
+    builder.diagnostic("b", 0.88, label="Power")
+    figure = diagnostics_plot(builder.build())
+    assert not isinstance(figure, Unsupported), figure
+    assert not figure.layout.xaxis.zeroline, "nothing crosses zero; the baseline is the axis"
+    low, _ = figure.layout.xaxis.range
+    assert low < 0.0, "the axis still starts at zero, with room for a label"
+
+
+@needs_plotly
 def test_only_drawable_figures_reach_the_context() -> None:
     keys = figures_for(evidence())
     assert "findings_figure" in keys
