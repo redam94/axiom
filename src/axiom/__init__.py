@@ -11,5 +11,5 @@ or anything outside {numpy, scipy, pandas, pydantic}. Pinned by
 ``tests/contracts/test_import_weight.py``.
 """
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 __all__: list[str] = []

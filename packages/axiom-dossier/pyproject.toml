@@ -1,6 +1,6 @@
 [project]
 name = "axiom-dossier"
-version = "0.1.0"
+version = "0.2.0"
 description = "Shareable research reports from axiom results: methods and analysis sections written from the evidence, optionally narrated by a language model"
 readme = "README.md"
 license = "LicenseRef-Proprietary"

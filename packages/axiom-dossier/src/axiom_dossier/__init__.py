@@ -127,7 +127,7 @@ from axiom_dossier.walkthrough import (
 #: it needs langgraph, and importing axiom_dossier must not.
 #:
 #:     from axiom_dossier.agent import run_pipeline
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "title_block",
