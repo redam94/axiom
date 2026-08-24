@@ -43,6 +43,10 @@ _FN = {
     "logit": "\\operatorname{logit}",
     "softplus": "\\operatorname{softplus}",
     "neg": "-",
+    "relu": "\\operatorname{relu}",
+    "step": "\\operatorname{step}",
+    "sin": "\\sin",
+    "cos": "\\cos",
 }
 _GREEK = {
     "alpha",

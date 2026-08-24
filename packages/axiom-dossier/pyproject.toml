@@ -1,0 +1,84 @@
+[project]
+name = "axiom-dossier"
+version = "0.2.0"
+description = "Shareable research reports from axiom results: methods and analysis sections written from the evidence, optionally narrated by a language model"
+readme = "README.md"
+license = "LicenseRef-Proprietary"
+authors = [{ name = "Matthew Reda", email = "m.reda94@gmail.com" }]
+requires-python = ">=3.12"
+
+# ---------------------------------------------------------------------------
+# This is the package axiom's charter says it will not be.
+#
+#   "A report generator. axiom returns typed results; rendering is someone
+#    else's job."   -- docs/plan/00-charter.md
+#
+# So it lives here instead, and it depends on axiom rather than the reverse.
+# axiom never imports axiom_dossier; the twelve gates never see it. The one
+# thing inherited on purpose is the dependency discipline: a language model is
+# an EXTRA, not a dependency, and everything this package does apart from the
+# narration works with the extra absent.
+# ---------------------------------------------------------------------------
+dependencies = [
+    "axiom>=1.0",
+    "pydantic>=2.12",
+]
+
+[project.optional-dependencies]
+# Static output: slides and paged PDF. HTML needs only axiom[viz].
+render = ["axiom[report]>=1.0"]
+# Narration. google-genai is imported lazily and only when a Gemini model is
+# actually called, so importing axiom_dossier never needs it.
+gemini = ["google-genai>=1.0"]
+# The multi-stage pipeline that reads a notebook series and reports on it.
+# langgraph is imported inside build_graph(), so everything else in the package
+# works without it -- including the reports the pipeline eventually produces.
+agent = ["axiom-dossier[gemini,render]", "langgraph>=0.2", "langchain-core>=0.3"]
+all = ["axiom-dossier[render,gemini,agent]"]
+
+[dependency-groups]
+dev = [
+    "axiom-dossier[all]",
+    "black>=24.0",
+    "ruff>=0.13",
+    "mypy>=1.11",
+    "pytest>=9.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/axiom_dossier"]
+
+[tool.uv.sources]
+axiom = { workspace = true }
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "BLE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Opt-in even when a key happens to be in the environment: a default `pytest`
+# must never spend money or reach the network. `pytest -m live` runs them.
+addopts = "-m 'not live'"
+markers = ["live: calls a real language-model API; needs a key and is off by default"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+# plotly ships no stubs and no py.typed marker. Figures are drawn through it
+# and nothing is read back out of it, so untyped is the honest description.
+[[tool.mypy.overrides]]
+module = ["plotly.*"]
+ignore_missing_imports = true

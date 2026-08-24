@@ -1,6 +1,6 @@
 [project]
 name = "axiom"
-version = "1.0.0"
+version = "1.1.2"
 description = "Bayesian causal decision science: identification, experimental design and calibration, response-surface methodology, and evidence meta-analysis"
 readme = "README.md"
 license = "LicenseRef-Proprietary"
@@ -42,8 +42,18 @@ numpyro = [
 ]
 # Alternative backend for models NumPyro serves badly (discrete latents without
 # enumeration, some hierarchies). Optional on purpose -- see the note above.
+#
+# PyMC is the one backend that dispatches NUTS to a *choice* of sampler over the
+# same compiled log density: its own, nutpie (Rust, usually the fastest here),
+# numpyro (needs axiom[numpyro] as well) and blackjax (likewise, via jax).
+# nutpie is in this extra because it is small and is the sampler we default to
+# recommending; the other two ride along with the extras that already carry jax.
+# `infer.samplers(probe=True)` reports which are actually usable against the
+# installed PyMC -- an external sampler can import cleanly and still be out of
+# step with it, which is not the same thing as installed.
 pymc = [
     "pymc>=6.0.1",
+    "nutpie>=0.16",
     "arviz-base>=1.2",
     "arviz-stats>=1.2",
 ]
@@ -57,11 +67,28 @@ convex = ["cvxpy>=1.5"]
 privacy = ["scipy>=1.16"]
 # Figures. Never imported by core.
 viz = ["plotly>=6.5"]
-all = ["axiom[numpyro,netcdf,convex,privacy,viz]"]
+# Styled terminal and notebook output for every result type. rich is pure
+# python and imports in 0.018s against pandas' 0.407s, but it is an extra
+# rather than a dependency because `axiom.display` works without it: the same
+# card renders as aligned plain text, and the four-package core holds.
+display = ["rich>=13"]
+# Static report output: slides and paged PDF. HTML needs none of this -- it keeps
+# plotly figures live and only wants the viz extra. kaleido ships a browser engine
+# to turn a figure into a PNG, which is exactly why it is not a core dependency.
+report = ["axiom[viz]", "python-pptx>=1.0", "reportlab>=4.0", "kaleido>=1.0"]
+# Everything. Heavy on purpose: this is what `uv sync --group dev` installs so
+# that CI can run the backend-equivalence gate and the infer notebooks, both of
+# which compare all three backends against each other.
+all = ["axiom[numpyro,pymc,netcdf,convex,privacy,viz,display,report]"]
 
 [dependency-groups]
 dev = [
     "axiom[all]",
+    # The add-on the tutorial notebook ends on. It depends on axiom and axiom
+    # never imports it, so this is a dev-only edge: `pip install axiom` still
+    # pulls nothing extra, and `make notebooks` can execute the one notebook
+    # that shows a report being written.
+    "axiom-dossier[render]",
     "black>=24.0",
     "ruff>=0.13",
     "mypy>=1.11",
@@ -82,6 +109,19 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/axiom"]
 
+# Add-on packages that depend on axiom and are developed alongside it. They are
+# separate distributions with their own version and their own tests: `pip install
+# axiom` does not install any of them, and axiom never imports one. The charter
+# keeps rendering and any language model out of axiom itself; packages/ is where
+# that work is allowed to live.
+[tool.uv.workspace]
+members = ["packages/*"]
+
+# The dev group's `axiom-dossier` is the one in this repository, not one from an
+# index: it is developed alongside axiom and has never been published.
+[tool.uv.sources]
+axiom-dossier = { workspace = true }
+
 [tool.black]
 line-length = 100
 target-version = ["py312"]
@@ -97,6 +137,12 @@ select = ["E", "F", "I", "B", "UP", "BLE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# pytest's default `norecursedirs` contains "build", which silently excluded
+# `nbs/build/` from `make notebooks`: the builders notebook had never once been
+# executed in CI, and nothing reported it — a skipped directory looks exactly
+# like a directory with nothing in it. Set explicitly so that a subpackage's
+# name cannot decide whether its deliverable is tested.
+norecursedirs = [".*", "dist", "node_modules", "venv", "*.egg"]
 markers = [
     "slow: long-running (sampling) tests",
     "golden: compares against fixtures captured from mmm-framework",
@@ -107,3 +153,10 @@ markers = [
 python_version = "3.12"
 strict = true
 files = ["src/axiom"]
+
+# Optional report backends that ship no type information. They are reached only
+# from axiom.report.render.*, always behind a try/ImportError that returns a typed
+# Unsupported, so nothing in axiom's own surface loses a type to this.
+[[tool.mypy.overrides]]
+module = ["pptx.*", "reportlab.*", "kaleido.*"]
+ignore_missing_imports = true

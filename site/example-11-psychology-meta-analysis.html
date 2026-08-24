@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>11 · What study twenty-one will actually find — Behavioural science · axiom</title>
+<meta name="description" content="Behavioural science: Pooling a literature that disagrees with itself. A 6-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:title" content="11 · What study twenty-one will actually find — Behavioural science · axiom">
+<meta property="og:description" content="Behavioural science: Pooling a literature that disagrees with itself. A 6-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="example">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Example 11 · Behavioural science</p>
+    <h1 style="max-width:18ch">What study twenty-one will actually find</h1>
+    <p class="lede prose mt">Twenty published studies test the same nudge and disagree with each other. Pooling them gives a number. The question is whether that number is the one a replication team should power against.</p>
+    <div class="ex-meta"><a class="pkg" href="meta.html">Pool</a>
+      <span class="pkg">6 steps</span>
+      <span class="pkg">5 figures</span>
+      <span class="pkg">389 lines</span>
+      <span class="pkg">runs in 1.0s</span></div>
+    <div class="hero-cta">
+      <a class="btn btn-1" href="#step-1">Start the walkthrough</a>
+      <a class="btn btn-2" href="https://github.com/redam94/axiom/blob/main/examples/11_psychology_meta_analysis.py">The whole file on GitHub &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div class="prose wt-framing"><p>Behavioural science — pooling a literature that disagrees with itself.</p><p class="wt-h">The question</p><p>Twenty published studies test the same behavioural nudge. The effects range from trivial to large. What does the literature say, how much do the studies really disagree, and what should you expect if you run study twenty-one?</p><p class="wt-h">Three things that get skipped</p><p>The pooled mean is the least interesting output. What a replication team actually needs is the PREDICTION interval -- where a new study would land -- which is much wider than the interval on the mean and is the number that predicts replication success.</p><p>Heterogeneity is not a nuisance to be averaged away; a high I-squared means the single pooled number is answering a question nobody asked.</p><p>And small-study effects deserve a look before any of it is believed.</p><p>Pillars: meta (pooling, heterogeneity, small-study effects, influence)</p></div>
+      <div>
+        <p class="eyebrow">The route</p>
+        <nav class="wt-toc"><a class="wt-toc-i" href="#step-1"><span class="wt-toc-n">1</span>Build the corpus through a vocabulary that refuses the wrong pool</a><a class="wt-toc-i" href="#step-2"><span class="wt-toc-n">2</span>Pool it three ways, because the estimators disagree</a><a class="wt-toc-i" href="#step-3"><span class="wt-toc-n">3</span>Draw all twenty, because the pooled number hides them</a><a class="wt-toc-i" href="#step-4"><span class="wt-toc-n">4</span>Then compute the number a replication team actually needs</a><a class="wt-toc-i" href="#step-5"><span class="wt-toc-n">5</span>Check whether the small studies are telling a different story</a><a class="wt-toc-i" href="#step-6"><span class="wt-toc-n">6</span>And ask which studies are carrying the answer</a></nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Before the first step</p>
+      <h2>What this example imports, and why that list is short</h2>
+      <p>Everything below runs on the four core dependencies. No sampler, no extras.</p>
+    </div>
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>examples/11_psychology_meta_analysis.py</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>from _walkthrough import Walkthrough
+
+from axiom.build import MetaBuilder
+from axiom.meta import (
+    baujat,
+    egger,
+    funnel_data,
+    heterogeneity,
+    leave_one_out,
+    prediction_interval,
+    random_effects,
+)
+
+# Twenty nudge studies: effect size and standard error, as a review would collect
+# them. Larger studies are more precise, and the smaller ones scatter wider --
+# partly by sampling and partly, as the funnel below suggests, by what got
+# published at all.
+STUDIES = [
+    (&quot;s01&quot;, 0.09, 0.041, 1180),
+    (&quot;s02&quot;, 0.31, 0.152, 88),
+    (&quot;s03&quot;, 0.15, 0.033, 1840),
+    (&quot;s04&quot;, 0.22, 0.131, 118),
+    (&quot;s05&quot;, 0.19, 0.058, 602),
+    (&quot;s06&quot;, 0.48, 0.186, 61),
+    (&quot;s07&quot;, 0.13, 0.028, 2510),
+    (&quot;s08&quot;, 0.05, 0.104, 187),
+    (&quot;s09&quot;, 0.21, 0.049, 842),
+    (&quot;s10&quot;, 0.42, 0.168, 72),
+    (&quot;s11&quot;, 0.11, 0.031, 2080),
+    (&quot;s12&quot;, 0.34, 0.088, 258),
+    (&quot;s13&quot;, 0.17, 0.126, 128),
+    (&quot;s14&quot;, 0.24, 0.044, 1030),
+    (&quot;s15&quot;, 0.39, 0.147, 94),
+    (&quot;s16&quot;, 0.06, 0.030, 2240),
+    (&quot;s17&quot;, 0.28, 0.076, 344),
+    (&quot;s18&quot;, 0.51, 0.198, 54),
+    (&quot;s19&quot;, 0.16, 0.052, 742),
+    (&quot;s20&quot;, 0.12, 0.097, 214),
+]
+
+w = Walkthrough(
+    field=&quot;Behavioural science&quot;,
+    title=&quot;What study twenty-one will actually find&quot;,
+    question=&quot;&quot;&quot;Twenty published studies test the same nudge and disagree with each
+        other. Pooling them gives a number. The question is whether that number is
+        the one a replication team should power against.&quot;&quot;&quot;,
+)</pre>
+    </div>
+  </div>
+</section>
+
+<section class="wt-step" id="step-1">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 1 <span>of 6</span></p>
+      <h2>Build the corpus through a vocabulary that refuses the wrong pool</h2>
+      <div class="wt-why prose"><p>&#x27;standardized_contrast&#x27; is not free text: poolable quantities are a controlled vocabulary, so two reviews cannot quietly pool an odds ratio with a standardized mean difference. Pass something outside the vocabulary and the record refuses to be built, at collection time rather than at interpretation time.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>A dataframe of estimates and standard errors. It pools anything you put in it, including things that are not the same kind of number, and the mistake surfaces — if it ever does — in review.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/11_psychology_meta_analysis.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>builder = MetaBuilder().name(&quot;nudge-replication&quot;).family(&quot;behavioural_nudge&quot;)
+for study, estimate, se_i, n in STUDIES:
+    builder = builder.study(
+        study,
+        estimate=estimate,
+        se=se_i,
+        read=&quot;experiment&quot;,
+        contributor=study,
+        quantity=&quot;standardized_contrast&quot;,
+        n=n,
+        source=f&quot;paper-{study}&quot;,
+    )
+corpus = builder.build()
+y, se = corpus.arrays()
+w.out(f&quot;corpus   : {corpus.name}, k = {len(corpus)} studies&quot;)
+w.out(f&quot;quantity : {corpus.records[0].quantity}&quot;)
+w.out(f&quot;effects  : {min(y):.2f} to {max(y):.2f}&quot;)
+w.out(f&quot;n        : {min(n for _, _, _, n in STUDIES):,} to {max(n for _, _, _, n in STUDIES):,}&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>corpus   : nudge-replication, k = 20 studies
+quantity : standardized_contrast
+effects  : 0.05 to 0.51
+n        : 54 to 2,510</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-2">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 2 <span>of 6</span></p>
+      <h2>Pool it three ways, because the estimators disagree</h2>
+      <div class="wt-why prose"><p>The between-study variance has to be estimated, and DerSimonian-Laird, Paule-Mandel and REML do it differently. When they agree, quoting one is fine. When they do not, the disagreement is information about how much of the answer is coming from the tau estimator rather than from the studies — and it is worth knowing before quoting any of them.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Using DerSimonian-Laird because it is the default in most software. It is known to understate tau-squared when heterogeneity is high, which is exactly the regime this literature is in.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/11_psychology_meta_analysis.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>pooled_rows = []
+for method, label in ((&quot;dl&quot;, &quot;DerSimonian-Laird&quot;), (&quot;pm&quot;, &quot;Paule-Mandel&quot;), (&quot;reml&quot;, &quot;REML&quot;)):
+    re = random_effects(y, se, tau_method=method)
+    w.out(
+        f&quot;{label:&lt;20}{re.estimate:&gt;9.4f}  se {re.se:.4f}  tau2 {re.tau2:.5f}   &quot;
+        f&quot;[{re.interval.lower:.3f}, {re.interval.upper:.3f}]&quot;
+    )
+    pooled_rows.append(
+        {
+            &quot;label&quot;: label,
+            &quot;estimate&quot;: float(re.estimate),
+            &quot;lower&quot;: float(re.interval.lower),
+            &quot;upper&quot;: float(re.interval.upper),
+            &quot;note&quot;: f&quot;tau^2 = {re.tau2:.5f}&quot;,
+        }
+    )
+w.figure(
+    &quot;estimators&quot;,
+    kind=&quot;intervals&quot;,
+    data={&quot;rows&quot;: pooled_rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;zero&quot;: True,
+        &quot;xLabel&quot;: &quot;pooled effect&quot;,
+        &quot;labelWidth&quot;: 150,
+        &quot;rowHeight&quot;: 36,
+        &quot;mass&quot;: 95,
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>DerSimonian-Laird      0.1731  se 0.0204  tau2 0.00338   [0.133, 0.213]
+Paule-Mandel           0.1784  se 0.0228  tau2 0.00488   [0.134, 0.223]
+REML                   0.1736  se 0.0206  tau2 0.00350   [0.133, 0.214]</pre></div>
+<figure class="fig" id="11_psychology_meta_analysis-estimators">
+  <div class="fig-head"><p class="fig-t">Three ways of estimating the between-study variance</p><p class="fig-s">Close enough here that the choice does not change the conclusion — which is itself worth establishing rather than assuming, and takes one loop.</p></div>
+  
+  <div class="chart" data-chart="intervals" data-file="figures-11_psychology_meta_analysis"
+       data-opt='{&quot;rows&quot;: &quot;estimators.rows&quot;, &quot;zero&quot;: true, &quot;xLabel&quot;: &quot;pooled effect&quot;, &quot;labelWidth&quot;: 150, &quot;rowHeight&quot;: 36, &quot;mass&quot;: 95}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-3">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 3 <span>of 6</span></p>
+      <h2>Draw all twenty, because the pooled number hides them</h2>
+      <div class="wt-why prose"><p>A forest plot is not decoration. The pooled mean is a summary of a distribution, and the only way to see whether that distribution has a centre worth summarising is to look at the studies. Here the effects run from 0.05 to 0.51 and the small studies sit systematically to the right.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Reporting the pooled estimate and I-squared as two numbers. I-squared of 70% and I-squared of 70% look identical in a table and can mean a tidy spread or two distinct clusters, which imply completely different next steps.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/11_psychology_meta_analysis.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>het = heterogeneity(y, se)
+kh = random_effects(y, se, tau_method=&quot;reml&quot;, knapp_hartung=True)
+w.out(f&quot;Q  = {het.q:.1f} on {het.df} df (p = {het.p_value:.4f})&quot;)
+w.out(f&quot;I2 = {het.i2:.0%}&quot;)
+w.out(
+    f&quot;pooled (REML, Knapp-Hartung) = {kh.estimate:.4f} &quot;
+    f&quot;[{kh.interval.lower:.3f}, {kh.interval.upper:.3f}]&quot;
+)
+w.say(f&quot;&quot;&quot;An I-squared of {het.i2:.0%} means most of the variation between these studies
+    is real disagreement rather than sampling noise. The pooled mean is a summary of
+    a distribution, not an estimate of one shared number — and that distinction is
+    what the next two steps are about.&quot;&quot;&quot;)
+order = sorted(range(len(STUDIES)), key=lambda i: STUDIES[i][1])
+weights = [1.0 / (s * s) for s in se]
+total_weight = sum(weights)
+w.figure(
+    &quot;forest&quot;,
+    kind=&quot;intervals&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: STUDIES[i][0],
+                &quot;estimate&quot;: float(y[i]),
+                &quot;lower&quot;: float(y[i] - 1.96 * se[i]),
+                &quot;upper&quot;: float(y[i] + 1.96 * se[i]),
+                &quot;weight&quot;: weights[i] / total_weight,
+                &quot;note&quot;: f&quot;n = {STUDIES[i][3]:,}, se {se[i]:.3f}&quot;,
+            }
+            for i in order
+        ],
+        &quot;pooled&quot;: {
+            &quot;estimate&quot;: float(kh.estimate),
+            &quot;lower&quot;: float(kh.interval.lower),
+            &quot;upper&quot;: float(kh.interval.upper),
+        },
+    },
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;pooled&quot;: &quot;@pooled&quot;,
+        &quot;pooledLabel&quot;: &quot;pooled (REML)&quot;,
+        &quot;weightBy&quot;: &quot;weight&quot;,
+        &quot;zero&quot;: True,
+        &quot;xLabel&quot;: &quot;standardized effect&quot;,
+        &quot;labelWidth&quot;: 90,
+        &quot;rowHeight&quot;: 26,
+        &quot;mass&quot;: 95,
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>Q  = 41.1 on 19 df (p = 0.0023)
+I2 = 54%
+pooled (REML, Knapp-Hartung) = 0.1736 [0.128, 0.219]</pre></div>
+<div class="prose"><p>An I-squared of 54% means most of the variation between these studies is real disagreement rather than sampling noise. The pooled mean is a summary of a distribution, not an estimate of one shared number — and that distinction is what the next two steps are about.</p></div>
+<figure class="fig" id="11_psychology_meta_analysis-forest">
+  <div class="fig-head"><p class="fig-t">Every study, sorted by effect, sized by weight</p><p class="fig-s">The dot size is the study&#x27;s weight in the pool. Notice that the largest dots — the most precise studies — sit at the left end, and the studies at the right are the small ones. That pattern is what the funnel below is for.</p></div>
+  <div class="legend"><span><i style="--k:var(--accent)"></i>95% interval, sized by weight</span></div>
+  <div class="chart" data-chart="intervals" data-file="figures-11_psychology_meta_analysis"
+       data-opt='{&quot;rows&quot;: &quot;forest.rows&quot;, &quot;pooled&quot;: &quot;forest.pooled&quot;, &quot;pooledLabel&quot;: &quot;pooled (REML)&quot;, &quot;weightBy&quot;: &quot;weight&quot;, &quot;zero&quot;: true, &quot;xLabel&quot;: &quot;standardized effect&quot;, &quot;labelWidth&quot;: 90, &quot;rowHeight&quot;: 26, &quot;mass&quot;: 95}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-4">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 4 <span>of 6</span></p>
+      <h2>Then compute the number a replication team actually needs</h2>
+      <div class="wt-why prose"><p>The interval on the mean says where the average of this literature sits. The prediction interval says where a NEW study would land, and it includes the between-study variance rather than averaging it away. When heterogeneity is real these are very different numbers, and only the second one predicts replication.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Powering the replication off the pooled mean. It is the single most common way a replication ends up underpowered for the effect it actually meets: the mean is the centre of a distribution the new study is drawn from, not the value it will take.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/11_psychology_meta_analysis.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>pi = prediction_interval(kh)
+ratio = (pi.upper - pi.lower) / (kh.interval.upper - kh.interval.lower)
+w.out(f&quot;pooled mean        {kh.estimate:.4f}  [{kh.interval.lower:.3f}, {kh.interval.upper:.3f}]&quot;)
+w.out(f&quot;NEXT study lands in           [{pi.lower:.3f}, {pi.upper:.3f}]&quot;)
+w.out(f&quot;the prediction interval is {ratio:.1f}x wider&quot;)
+w.figure(
+    &quot;prediction&quot;,
+    kind=&quot;intervals&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: &quot;where the mean is&quot;,
+                &quot;estimate&quot;: float(kh.estimate),
+                &quot;lower&quot;: float(kh.interval.lower),
+                &quot;upper&quot;: float(kh.interval.upper),
+                &quot;note&quot;: &quot;95% interval on the pooled mean&quot;,
+            },
+            {
+                &quot;label&quot;: &quot;where study 21 lands&quot;,
+                &quot;estimate&quot;: float(kh.estimate),
+                &quot;lower&quot;: float(pi.lower),
+                &quot;upper&quot;: float(pi.upper),
+                &quot;note&quot;: &quot;95% prediction interval&quot;,
+                &quot;colour&quot;: &quot;s2&quot;,
+            },
+        ]
+    },
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;zero&quot;: True,
+        &quot;xLabel&quot;: &quot;standardized effect&quot;,
+        &quot;labelWidth&quot;: 160,
+        &quot;rowHeight&quot;: 42,
+        &quot;mass&quot;: 95,
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>pooled mean        0.1736  [0.128, 0.219]
+NEXT study lands in           [0.041, 0.306]
+the prediction interval is 2.9x wider</pre></div>
+<figure class="fig" id="11_psychology_meta_analysis-prediction">
+  <div class="fig-head"><p class="fig-t">Two intervals that are routinely confused</p><p class="fig-s">Same centre, 2.9 times the width. A replication powered off the mean is powered for the wrong quantity, and the bottom of the prediction interval — 0.04 — is where an honest power calculation has to start.</p></div>
+  <div class="legend"><span><i style="--k:var(--accent)"></i>interval on the mean</span><span><i style="--k:var(--s2)"></i>prediction interval</span></div>
+  <div class="chart" data-chart="intervals" data-file="figures-11_psychology_meta_analysis"
+       data-opt='{&quot;rows&quot;: &quot;prediction.rows&quot;, &quot;zero&quot;: true, &quot;xLabel&quot;: &quot;standardized effect&quot;, &quot;labelWidth&quot;: 160, &quot;rowHeight&quot;: 42, &quot;mass&quot;: 95}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-5">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 5 <span>of 6</span></p>
+      <h2>Check whether the small studies are telling a different story</h2>
+      <div class="wt-why prose"><p>Egger&#x27;s test asks whether effect size is associated with precision. A non-zero intercept means the imprecise studies report systematically larger effects — the signature of publication bias. The funnel plot is the same question drawn, and it shows the asymmetry rather than compressing it into a p-value.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Treating a significant Egger test as proof of publication bias. It is not: real heterogeneity correlated with study size looks identical. Small studies often run more intensive versions of an intervention, and that would produce the same picture with nobody hiding anything.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/11_psychology_meta_analysis.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>eg = egger(y, se)
+w.out(f&quot;Egger intercept {eg.intercept:+.3f} +/- {eg.se:.3f}&quot;)
+w.out(f&quot;t = {eg.t:+.2f} on {eg.df} df, p = {eg.p:.4f}&quot;)
+fu = funnel_data(y, se, kh)
+w.figure(
+    &quot;funnel&quot;,
+    kind=&quot;funnel&quot;,
+    data={
+        &quot;y&quot;: [float(v) for v in y],
+        &quot;se&quot;: [float(v) for v in se],
+        &quot;labels&quot;: [r.study for r in corpus.records],
+        &quot;pooled&quot;: float(fu.pooled),
+        &quot;contours&quot;: [
+            {
+                &quot;mass&quot;: c.mass,
+                &quot;se&quot;: [float(v) for v in c.se],
+                &quot;lower&quot;: [float(v) for v in c.lower],
+                &quot;upper&quot;: [float(v) for v in c.upper],
+            }
+            for c in fu.contours
+        ],
+        &quot;max_se&quot;: float(max(se)),
+    },
+    opt={&quot;key&quot;: &quot;@&quot;, &quot;xLabel&quot;: &quot;standardized effect&quot;, &quot;height&quot;: 360},
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>Egger intercept +1.822 +/- 0.474
+t = +3.84 on 18 df, p = 0.0012</pre></div>
+<figure class="fig" id="11_psychology_meta_analysis-funnel">
+  <div class="fig-head"><p class="fig-t">The funnel, with its contours</p><p class="fig-s">Precise studies sit at the top and should scatter symmetrically about the pooled line. Here the bottom-left of the funnel is empty: there are no small studies reporting small effects, which is either what publication looks like or what a genuine relationship between study size and effect looks like.</p></div>
+  
+  <div class="chart" data-chart="funnel" data-file="figures-11_psychology_meta_analysis"
+       data-opt='{&quot;key&quot;: &quot;funnel&quot;, &quot;xLabel&quot;: &quot;standardized effect&quot;, &quot;height&quot;: 360}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-6">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 6 <span>of 6</span></p>
+      <h2>And ask which studies are carrying the answer</h2>
+      <div class="wt-why prose"><p>Leave-one-out says how far the pooled estimate moves when each study is dropped; the Baujat plot separates two different reasons a study matters — contributing heterogeneity, and influencing the result. A study high on both axes is one whose inclusion decision is doing real work and should be argued for rather than defaulted into.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Running a sensitivity analysis that drops studies by quality rating. Quality ratings are largely uncorrelated with influence, so that procedure removes studies that do not matter and keeps the ones that do.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/11_psychology_meta_analysis.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>loo = leave_one_out(y, se, method=&quot;reml&quot;)
+influence = sorted(
+    zip((r.study for r in corpus.records), loo.influence, strict=True),
+    key=lambda t: abs(t[1]),
+    reverse=True,
+)
+by_estimate = {s: e for s, e, _, _ in STUDIES}
+by_n = {s: n for s, _, _, n in STUDIES}
+w.table(
+    [&quot;study&quot;, &quot;shift when dropped&quot;, &quot;effect&quot;, &quot;n&quot;],
+    [
+        [study, f&quot;{shift:+.3f}&quot;, f&quot;{by_estimate[study]:.2f}&quot;, f&quot;{by_n[study]:,}&quot;]
+        for study, shift in influence[:5]
+    ],
+    caption=&quot;The five most influential studies, in pooled-se units.&quot;,
+)
+bj = baujat(y, se)
+worst = max(range(len(bj.q_contribution)), key=lambda i: bj.q_contribution[i])
+w.out(
+    f&quot;largest contributor to heterogeneity: {corpus.records[worst].study} &quot;
+    f&quot;(Q share {bj.q_contribution[worst]:.2f})&quot;
+)
+w.figure(
+    &quot;baujat&quot;,
+    kind=&quot;scatter&quot;,
+    data={
+        &quot;x&quot;: [float(v) for v in bj.q_contribution],
+        &quot;y&quot;: [float(v) for v in bj.influence],
+        &quot;labels&quot;: [r.study for r in corpus.records],
+    },
+    opt={
+        &quot;key&quot;: &quot;@&quot;,
+        &quot;x&quot;: &quot;x&quot;,
+        &quot;y&quot;: &quot;y&quot;,
+        &quot;labels&quot;: &quot;labels&quot;,
+        &quot;xLabel&quot;: &quot;contribution to heterogeneity&quot;,
+        &quot;yLabel&quot;: &quot;influence on the pooled estimate&quot;,
+        &quot;height&quot;: 330,
+    },
+    # title, note and legend: the caption shown with the chart
+)
+
+
+w.finding(f&quot;&quot;&quot;Reported as one number this literature says the nudge works: {kh.estimate:.2f},
+    interval comfortably clear of zero. Reported honestly it says something more
+    useful and less quotable.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;The studies genuinely disagree — {het.i2:.0%} of the variation is real rather
+    than sampling — effect size tracks precision in a way consistent with publication
+    bias (p = {eg.p:.4f}), and study twenty-one could land anywhere in
+    [{pi.lower:.2f}, {pi.upper:.2f}]. The bottom of that range is about a quarter of
+    the pooled mean and small enough that a replication powered off {kh.estimate:.2f}
+    would miss it.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;None of that needed a different estimator. It needed the three quantities that
+    usually end up in an appendix: heterogeneity, the prediction interval, and a
+    small-study check — plus two plots, because I-squared and an Egger p-value are
+    summaries of pictures and the pictures are where the shape is.&quot;&quot;&quot;)</pre>
+</div>
+      <div class="tbl-wrap"><table class="t"><caption>The five most influential studies, in pooled-se units.</caption><thead><tr><th>study</th><th>shift when dropped</th><th>effect</th><th>n</th></tr></thead><tbody><tr><td>s12</td><td>+0.477</td><td>0.34</td><td>258</td></tr><tr><td>s11</td><td>-0.402</td><td>0.11</td><td>2,080</td></tr><tr><td>s01</td><td>-0.393</td><td>0.09</td><td>1,180</td></tr><tr><td>s07</td><td>-0.367</td><td>0.13</td><td>2,510</td></tr><tr><td>s14</td><td>+0.360</td><td>0.24</td><td>1,030</td></tr></tbody></table></div>
+<div class="out"><div class="out-h">what it printed</div><pre>largest contributor to heterogeneity: s16 (Q share 8.21)</pre></div>
+<figure class="fig" id="11_psychology_meta_analysis-baujat">
+  <div class="fig-head"><p class="fig-t">Baujat: which studies matter, and for which reason</p><p class="fig-s">Far right means a study disagrees with the rest. High up means dropping it moves the answer. The top-right corner is where an inclusion decision changes the conclusion, and those are the studies to argue about by name.</p></div>
+  
+  <div class="chart" data-chart="scatter" data-file="figures-11_psychology_meta_analysis"
+       data-opt='{&quot;key&quot;: &quot;baujat&quot;, &quot;x&quot;: &quot;x&quot;, &quot;y&quot;: &quot;y&quot;, &quot;labels&quot;: &quot;labels&quot;, &quot;xLabel&quot;: &quot;contribution to heterogeneity&quot;, &quot;yLabel&quot;: &quot;influence on the pooled estimate&quot;, &quot;height&quot;: 330}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+
+<section class="wt-close">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The close</p>
+      <h2>What it actually showed</h2>
+      <p>Written after looking at the output, which is why it does not always agree
+        with the setup.</p>
+    </div>
+    <div class="prose wt-findings"><p>Reported as one number this literature says the nudge works: 0.17, interval comfortably clear of zero. Reported honestly it says something more useful and less quotable.</p><p>The studies genuinely disagree — 54% of the variation is real rather than sampling — effect size tracks precision in a way consistent with publication bias (p = 0.0012), and study twenty-one could land anywhere in [0.04, 0.31]. The bottom of that range is about a quarter of the pooled mean and small enough that a replication powered off 0.17 would miss it.</p><p>None of that needed a different estimator. It needed the three quantities that usually end up in an appendix: heterogeneity, the prediction interval, and a small-study check — plus two plots, because I-squared and an Egger p-value are summaries of pictures and the pictures are where the shape is.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <details class="ex-more">
+      <summary>The whole file, and everything this run printed</summary>
+      <div class="ex-body">
+        <div class="pair">
+          <div class="code">
+            <div class="code-h"><span>examples/11_psychology_meta_analysis.py</span>
+              <button class="copy" type="button">Copy</button></div>
+            <pre>from _walkthrough import Walkthrough
+
+from axiom.build import MetaBuilder
+from axiom.meta import (
+    baujat,
+    egger,
+    funnel_data,
+    heterogeneity,
+    leave_one_out,
+    prediction_interval,
+    random_effects,
+)
+
+# Twenty nudge studies: effect size and standard error, as a review would collect
+# them. Larger studies are more precise, and the smaller ones scatter wider --
+# partly by sampling and partly, as the funnel below suggests, by what got
+# published at all.
+STUDIES = [
+    (&quot;s01&quot;, 0.09, 0.041, 1180),
+    (&quot;s02&quot;, 0.31, 0.152, 88),
+    (&quot;s03&quot;, 0.15, 0.033, 1840),
+    (&quot;s04&quot;, 0.22, 0.131, 118),
+    (&quot;s05&quot;, 0.19, 0.058, 602),
+    (&quot;s06&quot;, 0.48, 0.186, 61),
+    (&quot;s07&quot;, 0.13, 0.028, 2510),
+    (&quot;s08&quot;, 0.05, 0.104, 187),
+    (&quot;s09&quot;, 0.21, 0.049, 842),
+    (&quot;s10&quot;, 0.42, 0.168, 72),
+    (&quot;s11&quot;, 0.11, 0.031, 2080),
+    (&quot;s12&quot;, 0.34, 0.088, 258),
+    (&quot;s13&quot;, 0.17, 0.126, 128),
+    (&quot;s14&quot;, 0.24, 0.044, 1030),
+    (&quot;s15&quot;, 0.39, 0.147, 94),
+    (&quot;s16&quot;, 0.06, 0.030, 2240),
+    (&quot;s17&quot;, 0.28, 0.076, 344),
+    (&quot;s18&quot;, 0.51, 0.198, 54),
+    (&quot;s19&quot;, 0.16, 0.052, 742),
+    (&quot;s20&quot;, 0.12, 0.097, 214),
+]
+
+w = Walkthrough(
+    field=&quot;Behavioural science&quot;,
+    title=&quot;What study twenty-one will actually find&quot;,
+    question=&quot;&quot;&quot;Twenty published studies test the same nudge and disagree with each
+        other. Pooling them gives a number. The question is whether that number is
+        the one a replication team should power against.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Build the corpus through a vocabulary that refuses the wrong pool&quot;,
+    why=&quot;&quot;&quot;&#x27;standardized_contrast&#x27; is not free text: poolable quantities are a
+        controlled vocabulary, so two reviews cannot quietly pool an odds ratio with
+        a standardized mean difference. Pass something outside the vocabulary and the
+        record refuses to be built, at collection time rather than at interpretation
+        time.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;A dataframe of estimates and standard errors. It pools anything you put
+        in it, including things that are not the same kind of number, and the mistake
+        surfaces — if it ever does — in review.&quot;&quot;&quot;,
+)
+builder = MetaBuilder().name(&quot;nudge-replication&quot;).family(&quot;behavioural_nudge&quot;)
+for study, estimate, se_i, n in STUDIES:
+    builder = builder.study(
+        study,
+        estimate=estimate,
+        se=se_i,
+        read=&quot;experiment&quot;,
+        contributor=study,
+        quantity=&quot;standardized_contrast&quot;,
+        n=n,
+        source=f&quot;paper-{study}&quot;,
+    )
+corpus = builder.build()
+y, se = corpus.arrays()
+w.out(f&quot;corpus   : {corpus.name}, k = {len(corpus)} studies&quot;)
+w.out(f&quot;quantity : {corpus.records[0].quantity}&quot;)
+w.out(f&quot;effects  : {min(y):.2f} to {max(y):.2f}&quot;)
+w.out(f&quot;n        : {min(n for _, _, _, n in STUDIES):,} to {max(n for _, _, _, n in STUDIES):,}&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Pool it three ways, because the estimators disagree&quot;,
+    why=&quot;&quot;&quot;The between-study variance has to be estimated, and DerSimonian-Laird,
+        Paule-Mandel and REML do it differently. When they agree, quoting one is
+        fine. When they do not, the disagreement is information about how much of the
+        answer is coming from the tau estimator rather than from the studies — and it
+        is worth knowing before quoting any of them.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Using DerSimonian-Laird because it is the default in most software. It
+        is known to understate tau-squared when heterogeneity is high, which is
+        exactly the regime this literature is in.&quot;&quot;&quot;,
+)
+pooled_rows = []
+for method, label in ((&quot;dl&quot;, &quot;DerSimonian-Laird&quot;), (&quot;pm&quot;, &quot;Paule-Mandel&quot;), (&quot;reml&quot;, &quot;REML&quot;)):
+    re = random_effects(y, se, tau_method=method)
+    w.out(
+        f&quot;{label:&lt;20}{re.estimate:&gt;9.4f}  se {re.se:.4f}  tau2 {re.tau2:.5f}   &quot;
+        f&quot;[{re.interval.lower:.3f}, {re.interval.upper:.3f}]&quot;
+    )
+    pooled_rows.append(
+        {
+            &quot;label&quot;: label,
+            &quot;estimate&quot;: float(re.estimate),
+            &quot;lower&quot;: float(re.interval.lower),
+            &quot;upper&quot;: float(re.interval.upper),
+            &quot;note&quot;: f&quot;tau^2 = {re.tau2:.5f}&quot;,
+        }
+    )
+w.figure(
+    &quot;estimators&quot;,
+    kind=&quot;intervals&quot;,
+    data={&quot;rows&quot;: pooled_rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;zero&quot;: True,
+        &quot;xLabel&quot;: &quot;pooled effect&quot;,
+        &quot;labelWidth&quot;: 150,
+        &quot;rowHeight&quot;: 36,
+        &quot;mass&quot;: 95,
+    },
+    title=&quot;Three ways of estimating the between-study variance&quot;,
+    note=&quot;&quot;&quot;Close enough here that the choice does not change the conclusion — which
+        is itself worth establishing rather than assuming, and takes one loop.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Draw all twenty, because the pooled number hides them&quot;,
+    why=&quot;&quot;&quot;A forest plot is not decoration. The pooled mean is a summary of a
+        distribution, and the only way to see whether that distribution has a centre
+        worth summarising is to look at the studies. Here the effects run from 0.05
+        to 0.51 and the small studies sit systematically to the right.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Reporting the pooled estimate and I-squared as two numbers. I-squared
+        of 70% and I-squared of 70% look identical in a table and can mean a tidy
+        spread or two distinct clusters, which imply completely different next
+        steps.&quot;&quot;&quot;,
+)
+het = heterogeneity(y, se)
+kh = random_effects(y, se, tau_method=&quot;reml&quot;, knapp_hartung=True)
+w.out(f&quot;Q  = {het.q:.1f} on {het.df} df (p = {het.p_value:.4f})&quot;)
+w.out(f&quot;I2 = {het.i2:.0%}&quot;)
+w.out(
+    f&quot;pooled (REML, Knapp-Hartung) = {kh.estimate:.4f} &quot;
+    f&quot;[{kh.interval.lower:.3f}, {kh.interval.upper:.3f}]&quot;
+)
+w.say(f&quot;&quot;&quot;An I-squared of {het.i2:.0%} means most of the variation between these studies
+    is real disagreement rather than sampling noise. The pooled mean is a summary of
+    a distribution, not an estimate of one shared number — and that distinction is
+    what the next two steps are about.&quot;&quot;&quot;)
+order = sorted(range(len(STUDIES)), key=lambda i: STUDIES[i][1])
+weights = [1.0 / (s * s) for s in se]
+total_weight = sum(weights)
+w.figure(
+    &quot;forest&quot;,
+    kind=&quot;intervals&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: STUDIES[i][0],
+                &quot;estimate&quot;: float(y[i]),
+                &quot;lower&quot;: float(y[i] - 1.96 * se[i]),
+                &quot;upper&quot;: float(y[i] + 1.96 * se[i]),
+                &quot;weight&quot;: weights[i] / total_weight,
+                &quot;note&quot;: f&quot;n = {STUDIES[i][3]:,}, se {se[i]:.3f}&quot;,
+            }
+            for i in order
+        ],
+        &quot;pooled&quot;: {
+            &quot;estimate&quot;: float(kh.estimate),
+            &quot;lower&quot;: float(kh.interval.lower),
+            &quot;upper&quot;: float(kh.interval.upper),
+        },
+    },
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;pooled&quot;: &quot;@pooled&quot;,
+        &quot;pooledLabel&quot;: &quot;pooled (REML)&quot;,
+        &quot;weightBy&quot;: &quot;weight&quot;,
+        &quot;zero&quot;: True,
+        &quot;xLabel&quot;: &quot;standardized effect&quot;,
+        &quot;labelWidth&quot;: 90,
+        &quot;rowHeight&quot;: 26,
+        &quot;mass&quot;: 95,
+    },
+    title=&quot;Every study, sorted by effect, sized by weight&quot;,
+    note=&quot;&quot;&quot;The dot size is the study&#x27;s weight in the pool. Notice that the largest
+        dots — the most precise studies — sit at the left end, and the studies at the
+        right are the small ones. That pattern is what the funnel below is for.&quot;&quot;&quot;,
+    legend=((&quot;accent&quot;, &quot;95% interval, sized by weight&quot;),),
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Then compute the number a replication team actually needs&quot;,
+    why=&quot;&quot;&quot;The interval on the mean says where the average of this literature sits.
+        The prediction interval says where a NEW study would land, and it includes
+        the between-study variance rather than averaging it away. When heterogeneity
+        is real these are very different numbers, and only the second one predicts
+        replication.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Powering the replication off the pooled mean. It is the single most
+        common way a replication ends up underpowered for the effect it actually
+        meets: the mean is the centre of a distribution the new study is drawn
+        from, not the value it will take.&quot;&quot;&quot;,
+)
+pi = prediction_interval(kh)
+ratio = (pi.upper - pi.lower) / (kh.interval.upper - kh.interval.lower)
+w.out(f&quot;pooled mean        {kh.estimate:.4f}  [{kh.interval.lower:.3f}, {kh.interval.upper:.3f}]&quot;)
+w.out(f&quot;NEXT study lands in           [{pi.lower:.3f}, {pi.upper:.3f}]&quot;)
+w.out(f&quot;the prediction interval is {ratio:.1f}x wider&quot;)
+w.figure(
+    &quot;prediction&quot;,
+    kind=&quot;intervals&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: &quot;where the mean is&quot;,
+                &quot;estimate&quot;: float(kh.estimate),
+                &quot;lower&quot;: float(kh.interval.lower),
+                &quot;upper&quot;: float(kh.interval.upper),
+                &quot;note&quot;: &quot;95% interval on the pooled mean&quot;,
+            },
+            {
+                &quot;label&quot;: &quot;where study 21 lands&quot;,
+                &quot;estimate&quot;: float(kh.estimate),
+                &quot;lower&quot;: float(pi.lower),
+                &quot;upper&quot;: float(pi.upper),
+                &quot;note&quot;: &quot;95% prediction interval&quot;,
+                &quot;colour&quot;: &quot;s2&quot;,
+            },
+        ]
+    },
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;zero&quot;: True,
+        &quot;xLabel&quot;: &quot;standardized effect&quot;,
+        &quot;labelWidth&quot;: 160,
+        &quot;rowHeight&quot;: 42,
+        &quot;mass&quot;: 95,
+    },
+    title=&quot;Two intervals that are routinely confused&quot;,
+    note=f&quot;&quot;&quot;Same centre, {ratio:.1f} times the width. A replication powered off the
+        mean is powered for the wrong quantity, and the bottom of the prediction
+        interval — {pi.lower:.2f} — is where an honest power calculation has to
+        start.&quot;&quot;&quot;,
+    legend=((&quot;accent&quot;, &quot;interval on the mean&quot;), (&quot;s2&quot;, &quot;prediction interval&quot;)),
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Check whether the small studies are telling a different story&quot;,
+    why=&quot;&quot;&quot;Egger&#x27;s test asks whether effect size is associated with precision. A
+        non-zero intercept means the imprecise studies report systematically larger
+        effects — the signature of publication bias. The funnel plot is the same
+        question drawn, and it shows the asymmetry rather than compressing it into a
+        p-value.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Treating a significant Egger test as proof of publication bias. It is
+        not: real heterogeneity correlated with study size looks identical. Small
+        studies often run more intensive versions of an intervention, and that would
+        produce the same picture with nobody hiding anything.&quot;&quot;&quot;,
+)
+eg = egger(y, se)
+w.out(f&quot;Egger intercept {eg.intercept:+.3f} +/- {eg.se:.3f}&quot;)
+w.out(f&quot;t = {eg.t:+.2f} on {eg.df} df, p = {eg.p:.4f}&quot;)
+fu = funnel_data(y, se, kh)
+w.figure(
+    &quot;funnel&quot;,
+    kind=&quot;funnel&quot;,
+    data={
+        &quot;y&quot;: [float(v) for v in y],
+        &quot;se&quot;: [float(v) for v in se],
+        &quot;labels&quot;: [r.study for r in corpus.records],
+        &quot;pooled&quot;: float(fu.pooled),
+        &quot;contours&quot;: [
+            {
+                &quot;mass&quot;: c.mass,
+                &quot;se&quot;: [float(v) for v in c.se],
+                &quot;lower&quot;: [float(v) for v in c.lower],
+                &quot;upper&quot;: [float(v) for v in c.upper],
+            }
+            for c in fu.contours
+        ],
+        &quot;max_se&quot;: float(max(se)),
+    },
+    opt={&quot;key&quot;: &quot;@&quot;, &quot;xLabel&quot;: &quot;standardized effect&quot;, &quot;height&quot;: 360},
+    title=&quot;The funnel, with its contours&quot;,
+    note=&quot;&quot;&quot;Precise studies sit at the top and should scatter symmetrically about the
+        pooled line. Here the bottom-left of the funnel is empty: there are no small
+        studies reporting small effects, which is either what publication looks like
+        or what a genuine relationship between study size and effect looks like.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;And ask which studies are carrying the answer&quot;,
+    why=&quot;&quot;&quot;Leave-one-out says how far the pooled estimate moves when each study is
+        dropped; the Baujat plot separates two different reasons a study matters —
+        contributing heterogeneity, and influencing the result. A study high on both
+        axes is one whose inclusion decision is doing real work and should be argued
+        for rather than defaulted into.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Running a sensitivity analysis that drops studies by quality rating.
+        Quality ratings are largely uncorrelated with influence, so that procedure
+        removes studies that do not matter and keeps the ones that do.&quot;&quot;&quot;,
+)
+loo = leave_one_out(y, se, method=&quot;reml&quot;)
+influence = sorted(
+    zip((r.study for r in corpus.records), loo.influence, strict=True),
+    key=lambda t: abs(t[1]),
+    reverse=True,
+)
+by_estimate = {s: e for s, e, _, _ in STUDIES}
+by_n = {s: n for s, _, _, n in STUDIES}
+w.table(
+    [&quot;study&quot;, &quot;shift when dropped&quot;, &quot;effect&quot;, &quot;n&quot;],
+    [
+        [study, f&quot;{shift:+.3f}&quot;, f&quot;{by_estimate[study]:.2f}&quot;, f&quot;{by_n[study]:,}&quot;]
+        for study, shift in influence[:5]
+    ],
+    caption=&quot;The five most influential studies, in pooled-se units.&quot;,
+)
+bj = baujat(y, se)
+worst = max(range(len(bj.q_contribution)), key=lambda i: bj.q_contribution[i])
+w.out(
+    f&quot;largest contributor to heterogeneity: {corpus.records[worst].study} &quot;
+    f&quot;(Q share {bj.q_contribution[worst]:.2f})&quot;
+)
+w.figure(
+    &quot;baujat&quot;,
+    kind=&quot;scatter&quot;,
+    data={
+        &quot;x&quot;: [float(v) for v in bj.q_contribution],
+        &quot;y&quot;: [float(v) for v in bj.influence],
+        &quot;labels&quot;: [r.study for r in corpus.records],
+    },
+    opt={
+        &quot;key&quot;: &quot;@&quot;,
+        &quot;x&quot;: &quot;x&quot;,
+        &quot;y&quot;: &quot;y&quot;,
+        &quot;labels&quot;: &quot;labels&quot;,
+        &quot;xLabel&quot;: &quot;contribution to heterogeneity&quot;,
+        &quot;yLabel&quot;: &quot;influence on the pooled estimate&quot;,
+        &quot;height&quot;: 330,
+    },
+    title=&quot;Baujat: which studies matter, and for which reason&quot;,
+    note=&quot;&quot;&quot;Far right means a study disagrees with the rest. High up means dropping it
+        moves the answer. The top-right corner is where an inclusion decision changes
+        the conclusion, and those are the studies to argue about by name.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.finding(f&quot;&quot;&quot;Reported as one number this literature says the nudge works: {kh.estimate:.2f},
+    interval comfortably clear of zero. Reported honestly it says something more
+    useful and less quotable.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;The studies genuinely disagree — {het.i2:.0%} of the variation is real rather
+    than sampling — effect size tracks precision in a way consistent with publication
+    bias (p = {eg.p:.4f}), and study twenty-one could land anywhere in
+    [{pi.lower:.2f}, {pi.upper:.2f}]. The bottom of that range is about a quarter of
+    the pooled mean and small enough that a replication powered off {kh.estimate:.2f}
+    would miss it.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;None of that needed a different estimator. It needed the three quantities that
+    usually end up in an appendix: heterogeneity, the prediction interval, and a
+    small-study check — plus two plots, because I-squared and an Egger p-value are
+    summaries of pictures and the pictures are where the shape is.&quot;&quot;&quot;)</pre>
+          </div>
+          <div class="out">
+            <div class="out-h">stdout, captured on this build</div>
+            <pre>========================================================================================
+BEHAVIOURAL SCIENCE  ---  What study twenty-one will actually find
+========================================================================================
+  Twenty published studies test the same nudge and disagree with each other. Pooling
+  them gives a number. The question is whether that number is the one a replication team
+  should power against.
+
+----------------------------------------------------------------------------------------
+STEP 1  Build the corpus through a vocabulary that refuses the wrong pool
+----------------------------------------------------------------------------------------
+  &#x27;standardized_contrast&#x27; is not free text: poolable quantities are a controlled
+  vocabulary, so two reviews cannot quietly pool an odds ratio with a standardized mean
+  difference. Pass something outside the vocabulary and the record refuses to be built,
+  at collection time rather than at interpretation time.
+
+  INSTEAD OF: A dataframe of estimates and standard errors. It pools anything you put in
+  it, including things that are not the same kind of number, and the mistake surfaces —
+  if it ever does — in review.
+
+  corpus   : nudge-replication, k = 20 studies
+  quantity : standardized_contrast
+  effects  : 0.05 to 0.51
+  n        : 54 to 2,510
+
+----------------------------------------------------------------------------------------
+STEP 2  Pool it three ways, because the estimators disagree
+----------------------------------------------------------------------------------------
+  The between-study variance has to be estimated, and DerSimonian-Laird, Paule-Mandel
+  and REML do it differently. When they agree, quoting one is fine. When they do not,
+  the disagreement is information about how much of the answer is coming from the tau
+  estimator rather than from the studies — and it is worth knowing before quoting any of
+  them.
+
+  INSTEAD OF: Using DerSimonian-Laird because it is the default in most software. It is
+  known to understate tau-squared when heterogeneity is high, which is exactly the
+  regime this literature is in.
+
+  DerSimonian-Laird      0.1731  se 0.0204  tau2 0.00338   [0.133, 0.213]
+  Paule-Mandel           0.1784  se 0.0228  tau2 0.00488   [0.134, 0.223]
+  REML                   0.1736  se 0.0206  tau2 0.00350   [0.133, 0.214]
+  [figure: Three ways of estimating the between-study variance]
+
+
+----------------------------------------------------------------------------------------
+STEP 3  Draw all twenty, because the pooled number hides them
+----------------------------------------------------------------------------------------
+  A forest plot is not decoration. The pooled mean is a summary of a distribution, and
+  the only way to see whether that distribution has a centre worth summarising is to
+  look at the studies. Here the effects run from 0.05 to 0.51 and the small studies sit
+  systematically to the right.
+
+  INSTEAD OF: Reporting the pooled estimate and I-squared as two numbers. I-squared of
+  70% and I-squared of 70% look identical in a table and can mean a tidy spread or two
+  distinct clusters, which imply completely different next steps.
+
+  Q  = 41.1 on 19 df (p = 0.0023)
+  I2 = 54%
+  pooled (REML, Knapp-Hartung) = 0.1736 [0.128, 0.219]
+  An I-squared of 54% means most of the variation between these studies is real
+  disagreement rather than sampling noise. The pooled mean is a summary of a
+  distribution, not an estimate of one shared number — and that distinction is what the
+  next two steps are about.
+
+  [figure: Every study, sorted by effect, sized by weight]
+
+
+----------------------------------------------------------------------------------------
+STEP 4  Then compute the number a replication team actually needs
+----------------------------------------------------------------------------------------
+  The interval on the mean says where the average of this literature sits. The
+  prediction interval says where a NEW study would land, and it includes the between-
+  study variance rather than averaging it away. When heterogeneity is real these are
+  very different numbers, and only the second one predicts replication.
+
+  INSTEAD OF: Powering the replication off the pooled mean. It is the single most common
+  way a replication ends up underpowered for the effect it actually meets: the mean is
+  the centre of a distribution the new study is drawn from, not the value it will take.
+
+  pooled mean        0.1736  [0.128, 0.219]
+  NEXT study lands in           [0.041, 0.306]
+  the prediction interval is 2.9x wider
+  [figure: Two intervals that are routinely confused]
+
+
+----------------------------------------------------------------------------------------
+STEP 5  Check whether the small studies are telling a different story
+----------------------------------------------------------------------------------------
+  Egger&#x27;s test asks whether effect size is associated with precision. A non-zero
+  intercept means the imprecise studies report systematically larger effects — the
+  signature of publication bias. The funnel plot is the same question drawn, and it
+  shows the asymmetry rather than compressing it into a p-value.
+
+  INSTEAD OF: Treating a significant Egger test as proof of publication bias. It is not:
+  real heterogeneity correlated with study size looks identical. Small studies often run
+  more intensive versions of an intervention, and that would produce the same picture
+  with nobody hiding anything.
+
+  Egger intercept +1.822 +/- 0.474
+  t = +3.84 on 18 df, p = 0.0012
+  [figure: The funnel, with its contours]
+
+
+----------------------------------------------------------------------------------------
+STEP 6  And ask which studies are carrying the answer
+----------------------------------------------------------------------------------------
+  Leave-one-out says how far the pooled estimate moves when each study is dropped; the
+  Baujat plot separates two different reasons a study matters — contributing
+  heterogeneity, and influencing the result. A study high on both axes is one whose
+  inclusion decision is doing real work and should be argued for rather than defaulted
+  into.
+
+  INSTEAD OF: Running a sensitivity analysis that drops studies by quality rating.
+  Quality ratings are largely uncorrelated with influence, so that procedure removes
+  studies that do not matter and keeps the ones that do.
+
+  The five most influential studies, in pooled-se units.
+  study  shift when dropped  effect  n
+  -----  ------------------  ------  -----
+  s12    +0.477              0.34    258
+  s11    -0.402              0.11    2,080
+  s01    -0.393              0.09    1,180
+  s07    -0.367              0.13    2,510
+  s14    +0.360              0.24    1,030
+
+  largest contributor to heterogeneity: s16 (Q share 8.21)
+  [figure: Baujat: which studies matter, and for which reason]
+
+
+========================================================================================
+WHAT IT ACTUALLY SHOWED
+========================================================================================
+  Reported as one number this literature says the nudge works: 0.17, interval
+  comfortably clear of zero. Reported honestly it says something more useful and less
+  quotable.
+
+  The studies genuinely disagree — 54% of the variation is real rather than sampling —
+  effect size tracks precision in a way consistent with publication bias (p = 0.0012),
+  and study twenty-one could land anywhere in [0.04, 0.31]. The bottom of that range is
+  about a quarter of the pooled mean and small enough that a replication powered off
+  0.17 would miss it.
+
+  None of that needed a different estimator. It needed the three quantities that usually
+  end up in an appendix: heterogeneity, the prediction interval, and a small-study check
+  — plus two plots, because I-squared and an Egger p-value are summaries of pictures and
+  the pictures are where the shape is.</pre>
+          </div>
+        </div>
+      </div>
+    </details>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="example-10-marketing-saturation.html">&larr; 10 · Marketing</a><a class="btn btn-2" href="examples.html">All twelve</a><a class="btn btn-2" href="example-12-software-experiment-value.html">12 · Product analytics &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

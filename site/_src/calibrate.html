@@ -1,0 +1,334 @@
+<!--meta {
+  "title": "Calibrate — fold the experiment into the model · axiom",
+  "description": "A randomized result should change an observational model. axiom does that through the prior or through the likelihood, then writes a ledger line for every assumption the transfer needed."
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Pillar 03 · axiom.calibrate</p>
+    <h1 style="max-width:16ch">Fold the experiment&nbsp;in</h1>
+    <p class="lede prose mt">You have an observational model fitted to everything you have
+      ever collected, and it is confounded. You also have one clean randomized result,
+      measured on a narrow slice. Neither is what you need on its own. Calibration is the
+      operation that makes the second correct the first — and the part that usually goes
+      unrecorded is what that correction assumed.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The setup</p>
+      <h2>A model that is confidently wrong</h2>
+      <p>{{calibrate.setup.n_units}} units over {{calibrate.setup.n_periods}} periods, with a
+        saturating dose–response and geometric carryover. Something unobserved drives both
+        the dose and the outcome — the correlation between them is
+        {{calibrate.setup.confounding_correlation:.2f}} — so the fitted amplitude comes out
+        far too large, and the posterior is tight enough to be confident about it.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="stack">
+        <div>
+          <p class="readout-l">True amplitude</p>
+          <div class="readout">
+            <div class="readout-v">{{calibrate.setup.truth.beta_a:.2f}}</div>
+            <p class="readout-d" style="margin-top:8px">the value the data-generating process
+              actually used</p>
+          </div>
+        </div>
+        <div>
+          <p class="readout-l">What the confounded fit believes</p>
+          <div class="readout">
+            <div class="readout-v is-boundary">{{calibrate.routes.rows[0].beta_a:.2f}}</div>
+            <p class="readout-d" style="margin-top:8px">± {{calibrate.routes.rows[0].beta_a_sd:.2f}} —
+              which puts the truth
+              <strong>{{calibrate.routes.rows[0].sd_above_truth:.1f}} posterior standard
+              deviations</strong> away. The model is not uncertain. It is wrong.</p>
+          </div>
+        </div>
+      </div>
+      <div class="stack">
+        <div>
+          <p class="readout-l">The randomized measurement</p>
+          <div class="readout">
+            <div class="readout-v">{{calibrate.setup.measurement.estimate:.3f}}</div>
+            <div class="readout-bar" style="--pos:{{@ calibrate.setup.measurement.estimate calibrate.setup.measurement.lower calibrate.setup.measurement.upper }}"><i></i><i></i></div>
+            <div class="readout-e"><span>{{calibrate.setup.measurement.lower:.3f}}</span>
+              <span>{{calibrate.setup.measurement.upper:.3f}}</span></div>
+            <p class="readout-d">{{calibrate.setup.measurement.method}} ·
+              source {{calibrate.setup.measurement.source}} · target estimand
+              {{calibrate.setup.measurement.target_hash}}…</p>
+          </div>
+        </div>
+        <div class="note">
+          <p class="note-t">The measurement knows what it measured</p>
+          <p class="small" style="margin:0">It is not a loose number with a standard error.
+            It carries the estimand it is an estimate <em>of</em> — dose, reference, window,
+            population, level — hashed. That is what lets axiom check later whether the
+            experiment and the decision are even about the same quantity. On this page they
+            are not, and that turns out to matter.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Two routes</p>
+      <h2>Through the prior, or through the likelihood</h2>
+      <p>axiom offers both, because they are not the same operation and they do not agree.
+        The <strong>prior route</strong> converts the measurement into a prior on the
+        amplitude and refits. The <strong>likelihood route</strong> adds the measurement to
+        the log density as a constraint, so it competes with the observational data instead
+        of preceding it.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="fig-head">
+        <p class="fig-t">Fitted amplitude under each route</p>
+        <p class="fig-s">Both routes start from the same confounded fit and pull it toward
+          the truth by different amounts.</p>
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="--k:var(--ink-2)"></i>uncalibrated fit</span>
+        <span><i class="dot" style="--k:var(--accent)"></i>after calibration</span>
+        <span><i class="dash" style="--k:var(--ink-2)"></i>truth</span>
+      </div>
+      <div class="chart" data-chart="dumbbell" data-file="calibrate"
+           data-opt='{"rows":[
+             {"label":"prior route","a":{{calibrate.routes.rows[0].beta_a:.4f}},
+              "b":{{calibrate.routes.rows[1].beta_a:.4f}}},
+             {"label":"likelihood route","a":{{calibrate.routes.rows[0].beta_a:.4f}},
+              "b":{{calibrate.routes.rows[2].beta_a:.4f}}}],
+             "truth":{{calibrate.setup.truth.beta_a:.4f}},"truthLabel":"truth = {{calibrate.setup.truth.beta_a:.0f}}",
+             "aLabel":"uncalibrated","bLabel":"calibrated",
+             "xLabel":"posterior mean of the amplitude","labelWidth":150,"rowHeight":52}'></div>
+      <p class="stamp"><b>axiom.calibrate.derive_prior</b>(…) and
+        <b>axiom.calibrate.fit_calibrated</b>(spec, panel, [measurement]) ·
+        Laplace backend, 1,000 draws, seed 1</p>
+    </figure>
+
+    <div class="tbl-wrap mt-lg">
+      <table class="t">
+        <caption>The same three fits, judged two ways: how close the amplitude parameter
+          lands, and whether the model’s own realization of the experiment’s estimand agrees
+          with what the experiment measured.</caption>
+        <thead>
+          <tr><th>fit</th><th>amplitude</th><th>sd from truth</th>
+            <th>realizes the estimand as</th><th>z vs measurement</th><th>verdict</th></tr>
+        </thead>
+        <tbody>
+          <tr class="bad">
+            <td>{{calibrate.routes.rows[0].label}}</td>
+            <td>{{calibrate.routes.rows[0].beta_a:.3f}}</td>
+            <td>{{calibrate.routes.rows[0].sd_above_truth:+.1f}}</td>
+            <td>{{calibrate.routes.rows[0].realized:.3f}}</td>
+            <td>{{calibrate.routes.rows[0].z:+.2f}}</td>
+            <td>{{calibrate.routes.rows[0].verdict}}</td>
+          </tr>
+          <tr>
+            <td>{{calibrate.routes.rows[1].label}}</td>
+            <td>{{calibrate.routes.rows[1].beta_a:.3f}}</td>
+            <td>{{calibrate.routes.rows[1].sd_above_truth:+.1f}}</td>
+            <td>{{calibrate.routes.rows[1].realized:.3f}}</td>
+            <td>{{calibrate.routes.rows[1].z:+.2f}}</td>
+            <td>{{calibrate.routes.rows[1].verdict}}</td>
+          </tr>
+          <tr class="hi">
+            <td>{{calibrate.routes.rows[2].label}}</td>
+            <td>{{calibrate.routes.rows[2].beta_a:.3f}}</td>
+            <td>{{calibrate.routes.rows[2].sd_above_truth:+.1f}}</td>
+            <td>{{calibrate.routes.rows[2].realized:.3f}}</td>
+            <td>{{calibrate.routes.rows[2].z:+.2f}}</td>
+            <td>{{calibrate.routes.rows[2].verdict}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note mt" style="max-width:var(--measure)">
+      <p class="note-t">The two routes disagree, and axiom does not hide it</p>
+      <p class="small" style="margin:0">The prior route recovers the amplitude almost exactly
+        ({{calibrate.routes.rows[1].beta_a:.2f}} against a truth of
+        {{calibrate.setup.truth.beta_a:.0f}}) but its realization of the estimand still
+        disagrees with the measurement at z =
+        {{calibrate.routes.rows[1].z:+.2f}}. The likelihood route is the reverse: its
+        amplitude is still high at {{calibrate.routes.rows[2].beta_a:.2f}}, but it
+        <em>agrees</em> with the experiment at z =
+        {{calibrate.routes.rows[2].z:+.2f}}. Constraining a parameter and constraining a
+        prediction are different requests, and which one you want depends on what you intend
+        to do with the model. axiom implements both and reports the disagreement rather than
+        picking for you.</p>
+    </div>
+
+    <div class="mt-lg">
+      <h3>What the prior route derived</h3>
+      <p class="prose muted small">Turning a measurement of a contrast into a prior on a
+        kernel parameter is not division. It goes through the design factor — the share of
+        the contrast that the amplitude is responsible for at the tested dose — and every
+        step writes its assumption down.</p>
+      <div class="ledger mt">
+        <div class="ledger-row">
+          <span class="ledger-f">design factor</span>
+          <span class="ledger-s">the fraction of the measured contrast attributable to the
+            amplitude parameter at this dose and window</span>
+          <span class="ledger-v">{{calibrate.routes.design_factor:.4f}}</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">implied prior</span>
+          <span class="ledger-s">on <b>{{calibrate.routes.parameter}}</b>, moment-matched to
+            {{calibrate.routes.amplitude_mean:.3f}} ±
+            {{calibrate.routes.amplitude_sd:.3f}}</span>
+          <span class="ledger-v">lognormal</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">route taken</span>
+          <span class="ledger-s">the likelihood route records itself in provenance as
+            <b>{{calibrate.routes.route_provenance}}</b>, with constraint
+            <code>{{calibrate.routes.constraint}}</code></span>
+          <span class="tag">provenance</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The hard part</p>
+      <h2>The experiment measured one thing. You need another.</h2>
+      <p>The experiment measured a <strong>first-period lift for an individual</strong>. The
+        decision needs a <strong>steady-state per-period lift for a cluster</strong>. Those
+        are different numbers. axiom compares the two estimands facet by facet, names the
+        {{calibrate.transfer.differing}} facets that differ, and refuses to call the transfer
+        clean.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="ledger">
+        <div class="ledger-row">
+          <span class="ledger-f">plan</span>
+          <span class="ledger-s">status <b>{{calibrate.transfer.plan_status}}</b> — the
+            estimands differ on {{calibrate.transfer.differing}}</span>
+          <span class="tag is-warn">not clean</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">window</span>
+          <span class="ledger-s">only
+            <b>{{calibrate.transfer.window_counterfactual:.1%}}</b> of the carryover mass
+            lands in the first period, so the steady state is larger by the reciprocal</span>
+          <span class="ledger-v">×{{calibrate.transfer.window_factor:.4f}}</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">level</span>
+          <span class="ledger-s">individual to cluster, at an intra-cluster correlation of
+            0.05 — the point estimate scales, and so does its standard error</span>
+          <span class="ledger-v">se ×{{calibrate.transfer.level_se_factor:.4f}}</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">resolved</span>
+          <span class="ledger-s">the corrections together license a factor of
+            <b>{{calibrate.transfer.factor:.4f}}</b></span>
+          <span class="tag is-good">licensed</span>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div>
+          <p class="readout-l">Experiment, read as the decision’s estimand</p>
+          <div class="readout">
+            <div class="readout-v">{{calibrate.transfer.per_cluster:.2f}}</div>
+            <p class="readout-d" style="margin-top:8px">± {{calibrate.transfer.per_cluster_se:.2f}}
+              per cluster, after applying the window and level corrections</p>
+          </div>
+        </div>
+        <div>
+          <p class="readout-l">What that estimand actually is</p>
+          <div class="readout">
+            <div class="readout-v">{{calibrate.transfer.truth_decision:.2f}}</div>
+            <p class="readout-d" style="margin-top:8px">the simulation’s truth. The transfer
+              lands <strong>above</strong> it, and the ledger below names the assumption
+              responsible.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note is-refusal mt-lg" style="max-width:var(--measure)">
+      <p class="note-t">The transfer overshoots — and the ledger says which assumption did it</p>
+      <p class="small">Reading the experiment through the transfer gives
+        <strong>{{calibrate.transfer.per_cluster:.2f}}</strong> per cluster. The truth is
+        <strong>{{calibrate.transfer.truth_decision:.2f}}</strong>. The calibrated model’s own
+        forward pass gives <strong>{{calibrate.transfer.model_read:.2f}}</strong>, so both
+        routes overshoot in the same direction and by a similar amount.</p>
+      <p class="small" style="margin:0">That is not a bug being hidden — it is the point of
+        keeping a ledger. The window correction assumes the accumulation is
+        <em>linear</em> in the carryover mass. With a saturating dose–response it is not, so
+        scaling a first-period reading up to steady state overstates it. The assumption is
+        recorded as <code>carryover_contained</code> in state <code>unverified</code>, which
+        is exactly the line a reviewer should challenge first.</p>
+    </div>
+
+    <div class="mt-lg">
+      <h3>The ledger, in full</h3>
+      <p class="prose muted small">Every correction applied to move a number from one
+        estimand to another leaves a line: which facet it touched, what it assumed, whether
+        that assumption has been verified, and the factor it contributed.</p>
+      <div class="tbl-wrap mt">
+        <table class="t">
+          <caption>{{calibrate.transfer.ledger_summary}}</caption>
+          <thead>
+            <tr><th>facet</th><th>assumption</th><th>state</th><th>counterfactual</th>
+              <th>value</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{calibrate.transfer.ledger[0].facet}}</td>
+              <td>{{calibrate.transfer.ledger[0].assumption}}</td>
+              <td>{{calibrate.transfer.ledger[0].state}}</td>
+              <td>{{calibrate.transfer.ledger[0].counterfactual:.5f}}</td>
+              <td>{{calibrate.transfer.ledger[0].value:.5f}}</td>
+            </tr>
+            <tr>
+              <td>{{calibrate.transfer.ledger[1].facet}}</td>
+              <td>{{calibrate.transfer.ledger[1].assumption}}</td>
+              <td>{{calibrate.transfer.ledger[1].state}}</td>
+              <td>{{calibrate.transfer.ledger[1].counterfactual:.5f}}</td>
+              <td>{{calibrate.transfer.ledger[1].value:.5f}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted mt">axiom also checks the ledger for completeness against the
+        plan: the facets covered are {{calibrate.transfer.facets_covered}}, and the check
+        returns <strong>{{calibrate.transfer.complete}}</strong>. A transfer that quietly
+        skipped a differing facet would fail that check rather than producing a number.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div>
+        <h3>What is in <code>axiom.calibrate</code></h3>
+        <p class="small muted">{{overview.by_name.calibrate.n}} public symbols. Measurements and
+          their estimands, both calibration routes, agreement tests, prior derivation with
+          the design factor, the correction algebra for each facet, and the ledger that
+          records all of it.</p>
+        <p class="small"><a href="api.html#calibrate">Browse every symbol →</a></p>
+      </div>
+      <div>
+        <h3>Next: the shape of the response</h3>
+        <p class="small muted">Calibration corrected the amplitude. The surface is what that
+          amplitude is an amplitude <em>of</em> — the dose–response curve, its optimum, and
+          where the next probe should go.</p>
+        <p class="small"><a href="surface.html">Go to Surface →</a></p>
+      </div>
+    </div>
+  </div>
+</section>

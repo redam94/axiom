@@ -1,0 +1,968 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12 · The worst-powered design is the one worth running — Product analytics · axiom</title>
+<meta name="description" content="Product analytics: Is this A/B test worth running at all? A 5-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:title" content="12 · The worst-powered design is the one worth running — Product analytics · axiom">
+<meta property="og:description" content="Product analytics: Is this A/B test worth running at all? A 5-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="example">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Example 12 · Product analytics</p>
+    <h1 style="max-width:18ch">The worst-powered design is the one worth running</h1>
+    <p class="lede prose mt">Before asking how many users an A/B test needs, ask whether it can change what anyone does — and then whether the precision it buys is worth more than the traffic it withholds.</p>
+    <div class="ex-meta"><a class="pkg" href="design.html">Design</a>
+      <span class="pkg">5 steps</span>
+      <span class="pkg">4 figures</span>
+      <span class="pkg">365 lines</span>
+      <span class="pkg">runs in 9.5s</span></div>
+    <div class="hero-cta">
+      <a class="btn btn-1" href="#step-1">Start the walkthrough</a>
+      <a class="btn btn-2" href="https://github.com/redam94/axiom/blob/main/examples/12_software_experiment_value.py">The whole file on GitHub &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div class="prose wt-framing"><p>Product analytics — is this A/B test worth running at all?</p><p class="wt-h">The question</p><p>A team wants to test a checkout change. The usual conversation is about sample size and how long it will take. The prior question, almost never asked, is whether the test can change what anyone does.</p><p>If you would ship the change whatever the result, the test is theatre. If the decision genuinely hangs in the balance, the test has value, and that value can be put in the same units as its cost.</p><p class="wt-h">The move</p><p>Value of information. EVPI is the ceiling -- what you would pay to know the truth outright. EVSI is what a test of a given precision is actually worth. Both fall to nearly zero when the prior already settles the decision, which is the quantitative version of &quot;we already know this&quot;.</p><p>Pillars: design (value of information, candidate scoring)</p></div>
+      <div>
+        <p class="eyebrow">The route</p>
+        <nav class="wt-toc"><a class="wt-toc-i" href="#step-1"><span class="wt-toc-n">1</span>State the decision and, carefully, the stake</a><a class="wt-toc-i" href="#step-2"><span class="wt-toc-n">2</span>Ask what a test is worth under three different beliefs</a><a class="wt-toc-i" href="#step-3"><span class="wt-toc-n">3</span>Take the live case and size it the ordinary way</a><a class="wt-toc-i" href="#step-4"><span class="wt-toc-n">4</span>Then watch precision stop paying</a><a class="wt-toc-i" href="#step-5"><span class="wt-toc-n">5</span>Now count what the test costs, including the part nobody bills for</a></nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Before the first step</p>
+      <h2>What this example imports, and why that list is short</h2>
+      <p>Everything below runs on the four core dependencies. No sampler, no extras.</p>
+    </div>
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>examples/12_software_experiment_value.py</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>import numpy as np
+from _walkthrough import Walkthrough
+
+from axiom.design import (
+    DecisionSpec,
+    DesignCandidate,
+    EconomicInputs,
+    ValuePerOutcome,
+    difference_se,
+    eig_gaussian,
+    evaluate_candidate,
+    evoi_gaussian,
+    pareto_front,
+    sample_size,
+)
+
+MONTHLY_USERS = 250_000
+VALUE_PER_CONVERSION = 12.0  # USD of margin
+THRESHOLD = 0.004  # +0.4pp conversion, the bar for rolling out
+HORIZON_MONTHS = 12  # a checkout change ships and stays shipped
+BASE_RATE = 0.052
+OUTCOME_SD = (BASE_RATE * (1 - BASE_RATE)) ** 0.5
+PRIOR_MEAN, PRIOR_SD = 0.004, 0.0035
+
+w = Walkthrough(
+    field=&quot;Product analytics&quot;,
+    title=&quot;The worst-powered design is the one worth running&quot;,
+    question=&quot;&quot;&quot;Before asking how many users an A/B test needs, ask whether it can
+        change what anyone does — and then whether the precision it buys is worth
+        more than the traffic it withholds.&quot;&quot;&quot;,
+)</pre>
+    </div>
+  </div>
+</section>
+
+<section class="wt-step" id="step-1">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 1 <span>of 5</span></p>
+      <h2>State the decision and, carefully, the stake</h2>
+      <div class="wt-why prose"><p>The stake is the whole horizon the decision governs, not one month. A checkout change ships and stays shipped, so the value of getting it right is twelve months of margin on the whole base. Getting this wrong is the single most common way a value-of-information calculation comes out saying &#x27;never test&#x27;: the cost of the test is immediate and real, so the benefit has to be counted over the life of the decision it informs.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Valuing the decision at one month of impact. It makes every test look unaffordable, which produces the same answer as never running the calculation — and it is wrong for a different reason than the intuition it agrees with.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/12_software_experiment_value.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>decision = DecisionSpec(
+    name=&quot;roll_out_checkout_change&quot;,
+    threshold=THRESHOLD,
+    value_per_outcome_unit=VALUE_PER_CONVERSION * MONTHLY_USERS * HORIZON_MONTHS,
+    numeraire=&quot;USD&quot;,
+)
+w.out(f&quot;decision : roll out if the lift beats {THRESHOLD:.1%}&quot;)
+w.out(f&quot;stakes   : {decision.value_per_outcome_unit:,.0f} USD per unit of conversion rate&quot;)
+w.out(f&quot;           over {HORIZON_MONTHS} months and {MONTHLY_USERS:,} users a month&quot;)
+w.out(
+    f&quot;so a {THRESHOLD:.1%} lift is worth &quot; f&quot;{THRESHOLD * decision.value_per_outcome_unit:,.0f} USD&quot;
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>decision : roll out if the lift beats 0.4%
+stakes   : 36,000,000 USD per unit of conversion rate
+           over 12 months and 250,000 users a month
+so a 0.4% lift is worth 144,000 USD</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-2">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 2 <span>of 5</span></p>
+      <h2>Ask what a test is worth under three different beliefs</h2>
+      <div class="wt-why prose"><p>EVPI is the ceiling: what you would pay to know the truth outright. EVSI is what a test of a given precision is actually worth. Both collapse when the prior already settles the decision — which is the quantitative version of &#x27;we already know this&#x27;, and it is a sentence a team can act on in a way it cannot act on a hunch.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Starting from the sample size. A sample-size calculator will happily size a test for a decision that is already made; it has no way to represent the fact that the result cannot change anything.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/12_software_experiment_value.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>n_pilot = 40_000
+se_pilot = difference_se(n_pilot, sd=OUTCOME_SD)
+BELIEFS = (
+    (&quot;already sure it works&quot;, 0.011, 0.0020),
+    (&quot;genuinely on the fence&quot;, 0.004, 0.0035),
+    (&quot;already sure it does not&quot;, -0.004, 0.0020),
+)
+for label, prior_mean, prior_sd in BELIEFS:
+    ev = evoi_gaussian(decision, prior_mean, prior_sd, se_pilot)
+    w.out(
+        f&quot;{label:&lt;28}EVPI {ev.evpi:&gt;11,.0f}   EVSI {ev.evsi:&gt;11,.0f}   &quot;
+        f&quot;EIG {eig_gaussian(prior_sd, se_pilot):&gt;6.3f}&quot;
+    )
+
+sweep = np.linspace(-0.006, 0.014, 61)
+sweep_evsi, sweep_evpi = [], []
+for m in sweep:
+    ev = evoi_gaussian(decision, float(m), PRIOR_SD, se_pilot)
+    sweep_evsi.append(float(ev.evsi))
+    sweep_evpi.append(float(ev.evpi))
+w.figure(
+    &quot;belief&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;mean&quot;: sweep.tolist(), &quot;evsi&quot;: sweep_evsi, &quot;evpi&quot;: sweep_evpi},
+    opt={
+        &quot;series&quot;: [
+            {&quot;label&quot;: &quot;EVPI&quot;, &quot;x&quot;: &quot;@mean&quot;, &quot;y&quot;: &quot;@evpi&quot;, &quot;colour&quot;: &quot;ink-2&quot;},
+            {&quot;label&quot;: &quot;EVSI&quot;, &quot;x&quot;: &quot;@mean&quot;, &quot;y&quot;: &quot;@evsi&quot;, &quot;colour&quot;: &quot;accent&quot;},
+        ],
+        &quot;xLabel&quot;: &quot;what the team already believes the lift is&quot;,
+        &quot;yLabel&quot;: &quot;value of the information, USD&quot;,
+        &quot;height&quot;: 300,
+        &quot;rightPad&quot;: 70,
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>already sure it works       EVPI           4   EVSI           0   EIG  0.297
+genuinely on the fence      EVPI      50,267   EVSI      42,447   EIG  0.624
+already sure it does not    EVPI           1   EVSI           0   EIG  0.297</pre></div>
+<figure class="fig" id="12_software_experiment_value-belief">
+  <div class="fig-head"><p class="fig-t">A test is only worth something near the decision boundary</p><p class="fig-s">Both curves peak where the prior mean sits on the rollout bar of 0.4% and fall away in both directions. Far from the bar the decision is already made, and buying information about it returns almost nothing — however many users are thrown at it and however tight the resulting confidence interval looks in the readout.</p></div>
+  <div class="legend"><span><i style="--k:var(--ink-2)"></i>EVPI: knowing the truth outright</span><span><i style="--k:var(--accent)"></i>EVSI: this test</span></div>
+  <div class="chart" data-chart="lines" data-file="figures-12_software_experiment_value"
+       data-opt='{&quot;series&quot;: [{&quot;label&quot;: &quot;EVPI&quot;, &quot;x&quot;: &quot;belief.mean&quot;, &quot;y&quot;: &quot;belief.evpi&quot;, &quot;colour&quot;: &quot;ink-2&quot;}, {&quot;label&quot;: &quot;EVSI&quot;, &quot;x&quot;: &quot;belief.mean&quot;, &quot;y&quot;: &quot;belief.evsi&quot;, &quot;colour&quot;: &quot;accent&quot;}], &quot;xLabel&quot;: &quot;what the team already believes the lift is&quot;, &quot;yLabel&quot;: &quot;value of the information, USD&quot;, &quot;height&quot;: 300, &quot;rightPad&quot;: 70}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-3">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 3 <span>of 5</span></p>
+      <h2>Take the live case and size it the ordinary way</h2>
+      <div class="wt-why prose"><p>The on-the-fence case is the only one where a test earns its keep, so it is the one to size. This step is the conventional power calculation, run exactly as it normally would be, so that the next two steps have something familiar to disagree with.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Nothing — this step is not in dispute. A minimum detectable effect and 80% power is the right way to turn a decision-relevant effect size into a number of users. The argument is about what happens next.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/12_software_experiment_value.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>mde = 0.003
+sized = sample_size(effect=mde, sd=OUTCOME_SD, power=0.8, alpha=0.05)
+se_at_n = difference_se(sized.n, sd=OUTCOME_SD)
+ev = evoi_gaussian(decision, PRIOR_MEAN, PRIOR_SD, se_at_n)
+w.out(f&quot;powering for a {mde:.1%} lift:&quot;)
+w.out(f&quot;  n = {sized.n:,} users ({sized.n_treated:,} / {sized.n_control:,})&quot;)
+w.out(f&quot;  power {sized.power:.3f}, experiment se {se_at_n:.5f}&quot;)
+w.out(
+    f&quot;  EVPI {ev.evpi:,.0f} USD, EVSI {ev.evsi:,.0f} USD &quot;
+    f&quot;({ev.evsi / ev.evpi:.0%} of the ceiling)&quot;
+)
+w.out(f&quot;  posterior sd after the test {ev.preposterior_sd:.5f}, down from {PRIOR_SD:.5f}&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>powering for a 0.3% lift:
+  n = 171,964 users (85,982 / 85,982)
+  power 0.800, experiment se 0.00107
+  EVPI 50,267 USD, EVSI 48,067 USD (96% of the ceiling)
+  posterior sd after the test 0.00335, down from 0.00350</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-4">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 4 <span>of 5</span></p>
+      <h2>Then watch precision stop paying</h2>
+      <div class="wt-why prose"><p>More precision costs more exposure, and EVSI is bounded above by EVPI no matter how large the test. Plotting the two together shows where the curve flattens: past that point extra users buy a tighter interval that does not change the decision, and a tighter interval that changes nothing is worth nothing.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Choosing the sample size that reaches 95% power. Power is a property of the test, not of the decision; it keeps improving long after the decision has stopped being in doubt, and nothing in a power calculation ever says &#x27;enough&#x27;.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/12_software_experiment_value.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>ns = [10_000, 20_000, 40_000, 80_000, 160_000, 320_000, 640_000, 1_280_000]
+evsis = []
+for n in ns:
+    e = evoi_gaussian(decision, PRIOR_MEAN, PRIOR_SD, difference_se(n, sd=OUTCOME_SD))
+    evsis.append(float(e.evsi))
+w.table(
+    [&quot;test size&quot;, &quot;experiment se&quot;, &quot;EVSI&quot;, &quot;% of EVPI&quot;],
+    [
+        [
+            f&quot;{n:,}&quot;,
+            f&quot;{difference_se(n, sd=OUTCOME_SD):.5f}&quot;,
+            f&quot;{e:,.0f}&quot;,
+            f&quot;{e / ev.evpi:.0%}&quot;,
+        ]
+        for n, e in zip(ns, evsis, strict=True)
+    ],
+)
+w.figure(
+    &quot;returns&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;n&quot;: ns, &quot;evsi&quot;: evsis},
+    opt={
+        &quot;series&quot;: [{&quot;label&quot;: &quot;EVSI&quot;, &quot;x&quot;: &quot;@n&quot;, &quot;y&quot;: &quot;@evsi&quot;, &quot;colour&quot;: &quot;accent&quot;}],
+        &quot;xLabel&quot;: &quot;users in the test&quot;,
+        &quot;yLabel&quot;: &quot;value of what the test tells you, USD&quot;,
+        &quot;hline&quot;: float(ev.evpi),
+        &quot;hlineLabel&quot;: &quot;EVPI — the ceiling&quot;,
+        &quot;height&quot;: 300,
+        &quot;rightPad&quot;: 70,
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="tbl-wrap"><table class="t"><thead><tr><th>test size</th><th>experiment se</th><th>EVSI</th><th>% of EVPI</th></tr></thead><tbody><tr><td>10,000</td><td>0.00444</td><td>31,116</td><td>62%</td></tr><tr><td>20,000</td><td>0.00314</td><td>37,416</td><td>74%</td></tr><tr><td>40,000</td><td>0.00222</td><td>42,447</td><td>84%</td></tr><tr><td>80,000</td><td>0.00157</td><td>45,864</td><td>91%</td></tr><tr><td>160,000</td><td>0.00111</td><td>47,914</td><td>95%</td></tr><tr><td>320,000</td><td>0.00078</td><td>49,048</td><td>98%</td></tr><tr><td>640,000</td><td>0.00056</td><td>49,646</td><td>99%</td></tr><tr><td>1,280,000</td><td>0.00039</td><td>49,954</td><td>99%</td></tr></tbody></table></div>
+<figure class="fig" id="12_software_experiment_value-returns">
+  <div class="fig-head"><p class="fig-t">Doubling the test does not double what it is worth</p><p class="fig-s">Each doubling of exposure buys less than the last, and the curve is asymptotic to the value of knowing the truth outright. Between 640,000 and 1,280,000 users the test gains 307 USD of value for double the traffic.</p></div>
+  <div class="legend"><span><i style="--k:var(--accent)"></i>EVSI at this size</span><span><i class="dash" style="--k:var(--ink-3)"></i>EVPI</span></div>
+  <div class="chart" data-chart="lines" data-file="figures-12_software_experiment_value"
+       data-opt='{&quot;series&quot;: [{&quot;label&quot;: &quot;EVSI&quot;, &quot;x&quot;: &quot;returns.n&quot;, &quot;y&quot;: &quot;returns.evsi&quot;, &quot;colour&quot;: &quot;accent&quot;}], &quot;xLabel&quot;: &quot;users in the test&quot;, &quot;yLabel&quot;: &quot;value of what the test tells you, USD&quot;, &quot;hline&quot;: 50266.727331, &quot;hlineLabel&quot;: &quot;EVPI \u2014 the ceiling&quot;, &quot;height&quot;: 300, &quot;rightPad&quot;: 70}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-5">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 5 <span>of 5</span></p>
+      <h2>Now count what the test costs, including the part nobody bills for</h2>
+      <div class="wt-why prose"><p>Showing someone a different checkout page costs nothing to serve, so the cost per unit of exposure is zero — but withholding the change from the holdout arm forgoes the lift on those users for the duration, and that is a real cost the power calculation never mentions. Putting the price of a conversion on the record, with its source, is what lets the two be compared at all.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Comparing designs on run cost alone. Engineering time and analyst time are the visible costs; the invisible one is usually larger, and it scales with exactly the thing a power calculation wants to maximise — how much traffic you hold back.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/12_software_experiment_value.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>value = ValuePerOutcome(
+    value=VALUE_PER_CONVERSION,
+    outcome_unit=&quot;conversion&quot;,
+    numeraire=&quot;USD&quot;,
+    source=&quot;finance, margin per converted user, 2026 H1&quot;,
+)
+economics = EconomicInputs(
+    value_per_outcome=value,
+    dose_per_period=float(sized.n),
+    discount_rate=0.0,
+    dose_unit=&quot;exposure&quot;,
+    dose_cost_per_unit=0.0,
+    marginal_value_ratio=PRIOR_MEAN,
+)
+w.out(f&quot;the price is on the record: {value.ledger_line().statement}&quot;)
+
+candidates = [
+    DesignCandidate(
+        name=&quot;two_week_50_50&quot;,
+        method=&quot;cluster_based_regression&quot;,
+        n_units=sized.n,
+        n_periods=2,
+        holdout_fraction=0.5,
+        experiment_se=se_at_n,
+        cost=18_000.0,
+        cooldown_periods=0,
+    ),
+    DesignCandidate(
+        name=&quot;one_week_90_10&quot;,
+        method=&quot;cluster_based_regression&quot;,
+        n_units=sized.n,
+        n_periods=1,
+        holdout_fraction=0.1,
+        experiment_se=se_at_n * 1.6,
+        cost=9_000.0,
+        cooldown_periods=0,
+    ),
+    DesignCandidate(
+        name=&quot;four_week_50_50&quot;,
+        method=&quot;cluster_based_regression&quot;,
+        n_units=sized.n * 2,
+        n_periods=4,
+        holdout_fraction=0.5,
+        experiment_se=se_at_n * 0.7,
+        cost=34_000.0,
+        cooldown_periods=1,
+    ),
+]
+scores = [
+    evaluate_candidate(c, decision, prior_mean=PRIOR_MEAN, prior_sd=PRIOR_SD, economics=economics)
+    for c in candidates
+]
+front = {s.name for s in pareto_front(scores, objectives=(&quot;net_value&quot;, &quot;-cost&quot;, &quot;eig&quot;))}
+w.table(
+    [&quot;design&quot;, &quot;power&quot;, &quot;EVSI&quot;, &quot;holdout cost&quot;, &quot;run cost&quot;, &quot;net&quot;, &quot;on the front&quot;],
+    [
+        [
+            s.name,
+            f&quot;{s.power:.2f}&quot;,
+            f&quot;{s.evsi:,.0f}&quot;,
+            f&quot;{s.opportunity_cost:,.0f}&quot;,
+            f&quot;{s.cost:,.0f}&quot;,
+            f&quot;{s.net_value:,.0f}&quot;,
+            &quot;yes&quot; if s.name in front else &quot;&quot;,
+        ]
+        for s in scores
+    ],
+)
+w.figure(
+    &quot;net&quot;,
+    kind=&quot;bars&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: s.name.replace(&quot;_&quot;, &quot; &quot;),
+                &quot;value&quot;: float(s.net_value),
+                &quot;display&quot;: f&quot;{s.net_value:,.0f}&quot;,
+                &quot;colour&quot;: &quot;accent&quot; if s.net_value &gt; 0 else &quot;boundary&quot;,
+                &quot;note&quot;: f&quot;power {s.power:.2f}, EVSI {s.evsi:,.0f}, &quot;
+                f&quot;holdout cost {s.opportunity_cost:,.0f}&quot;,
+            }
+            for s in scores
+        ]
+    },
+    opt={&quot;rows&quot;: &quot;@rows&quot;, &quot;xLabel&quot;: &quot;net value, USD&quot;, &quot;labelWidth&quot;: 160, &quot;rowHeight&quot;: 44},
+    # title, note and legend: the caption shown with the chart
+)
+by_name = {s.name: s for s in scores}
+w.figure(
+    &quot;power_vs_net&quot;,
+    kind=&quot;dumbbell&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: s.name.replace(&quot;_&quot;, &quot; &quot;),
+                &quot;a&quot;: float(s.evsi),
+                &quot;b&quot;: float(s.net_value),
+            }
+            for s in scores
+        ]
+    },
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;xLabel&quot;: &quot;USD&quot;,
+        &quot;aLabel&quot;: &quot;EVSI, before costs&quot;,
+        &quot;bLabel&quot;: &quot;net value&quot;,
+        &quot;labelWidth&quot;: 160,
+        &quot;rowHeight&quot;: 44,
+    },
+    # title, note and legend: the caption shown with the chart
+)
+
+
+low, high = by_name[&quot;one_week_90_10&quot;], by_name[&quot;four_week_50_50&quot;]
+winner = max(scores, key=lambda s: s.net_value)
+w.finding(f&quot;&quot;&quot;The winner is the WORST-powered design on the list. &#x27;{low.name}&#x27; has power
+    {low.power:.2f} — a number that would be rejected out of hand in a design
+    review — and nets {low.net_value:,.0f} USD. &#x27;{high.name}&#x27; has power
+    {high.power:.2f}, near certainty, and nets {high.net_value:,.0f}.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;Nothing is wrong with the power calculation. It is answering a different
+    question. Holding half the traffic away from a change the team mostly believes in
+    forgoes {high.opportunity_cost:,.0f} USD of upside, and running four weeks
+    instead of one costs more besides — neither of which appears anywhere in a
+    sample-size formula. Once both are counted, the extra precision is being bought
+    at a price higher than the decision it improves is worth.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;Precision is an input, not the objective. Past the point where more of it stops
+    changing what you would do, buying more is just spending — and the first chart in
+    this walkthrough says where that point is before a single user is exposed.&quot;&quot;&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>the price is on the record: one conversion is worth 12 USD (finance, margin per converted user, 2026 H1)</pre></div>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>design</th><th>power</th><th>EVSI</th><th>holdout cost</th><th>run cost</th><th>net</th><th>on the front</th></tr></thead><tbody><tr><td>two_week_50_50</td><td>0.96</td><td>48,067</td><td>8,254</td><td>18,000</td><td>21,813</td><td>yes</td></tr><tr><td>one_week_90_10</td><td>0.65</td><td>45,148</td><td>825</td><td>9,000</td><td>35,322</td><td>yes</td></tr><tr><td>four_week_50_50</td><td>1.00</td><td>49,152</td><td>16,509</td><td>34,000</td><td>-1,356</td><td>yes</td></tr></tbody></table></div>
+<figure class="fig" id="12_software_experiment_value-net">
+  <div class="fig-head"><p class="fig-t">What each design is worth once everything is counted</p><p class="fig-s">Red is net-negative: the design costs more than the decision it improves is worth. Hover any bar for the power it achieves — the ordering by net value is close to the reverse of the ordering by power.</p></div>
+  <div class="legend"><span><i style="--k:var(--accent)"></i>net positive</span><span><i style="--k:var(--boundary)"></i>net negative</span></div>
+  <div class="chart" data-chart="bars" data-file="figures-12_software_experiment_value"
+       data-opt='{&quot;rows&quot;: &quot;net.rows&quot;, &quot;xLabel&quot;: &quot;net value, USD&quot;, &quot;labelWidth&quot;: 160, &quot;rowHeight&quot;: 44}'></div>
+</figure>
+<figure class="fig" id="12_software_experiment_value-power_vs_net">
+  <div class="fig-head"><p class="fig-t">How much of each design&#x27;s value survives its costs</p><p class="fig-s">The length of each bar is what the design spends — run cost plus the upside withheld from the holdout arm. The design with the largest gross value gives most of it back.</p></div>
+  <div class="legend"><span><i style="--k:var(--ink-2)"></i>EVSI, gross</span><span><i style="--k:var(--accent)"></i>net of run and holdout cost</span></div>
+  <div class="chart" data-chart="dumbbell" data-file="figures-12_software_experiment_value"
+       data-opt='{&quot;rows&quot;: &quot;power_vs_net.rows&quot;, &quot;xLabel&quot;: &quot;USD&quot;, &quot;aLabel&quot;: &quot;EVSI, before costs&quot;, &quot;bLabel&quot;: &quot;net value&quot;, &quot;labelWidth&quot;: 160, &quot;rowHeight&quot;: 44}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+
+<section class="wt-close">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The close</p>
+      <h2>What it actually showed</h2>
+      <p>Written after looking at the output, which is why it does not always agree
+        with the setup.</p>
+    </div>
+    <div class="prose wt-findings"><p>The winner is the WORST-powered design on the list. &#x27;one_week_90_10&#x27; has power 0.65 — a number that would be rejected out of hand in a design review — and nets 35,322 USD. &#x27;four_week_50_50&#x27; has power 1.00, near certainty, and nets -1,356.</p><p>Nothing is wrong with the power calculation. It is answering a different question. Holding half the traffic away from a change the team mostly believes in forgoes 16,509 USD of upside, and running four weeks instead of one costs more besides — neither of which appears anywhere in a sample-size formula. Once both are counted, the extra precision is being bought at a price higher than the decision it improves is worth.</p><p>Precision is an input, not the objective. Past the point where more of it stops changing what you would do, buying more is just spending — and the first chart in this walkthrough says where that point is before a single user is exposed.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <details class="ex-more">
+      <summary>The whole file, and everything this run printed</summary>
+      <div class="ex-body">
+        <div class="pair">
+          <div class="code">
+            <div class="code-h"><span>examples/12_software_experiment_value.py</span>
+              <button class="copy" type="button">Copy</button></div>
+            <pre>import numpy as np
+from _walkthrough import Walkthrough
+
+from axiom.design import (
+    DecisionSpec,
+    DesignCandidate,
+    EconomicInputs,
+    ValuePerOutcome,
+    difference_se,
+    eig_gaussian,
+    evaluate_candidate,
+    evoi_gaussian,
+    pareto_front,
+    sample_size,
+)
+
+MONTHLY_USERS = 250_000
+VALUE_PER_CONVERSION = 12.0  # USD of margin
+THRESHOLD = 0.004  # +0.4pp conversion, the bar for rolling out
+HORIZON_MONTHS = 12  # a checkout change ships and stays shipped
+BASE_RATE = 0.052
+OUTCOME_SD = (BASE_RATE * (1 - BASE_RATE)) ** 0.5
+PRIOR_MEAN, PRIOR_SD = 0.004, 0.0035
+
+w = Walkthrough(
+    field=&quot;Product analytics&quot;,
+    title=&quot;The worst-powered design is the one worth running&quot;,
+    question=&quot;&quot;&quot;Before asking how many users an A/B test needs, ask whether it can
+        change what anyone does — and then whether the precision it buys is worth
+        more than the traffic it withholds.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;State the decision and, carefully, the stake&quot;,
+    why=&quot;&quot;&quot;The stake is the whole horizon the decision governs, not one month. A
+        checkout change ships and stays shipped, so the value of getting it right is
+        twelve months of margin on the whole base. Getting this wrong is the single
+        most common way a value-of-information calculation comes out saying &#x27;never
+        test&#x27;: the cost of the test is immediate and real, so the benefit has to be
+        counted over the life of the decision it informs.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Valuing the decision at one month of impact. It makes every test look
+        unaffordable, which produces the same answer as never running the
+        calculation — and it is wrong for a different reason than the intuition it
+        agrees with.&quot;&quot;&quot;,
+)
+decision = DecisionSpec(
+    name=&quot;roll_out_checkout_change&quot;,
+    threshold=THRESHOLD,
+    value_per_outcome_unit=VALUE_PER_CONVERSION * MONTHLY_USERS * HORIZON_MONTHS,
+    numeraire=&quot;USD&quot;,
+)
+w.out(f&quot;decision : roll out if the lift beats {THRESHOLD:.1%}&quot;)
+w.out(f&quot;stakes   : {decision.value_per_outcome_unit:,.0f} USD per unit of conversion rate&quot;)
+w.out(f&quot;           over {HORIZON_MONTHS} months and {MONTHLY_USERS:,} users a month&quot;)
+w.out(
+    f&quot;so a {THRESHOLD:.1%} lift is worth &quot; f&quot;{THRESHOLD * decision.value_per_outcome_unit:,.0f} USD&quot;
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Ask what a test is worth under three different beliefs&quot;,
+    why=&quot;&quot;&quot;EVPI is the ceiling: what you would pay to know the truth outright. EVSI
+        is what a test of a given precision is actually worth. Both collapse when the
+        prior already settles the decision — which is the quantitative version of &#x27;we
+        already know this&#x27;, and it is a sentence a team can act on in a way it cannot
+        act on a hunch.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Starting from the sample size. A sample-size calculator will happily
+        size a test for a decision that is already made; it has no way to represent
+        the fact that the result cannot change anything.&quot;&quot;&quot;,
+)
+n_pilot = 40_000
+se_pilot = difference_se(n_pilot, sd=OUTCOME_SD)
+BELIEFS = (
+    (&quot;already sure it works&quot;, 0.011, 0.0020),
+    (&quot;genuinely on the fence&quot;, 0.004, 0.0035),
+    (&quot;already sure it does not&quot;, -0.004, 0.0020),
+)
+for label, prior_mean, prior_sd in BELIEFS:
+    ev = evoi_gaussian(decision, prior_mean, prior_sd, se_pilot)
+    w.out(
+        f&quot;{label:&lt;28}EVPI {ev.evpi:&gt;11,.0f}   EVSI {ev.evsi:&gt;11,.0f}   &quot;
+        f&quot;EIG {eig_gaussian(prior_sd, se_pilot):&gt;6.3f}&quot;
+    )
+
+sweep = np.linspace(-0.006, 0.014, 61)
+sweep_evsi, sweep_evpi = [], []
+for m in sweep:
+    ev = evoi_gaussian(decision, float(m), PRIOR_SD, se_pilot)
+    sweep_evsi.append(float(ev.evsi))
+    sweep_evpi.append(float(ev.evpi))
+w.figure(
+    &quot;belief&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;mean&quot;: sweep.tolist(), &quot;evsi&quot;: sweep_evsi, &quot;evpi&quot;: sweep_evpi},
+    opt={
+        &quot;series&quot;: [
+            {&quot;label&quot;: &quot;EVPI&quot;, &quot;x&quot;: &quot;@mean&quot;, &quot;y&quot;: &quot;@evpi&quot;, &quot;colour&quot;: &quot;ink-2&quot;},
+            {&quot;label&quot;: &quot;EVSI&quot;, &quot;x&quot;: &quot;@mean&quot;, &quot;y&quot;: &quot;@evsi&quot;, &quot;colour&quot;: &quot;accent&quot;},
+        ],
+        &quot;xLabel&quot;: &quot;what the team already believes the lift is&quot;,
+        &quot;yLabel&quot;: &quot;value of the information, USD&quot;,
+        &quot;height&quot;: 300,
+        &quot;rightPad&quot;: 70,
+    },
+    title=&quot;A test is only worth something near the decision boundary&quot;,
+    note=f&quot;&quot;&quot;Both curves peak where the prior mean sits on the rollout bar of
+        {THRESHOLD:.1%} and fall away in both directions. Far from the bar the
+        decision is already made, and buying information about it returns almost
+        nothing — however many users are thrown at it and however tight the resulting
+        confidence interval looks in the readout.&quot;&quot;&quot;,
+    legend=((&quot;ink-2&quot;, &quot;EVPI: knowing the truth outright&quot;), (&quot;accent&quot;, &quot;EVSI: this test&quot;)),
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Take the live case and size it the ordinary way&quot;,
+    why=&quot;&quot;&quot;The on-the-fence case is the only one where a test earns its keep, so it
+        is the one to size. This step is the conventional power calculation, run
+        exactly as it normally would be, so that the next two steps have something
+        familiar to disagree with.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Nothing — this step is not in dispute. A minimum detectable effect and
+        80% power is the right way to turn a decision-relevant effect size into a
+        number of users. The argument is about what happens next.&quot;&quot;&quot;,
+)
+mde = 0.003
+sized = sample_size(effect=mde, sd=OUTCOME_SD, power=0.8, alpha=0.05)
+se_at_n = difference_se(sized.n, sd=OUTCOME_SD)
+ev = evoi_gaussian(decision, PRIOR_MEAN, PRIOR_SD, se_at_n)
+w.out(f&quot;powering for a {mde:.1%} lift:&quot;)
+w.out(f&quot;  n = {sized.n:,} users ({sized.n_treated:,} / {sized.n_control:,})&quot;)
+w.out(f&quot;  power {sized.power:.3f}, experiment se {se_at_n:.5f}&quot;)
+w.out(
+    f&quot;  EVPI {ev.evpi:,.0f} USD, EVSI {ev.evsi:,.0f} USD &quot;
+    f&quot;({ev.evsi / ev.evpi:.0%} of the ceiling)&quot;
+)
+w.out(f&quot;  posterior sd after the test {ev.preposterior_sd:.5f}, down from {PRIOR_SD:.5f}&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Then watch precision stop paying&quot;,
+    why=&quot;&quot;&quot;More precision costs more exposure, and EVSI is bounded above by EVPI no
+        matter how large the test. Plotting the two together shows where the curve
+        flattens: past that point extra users buy a tighter interval that does not
+        change the decision, and a tighter interval that changes nothing is worth
+        nothing.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Choosing the sample size that reaches 95% power. Power is a property of
+        the test, not of the decision; it keeps improving long after the decision has
+        stopped being in doubt, and nothing in a power calculation ever says
+        &#x27;enough&#x27;.&quot;&quot;&quot;,
+)
+ns = [10_000, 20_000, 40_000, 80_000, 160_000, 320_000, 640_000, 1_280_000]
+evsis = []
+for n in ns:
+    e = evoi_gaussian(decision, PRIOR_MEAN, PRIOR_SD, difference_se(n, sd=OUTCOME_SD))
+    evsis.append(float(e.evsi))
+w.table(
+    [&quot;test size&quot;, &quot;experiment se&quot;, &quot;EVSI&quot;, &quot;% of EVPI&quot;],
+    [
+        [
+            f&quot;{n:,}&quot;,
+            f&quot;{difference_se(n, sd=OUTCOME_SD):.5f}&quot;,
+            f&quot;{e:,.0f}&quot;,
+            f&quot;{e / ev.evpi:.0%}&quot;,
+        ]
+        for n, e in zip(ns, evsis, strict=True)
+    ],
+)
+w.figure(
+    &quot;returns&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;n&quot;: ns, &quot;evsi&quot;: evsis},
+    opt={
+        &quot;series&quot;: [{&quot;label&quot;: &quot;EVSI&quot;, &quot;x&quot;: &quot;@n&quot;, &quot;y&quot;: &quot;@evsi&quot;, &quot;colour&quot;: &quot;accent&quot;}],
+        &quot;xLabel&quot;: &quot;users in the test&quot;,
+        &quot;yLabel&quot;: &quot;value of what the test tells you, USD&quot;,
+        &quot;hline&quot;: float(ev.evpi),
+        &quot;hlineLabel&quot;: &quot;EVPI — the ceiling&quot;,
+        &quot;height&quot;: 300,
+        &quot;rightPad&quot;: 70,
+    },
+    title=&quot;Doubling the test does not double what it is worth&quot;,
+    note=f&quot;&quot;&quot;Each doubling of exposure buys less than the last, and the curve is
+        asymptotic to the value of knowing the truth outright. Between
+        {ns[-2]:,} and {ns[-1]:,} users the test gains
+        {evsis[-1] - evsis[-2]:,.0f} USD of value for double the traffic.&quot;&quot;&quot;,
+    legend=((&quot;accent&quot;, &quot;EVSI at this size&quot;), (&quot;ink-3:dash&quot;, &quot;EVPI&quot;)),
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Now count what the test costs, including the part nobody bills for&quot;,
+    why=&quot;&quot;&quot;Showing someone a different checkout page costs nothing to serve, so the
+        cost per unit of exposure is zero — but withholding the change from the
+        holdout arm forgoes the lift on those users for the duration, and that is a
+        real cost the power calculation never mentions. Putting the price of a
+        conversion on the record, with its source, is what lets the two be compared
+        at all.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Comparing designs on run cost alone. Engineering time and analyst time
+        are the visible costs; the invisible one is usually larger, and it scales
+        with exactly the thing a power calculation wants to maximise — how much
+        traffic you hold back.&quot;&quot;&quot;,
+)
+value = ValuePerOutcome(
+    value=VALUE_PER_CONVERSION,
+    outcome_unit=&quot;conversion&quot;,
+    numeraire=&quot;USD&quot;,
+    source=&quot;finance, margin per converted user, 2026 H1&quot;,
+)
+economics = EconomicInputs(
+    value_per_outcome=value,
+    dose_per_period=float(sized.n),
+    discount_rate=0.0,
+    dose_unit=&quot;exposure&quot;,
+    dose_cost_per_unit=0.0,
+    marginal_value_ratio=PRIOR_MEAN,
+)
+w.out(f&quot;the price is on the record: {value.ledger_line().statement}&quot;)
+
+candidates = [
+    DesignCandidate(
+        name=&quot;two_week_50_50&quot;,
+        method=&quot;cluster_based_regression&quot;,
+        n_units=sized.n,
+        n_periods=2,
+        holdout_fraction=0.5,
+        experiment_se=se_at_n,
+        cost=18_000.0,
+        cooldown_periods=0,
+    ),
+    DesignCandidate(
+        name=&quot;one_week_90_10&quot;,
+        method=&quot;cluster_based_regression&quot;,
+        n_units=sized.n,
+        n_periods=1,
+        holdout_fraction=0.1,
+        experiment_se=se_at_n * 1.6,
+        cost=9_000.0,
+        cooldown_periods=0,
+    ),
+    DesignCandidate(
+        name=&quot;four_week_50_50&quot;,
+        method=&quot;cluster_based_regression&quot;,
+        n_units=sized.n * 2,
+        n_periods=4,
+        holdout_fraction=0.5,
+        experiment_se=se_at_n * 0.7,
+        cost=34_000.0,
+        cooldown_periods=1,
+    ),
+]
+scores = [
+    evaluate_candidate(c, decision, prior_mean=PRIOR_MEAN, prior_sd=PRIOR_SD, economics=economics)
+    for c in candidates
+]
+front = {s.name for s in pareto_front(scores, objectives=(&quot;net_value&quot;, &quot;-cost&quot;, &quot;eig&quot;))}
+w.table(
+    [&quot;design&quot;, &quot;power&quot;, &quot;EVSI&quot;, &quot;holdout cost&quot;, &quot;run cost&quot;, &quot;net&quot;, &quot;on the front&quot;],
+    [
+        [
+            s.name,
+            f&quot;{s.power:.2f}&quot;,
+            f&quot;{s.evsi:,.0f}&quot;,
+            f&quot;{s.opportunity_cost:,.0f}&quot;,
+            f&quot;{s.cost:,.0f}&quot;,
+            f&quot;{s.net_value:,.0f}&quot;,
+            &quot;yes&quot; if s.name in front else &quot;&quot;,
+        ]
+        for s in scores
+    ],
+)
+w.figure(
+    &quot;net&quot;,
+    kind=&quot;bars&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: s.name.replace(&quot;_&quot;, &quot; &quot;),
+                &quot;value&quot;: float(s.net_value),
+                &quot;display&quot;: f&quot;{s.net_value:,.0f}&quot;,
+                &quot;colour&quot;: &quot;accent&quot; if s.net_value &gt; 0 else &quot;boundary&quot;,
+                &quot;note&quot;: f&quot;power {s.power:.2f}, EVSI {s.evsi:,.0f}, &quot;
+                f&quot;holdout cost {s.opportunity_cost:,.0f}&quot;,
+            }
+            for s in scores
+        ]
+    },
+    opt={&quot;rows&quot;: &quot;@rows&quot;, &quot;xLabel&quot;: &quot;net value, USD&quot;, &quot;labelWidth&quot;: 160, &quot;rowHeight&quot;: 44},
+    title=&quot;What each design is worth once everything is counted&quot;,
+    note=&quot;&quot;&quot;Red is net-negative: the design costs more than the decision it improves
+        is worth. Hover any bar for the power it achieves — the ordering by net value
+        is close to the reverse of the ordering by power.&quot;&quot;&quot;,
+    legend=((&quot;accent&quot;, &quot;net positive&quot;), (&quot;boundary&quot;, &quot;net negative&quot;)),
+)
+by_name = {s.name: s for s in scores}
+w.figure(
+    &quot;power_vs_net&quot;,
+    kind=&quot;dumbbell&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: s.name.replace(&quot;_&quot;, &quot; &quot;),
+                &quot;a&quot;: float(s.evsi),
+                &quot;b&quot;: float(s.net_value),
+            }
+            for s in scores
+        ]
+    },
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;xLabel&quot;: &quot;USD&quot;,
+        &quot;aLabel&quot;: &quot;EVSI, before costs&quot;,
+        &quot;bLabel&quot;: &quot;net value&quot;,
+        &quot;labelWidth&quot;: 160,
+        &quot;rowHeight&quot;: 44,
+    },
+    title=&quot;How much of each design&#x27;s value survives its costs&quot;,
+    note=&quot;&quot;&quot;The length of each bar is what the design spends — run cost plus the
+        upside withheld from the holdout arm. The design with the largest gross value
+        gives most of it back.&quot;&quot;&quot;,
+    legend=((&quot;ink-2&quot;, &quot;EVSI, gross&quot;), (&quot;accent&quot;, &quot;net of run and holdout cost&quot;)),
+)
+
+# ----------------------------------------------------------------------------------
+
+low, high = by_name[&quot;one_week_90_10&quot;], by_name[&quot;four_week_50_50&quot;]
+winner = max(scores, key=lambda s: s.net_value)
+w.finding(f&quot;&quot;&quot;The winner is the WORST-powered design on the list. &#x27;{low.name}&#x27; has power
+    {low.power:.2f} — a number that would be rejected out of hand in a design
+    review — and nets {low.net_value:,.0f} USD. &#x27;{high.name}&#x27; has power
+    {high.power:.2f}, near certainty, and nets {high.net_value:,.0f}.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;Nothing is wrong with the power calculation. It is answering a different
+    question. Holding half the traffic away from a change the team mostly believes in
+    forgoes {high.opportunity_cost:,.0f} USD of upside, and running four weeks
+    instead of one costs more besides — neither of which appears anywhere in a
+    sample-size formula. Once both are counted, the extra precision is being bought
+    at a price higher than the decision it improves is worth.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;Precision is an input, not the objective. Past the point where more of it stops
+    changing what you would do, buying more is just spending — and the first chart in
+    this walkthrough says where that point is before a single user is exposed.&quot;&quot;&quot;)</pre>
+          </div>
+          <div class="out">
+            <div class="out-h">stdout, captured on this build</div>
+            <pre>========================================================================================
+PRODUCT ANALYTICS  ---  The worst-powered design is the one worth running
+========================================================================================
+  Before asking how many users an A/B test needs, ask whether it can change what anyone
+  does — and then whether the precision it buys is worth more than the traffic it
+  withholds.
+
+----------------------------------------------------------------------------------------
+STEP 1  State the decision and, carefully, the stake
+----------------------------------------------------------------------------------------
+  The stake is the whole horizon the decision governs, not one month. A checkout change
+  ships and stays shipped, so the value of getting it right is twelve months of margin
+  on the whole base. Getting this wrong is the single most common way a value-of-
+  information calculation comes out saying &#x27;never test&#x27;: the cost of the test is
+  immediate and real, so the benefit has to be counted over the life of the decision it
+  informs.
+
+  INSTEAD OF: Valuing the decision at one month of impact. It makes every test look
+  unaffordable, which produces the same answer as never running the calculation — and it
+  is wrong for a different reason than the intuition it agrees with.
+
+  decision : roll out if the lift beats 0.4%
+  stakes   : 36,000,000 USD per unit of conversion rate
+             over 12 months and 250,000 users a month
+  so a 0.4% lift is worth 144,000 USD
+
+----------------------------------------------------------------------------------------
+STEP 2  Ask what a test is worth under three different beliefs
+----------------------------------------------------------------------------------------
+  EVPI is the ceiling: what you would pay to know the truth outright. EVSI is what a
+  test of a given precision is actually worth. Both collapse when the prior already
+  settles the decision — which is the quantitative version of &#x27;we already know this&#x27;,
+  and it is a sentence a team can act on in a way it cannot act on a hunch.
+
+  INSTEAD OF: Starting from the sample size. A sample-size calculator will happily size
+  a test for a decision that is already made; it has no way to represent the fact that
+  the result cannot change anything.
+
+  already sure it works       EVPI           4   EVSI           0   EIG  0.297
+  genuinely on the fence      EVPI      50,267   EVSI      42,447   EIG  0.624
+  already sure it does not    EVPI           1   EVSI           0   EIG  0.297
+  [figure: A test is only worth something near the decision boundary]
+
+
+----------------------------------------------------------------------------------------
+STEP 3  Take the live case and size it the ordinary way
+----------------------------------------------------------------------------------------
+  The on-the-fence case is the only one where a test earns its keep, so it is the one to
+  size. This step is the conventional power calculation, run exactly as it normally
+  would be, so that the next two steps have something familiar to disagree with.
+
+  INSTEAD OF: Nothing — this step is not in dispute. A minimum detectable effect and 80%
+  power is the right way to turn a decision-relevant effect size into a number of users.
+  The argument is about what happens next.
+
+  powering for a 0.3% lift:
+    n = 171,964 users (85,982 / 85,982)
+    power 0.800, experiment se 0.00107
+    EVPI 50,267 USD, EVSI 48,067 USD (96% of the ceiling)
+    posterior sd after the test 0.00335, down from 0.00350
+
+----------------------------------------------------------------------------------------
+STEP 4  Then watch precision stop paying
+----------------------------------------------------------------------------------------
+  More precision costs more exposure, and EVSI is bounded above by EVPI no matter how
+  large the test. Plotting the two together shows where the curve flattens: past that
+  point extra users buy a tighter interval that does not change the decision, and a
+  tighter interval that changes nothing is worth nothing.
+
+  INSTEAD OF: Choosing the sample size that reaches 95% power. Power is a property of
+  the test, not of the decision; it keeps improving long after the decision has stopped
+  being in doubt, and nothing in a power calculation ever says &#x27;enough&#x27;.
+
+  test size  experiment se  EVSI    % of EVPI
+  ---------  -------------  ------  ---------
+  10,000     0.00444        31,116  62%
+  20,000     0.00314        37,416  74%
+  40,000     0.00222        42,447  84%
+  80,000     0.00157        45,864  91%
+  160,000    0.00111        47,914  95%
+  320,000    0.00078        49,048  98%
+  640,000    0.00056        49,646  99%
+  1,280,000  0.00039        49,954  99%
+
+  [figure: Doubling the test does not double what it is worth]
+
+
+----------------------------------------------------------------------------------------
+STEP 5  Now count what the test costs, including the part nobody bills for
+----------------------------------------------------------------------------------------
+  Showing someone a different checkout page costs nothing to serve, so the cost per unit
+  of exposure is zero — but withholding the change from the holdout arm forgoes the lift
+  on those users for the duration, and that is a real cost the power calculation never
+  mentions. Putting the price of a conversion on the record, with its source, is what
+  lets the two be compared at all.
+
+  INSTEAD OF: Comparing designs on run cost alone. Engineering time and analyst time are
+  the visible costs; the invisible one is usually larger, and it scales with exactly the
+  thing a power calculation wants to maximise — how much traffic you hold back.
+
+  the price is on the record: one conversion is worth 12 USD (finance, margin per converted user, 2026 H1)
+  design           power  EVSI    holdout cost  run cost  net     on the front
+  ---------------  -----  ------  ------------  --------  ------  ------------
+  two_week_50_50   0.96   48,067  8,254         18,000    21,813  yes
+  one_week_90_10   0.65   45,148  825           9,000     35,322  yes
+  four_week_50_50  1.00   49,152  16,509        34,000    -1,356  yes
+
+  [figure: What each design is worth once everything is counted]
+
+  [figure: How much of each design&#x27;s value survives its costs]
+
+
+========================================================================================
+WHAT IT ACTUALLY SHOWED
+========================================================================================
+  The winner is the WORST-powered design on the list. &#x27;one_week_90_10&#x27; has power 0.65 —
+  a number that would be rejected out of hand in a design review — and nets 35,322 USD.
+  &#x27;four_week_50_50&#x27; has power 1.00, near certainty, and nets -1,356.
+
+  Nothing is wrong with the power calculation. It is answering a different question.
+  Holding half the traffic away from a change the team mostly believes in forgoes 16,509
+  USD of upside, and running four weeks instead of one costs more besides — neither of
+  which appears anywhere in a sample-size formula. Once both are counted, the extra
+  precision is being bought at a price higher than the decision it improves is worth.
+
+  Precision is an input, not the objective. Past the point where more of it stops
+  changing what you would do, buying more is just spending — and the first chart in this
+  walkthrough says where that point is before a single user is exposed.</pre>
+          </div>
+        </div>
+      </div>
+    </details>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="example-11-psychology-meta-analysis.html">&larr; 11 · Behavioural science</a><a class="btn btn-2" href="examples.html">All twelve</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

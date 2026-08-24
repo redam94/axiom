@@ -43,9 +43,7 @@ import numpy.typing as npt
 
 from axiom.core import (
     Add,
-    Const,
     Data,
-    Div,
     Expr,
     Intervention,
     ModelSpec,
@@ -55,12 +53,10 @@ from axiom.core import (
     SupportsPosterior,
     TimeWindow,
     causal_convolve,
-    dimension,
     dimension_of,
-    dimensionless,
     value,
 )
-from axiom.surface.kernels import LinearKernel, ResponseKernel
+from axiom.surface.kernels import ResponseKernel
 from axiom.surface.model import Surface, _require_panel_layout, interaction_name
 
 __all__ = [
@@ -310,34 +306,14 @@ def counterfactual_doses(
 def _saturation_derivative(
     surface: Surface, kernel: ResponseKernel, carried: Expr, treatment: str
 ) -> Expr:
-    """``∂f/∂c`` for the dimensionless saturation ``f``: ``derivative / amplitude``.
+    """``∂f/∂c`` for the dimensionless saturation ``f``, from the kernel itself.
 
-    Every shipped kernel's response is ``amplitude · f`` with one amplitude
-    parameter, so its saturation derivative is the response derivative with
-    the amplitude divided out. Both are built in the spec's outcome
-    dimension and the divisor is the amplitude ``Param`` the model
-    declares, so the amplitude appears with one dimension throughout the
-    marginal tree. ``LinearKernel`` is the exception — its ``saturation``
-    is ``dose / reference_dose`` — and is handled directly.
+    Every family ships this in closed form (``ResponseKernel``), which is
+    what lets an interaction differentiate one side of it without assuming
+    the family has a single amplitude to divide out — the basis families
+    (polynomial, spline, piecewise linear) have several.
     """
-    dose_dim = dimension(carried)
-    if isinstance(kernel, LinearKernel):
-        return Div(
-            numerator=Const(value=1.0, dimension=dimensionless()),
-            denominator=Const(value=kernel.reference_dose, dimension=dose_dim),
-        )
-    out_dim = surface.spec.outcome_dimension
-    amplitudes = [
-        p
-        for p in kernel.parameters(treatment, dose_dim, out_dim)
-        if kernel.roles[p.name.removesuffix(f"_{treatment}")] == "amplitude"
-    ]
-    if len(amplitudes) != 1:  # pragma: no cover - kernel contract
-        raise ValueError(f"kernel {kernel.name!r} must declare exactly one amplitude")
-    return Div(
-        numerator=kernel.derivative(carried, treatment, out_dim),
-        denominator=surface.model.parameter(amplitudes[0].name),
-    )
+    return kernel.saturation_derivative(carried, treatment)
 
 
 def _carried(surface: Surface) -> dict[str, Expr]:

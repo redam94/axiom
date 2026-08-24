@@ -92,7 +92,7 @@ When moving something out of `mmm-framework`:
 ```
 viz  adapters  →  build  diagnose  →  meta  calibrate  design
                                             →  surface  estimands  identify
-                                            →  infer
+                                            →  infer  dynamics
                                             →  core  data  io
 ```
 

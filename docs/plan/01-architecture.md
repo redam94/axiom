@@ -11,15 +11,18 @@ src/axiom/
 ├── estimands/       declarative counterfactual quantities + realization
 ├── surface/         dose-response kernels, carryover, RSM designs, optimization
 ├── design/          power, EIG, EVOI, methods registry, simulation, portfolio
+├── discover/        essential graphs, GES/GIES, the price of an experiment (note 0013)
 ├── calibrate/       evidence records, prior route, likelihood route, transfer, ledger
 ├── meta/            random-effects pooling, moderators, bias, priors, privacy
 ├── infer/           Backend protocol; NumPyro impl, PyMC impl, Laplace, convergence
+├── dynamics/        simultaneous and time-structured systems, compiled to core.expr (note 0010)
 ├── diagnose/        SBC, coverage, weak-id, sensitivity, learning, spec curve, refute
 ├── build/           fluent builders over every spec
 ├── io/              serialize, provenance, artifact registry
 ├── sim/             DGPs with causal ground truth
 ├── adapters/        marketing.py (channel/spend/geo/KPI over the general core)
-└── viz/             optional plotly figures
+├── viz/             optional plotly figures
+└── report/          templates rendered to HTML, PPTX and PDF (note 0007)
 ```
 
 ### The dependency rule
@@ -28,19 +31,23 @@ Arrows point *down only*. A module may import from any layer below it and never
 from one above.
 
 ```
-  viz    adapters                          (leaves; nothing imports them)
+  report                                   (leaf; templates over viz, layer 8)
+   |
+  viz    adapters                          (adapters is a leaf; viz is imported by report)
    |        |
   build   diagnose                         (compose everything below)
    |        |
-  meta  calibrate  design                  (the four pillars; peers, no cross-imports
-   |        |        |                      except design <- surface, calibrate <- estimands)
-   +--------+--------+
+ meta calibrate design discover            (the pillars; peers, no cross-imports
+   |      |       |       |                  except design <- surface, calibrate <- estimands,
+   +------+-------+-------+                  discover <- identify)
             |
         surface   estimands   identify     (domain layer)
             |         |          |
             +---------+----------+
                       |
-                    infer                  (sampler seam; optional deps live here)
+             infer     dynamics          (sampler seam, and the system compiler;
+                 |        |                 peers, neither imports the other)
+                 +--------+
                       |
                   core    data    io       (foundation; numpy/scipy/pandas/pydantic)
 ```
@@ -50,6 +57,13 @@ Peers at the same layer do not import each other either. In particular
 any reasoning about whether it is identified, which is exactly what lets the
 same `Estimand` object be produced by an experiment, a fitted surface, and a
 meta-analysis. See *Estimands and transport* below.
+
+`dynamics` sits beside `infer` for the same reason `infer` is there: it imports
+`axiom.core` and nothing else from axiom, so everything above — `identify`,
+`surface`, `design`, `diagnose` — can read a compiled system. The bridge from a
+`DynamicSystem` to a `CausalGraph` lives in `identify.dynamic`, one layer up,
+because identification of a dynamic system is identification
+(`docs/notes/0010-dynamic-systems.md`).
 
 `tests/contracts/test_layering.py` enforces this by walking the import graph.
 `sim` sits one layer above the domain layer (it composes `identify.CausalGraph`

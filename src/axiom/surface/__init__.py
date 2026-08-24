@@ -14,6 +14,13 @@ from axiom.surface.ascent import (
     hessian,
     steepest_ascent,
 )
+from axiom.surface.bands import (
+    BandKind,
+    ResponseBand,
+    SupportsBands,
+    marginal_band,
+    response_band,
+)
 from axiom.surface.carryover import (
     CARRYOVERS,
     AnyCarryover,
@@ -55,15 +62,21 @@ from axiom.surface.forward import (
 )
 from axiom.surface.frontier import Frontier, frontier
 from axiom.surface.kernels import (
+    BASIS_PRIOR_FAMILIES,
     KERNELS,
     AnyKernel,
+    CovarianceFamily,
     ExponentialKernel,
+    GaussianProcessKernel,
     HillKernel,
     KernelRole,
     LinearKernel,
     LogisticKernel,
+    PiecewiseLinearKernel,
+    PolynomialKernel,
     PowerKernel,
     ResponseKernel,
+    SplineKernel,
     kernel_from_name,
 )
 from axiom.surface.linearize import (
@@ -96,18 +109,19 @@ from axiom.surface.nuisance import (
 from axiom.surface.optimize import Allocation, AllocationMethod, Objective, allocate
 
 __all__ = [
-    "CARRYOVERS",
-    "GRID_VERSION",
-    "KERNELS",
     "Allocation",
     "AllocationMethod",
     "AnyCarryover",
     "AnyKernel",
     "AnyNuisanceTerm",
     "AscentPath",
+    "BASIS_PRIOR_FAMILIES",
+    "BandKind",
     "Bounds",
+    "CARRYOVERS",
     "CarryoverKernel",
     "CarryoverRole",
+    "CovarianceFamily",
     "Criterion",
     "DelayedCarryover",
     "Design",
@@ -116,9 +130,12 @@ __all__ = [
     "FitResult",
     "FourierSeasonality",
     "Frontier",
+    "GRID_VERSION",
+    "GaussianProcessKernel",
     "GeometricCarryover",
     "HillKernel",
     "InterceptKind",
+    "KERNELS",
     "KernelRole",
     "LinearKernel",
     "LinearTrend",
@@ -130,9 +147,14 @@ __all__ = [
     "NuisanceTerm",
     "Objective",
     "ParameterRole",
+    "PiecewiseLinearKernel",
+    "PolynomialKernel",
     "PowerKernel",
+    "ResponseBand",
     "ResponseKernel",
+    "SplineKernel",
     "StationaryPoint",
+    "SupportsBands",
     "Surface",
     "SurfaceSpec",
     "WeibullCarryover",
@@ -164,6 +186,7 @@ __all__ = [
     "latin_hypercube",
     "linear_coefficients",
     "marginal",
+    "marginal_band",
     "marginal_expr",
     "marginal_total",
     "optimal_exchange",
@@ -172,5 +195,6 @@ __all__ = [
     "predict_marginal",
     "prepare",
     "resolve_conventions",
+    "response_band",
     "steepest_ascent",
 ]

@@ -12,6 +12,7 @@ from collections.abc import Callable
 from fractions import Fraction
 
 from axiom.adapters import MarketingRoles
+from axiom.adapters.agronomy import EconomicOptimum, Prices, TrialRoles
 from axiom.calibrate import (
     Agreement,
     CalibratedSpec,
@@ -75,11 +76,13 @@ from axiom.design import (
     MDE,
     AnchoredEffect,
     Assignment,
+    Boundary,
     CalibrationResult,
     CandidateScore,
     ClusterDesign,
     CostPerOutcomeInterval,
     CostPerOutcomePower,
+    CrossingProbabilities,
     DecisionSpec,
     DesignCandidate,
     EconomicInputs,
@@ -93,8 +96,10 @@ from axiom.design import (
     Leaderboard,
     LeaderboardRow,
     LearningPriority,
+    LookSchedule,
     MethodEstimate,
     MethodSpec,
+    OperatingCharacteristics,
     OpportunityCost,
     PowerCurve,
     PowerResult,
@@ -107,20 +112,25 @@ from axiom.design import (
     SensitivityTable,
     SimulatedPower,
     SimulationSpec,
+    StoppingRule,
     StudySummary,
     TreatmentCandidate,
     ValuePerOutcome,
+    alpha_spending,
     anchor_draws,
     cost_per_outcome_interval,
     cost_per_outcome_power,
+    crossing_probabilities,
     eig_monte_carlo,
     evaluate_candidate,
     evoi_gaussian,
     experiment_value,
+    harm_boundary,
     holdout_tradeoff,
     match_clusters,
     mde,
     method_spec,
+    operating_characteristics,
     opportunity_cost,
     perturb,
     power,
@@ -131,6 +141,12 @@ from axiom.design import (
     sample_size,
     schedule_with_cooldown,
     time_to_re_experiment,
+)
+from axiom.design.identifiability import (
+    Combination,
+    EstimabilityReport,
+    Prescription,
+    ProfileReport,
 )
 from axiom.diagnose import (
     Backtest,
@@ -170,6 +186,31 @@ from axiom.diagnose import (
     robustness_value,
     tipping_point,
 )
+from axiom.diagnose.structure import (
+    ImpliedIndependence,
+    IndependenceCheck,
+    StructureRefutation,
+    refute_structure,
+)
+from axiom.discover import Dataset as DiscoveryDataset
+from axiom.discover import EssentialGraph, GaussianBIC
+from axiom.discover.fci import PAG, PagEdge
+from axiom.discover.independence import IndependenceResult
+from axiom.discover.search import DiscoveryResult, ges
+from axiom.discover.stability import EdgeSupport, StabilityReport
+from axiom.dynamics import (
+    Block,
+    BlockOrder,
+    BlockSolution,
+    DynamicEquation,
+    DynamicSystem,
+    Unrolled,
+    Variable,
+    block_order,
+    conditional_form,
+    parse_system,
+    unroll,
+)
 from axiom.estimands import Estimand, EstimandResult, FacetDiff, Level, Quantity, TransferPlan
 from axiom.identify import (
     CausalGraph,
@@ -182,6 +223,11 @@ from axiom.identify import (
     identify,
     transport_verdict,
 )
+from axiom.identify.cluster import ClusterDAG
+from axiom.identify.cyclic import MixedGraph
+from axiom.identify.dynamic import SequentialPlan, sequential_plan
+from axiom.identify.formula import Density, Marginal, Product, Ratio
+from axiom.identify.id_algorithm import Hedge, IdentifiedEffect, identify_effect
 from axiom.identify.transport import TransportVerdict
 from axiom.identify.verdict import IdentificationVerdict
 from axiom.infer import (
@@ -231,6 +277,23 @@ from axiom.meta import (
     release,
     tau_dersimonian_laird,
 )
+from axiom.report import (
+    Divider,
+    Heading,
+    LedgerBlock,
+    Metric,
+    PageBreak,
+    Paragraph,
+    Report,
+    Section,
+    Theme,
+)
+from axiom.report import (
+    Figure as ReportFigure,
+)
+from axiom.report import (
+    Table as ReportTable,
+)
 from axiom.sim import DosePlan, LinearSCM
 from axiom.surface import (
     Allocation,
@@ -242,6 +305,7 @@ from axiom.surface import (
     ExponentialKernel,
     FourierSeasonality,
     Frontier,
+    GaussianProcessKernel,
     GeometricCarryover,
     HillKernel,
     LinearKernel,
@@ -249,7 +313,11 @@ from axiom.surface import (
     LogisticKernel,
     NoCarryover,
     NuisanceSet,
+    PiecewiseLinearKernel,
+    PolynomialKernel,
     PowerKernel,
+    ResponseBand,
+    SplineKernel,
     StationaryPoint,
     SurfaceSpec,
     WeibullCarryover,
@@ -954,7 +1022,349 @@ def _backtest() -> Backtest:
     )
 
 
+_LOOKS = (0.25, 0.5, 0.75, 1.0)
+
+
+def _stopping_rule() -> StoppingRule:
+    return StoppingRule(
+        name="hyper3_primary",
+        looks=LookSchedule(labels=("week_6", "week_12", "week_18", "week_24"), information=_LOOKS),
+        boundaries=(
+            alpha_spending(0.025, _LOOKS, side="upper", kind="efficacy"),
+            harm_boundary(0.95, _LOOKS, margin=2.0, se_at_full_information=1.5),
+        ),
+    )
+
+
+def _report_section() -> Section:
+    return Section(
+        title="Readout",
+        summary="Every number carries its interval.",
+        blocks=(
+            Heading(text="Headline", level=2),
+            Paragraph(text="The effect is {effect:.1f} units."),
+            Metric(source="contrast", label="Effect at 50", unit="mmHg"),
+            ReportFigure(source="response", caption="With its 90 % band"),
+            ReportTable(source="arms", caption="Arm means"),
+            LedgerBlock(source="ledger"),
+            Divider(),
+            PageBreak(),
+        ),
+    )
+
+
+# -- dynamics ---------------------------------------------------------------------------
+
+
+def _dynamic_variables() -> tuple[Variable, ...]:
+    return (
+        Variable(name="stock", dimension=D.outcome, initial=0.0),
+        Variable(name="inflow", dimension=D.outcome, role="exogenous"),
+    )
+
+
+def _dynamic_system() -> DynamicSystem:
+    return parse_system(
+        "stock = decay * stock[t-1] + inflow",
+        variables=_dynamic_variables(),
+        parameters=(Param(name="decay", dimension=Dimension(exponents={})),),
+        name="one-compartment",
+    )
+
+
+def _dynamic_equation() -> DynamicEquation:
+    return _dynamic_system().equation("stock")
+
+
+def _block_order() -> BlockOrder:
+    return block_order(_dynamic_system())
+
+
+def _block() -> Block:
+    return _block_order().blocks[0]
+
+
+def _block_solution() -> BlockSolution:
+    compiled = conditional_form(_dynamic_system())
+    assert isinstance(compiled, Unrolled)
+    return compiled.solutions[0]
+
+
+def _unrolled() -> Unrolled:
+    compiled = unroll(_dynamic_system(), periods=3)
+    assert isinstance(compiled, Unrolled)
+    return compiled
+
+
+def _sequential_plan() -> SequentialPlan:
+    graph = CausalGraph.from_edges(
+        "dose.t0 -> outcome.t0, outcome.t0 -> dose.t1, dose.t1 -> outcome.t1, "
+        "outcome.t0 -> outcome.t1"
+    )
+    return sequential_plan(graph, ["dose.t0", "dose.t1"], "outcome.t1")
+
+
+# -- identifiability --------------------------------------------------------------------
+
+
+def _combination() -> Combination:
+    return Combination(
+        exponents={"alpha": 1, "k": -1},
+        kind="estimable",
+        scaling="log",
+        score=1.4,
+        label="alpha / k",
+    )
+
+
+def _estimability_report() -> EstimabilityReport:
+    return EstimabilityReport(
+        parameters=("alpha", "k"),
+        observations=("low dose",),
+        scaling="log",
+        n_points=2,
+        rank=1,
+        deficiency=1,
+        persistent_deficiency=0,
+        singular_values=(6.8, 0.02),
+        condition_number=336.0,
+        symmetries=(
+            Combination(
+                exponents={"alpha": 1, "k": 1},
+                kind="symmetry",
+                score=0.01,
+                label="alpha -> alpha*c, k -> k*c",
+            ),
+        ),
+        estimable=(_combination(),),
+        null_basis=((0.7071, 0.7071),),
+        tolerance=0.03,
+    )
+
+
+def _profile_report() -> ProfileReport:
+    return ProfileReport(
+        targets=("alpha", "alpha / k"),
+        truth={"alpha": 4.0, "alpha / k": 0.4},
+        recovered={"alpha": 0.38, "alpha / k": 0.4},
+        interval={"alpha": (0.17, float("inf")), "alpha / k": (0.39, 0.41)},
+        level=0.95,
+        threshold=1.92,
+        flat=("alpha",),
+        n_observations=24,
+        seed=11,
+    )
+
+
+def _prescription() -> Prescription:
+    return Prescription(
+        added=("wide dose",),
+        rank_before=1,
+        rank_after=2,
+        n_parameters=2,
+        broken=(("alpha * k",),),
+        considered=("wide dose",),
+        complete=True,
+    )
+
+
+# -- graphs with cycles, and identification formulas -------------------------------------
+
+
+def _mixed_graph() -> MixedGraph:
+    return MixedGraph.from_edges("x -> a, a -> b, b -> a, b -> y", name="a market at equilibrium")
+
+
+def _density() -> Density:
+    return Density(outcomes=("Y",), given=("X", "Z"))
+
+
+def _product() -> Product:
+    return Product(factors=(_density(), Density(outcomes=("Z",))))
+
+
+def _marginal() -> Marginal:
+    return Marginal(over=("Z",), term=_product())
+
+
+def _ratio() -> Ratio:
+    return Ratio(numerator=Density(outcomes=("X", "Y")), denominator=Density(outcomes=("X",)))
+
+
+def _hedge() -> Hedge:
+    return Hedge(root=("X", "Y"), subset=("Y",), variables=("X", "Y"))
+
+
+def _identified_effect() -> IdentifiedEffect:
+    return identify_effect(CausalGraph.from_edges("Z -> X, Z -> Y, X -> Y"), "X", "Y")
+
+
+# -- discovery ---------------------------------------------------------------------------
+
+
+def _cluster_dag() -> ClusterDAG:
+    return ClusterDAG(
+        clusters={"demand": ("price", "quantity"), "cost": ("wage",)},
+        edges=(("cost", "demand"),),
+        name="a two-block market",
+    )
+
+
+def _essential_graph() -> EssentialGraph:
+    from axiom.discover import cpdag
+
+    return cpdag(CausalGraph.from_edges("a -> c, b -> c, c -> d"))
+
+
+def _discovery_dataset() -> DiscoveryDataset:
+    import numpy as np
+
+    rng = np.random.default_rng(0)
+    a = rng.normal(size=200)
+    b = 1.5 * a + rng.normal(size=200)
+    return DiscoveryDataset(np.column_stack([a, b]), ("a", "b"), (frozenset(),) * 200)
+
+
+def _discovery_result() -> DiscoveryResult:
+    return ges(GaussianBIC(_discovery_dataset()))
+
+
+# -- refutation and discovery under latents ----------------------------------------------
+
+
+def _independence_result() -> IndependenceResult:
+    return IndependenceResult(
+        x="heat",
+        y="growth",
+        given=("light",),
+        correlation=0.65,
+        p_value=1e-60,
+        n=2000,
+        statistic=38.5,
+    )
+
+
+def _implied_independence() -> ImpliedIndependence:
+    return ImpliedIndependence(x="heat", y="growth", given=("light",))
+
+
+def _structure_refutation() -> StructureRefutation:
+    import numpy as np
+
+    rng = np.random.default_rng(0)
+    rows = 400
+    a = rng.normal(size=rows)
+    b = 1.4 * a + rng.normal(size=rows)
+    c = 0.9 * b + rng.normal(size=rows)
+    data = DiscoveryDataset(np.column_stack([a, b, c]), ("a", "b", "c"), (frozenset(),) * rows)
+    report = refute_structure(CausalGraph.from_edges("a -> b, b -> c"), data)
+    assert isinstance(report, StructureRefutation)
+    return report
+
+
+def _independence_check() -> IndependenceCheck:
+    return _structure_refutation().checks[0]
+
+
+def _pag_edge() -> PagEdge:
+    return PagEdge(a="sprout", b="harvest", mark_a="arrow", mark_b="arrow")
+
+
+def _pag() -> PAG:
+    return PAG(
+        nodes=("harvest", "seed", "sprout"),
+        edges=(
+            _pag_edge(),
+            PagEdge(a="seed", b="sprout", mark_a="circle", mark_b="arrow"),
+        ),
+        limits_hit=("Zhang's rules R4 and R5-R10 are not implemented",),
+    )
+
+
+def _edge_support() -> EdgeSupport:
+    return EdgeSupport(
+        a="heat", b="light", adjacent=0.97, forward=0.10, backward=0.02, undirected=0.85
+    )
+
+
+def _stability_report() -> StabilityReport:
+    return StabilityReport(
+        variables=("heat", "light"),
+        edges=(_edge_support(),),
+        n_bootstrap=60,
+        n_rows=2000,
+        penalty=1.0,
+        seed=7,
+    )
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
+    IndependenceResult: _independence_result,
+    ImpliedIndependence: _implied_independence,
+    IndependenceCheck: _independence_check,
+    StructureRefutation: _structure_refutation,
+    PagEdge: _pag_edge,
+    PAG: _pag,
+    EdgeSupport: _edge_support,
+    StabilityReport: _stability_report,
+    ClusterDAG: _cluster_dag,
+    EssentialGraph: _essential_graph,
+    DiscoveryResult: _discovery_result,
+    MixedGraph: _mixed_graph,
+    Density: _density,
+    Product: _product,
+    Marginal: _marginal,
+    Ratio: _ratio,
+    Hedge: _hedge,
+    IdentifiedEffect: _identified_effect,
+    Variable: lambda: _dynamic_variables()[0],
+    DynamicEquation: _dynamic_equation,
+    DynamicSystem: _dynamic_system,
+    Block: _block,
+    BlockOrder: _block_order,
+    BlockSolution: _block_solution,
+    Unrolled: _unrolled,
+    SequentialPlan: _sequential_plan,
+    Combination: _combination,
+    EstimabilityReport: _estimability_report,
+    ProfileReport: _profile_report,
+    Prescription: _prescription,
+    ResponseBand: lambda: ResponseBand(
+        treatment="a",
+        outcome="y",
+        kind="response",
+        doses=(0.0, 25.0, 50.0),
+        mean=(0.0, 4.1, 6.2),
+        median=(0.0, 4.0, 6.1),
+        lower=(-0.3, 3.4, 5.1),
+        upper=(0.3, 4.9, 7.4),
+        definition="eti",
+        mass=0.9,
+        n_draws=200,
+        dimension=D.outcome,
+        dose_unit="USD",
+        outcome_unit="units",
+    ),
+    Theme: lambda: Theme(name="house", accent_color="#2f7fd1"),
+    Heading: lambda: Heading(text="Headline", level=2),
+    Paragraph: lambda: Paragraph(text="The effect is {effect:.1f} units."),
+    ReportFigure: lambda: ReportFigure(source="response", caption="With its 90 % band"),
+    ReportTable: lambda: ReportTable(source="arms", caption="Arm means"),
+    Metric: lambda: Metric(source="contrast", label="Effect at 50", unit="mmHg"),
+    LedgerBlock: lambda: LedgerBlock(source="ledger", show_detail=True),
+    Divider: Divider,
+    PageBreak: PageBreak,
+    Section: _report_section,
+    Report: lambda: Report(
+        name="readout", title="HYPER-3", subtitle="as of {as_of}", sections=(_report_section(),)
+    ),
+    LookSchedule: lambda: LookSchedule(
+        labels=("week_6", "week_12", "week_18", "week_24"), information=_LOOKS
+    ),
+    Boundary: lambda: alpha_spending(0.025, _LOOKS, side="upper", kind="efficacy"),
+    StoppingRule: _stopping_rule,
+    CrossingProbabilities: lambda: crossing_probabilities(_stopping_rule(), 0.0),
+    OperatingCharacteristics: lambda: operating_characteristics(_stopping_rule(), 2.8),
     PowerResult: lambda: power(100, 1.0, 2.0, allocation=0.4),
     MDE: lambda: mde(100, 2.0, power=0.9),
     SampleSize: lambda: sample_size(1.0, 2.0, two_sided=False),
@@ -1255,6 +1665,10 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     ExponentialKernel: lambda: ExponentialKernel(reference_dose=50.0),
     PowerKernel: lambda: PowerKernel(reference_dose=50.0),
     LinearKernel: lambda: LinearKernel(reference_dose=50.0),
+    PolynomialKernel: lambda: PolynomialKernel(reference_dose=50.0, degree=3),
+    SplineKernel: lambda: SplineKernel(reference_dose=50.0, knots=(10.0, 25.0, 40.0)),
+    PiecewiseLinearKernel: lambda: PiecewiseLinearKernel(reference_dose=50.0, knots=(15.0, 35.0)),
+    GaussianProcessKernel: lambda: GaussianProcessKernel(reference_dose=50.0, n_basis=6),
     GeometricCarryover: lambda: GeometricCarryover(max_lag=8),
     DelayedCarryover: lambda: DelayedCarryover(max_lag=8),
     WeibullCarryover: lambda: WeibullCarryover(max_lag=8),
@@ -1397,6 +1811,29 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
         hashes={"spec:roles": "c" * 64},
         seed=7,
         environment={"python": "3.12"},
+    ),
+    TrialRoles: lambda: TrialRoles(
+        harvest="grain",
+        nutrients=("nitrogen", "phosphorus"),
+        plot="plot",
+        season="season",
+        soil_tests=("soil_carbon",),
+        controls=("irrigated",),
+    ),
+    Prices: lambda: Prices(harvest=220.0, nutrient=1.1, currency="USD"),
+    EconomicOptimum: lambda: EconomicOptimum(
+        nutrient="nitrogen",
+        rate=138.0,
+        lower=131.0,
+        upper=145.0,
+        expected_gain=4.45,
+        prices=Prices(harvest=220.0, nutrient=2.2),
+        price_ratio=0.01,
+        definition="eti",
+        mass=0.9,
+        searched=(0.0, 270.0),
+        bracketed=True,
+        detail={"n_draws": "800"},
     ),
     MarketingRoles: lambda: MarketingRoles(
         kpi="revenue",

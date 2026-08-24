@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="axiom.report">
+<meta name="axiom-report-hash" content="fba0b02a775fefc0f7f50986445198ee499ff9a695a41e1a2cc15127264063f1">
+<title>The same children, worth five times as much</title>
+<style>
+:root {
+  color-scheme: light;
+  --ink: #111111;
+  --muted: #555555;
+  --accent: #1a1a1a;
+  --bg: #ffffff;
+  --rule: #c9c9c9;
+  --tint: rgba(26,26,26,0.055);
+  --wash: rgba(17,17,17,0.032);
+  --serif: Times-Roman, Georgia, "Times New Roman", Times, serif;
+  --mono: Courier, ui-monospace, SFMono-Regular, Menlo, monospace;
+  --size-title: 19.0pt;
+  --size-h2: 13.5pt;
+  --size-h3: 11.5pt;
+  --size-h4: 10.5pt;
+  --measure: 34em;
+  --wide: 46em;
+  --rail: 12.5em;
+  --gutter: clamp(1.15rem, 4vw, 64.0pt);
+}
+html { font-size: 10.5pt; }
+@page { margin: 64.0pt; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  padding: var(--gutter) var(--gutter) calc(var(--gutter) * 1.6);
+  background: var(--bg); color: var(--ink);
+  font-family: var(--serif); font-size: 1rem; line-height: 1.62;
+  font-kerning: normal; text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- the page: the article centred, a contents rail in the left margin --- */
+.paper { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+main { width: 100%; max-width: var(--wide); margin-inline: auto; min-width: 0; }
+@media (min-width: 68em) {
+  /* Out of the flow, so the rail cannot pull the article off centre: a reader
+     navigating by contents and one reading straight through see the same page. */
+  .toc {
+    position: fixed; top: var(--gutter); width: var(--rail);
+    left: max(var(--gutter), calc(50% - var(--wide) / 2 - var(--rail) - 2.5em));
+    max-height: calc(100vh - 2 * var(--gutter)); overflow: auto;
+  }
+}
+
+.toc { font-size: .8em; line-height: 1.4; }
+.toc-title {
+  margin: 0 0 .7em; padding: 0; border: 0; font-size: 1em; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .11em; color: var(--muted);
+}
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc a {
+  display: flex; gap: .5em; padding: .32em .7em; color: var(--muted);
+  text-decoration: none; border-left: 2px solid var(--rule);
+}
+.toc a:hover, .toc a:focus-visible {
+  color: var(--ink); border-left-color: var(--accent); background: var(--wash);
+}
+.toc .n { flex: 0 0 .9em; text-align: right; font-variant-numeric: tabular-nums; opacity: .75; }
+@media (max-width: 67.99em) {
+  .toc {
+    border: 1px solid var(--rule); padding: 1em 1.2em;
+    width: 100%; max-width: var(--wide); margin-inline: auto;
+  }
+  .toc ol { columns: 2 11em; column-gap: 2em; }
+  .toc a { border-left: 0; padding: .22em 0; }
+  .toc a:hover, .toc a:focus-visible { background: none; }
+}
+
+/* --- title block --- */
+.titleblock {
+  text-align: center; margin: 0 0 2.6em;
+  padding-bottom: 1.4em; border-bottom: 1px solid var(--rule);
+}
+h1 {
+  font-size: var(--size-title); line-height: 1.18; font-weight: 700;
+  letter-spacing: -.008em; margin: 0 0 .4em; text-wrap: balance;
+}
+.subtitle {
+  color: var(--muted); font-size: 1.06em; font-style: italic; line-height: 1.45;
+  margin: 0 auto; max-width: 32em; text-align: center; text-wrap: pretty;
+}
+
+/* --- sections: prose on the measure, figures wider than it --- */
+.section {
+  display: grid;
+  grid-template-columns:
+    [wide-start] minmax(0, 1fr)
+    [text-start] minmax(0, var(--measure))
+    [text-end] minmax(0, 1fr) [wide-end];
+}
+.section > * { grid-column: text; min-width: 0; }
+.section > figure, .section > .metrics { grid-column: wide; }
+.section.abstract { font-size: .96em; }
+.section.abstract > h2 {
+  text-align: center; border: 0; padding: 0; font-size: 1em; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .12em; margin: 0 0 .5em;
+}
+.section.abstract > * { grid-column: text; }
+
+h2, h3, h4 { break-after: avoid; scroll-margin-top: 1.2rem; text-wrap: balance; }
+h2 {
+  font-size: var(--size-h2); font-weight: 700; line-height: 1.25;
+  letter-spacing: -.005em; margin: 2.3em 0 .55em;
+  padding-bottom: .28em; border-bottom: 1px solid var(--rule);
+}
+.section:first-of-type h2 { margin-top: .4em; }
+h3 { font-size: var(--size-h3); font-weight: 700; margin: 1.9em 0 .35em; }
+h4 { font-size: var(--size-h4); font-weight: 700; margin: 1.7em 0 .3em; }
+h2 .anchor, h3 .anchor {
+  float: right; margin-left: .5em; color: var(--rule); text-decoration: none;
+  font-size: .72em; font-weight: 400; opacity: 0; transition: opacity .12s;
+}
+h2:hover .anchor, h3:hover .anchor, .anchor:focus-visible { opacity: 1; color: var(--accent); }
+
+p { margin: 0 0 .8em; text-align: justify; hyphens: auto; }
+p:last-child { margin-bottom: 0; }
+.summary { color: var(--muted); margin: 0 0 1.1em; }
+a { color: var(--accent); text-underline-offset: .16em; text-decoration-thickness: .06em; }
+strong { font-weight: 700; }
+/* `white-space: pre-wrap` is not a detail: a readout is column-aligned output,
+   and HTML collapses the columns away without it. */
+code {
+  font-family: var(--mono); font-size: .86em; background: var(--wash);
+  border-radius: 2px; padding: .1em .35em; white-space: pre-wrap;
+}
+hr { border: 0; border-top: 1px solid var(--rule); margin: 2em 0; }
+
+/* A pulled-out line: the parameters a step ran with, or a remark on a number. */
+p.emphasis {
+  margin: 1em 0 1.1em; padding: .6em .95em; text-align: left;
+  border-left: 2px solid var(--accent); background: var(--tint);
+  font-size: .95em; line-height: 1.5;
+}
+
+/* --- figures and tables --- */
+figure { margin: 1.9em 0; padding: 0; }
+figcaption {
+  color: var(--muted); font-size: .85em; line-height: 1.45;
+  margin-top: .75em; text-align: left;
+}
+figcaption .label { color: var(--ink); font-weight: 700; }
+.table-figure { overflow-x: auto; }
+/* A table is read from its caption down; a figure is read up to it. */
+.table-figure > figcaption:first-child { margin: 0 0 .6em; }
+table {
+  border-collapse: collapse; width: 100%; margin: 0;
+  font-size: .88em; line-height: 1.42; font-variant-numeric: tabular-nums;
+}
+thead th {
+  text-align: left; font-weight: 700; padding: .5em .7em; vertical-align: bottom;
+  border-top: 1.5px solid var(--ink); border-bottom: 1px solid var(--ink);
+}
+tbody td { padding: .42em .7em; vertical-align: top; border: 0; }
+tbody tr:nth-child(even) { background: var(--wash); }
+tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
+td.num, th.num { text-align: right; }
+
+/* --- the numbers, as a panel of hairline-separated cells --- */
+.metrics {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(12em, 1fr));
+  gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+  margin: 1.7em 0;
+}
+.metric {
+  background: var(--bg); padding: .8em .95em;
+  display: flex; flex-direction: column;
+}
+.metric .label { color: var(--muted); font-size: .8em; font-weight: 600; line-height: 1.35; }
+.metric .value {
+  font-size: 1.22em; font-weight: 600; line-height: 1.28; margin-top: .3em;
+  color: var(--accent); font-variant-numeric: tabular-nums; text-wrap: balance;
+}
+/* The interval sits on the floor of its cell, so a row of them reads as a row
+   however differently the values above them wrap. */
+.metric .interval {
+  color: var(--muted); font-size: .8em; line-height: 1.35; margin-top: auto;
+  padding-top: .25em; font-variant-numeric: tabular-nums;
+}
+.metric .interval:empty { display: none; }
+
+/* --- the assumption trail --- */
+.ledger {
+  margin: 1.7em 0; padding: .9em 1.1em;
+  background: var(--wash); border-left: 2px solid var(--accent);
+  font-size: .93em; line-height: 1.5;
+}
+.ledger > figcaption:first-child {
+  margin: 0 0 .7em; color: var(--ink); font-weight: 700;
+  font-size: .88em; text-transform: uppercase; letter-spacing: .07em;
+}
+.ledger .line { margin: 0 0 .75em; }
+.ledger .line:last-child { margin-bottom: 0; }
+.ledger .kind {
+  display: inline-block; font-family: var(--mono); font-size: .78em;
+  color: var(--muted); background: var(--bg); border: 1px solid var(--rule);
+  border-radius: 2px; padding: .05em .4em; margin-right: .4em;
+  vertical-align: baseline;
+}
+.ledger .assumption { color: var(--muted); font-size: .93em; margin-top: .25em; }
+.ledger .assumption code { font-size: .95em; }
+
+footer {
+  margin-top: 3em; padding-top: .9em; border-top: 1px solid var(--rule);
+  color: var(--muted); font-size: .82em; line-height: 1.5;
+}
+
+@media print {
+  html { scroll-behavior: auto; }
+  body { padding: 0; }
+  .toc, .anchor { display: none !important; }
+  .paper { display: block; }
+  main { max-width: none; }
+  .section { display: block; }
+  a { color: inherit; text-decoration: none; }
+  /* An article flows: a section does not start a fresh sheet, it starts where
+     the last one ended, and only the things that break badly are held together. */
+  p { orphans: 3; widows: 3; }
+  figure, .metrics, .ledger { break-inside: avoid; }
+  thead { display: table-header-group; }
+}
+</style>
+</head><body><div class="paper">
+<nav class="toc" aria-label="Contents"><div class="toc-title">Contents</div><ol><li><a href="#section-1"><span>Abstract</span></a></li><li><a href="#section-2"><span class="n">1</span><span>Introduction</span></a></li><li><a href="#section-3"><span class="n">2</span><span>Methods</span></a></li><li><a href="#section-4"><span class="n">3</span><span>Results</span></a></li><li><a href="#section-5"><span class="n">4</span><span>What the run showed</span></a></li><li><a href="#section-6"><span class="n">5</span><span>Model checking</span></a></li><li><a href="#section-7"><span class="n">6</span><span>Discussion</span></a></li><li><a href="#section-8"><span class="n">7</span><span>Conclusions</span></a></li><li><a href="#section-9"><span class="n">8</span><span>Limitations</span></a></li><li><a href="#section-10"><span class="n">9</span><span>Provenance</span></a></li></ol></nav>
+<main>
+<header class="titleblock">
+<h1>The same children, worth five times as much</h1>
+<p class="subtitle">A chlorination programme has to be randomized by village, because neighbours share water and would talk. How many villages, how many children in each, and why is that second question the one that decides the trial?</p>
+</header>
+<section id="section-1" class="section abstract">
+<h2><a class="anchor" href="#section-1" aria-hidden="true">§</a>Abstract</h2>
+<p>A chlorination programme has to be randomized by village, because neighbours share water and would talk. How many villages, how many children in each, and why is that second question the one that decides the trial? Name the thing being randomized, in the design itself. 6 steps are recorded in full below. An ICC of 0.03 — a number most protocols would describe as negligible — turned 503 children into 1,120. The correlation was never the problem. The cluster size was: at forty children per village the design effect is 2.17, and it would be 5.77 at a hundred and sixty. No assumptions were recorded for this run, which is not the same as none being required.</p>
+</section>
+<section id="section-2" class="section">
+<h2><a class="anchor" href="#section-2" aria-hidden="true">§</a>1. Introduction</h2>
+<p>This report addresses one question: A chlorination programme has to be randomized by village, because neighbours share water and would talk. How many villages, how many children in each, and why is that second question the one that decides the trial?</p>
+</section>
+<section id="section-3" class="section">
+<h2><a class="anchor" href="#section-3" aria-hidden="true">§</a>2. Methods</h2>
+<p>Question: A chlorination programme has to be randomized by village, because neighbours share water and would talk. How many villages, how many children in each, and why is that second question the one that decides the trial?</p>
+<h4>Name the thing being randomized, in the design itself</h4>
+<p>The unit of randomization is a village and the unit of measurement is a child, and almost every mistake in this literature comes from letting those two blur. A ClusterDesign carries the Unit it randomizes rather than just the arithmetic, so a power calculation cannot quietly be performed on the wrong one.</p>
+<p>Considered instead: Randomizing households and hoping contamination is small. Neighbours share a water source and a conversation; a household-randomized chlorination trial measures the programme minus whatever leaked across the fence, and nothing in the analysis can recover the difference.</p>
+<p><code>randomization unit : village (cluster)</code><br><code>measurement unit   : child</code><br><code>outcome            : diarrhoea episodes per child-year, sd 1.0</code><br><code>effect worth having: 0.25 sd</code><br><code>intra-cluster corr : 0.03</code></p>
+<h4>Get the naive answer first, so the damage is measurable</h4>
+<p>The independent-children calculation is not a straw man — it is what a sample-size calculator returns if nobody tells it about villages, and it is what ends up in a great many protocols. Computing it explicitly gives the rest of the walkthrough something to be a multiple of.</p>
+<p>Considered instead: Skipping straight to the clustered formula. Then the design effect is a number in a spreadsheet rather than a factor of five, and factors of five are what get a budget conversation started.</p>
+<p><code>if children were independent (they are not):</code><br><code>  n = 503 children (252 treated / 251 control)</code><br><code>  power 0.801</code></p>
+<h4>Then look at what clustering costs, and where the cost comes from</h4>
+<p>The design effect is 1 + (m - 1) x ICC. Read that formula: the correlation enters once, the cluster SIZE enters as a multiplier. An ICC of 0.03 sounds negligible and is negligible in clusters of five; in clusters of two hundred it multiplies your variance by seven. Size is the lever, and it is the one most protocols treat as an afterthought.</p>
+<p>Considered instead: Reporting the ICC alone and calling it small. &#x27;Our ICC is only 0.03&#x27; is the single most common way a cluster trial talks itself into being underpowered — the number is meaningless without the cluster size beside it.</p>
+<p><code>design effect at m = 40, ICC = 0.03: 2.17x variance inflation</code></p>
+<figure class="table-figure"><figcaption><span class="label">Table 1.</span> Variance inflation. Every entry is a multiplier on the sample you need</figcaption><table><thead><tr><th class="num">children per village</th><th class="num">ICC 0.01</th><th class="num">ICC 0.03</th><th class="num">ICC 0.05</th><th class="num">ICC 0.1</th></tr></thead><tbody><tr><td class="num">5</td><td class="num">1.04</td><td class="num">1.12</td><td class="num">1.20</td><td class="num">1.40</td></tr><tr><td class="num">10</td><td class="num">1.09</td><td class="num">1.27</td><td class="num">1.45</td><td class="num">1.90</td></tr><tr><td class="num">20</td><td class="num">1.19</td><td class="num">1.57</td><td class="num">1.95</td><td class="num">2.90</td></tr><tr><td class="num">40</td><td class="num">1.39</td><td class="num">2.17</td><td class="num">2.95</td><td class="num">4.90</td></tr><tr><td class="num">80</td><td class="num">1.79</td><td class="num">3.37</td><td class="num">4.95</td><td class="num">8.90</td></tr><tr><td class="num">120</td><td class="num">2.19</td><td class="num">4.57</td><td class="num">6.95</td><td class="num">12.90</td></tr><tr><td class="num">160</td><td class="num">2.59</td><td class="num">5.77</td><td class="num">8.95</td><td class="num">16.90</td></tr><tr><td class="num">200</td><td class="num">2.99</td><td class="num">6.97</td><td class="num">10.95</td><td class="num">20.90</td></tr></tbody></table></figure>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.7.0.min.js" integrity="sha256-jvTGqxNp8AGWEcvNLVuKr+8j5dGe9Yw51LQkmDH+IYA=" crossorigin="anonymous"></script>                <div id="ddf125bb-954d-4193-b556-64378ebaab17" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("ddf125bb-954d-4193-b556-64378ebaab17")) {                    Plotly.newPlot(                        "ddf125bb-954d-4193-b556-64378ebaab17",                        [{"hovertemplate":"%{x:.4g}\u003cbr\u003e%{y:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#2f7fd1","width":2},"mode":"lines","name":"ICC 0.01","x":[5,10,20,40,80,120,160,200],"y":[1.04,1.09,1.19,1.3900000000000001,1.79,2.19,2.59,2.99],"type":"scatter"},{"hovertemplate":"%{x:.4g}\u003cbr\u003e%{y:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#b5453b","width":2},"mode":"lines","name":"ICC 0.03","x":[5,10,20,40,80,120,160,200],"y":[1.12,1.27,1.5699999999999998,2.17,3.37,4.57,5.77,6.97],"type":"scatter"},{"hovertemplate":"%{x:.4g}\u003cbr\u003e%{y:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#3aa17e","width":2},"mode":"lines","name":"ICC 0.05","x":[5,10,20,40,80,120,160,200],"y":[1.2,1.45,1.9500000000000002,2.95,4.95,6.95,8.95,10.950000000000001],"type":"scatter"},{"hovertemplate":"%{x:.4g}\u003cbr\u003e%{y:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#8a63c4","width":2},"mode":"lines","name":"ICC 0.1","x":[5,10,20,40,80,120,160,200],"y":[1.4,1.9,2.9000000000000004,4.9,8.9,12.9,16.9,20.900000000000002],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"children measured per village"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"yaxis":{"title":{"text":"design effect"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"showlegend":true,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"legend":{"orientation":"h","y":-0.22,"x":0},"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 1.</span> The penalty is on cluster size, not on the correlation. Every line is straight, because the design effect is linear in cluster size. Doubling the ICC doubles the slope; doubling the cluster size doubles the penalty outright. The choice a protocol actually controls is the horizontal axis</figcaption></figure>
+<h4>Size the trial for the design you are really running</h4>
+<p>clusters_needed inverts the whole thing: given the effect, the ICC and the cluster size, how many villages. The effective sample size is the number worth quoting beside it — it says how many independent children all those real children are actually worth, which is the honest denominator for everything downstream.</p>
+<p>Considered instead: Inflating the naive n by the design effect and dividing by the cluster size. It gets you close, and it hides that both power and the minimum detectable effect should be read off the same design object rather than recomputed by hand from a rounded intermediate.</p>
+<p><code>villages needed : 28 (14 treated / 14 control)</code><br><code>children        : 1,120</code><br><code>worth about     : 516 independent children</code><br><code>power at 0.25   : 0.811</code><br><code>MDE at 80% power: 0.247</code></p>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                            <div id="7166ba9d-1185-43a3-9c60-9d5f319ebbf1" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("7166ba9d-1185-43a3-9c60-9d5f319ebbf1")) {                    Plotly.newPlot(                        "7166ba9d-1185-43a3-9c60-9d5f319ebbf1",                        [{"cliponaxis":false,"hovertemplate":"%{y}\u003cbr\u003e%{x:.4g}\u003cbr\u003e%{hovertext}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["what a calculator with no notion of villages returns","28 villages of 40","the effective sample size"],"marker":{"color":"#2f7fd1"},"orientation":"h","text":["503","1,120","516"],"textposition":"outside","x":[503.0,1120.0,516.1290322580645],"y":["if children were independent","children actually enrolled","independent children they are worth"],"type":"bar"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"children"},"gridcolor":"#c9c9c9","zeroline":false,"range":[-179.20000000000002,1299.2],"zerolinecolor":"#111111","zerolinewidth":1,"automargin":true},"yaxis":{"title":{"text":""},"gridcolor":"#c9c9c9","zeroline":false,"autorange":"reversed","automargin":true},"showlegend":false,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 2.</span> What the trial enrols, and what it is worth. Enrol 1,120 children to buy the information in 516. The gap is the design effect, and it is paid in field cost, consent, follow-up and time</figcaption></figure>
+<h4>Now the question the budget is really about: shape, not size</h4>
+<p>Fix the number of children at about 1,600 and vary only how they are grouped. This is the comparison that decides a cluster trial, and it is almost never drawn: the same 1,600 children give wildly different power depending on whether they sit in ten villages or a hundred and sixty.</p>
+<p>Considered instead: Asking &#x27;how many children can we afford&#x27;. Total enrolment is close to irrelevant here compared with the grouping. A protocol that negotiates hard for 20% more children and accepts larger villages to get them can easily end up with less power than it started with.</p>
+<figure class="table-figure"><figcaption><span class="label">Table 2</span></figcaption><table><thead><tr><th class="num">villages</th><th class="num">children each</th><th class="num">total children</th><th class="num">design effect</th><th class="num">power</th></tr></thead><tbody><tr><td class="num">10</td><td class="num">160</td><td class="num">1,600</td><td class="num">5.77</td><td class="num">0.548</td></tr><tr><td class="num">20</td><td class="num">80</td><td class="num">1,600</td><td class="num">3.37</td><td class="num">0.777</td></tr><tr><td class="num">40</td><td class="num">40</td><td class="num">1,600</td><td class="num">2.17</td><td class="num">0.924</td></tr><tr><td class="num">80</td><td class="num">20</td><td class="num">1,600</td><td class="num">1.57</td><td class="num">0.979</td></tr><tr><td class="num">160</td><td class="num">10</td><td class="num">1,600</td><td class="num">1.27</td><td class="num">0.993</td></tr></tbody></table></figure>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                            <div id="8ed9cbbf-0de8-4c1b-9ac8-7262e72fc28b" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("8ed9cbbf-0de8-4c1b-9ac8-7262e72fc28b")) {                    Plotly.newPlot(                        "8ed9cbbf-0de8-4c1b-9ac8-7262e72fc28b",                        [{"cliponaxis":false,"hovertemplate":"%{y}\u003cbr\u003e%{x:.4g}\u003cbr\u003e%{hovertext}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["1,600 children, design effect 5.77","1,600 children, design effect 3.37","1,600 children, design effect 2.17","1,600 children, design effect 1.57","1,600 children, design effect 1.27"],"marker":{"color":"#2f7fd1"},"orientation":"h","text":["0.55","0.78","0.92","0.98","0.99"],"textposition":"outside","x":[0.5484040966962125,0.7774812405908732,0.9242506007653563,0.978845629765196,0.993372036597614],"y":["10 villages of 160","20 villages of 80","40 villages of 40","80 villages of 20","160 villages of 10"],"type":"bar"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"power"},"gridcolor":"#c9c9c9","zeroline":false,"range":[-0.16,1.153372036597614],"zerolinecolor":"#111111","zerolinewidth":1,"automargin":true},"yaxis":{"title":{"text":""},"gridcolor":"#c9c9c9","zeroline":false,"autorange":"reversed","automargin":true},"showlegend":false,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 3.</span> Same 1,600 children, five different trials. From 0.55 to 0.99 with no change in enrolment. Red is below the conventional 0.8 bar. Nothing about the intervention, the effect or the budget changed between these rows — only the grouping</figcaption></figure>
+<h4>Put field cost on it, because the trade-off runs the other way</h4>
+<p>Villages are expensive to reach and children within them are cheap, so the design that maximises power is not the one that minimises cost. With an illustrative 4,000 per village of setup and 25 per child enrolled, a fixed budget buys a curve with an interior maximum — and that maximum is the design worth proposing.</p>
+<p>Considered instead: Choosing the highest-power shape from the previous step and taking it to the funder. 160 villages of ten wins on power and spends almost all of its money on reaching villages; the recommendation has to survive the budget, not just the power calculation.</p>
+<figure class="table-figure"><figcaption><span class="label">Table 3.</span> A fixed budget of 200,000, at 4,000 per village and 25 per child</figcaption><table><thead><tr><th class="num">villages</th><th class="num">children each, at this budget</th><th class="num">total children</th><th class="num">power</th></tr></thead><tbody><tr><td class="num">10</td><td class="num">640</td><td class="num">6,400</td><td class="num">0.605</td></tr><tr><td class="num">20</td><td class="num">240</td><td class="num">4,800</td><td class="num">0.858</td></tr><tr><td class="num">30</td><td class="num">106</td><td class="num">3,180</td><td class="num">0.933</td></tr><tr><td class="num">40</td><td class="num">40</td><td class="num">1,600</td><td class="num">0.924</td></tr></tbody></table></figure>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                            <div id="6e7f7b46-4444-4230-afc5-ee63d45933ca" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("6e7f7b46-4444-4230-afc5-ee63d45933ca")) {                    Plotly.newPlot(                        "6e7f7b46-4444-4230-afc5-ee63d45933ca",                        [{"hovertemplate":"%{x:.4g}\u003cbr\u003e%{y:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#2f7fd1","width":2},"mode":"lines","name":"power","x":[10,15,20,25,30,35,40,45],"y":[0.6051490134337958,0.7646462717265807,0.8576625984766753,0.9084416859337978,0.9332216611650572,0.9400215554617328,0.9242506007653563,0.8110969937445268],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"shapes":[{"line":{"color":"#555555","dash":"dash","width":1.2},"type":"line","x0":0,"x1":1,"xref":"x domain","y0":0.8,"y1":0.8,"yref":"y"}],"annotations":[{"font":{"color":"#555555","size":8.924999999999999},"showarrow":false,"text":"conventional 80%","x":0,"xanchor":"left","xref":"x domain","y":0.8,"yanchor":"bottom","yref":"y"}],"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"villages, with children per village set by what the budget allows"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"yaxis":{"title":{"text":"power"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"showlegend":false,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"legend":{"orientation":"h","y":-0.22,"x":0},"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 4.</span> What a fixed field budget can actually buy. The curve turns over. Too few villages and the design effect eats the sample; too many and the per-village setup cost leaves no children to measure. The best buy here is 35 villages of 68, at power 0.94</figcaption></figure>
+</section>
+<section id="section-4" class="section">
+<h2><a class="anchor" href="#section-4" aria-hidden="true">§</a>3. Results</h2>
+<p>No findings were recorded.</p>
+</section>
+<section id="section-5" class="section">
+<h2><a class="anchor" href="#section-5" aria-hidden="true">§</a>4. What the run showed</h2>
+<p class="emphasis">Written by the analyst after seeing the output, and reproduced unchanged. Nothing in this section is generated.</p>
+<p>An ICC of 0.03 — a number most protocols would describe as negligible — turned 503 children into 1,120. The correlation was never the problem. The cluster size was: at forty children per village the design effect is 2.17, and it would be 5.77 at a hundred and sixty.</p>
+<p>The same 1,600 children bought power of 0.55 or 0.99 depending only on how they were grouped. Ten villages of 160 is close to worthless; 160 villages of 10 is a real trial. That is a factor a protocol controls completely and usually decides by convenience.</p>
+<p>Once field cost is on the table the answer moves again, and it stops being &#x27;more villages&#x27;. At 200,000 the curve peaks at 35 villages of 68 and falls away on both sides. This is the conversation worth having before the protocol is written rather than after the results come back inconclusive — and it needs three numbers the statistics alone never supplies: the ICC, the cost of reaching a village, and the cost of a child.</p>
+</section>
+<section id="section-6" class="section">
+<h2><a class="anchor" href="#section-6" aria-hidden="true">§</a>5. Model checking</h2>
+<p>No diagnostics were recorded. An analysis with no model checking is not therefore sound; it is unexamined.</p>
+</section>
+<section id="section-7" class="section">
+<h2><a class="anchor" href="#section-7" aria-hidden="true">§</a>6. Discussion</h2>
+<p>There are no findings to interpret.</p>
+</section>
+<section id="section-8" class="section">
+<h2><a class="anchor" href="#section-8" aria-hidden="true">§</a>7. Conclusions</h2>
+<p>A chlorination programme has to be randomized by village, because neighbours share water and would talk. How many villages, how many children in each, and why is that second question the one that decides the trial?</p>
+<p>No finding was recorded, so no conclusion follows.</p>
+</section>
+<section id="section-9" class="section">
+<h2><a class="anchor" href="#section-9" aria-hidden="true">§</a>8. Limitations</h2>
+<p>No assumption in the record is left unresolved. That is a statement about the record, not a guarantee about the world.</p>
+</section>
+<section id="section-10" class="section">
+<h2><a class="anchor" href="#section-10" aria-hidden="true">§</a>9. Provenance</h2>
+<p>Every number in this document resolves to a quantity in the evidence record below. Prose was checked against that record: any numeral not traceable to it, and any claim the record does not itself make, is reported rather than published.</p>
+<figure class="table-figure"><figcaption><span class="label">Table 4.</span> Run</figcaption><table><thead><tr><th class="">Field</th><th class="">Value</th></tr></thead><tbody><tr><td class="">field</td><td class="">Public health</td></tr><tr><td class="">source</td><td class="">examples/ walkthrough record</td></tr><tr><td class="">steps</td><td class="">6</td></tr><tr><td class="">evidence hash</td><td class="">87c02f6e9f93ba777829fcc706cc43b735164af99b5c13e73f5ffaf9e36705cf</td></tr></tbody></table></figure>
+</section>
+
+</main>
+</div></body></html>

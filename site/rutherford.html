@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GEIGER-1911 — an experiment designed before it is run · axiom</title>
+<meta name="description" content="Two atoms, one parameter, and two hundred hours to tell them apart: which angles to point a detector at, what shape to cut the aperture, how long to leave it open, and when to stop. Every number computed with axiom before any apparatus exists.">
+<meta property="og:title" content="GEIGER-1911 — an experiment designed before it is run · axiom">
+<meta property="og:description" content="Two atoms, one parameter, and two hundred hours to tell them apart: which angles to point a detector at, what shape to cut the aperture, how long to leave it open, and when to stop. Every number computed with axiom before any apparatus exists.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="rutherford">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx navx-on" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Case study · design before data</p>
+    <h1 style="max-width:20ch">GEIGER-1911: where do you point the detector?</h1>
+    <p class="lede prose mt">An atom is neutral and it holds electrons. Where is the positive
+      charge that balances them — concentrated in a small hard centre, or spread through the
+      whole atom? Both answers fit everything known in 1910. This page is the experiment that
+      tells them apart, <em>planned before it is run</em>: nothing here is fitted until the
+      last section, because the deliverable is a set of angles, an aperture geometry, a time
+      allocation and a stopping rule.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The move the whole thing rests on</p>
+      <h2>Two hypotheses become one parameter</h2>
+      <p>Nothing in <code>axiom.design</code> scores “hypothesis A against hypothesis B”.
+        Everything in it scores a <em>parameter</em>. So the first job is to find the number
+        the two atoms differ in — and it exists, and it is physical.</p>
+      <p>An alpha of charge 2<i>e</i> fired head-on at a charge 79<i>e</i> stops and turns
+        around at <code>D = 2zZe²/4πε₀E</code>. A trajectory scattered through θ comes no
+        closer than <code>(D/2)(1 + 1/sin(θ/2))</code>, so a positive charge of radius
+        <i>R</i> kills the scattering past
+        <code>sin(θ<sub>cut</sub>/2) = 1/(2R/D − 1)</code>. The two atoms are two values of
+        that, and the model is continuous between them.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <p class="card-n">THE BEAM</p>
+        <h3>7.68 MeV alphas</h3>
+        <p>Radium-C′ on a 0.4 µm gold foil,
+          200,000 of them a second. Each one crosses about
+          1,351 atoms on the way through.</p>
+        <div class="card-f"><p class="card-stat">59.2 fm
+          <small>closest approach head-on — the smallest distance in the experiment</small></p></div>
+      </div>
+      <div class="card">
+        <p class="card-n">THE DIFFUSE ATOM</p>
+        <h3>Charge everywhere</h3>
+        <p>The positive charge fills the whole atom, <code>R =
+          1.35e-10 m</code>. The alpha is already
+          <em>inside</em> it by a fortieth of a degree.</p>
+        <div class="card-f"><p class="card-stat">0.025°
+          <small>past which single scattering is dead</small></p></div>
+      </div>
+      <div class="card">
+        <p class="card-n">THE HARD CENTRE</p>
+        <h3>Charge in a point</h3>
+        <p>Below <code>D/2</code> the beam never reaches the charge at any angle, the cut-off
+          disappears, and the Coulomb law holds out to 180°.</p>
+        <div class="card-f"><p class="card-stat">6.7 decades
+          <small>between the two, on one axis</small></p></div>
+      </div>
+    </div>
+
+    <div class="note mt-lg" style="max-width:var(--measure)">
+      <p class="note-t">The ceiling, in four lines of arithmetic</p>
+      <p class="small">That denominator goes to zero. Once <code>R ≤ D/2</code> every charge
+        ball predicts exactly the same thing, so the resolving power of this experiment is
+        <b>29.6 fm</b> and it is set by the beam energy
+        alone — no exposure, no aperture, no number of counts moves it. The gold nucleus is
+        four times smaller than that. <b>The experiment returns an upper bound on the size of
+        the positive charge, never a value</b>, and it is worth knowing that before spending
+        two hundred hours rather than after.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What the two atoms predict</p>
+      <h2>They agree below a degree and diverge by a hundred million by five</h2>
+      <p>Below about a degree both curves are the same multiple-scattering core — the pile-up
+        of a thousand glancing encounters that <em>both</em> atoms produce — and the
+        difference is a factor, not a fact. Then the diffuse atom’s prediction falls off a
+        cliff, a Gaussian dying against a power law, and by five degrees it has gone under the
+        counting background and stays there.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="fig-head">
+        <p class="fig-t">Scattered particles per steradian per second</p>
+        <p class="fig-s">Both axes logarithmic. The horizontal line is the background the
+          counter records with the foil taken out.</p>
+      </div>
+      <div class="legend">
+        <span><i style="--k:var(--s1)"></i>a hard positive centre</span>
+        <span><i style="--k:var(--s3)"></i>charge spread through the atom</span>
+      </div>
+      <div class="chart" data-chart="lines" data-file="rutherford"
+           data-opt='{"series":[
+             {"label":"hard centre","x":"curve.angles","y":"curve.log10_hard","colour":"s1"},
+             {"label":"diffuse","x":"curve.angles","y":"curve.log10_diffuse","colour":"s3"}],
+             "xLabel":"scattering angle (degrees)","yLabel":"log₁₀ counts / sr / s",
+             "height":320,"rightPad":86}'></div>
+      <p class="stamp"><b>scattering.rate_per_steradian</b>(angles, world) — one
+        <code>forward()</code> per point, for both worlds</p>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Which angles</p>
+      <h2>The information is at five degrees. The evidence is at a hundred and fifty.</h2>
+      <p>For a choice between two hypotheses the expected information gain has a closed form —
+        the Kullback–Leibler divergence between two Poisson counts — so every angle can be
+        priced in nats per hour before anything is built. A human at a scintillation
+        microscope counts about 90 flashes a minute
+        before missing them, so every station from half a degree to seventy-five collects the
+        <em>same</em> counts an hour and what differs is what the diffuse atom has to say
+        about them.</p>
+      <p>On that reading the answer is unambiguous and it is not the one folklore gives: an
+        hour at 5° is worth
+        <b>97,364 nats</b> and an hour at 150° is worth
+        4,895 — twenty times less.</p>
+    </div>
+
+    <div class="note mt" style="max-width:var(--measure)">
+      <p class="note-t">Except that the five-degree number is a statement made inside a model</p>
+      <p class="small">It assumes the width of the multiple-scattering core, which is a
+        <em>fitted</em> quantity and is exactly what a defender of the diffuse atom would
+        attack: <em>your core is wider than you think</em>. The defence is not free — the beam
+        is conserved, so a core <i>f</i> times wider is <i>f</i>² times lower at the peak, and
+        an adversary who widens it to explain a wide-angle count makes the small-angle counts
+        come out wrong. So there is a worst case rather than a slippery slope, and it can be
+        found by minimizing.</p>
+    </div>
+
+    <figure class="fig mt-lg">
+      <div class="fig-head">
+        <p class="fig-t">The same hour, before and after the opposition has chosen its core</p>
+        <p class="fig-s">The lower line is the least evidence a station still carries once the
+          diffuse atom may pick any core up to thirty times the fitted width — twenty degrees
+          rms, five times wider than any plate measurement of the period.</p>
+      </div>
+      <div class="legend">
+        <span><i style="--k:var(--s1)"></i>if the model of the core is right</span>
+        <span><i style="--k:var(--s5)"></i>the worst core the opposition can pick</span>
+      </div>
+      <div class="chart" data-chart="lines" data-file="rutherford"
+           data-opt='{"series":[
+             {"label":"believed","x":"evidence.angles","y":"evidence.log10_believed","colour":"s1"},
+             {"label":"attacked","x":"evidence.angles","y":"evidence.log10_attacked","colour":"s5"}],
+             "xLabel":"scattering angle (degrees)","yLabel":"log₁₀ nats per hour",
+             "height":320,"rightPad":76}'></div>
+      <p class="stamp"><b>scattering.surviving_evidence</b>(angles, aperture, 3600) —
+        the Poisson KL minimized over the adversary’s core</p>
+    </figure>
+
+    <p class="prose mt">Where the information was, it evaporates. Where it looked wasted, it
+      does not move: at a hundred and fifty degrees the evidence is
+      <b>4,895 nats</b> against
+      4,895 believed — unchanged to four figures, because
+      a core wide enough to reach a hundred and fifty degrees has had its peak destroyed by
+      the <i>f</i>² penalty and is refuted somewhere else instead.</p>
+
+    <div class="tbl-wrap mt-lg">
+      <table class="t">
+        <caption>The eight foil-in stations of the plan, priced both ways. “Kept” is the share
+          of a station’s evidence that survives the attack; the last column is its share of
+          all the evidence that survives.</caption>
+        <thead><tr><th>angle</th><th>role</th><th>hours</th><th>nats/h believed</th>
+          <th>nats/h attacked</th><th>kept</th><th>share of surviving</th></tr></thead>
+        <tbody>
+          <tr><td>1.0°</td><td>anchor</td>
+            <td>5</td>
+            <td>2,744</td>
+            <td>2,696</td>
+            <td>98%</td>
+            <td>2.4%</td></tr>
+          <tr><td>2.5°</td><td>anchor</td>
+            <td>5</td>
+            <td>13,029</td>
+            <td>2</td>
+            <td>0%</td>
+            <td>0.0%</td></tr>
+          <tr><td>5.0°</td><td>bank</td>
+            <td>10</td>
+            <td>97,394</td>
+            <td>18</td>
+            <td class="bad">0%</td>
+            <td>0.0%</td></tr>
+          <tr><td>10.0°</td><td>bank</td>
+            <td>10</td>
+            <td>82,606</td>
+            <td>32</td>
+            <td class="bad">0%</td>
+            <td>0.1%</td></tr>
+          <tr><td>20.0°</td><td>bank</td>
+            <td>10</td>
+            <td>67,717</td>
+            <td>1</td>
+            <td class="bad">0%</td>
+            <td>0.0%</td></tr>
+          <tr><td>45.0°</td><td>bank</td>
+            <td>15</td>
+            <td>50,649</td>
+            <td>532</td>
+            <td>1%</td>
+            <td>1.4%</td></tr>
+          <tr><td>90.0°</td><td>witness</td>
+            <td>25</td>
+            <td>20,659</td>
+            <td>536</td>
+            <td>3%</td>
+            <td>2.3%</td></tr>
+          <tr class="hi"><td>150.0°</td>
+            <td>witness</td>
+            <td><b>110</b></td>
+            <td>4,870</td>
+            <td>4,870</td>
+            <td class="num-good">100%</td>
+            <td><b>93.8%</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="fig mt-lg">
+      <div class="fig-head">
+        <p class="fig-t">What each station is worth, before and after the argument</p>
+        <p class="fig-s">Grey is the evidence an hour buys if the model of the core is
+          believed; green is what survives the opposition choosing its own. The rule joining
+          them is what the argument costs that station. Drawn in log₁₀ because the range
+          across stations is five orders of magnitude.</p>
+      </div>
+      <div class="chart" data-chart="dumbbell" data-file="rutherford"
+           data-opt='{"rows":"station_evidence","xLabel":"log₁₀ nats per hour",
+                      "aLabel":"model believed","bLabel":"model attacked",
+                      "labelWidth":150,"rowHeight":38}'></div>
+      <p class="stamp"><b>scattering.surviving_evidence</b>(angles, aperture, 3600) against
+        <b>weight_of_evidence</b>(mu_hard, mu_diffuse)</p>
+    </figure>
+
+    <p class="prose mt">Which is why the plan spends
+      <b>110 of its 200 hours</b>
+      at a hundred and fifty degrees — the opposite of what the evidence-per-hour calculation
+      says, and right, because evidence-per-hour is computed inside the model that is under
+      attack. The allocation is lexicographic rather than optimal: buy every constraint the
+      argument will need, as cheaply as it can be bought, then spend the rest where the
+      evidence cannot be talked out of.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">How far back the witness has to sit</p>
+      <h2>As far as the widest core anybody will concede</h2>
+      <p>Thirty-fold was a choice, and the answer moves with it. Somebody who will concede
+        only a threefold error in the core needs a much less awkward apparatus than somebody
+        arguing with a sceptic who will concede thirty. That trade is a curve, and it is the
+        design’s actual specification for the wide-angle station.</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="t">
+        <caption>The angle past which a station’s evidence is untouched — within one per cent —
+          by any core the opposition is allowed to build.</caption>
+        <thead><tr><th>the opposition may claim a core</th><th>rms scattering</th>
+          <th>immune beyond</th></tr></thead>
+        <tbody>
+          <tr><td>3× the fitted width</td>
+            <td>2.0°</td>
+            <td>14°</td></tr>
+          <tr><td>5×</td>
+            <td>3.3°</td>
+            <td>23°</td></tr>
+          <tr><td>10×</td>
+            <td>6.5°</td>
+            <td>45°</td></tr>
+          <tr><td>20×</td>
+            <td>13.1°</td>
+            <td>88°</td></tr>
+          <tr class="hi"><td>30×</td>
+            <td>19.6°</td>
+            <td><b>130°</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="fig mt-lg">
+      <div class="fig-head">
+        <p class="fig-t">The witness angle, as a function of how wrong the core may be</p>
+        <p class="fig-s">Concede more to the opposition and the station has to move further
+          round the apparatus. The curve is the specification; the table above is five
+          points on it.</p>
+      </div>
+      <div class="chart" data-chart="lines" data-file="rutherford"
+           data-opt='{"series":[
+             {"label":"immune beyond","x":"immunity_curve.allowance","y":"immunity_curve.beyond","colour":"s3"}],
+             "xLabel":"widest core the opposition may claim (× the fitted width)",
+             "yLabel":"immune beyond (degrees)","height":300,"rightPad":96,
+             "hline":150,"hlineLabel":"where the plan puts its witness"}'></div>
+      <p class="stamp"><b>scattering.surviving_evidence</b>(..., factors=geomspace(0.3, cap))
+        at five allowances</p>
+    </figure>
+
+    <p class="prose mt">To be immune against a core thirty times the fitted one, the witness
+      has to sit past 130 degrees. Which is, to within
+      the width of a slit, where Geiger and Marsden put theirs.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What to cut in the brass</p>
+      <h2>An annular slot, not a hole</h2>
+      <p>A detector opening covering azimuth φ and θ ± δ subtends exactly
+        <code>φ · 2 sin θ sin δ</code>. So the same solid angle — the same counts an hour —
+        can be bought by opening in δ or by opening in φ, and <b>only one of them costs
+        anything</b>. The scattering pattern does not depend on azimuth, so an aperture
+        stretched round the beam axis collects more counts of exactly the same measurement;
+        one stretched in θ collects counts of a <em>different</em> measurement and averages
+        them together.</p>
+      <p>The prescription follows: hold the radial half-width at the workshop’s floor of
+        0.05° and take every additional steradian out in
+        azimuth, opening radially only once the arc has closed into a full annulus.</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="t">
+        <caption>The same aperture at the same station, bought two ways. Both admit identical
+          counts; the error is what a model that ignored the width of its own aperture would
+          be wrong by.</caption>
+        <thead><tr><th>station</th><th>slot half-width</th><th>slot arc</th><th>slot error</th>
+          <th>round hole half-width</th><th>hole error</th></tr></thead>
+        <tbody>
+          <tr><td>5°</td>
+            <td>0.05°</td>
+            <td>2°</td>
+            <td class="num-good">0.020%</td>
+            <td>0.22°</td>
+            <td>0.40%</td></tr>
+          <tr><td>10°</td>
+            <td>0.05°</td>
+            <td>16°</td>
+            <td class="num-good">0.005%</td>
+            <td>0.63°</td>
+            <td>0.80%</td></tr>
+          <tr><td>20°</td>
+            <td>0.05°</td>
+            <td>126°</td>
+            <td class="num-good">0.001%</td>
+            <td>1.78°</td>
+            <td>1.62%</td></tr>
+          <tr><td>45°</td>
+            <td>0.20°</td>
+            <td>360°</td>
+            <td class="num-good">0.004%</td>
+            <td>6.01°</td>
+            <td>3.86%</td></tr>
+          <tr class="hi"><td>90°</td>
+            <td><b>0.91°</b></td>
+            <td>360°</td>
+            <td class="num-good">0.025%</td>
+            <td><b>12.87°</b></td>
+            <td class="bad">5.21%</td></tr>
+          <tr><td>150°</td>
+            <td>1.82°</td>
+            <td>360°</td>
+            <td class="num-good">0.054%</td>
+            <td>18.27°</td>
+            <td class="bad">5.63%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="fig mt-lg">
+      <div class="fig-head">
+        <p class="fig-t">The same solid angle, bought two ways</p>
+        <p class="fig-s">Every pair admits identical counts at identical stations. The only
+          difference is the shape of the brass — and the slot is the one that reports a rate
+          belonging to the angle it is pointed at.</p>
+      </div>
+      <div class="chart" data-chart="dumbbell" data-file="rutherford"
+           data-opt='{"rows":"slit_compare","xLabel":"smearing error (per cent of the reported rate)",
+                      "aLabel":"round hole","bLabel":"annular slot",
+                      "labelWidth":92,"rowHeight":38,"truth":0,"truthLabel":"no smearing"}'></div>
+      <p class="stamp"><b>scattering.aperture_bias</b>(theta, half_width, arc, world) —
+        <code>forward()</code> integrated across the opening against its value at the centre</p>
+    </figure>
+
+    <p class="prose mt">At ninety degrees the two openings admit exactly the same
+      0.2 steradians. The slot is ±0.91° wide and reports the
+      rate to a part in four thousand. The hole is ±12.9°
+      wide — it runs from seventy-seven degrees to a hundred and three — and reports a number
+      5.2 per cent too high that belongs to no angle in
+      particular. <b>Fourteen times the angular resolution and two hundred times less
+      smearing, for the same counts</b>, because the scattering does not care about azimuth
+      and the experimenter can.</p>
+
+    <div class="note mt-lg" style="max-width:var(--measure)">
+      <p class="note-t">And the anchor cannot be moved closer to the beam</p>
+      <p class="small">The smearing error scales as <code>2(δ/θ)²</code> with δ pinned at the
+        workshop’s floor, so it grows as a station moves inward, while the counting error
+        stays flat — the counter is rate-capped, so ten hours is ten hours’ worth of counts
+        wherever it points. They cross at <b>0.9°</b>. Inside that the number is limited by
+        brass rather than by counting, which is why the anchor sits at
+        1.0° and 2.5° and not at
+        half a degree.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">When to stop</p>
+      <h2>The decisive observation takes five hours. The rest buys the bound.</h2>
+      <p>A hundred and ten hours at a hundred and fifty degrees is the largest single
+        commitment in the plan, and there is no reason to make it blind. The station has a
+        clean interim statistic — counts against a background the foil-out run has measured —
+        and <code>obrien_fleming</code> budgets the looks so that watching costs no error
+        rate. At 857 counts an hour of signal
+        against 1.08 of background, it crosses at
+        the first look.</p>
+      <p>So the question the rule is really being asked is not <em>will this settle it</em>.
+        It is <b>how weak a source would still settle it</b> — which is the question that
+        decides whether an apparatus is worth building.</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="t">
+        <caption>Operating characteristics of the witness station, computed exactly rather
+          than simulated, as the source is scaled down.</caption>
+        <thead><tr><th>source strength</th><th>drift at 110 h</th><th>P(stop)</th>
+          <th>expected hours used</th></tr></thead>
+        <tbody>
+          <tr><td>×1 — as modelled</td>
+            <td>307</td>
+            <td class="num-good">100.0%</td>
+            <td>5 h</td></tr>
+          <tr><td>×0.01</td>
+            <td>28.9</td>
+            <td class="num-good">100.0%</td>
+            <td>15 h</td></tr>
+          <tr class="hi"><td>×0.001 — a thousand times weaker</td>
+            <td>6.5</td>
+            <td class="num-good">100.0%</td>
+            <td><b>43 h</b></td></tr>
+          <tr><td>×0.0003</td>
+            <td>2.33</td>
+            <td>74.6%</td>
+            <td>95 h</td></tr>
+          <tr><td>×0.0001</td>
+            <td>0.83</td>
+            <td class="bad">20.5%</td>
+            <td>108 h</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="fig mt-lg">
+      <div class="fig-head">
+        <p class="fig-t">One of those weaker campaigns, watched</p>
+        <p class="fig-s">A source a thousand times the modelled one is weak enough that the
+          crossing is an event rather than a foregone conclusion. The boundary falls as
+          information accumulates — an early look has to clear a much higher bar, which is
+          what buys the right to look at all.</p>
+      </div>
+      <div class="legend">
+        <span><i class="dash" style="--k:var(--boundary)"></i>O’Brien–Fleming boundary</span>
+        <span><i style="--k:var(--ink-2)"></i>counts against the measured background</span>
+      </div>
+      <div class="chart" data-chart="sequential" data-file="rutherford"
+           data-opt='{"panels":[0],"panelHeight":250,"showContinuation":true,
+                      "yDomain":[-1,9],"animate":true,"xLabel":"information fraction"}'></div>
+      <p class="stamp"><b>axiom.design.obrien_fleming</b>(0.05, looks, side="upper") ·
+        <b>monitor</b>(rule, z) on one simulated path</p>
+    </figure>
+
+    <p class="prose mt">A source a thousand times weaker than this one still settles the
+      question with certainty, in about forty of the hundred and ten hours. That is roughly
+      the situation Geiger and Marsden were actually in — which is why their answer took
+      months of nights at the microscope rather than an afternoon.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What comes back</p>
+      <h2>A bound 10 per cent above the best this beam can do</h2>
+    </div>
+
+    <div class="grid-2 mt-lg">
+      <div class="stack">
+        <div>
+          <p class="readout-l">The radius of the positive charge of gold</p>
+          <div class="readout">
+            <div class="readout-v">R &lt; 33 fm</div>
+            <p class="readout-d" style="margin-top:10px">95%, one-sided. There is no lower
+              bound to report and the profile says so by going flat — a charge the beam never
+              reaches is a charge whose size does not enter any prediction.</p>
+          </div>
+        </div>
+        <div class="ledger">
+          <div class="ledger-row">
+            <span class="ledger-f">the beam’s own floor</span>
+            <span class="ledger-s">set by 7.68 MeV alone —
+              nothing left to buy with time</span>
+            <span class="ledger-v">29.6 fm</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">how close the plan got</span>
+            <span class="ledger-s">the gap between the bound and the floor</span>
+            <span class="ledger-v">10%</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">Rutherford, 1911</span>
+            <span class="ledger-s">published from a smaller version of the same argument</span>
+            <span class="ledger-v">34 fm</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">evidence, model believed</span>
+            <span class="ledger-s">expected log Bayes factor over the whole plan</span>
+            <span class="ledger-v">4,367,913 nats</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">evidence, model attacked</span>
+            <span class="ledger-s">of which the two witness stations carry
+              <b>96%</b></span>
+            <span class="ledger-v">571,044 nats</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="tbl-wrap">
+          <table class="t">
+            <caption>Two hundred hours, run once against a hard centre. The right-hand column
+              is what the diffuse atom said would happen.</caption>
+            <thead><tr><th>station</th><th>hours</th><th>counted</th>
+              <th>if diffuse</th></tr></thead>
+            <tbody>
+              <tr><td>1.0°</td>
+                <td>5</td>
+                <td>26,701</td>
+                <td>8,051</td></tr>
+              <tr><td>2.5°</td>
+                <td>5</td>
+                <td>26,923</td>
+                <td>921</td></tr>
+              <tr><td>5.0°</td>
+                <td>10</td>
+                <td>54,744</td>
+                <td>0</td></tr>
+              <tr><td>10.0°</td>
+                <td>10</td>
+                <td>54,255</td>
+                <td>0</td></tr>
+              <tr><td>20.0°</td>
+                <td>10</td>
+                <td>54,316</td>
+                <td>0</td></tr>
+              <tr><td>45.0°</td>
+                <td>15</td>
+                <td>80,918</td>
+                <td>3</td></tr>
+              <tr><td>90.0°</td>
+                <td>25</td>
+                <td>74,864</td>
+                <td>27</td></tr>
+              <tr class="hi"><td>150.0°</td>
+                <td>110</td>
+                <td><b>94,117</b></td>
+                <td>119</td></tr>
+              <tr><td>90.0° · foil out</td>
+                <td>10</td>
+                <td>11</td>
+                <td>11</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="chart" data-chart="dumbbell" data-file="rutherford"
+             data-opt='{"rows":"counts_compare","xLabel":"log₁₀ counts over the whole run",
+                        "aLabel":"the diffuse atom said","bLabel":"the counter recorded",
+                        "labelWidth":78,"rowHeight":34}'></div>
+        <p class="small muted">The diffuse atom predicts exactly zero at four of the eight
+          stations; the chart floors it at a tenth of a count so the axis stays finite. Every
+          gap you can see is a lower bound on the real one.</p>
+        <p class="small muted">Ninety-four thousand flashes at a hundred and fifty degrees
+          where the diffuse atom accounts for a hundred and nineteen, every one of them
+          background. There is no version of that which is a fluctuation.</p>
+      </div>
+    </div>
+
+    <div class="note mt-lg" style="max-width:var(--measure)">
+      <p class="note-t">The five notebooks</p>
+      <p class="small">Everything on this page is computed by
+        <code>nbs/case-studies/rutherford/scattering.py</code>, the world the five notebooks
+        share — two atoms and one parameter, which angles, what shape to cut the aperture, how
+        long and when to stop, and running it in both worlds. The mean is a hand-built
+        expression tree and the first implementation of <code>SupportsForward</code> outside
+        <code>axiom.surface</code>; counting is Poisson and <code>forward()</code> returns
+        <code>2√µ</code>, which makes <code>fisher_information</code> exactly the Poisson
+        information. The decisions are in
+        <code>docs/notes/0018-case-study-rutherford.md</code>.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

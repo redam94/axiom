@@ -1,0 +1,361 @@
+<!--meta {
+  "title": "Surface — map the dose–response · axiom",
+  "description": "Saturating kernels, carryover, and one forward() that the likelihood, the design maths and the optimizer all call. Response bands, optimal allocation, the budget frontier, and the diagnostics that tell you when a fit is not identified."
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Pillar 04 · axiom.surface · axiom.diagnose</p>
+    <h1 style="max-width:14ch">Map the dose–response</h1>
+    <p class="lede prose mt">Effects saturate. Doubling a dose rarely doubles a response, and
+      a linear model asked to describe a saturating world will get the optimum wrong in a
+      predictable direction. The surface layer is where axiom keeps the actual shape — and
+      keeps exactly one implementation of it, so the likelihood, the design maths, and the
+      optimizer cannot drift apart.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The experiment</p>
+      <h2>{{surface.design.n}} arms, chosen rather than guessed</h2>
+      <p>Two treatments, each with a Hill kernel. The arms come from a rotatable central
+        composite design over the dose box — a classical response-surface layout that spends
+        its runs where curvature is estimable, instead of spreading them evenly and learning
+        the shape badly everywhere.</p>
+    </div>
+
+    <div class="grid-2">
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">Response to treatment <code>a</code>, with the truth overlaid</p>
+          <p class="fig-s">Blue is the posterior mean with its
+            {{surface.band_a.mass:.0%}} interval; dashed grey is the curve the simulation
+            actually used.</p>
+        </div>
+        <div class="legend">
+          <span><i style="--k:var(--accent)"></i>posterior mean</span>
+          <span><i class="dash" style="--k:var(--ink-2)"></i>truth</span>
+        </div>
+        <div class="chart" data-chart="band" data-file="surface"
+             data-opt='{"key":"band_a","height":300,"xLabel":"dose of a",
+                        "yLabel":"expected outcome"}'></div>
+        <p class="stamp"><b>axiom.surface.response_band</b>(fit, "a", mass=0.9) — every
+          posterior draw pushed through <code>forward</code>, then summarised</p>
+      </figure>
+
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">Response to treatment <code>b</code></p>
+          <p class="fig-s">A different reference dose and a different shape parameter, from
+            the same fit.</p>
+        </div>
+        <div class="legend">
+          <span><i style="--k:var(--accent)"></i>posterior mean</span>
+          <span><i class="dash" style="--k:var(--ink-2)"></i>truth</span>
+        </div>
+        <div class="chart" data-chart="band" data-file="surface"
+             data-opt='{"key":"band_b","height":300,"xLabel":"dose of b",
+                        "yLabel":"expected outcome"}'></div>
+        <p class="stamp"><b>axiom.surface.response_band</b>(fit, "b", mass=0.9) ·
+          {{surface.design.n}} arms, noise sd 0.5, Laplace backend, seed 0</p>
+      </figure>
+    </div>
+
+    <div class="mt-lg">
+      <h3>Parameter recovery</h3>
+      <p class="prose muted small">The simulation knows the truth, so recovery is checkable
+        rather than assertable. Every ported estimator in axiom ships with a recovery test
+        like this one in the same commit.</p>
+      <div class="tbl-wrap mt">
+        <table class="t">
+          <caption>Posterior mean and 90% highest-density interval against the parameter the
+            data-generating process actually used.</caption>
+          <thead><tr><th>parameter</th><th>truth</th><th>posterior mean</th><th>sd</th>
+            <th>90% HDI</th><th>contains truth</th></tr></thead>
+          <tbody>
+            <tr class="{{surface.recovery[0].row_class}}"><td>{{surface.recovery[0].name}}</td>
+              <td>{{surface.recovery[0].truth:.2f}}</td>
+              <td>{{surface.recovery[0].mean:.2f}}</td><td>{{surface.recovery[0].sd:.2f}}</td>
+              <td>[{{surface.recovery[0].lower:.2f}}, {{surface.recovery[0].upper:.2f}}]</td>
+              <td class="{{surface.recovery[0].cell_class}}">{{surface.recovery[0].contains_label}}</td></tr>
+            <tr class="{{surface.recovery[1].row_class}}"><td>{{surface.recovery[1].name}}</td>
+              <td>{{surface.recovery[1].truth:.2f}}</td>
+              <td>{{surface.recovery[1].mean:.2f}}</td><td>{{surface.recovery[1].sd:.2f}}</td>
+              <td>[{{surface.recovery[1].lower:.2f}}, {{surface.recovery[1].upper:.2f}}]</td>
+              <td class="{{surface.recovery[1].cell_class}}">{{surface.recovery[1].contains_label}}</td></tr>
+            <tr class="{{surface.recovery[2].row_class}}"><td>{{surface.recovery[2].name}}</td>
+              <td>{{surface.recovery[2].truth:.2f}}</td>
+              <td>{{surface.recovery[2].mean:.2f}}</td><td>{{surface.recovery[2].sd:.2f}}</td>
+              <td>[{{surface.recovery[2].lower:.2f}}, {{surface.recovery[2].upper:.2f}}]</td>
+              <td class="{{surface.recovery[2].cell_class}}">{{surface.recovery[2].contains_label}}</td></tr>
+            <tr class="{{surface.recovery[3].row_class}}"><td>{{surface.recovery[3].name}}</td>
+              <td>{{surface.recovery[3].truth:.2f}}</td>
+              <td>{{surface.recovery[3].mean:.2f}}</td><td>{{surface.recovery[3].sd:.2f}}</td>
+              <td>[{{surface.recovery[3].lower:.2f}}, {{surface.recovery[3].upper:.2f}}]</td>
+              <td class="{{surface.recovery[3].cell_class}}">{{surface.recovery[3].contains_label}}</td></tr>
+            <tr class="{{surface.recovery[4].row_class}}"><td>{{surface.recovery[4].name}}</td>
+              <td>{{surface.recovery[4].truth:.2f}}</td>
+              <td>{{surface.recovery[4].mean:.2f}}</td><td>{{surface.recovery[4].sd:.2f}}</td>
+              <td>[{{surface.recovery[4].lower:.2f}}, {{surface.recovery[4].upper:.2f}}]</td>
+              <td class="{{surface.recovery[4].cell_class}}">{{surface.recovery[4].contains_label}}</td></tr>
+            <tr class="{{surface.recovery[5].row_class}}"><td>{{surface.recovery[5].name}}</td>
+              <td>{{surface.recovery[5].truth:.2f}}</td>
+              <td>{{surface.recovery[5].mean:.2f}}</td><td>{{surface.recovery[5].sd:.2f}}</td>
+              <td>[{{surface.recovery[5].lower:.2f}}, {{surface.recovery[5].upper:.2f}}]</td>
+              <td class="{{surface.recovery[5].cell_class}}">{{surface.recovery[5].contains_label}}</td></tr>
+            <tr class="{{surface.recovery[6].row_class}}"><td>{{surface.recovery[6].name}}</td>
+              <td>{{surface.recovery[6].truth:.2f}}</td>
+              <td>{{surface.recovery[6].mean:.2f}}</td><td>{{surface.recovery[6].sd:.2f}}</td>
+              <td>[{{surface.recovery[6].lower:.2f}}, {{surface.recovery[6].upper:.2f}}]</td>
+              <td class="{{surface.recovery[6].cell_class}}">{{surface.recovery[6].contains_label}}</td></tr>
+            <tr class="{{surface.recovery[7].row_class}}"><td>{{surface.recovery[7].name}}</td>
+              <td>{{surface.recovery[7].truth:.2f}}</td>
+              <td>{{surface.recovery[7].mean:.2f}}</td><td>{{surface.recovery[7].sd:.2f}}</td>
+              <td>[{{surface.recovery[7].lower:.2f}}, {{surface.recovery[7].upper:.2f}}]</td>
+              <td class="{{surface.recovery[7].cell_class}}">{{surface.recovery[7].contains_label}}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted mt">Only
+        <strong>{{surface.recovery_hits}} of {{surface.recovery_n}}</strong> intervals
+        contain the truth — and that column is computed by the build, not typed in, so it
+        cannot flatter the fit. This is not a failure to report quietly: it is the honest
+        consequence of asking {{surface.design.n}} arms to pin down seven structural
+        parameters that trade off against one another. The curves above still track the truth
+        closely across the dose range, because the <em>combinations</em> the data constrain are
+        well determined even where the individual parameters are not. The next section is axiom saying so out
+        loud.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The check that earns its keep</p>
+      <h2>A good fit is not the same as an identified one</h2>
+      <p>The curves above track the truth and the posterior predictive checks all pass. That
+        is not sufficient. Several parameters are trading off against each other so strongly
+        that the data cannot separate them — the fit is fine as a prediction and unreliable
+        as an explanation, and those two uses call for different decisions.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="ledger">
+        <div class="ledger-row">
+          <span class="ledger-f">condition no.</span>
+          <span class="ledger-s">of the posterior correlation structure — anything in the
+            hundreds means a ridge, not a peak</span>
+          <span class="ledger-v">{{surface.checks.condition_number:,.0f}}</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">ridge pairs</span>
+          <span class="ledger-s"><b>{{surface.checks.high_pairs[0][0]}}</b> ↔
+            <b>{{surface.checks.high_pairs[0][1]}}</b> at ρ =
+            {{surface.checks.high_pairs[0][2]:+.3f}} — amplitude against half-saturation, the
+            classic saturating-curve trade-off</span>
+          <span class="tag is-bad">ρ &gt; 0.9</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f"></span>
+          <span class="ledger-s"><b>{{surface.checks.high_pairs[1][0]}}</b> ↔
+            <b>{{surface.checks.high_pairs[1][1]}}</b> at ρ =
+            {{surface.checks.high_pairs[1][2]:+.3f}}</span>
+          <span class="tag is-bad">ρ &gt; 0.9</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f"></span>
+          <span class="ledger-s"><b>{{surface.checks.high_pairs[2][0]}}</b> ↔
+            <b>{{surface.checks.high_pairs[2][1]}}</b> at ρ =
+            {{surface.checks.high_pairs[2][2]:+.3f}}</span>
+          <span class="tag is-bad">ρ &gt; 0.9</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">verdict</span>
+          <span class="ledger-s">weak-identification report</span>
+          <span class="tag is-bad">failed</span>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="note">
+          <p class="note-t">Posterior predictive checks all pass</p>
+          <p class="small" style="margin:0">Every summary statistic axiom checks sits inside
+            its predictive interval, and the list of extreme statistics is empty. If
+            model checking stopped at goodness of fit, this model would be signed off.
+            <code>weak_identification</code> is the check that catches what a residual plot
+            cannot.</p>
+        </div>
+        <div class="tbl-wrap">
+          <table class="t">
+            <caption>Posterior predictive check. Every statistic sits inside its predictive
+              interval; the list of extreme statistics is empty.</caption>
+            <thead><tr><th>statistic</th><th>observed</th><th>interval</th><th>p</th>
+              <th>extreme</th></tr></thead>
+            <tbody>
+              <tr><td>{{surface.checks.ppc[0].name}}</td>
+                <td>{{surface.checks.ppc[0].observed:.3f}}</td>
+                <td>[{{surface.checks.ppc[0].lower:.2f}}, {{surface.checks.ppc[0].upper:.2f}}]</td>
+                <td>{{surface.checks.ppc[0].p:.2f}}</td><td class="num-good">no</td></tr>
+              <tr><td>{{surface.checks.ppc[1].name}}</td>
+                <td>{{surface.checks.ppc[1].observed:.3f}}</td>
+                <td>[{{surface.checks.ppc[1].lower:.2f}}, {{surface.checks.ppc[1].upper:.2f}}]</td>
+                <td>{{surface.checks.ppc[1].p:.2f}}</td><td class="num-good">no</td></tr>
+              <tr><td>{{surface.checks.ppc[2].name}}</td>
+                <td>{{surface.checks.ppc[2].observed:.3f}}</td>
+                <td>[{{surface.checks.ppc[2].lower:.2f}}, {{surface.checks.ppc[2].upper:.2f}}]</td>
+                <td>{{surface.checks.ppc[2].p:.2f}}</td><td class="num-good">no</td></tr>
+              <tr><td>{{surface.checks.ppc[3].name}}</td>
+                <td>{{surface.checks.ppc[3].observed:.3f}}</td>
+                <td>[{{surface.checks.ppc[3].lower:.2f}}, {{surface.checks.ppc[3].upper:.2f}}]</td>
+                <td>{{surface.checks.ppc[3].p:.2f}}</td><td class="num-good">no</td></tr>
+              <tr><td>{{surface.checks.ppc[4].name}}</td>
+                <td>{{surface.checks.ppc[4].observed:.3f}}</td>
+                <td>[{{surface.checks.ppc[4].lower:.2f}}, {{surface.checks.ppc[4].upper:.2f}}]</td>
+                <td>{{surface.checks.ppc[4].p:.2f}}</td><td class="num-good">no</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Acting on it</p>
+      <h2>Where the optimum is, and what a budget buys</h2>
+      <p>Given a fixed total dose to spend across both treatments, axiom finds the split that
+        maximises the expected outcome — pushing the posterior through the same
+        <code>forward</code> the likelihood used, not a linearised stand-in.</p>
+    </div>
+
+    <div class="grid-2">
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">The response surface over both treatments</p>
+          <p class="fig-s">Expected outcome at every dose pair. The marked point is the
+            allocation axiom chooses for a budget of
+            {{surface.allocation.budget:.0f}}.</p>
+        </div>
+        <div class="chart" data-chart="heatmap" data-file="surface"
+             data-opt='{"key":"heatmap","x":"a","y":"b","z":"z",
+                        "xLabel":"dose of a","yLabel":"dose of b",
+                        "zLabel":"expected outcome","height":340,
+                        "marks":[{"x":{{surface.allocation.fitted.a:.2f}},
+                                  "y":{{surface.allocation.fitted.b:.2f}},
+                                  "label":"chosen"}]}'></div>
+        <p class="stamp"><b>axiom.surface.forward</b>(doses, theta) over a 36×36 grid ·
+          allocation from <b>axiom.surface.allocate</b>(surface, posterior, budget=60)</p>
+      </figure>
+
+      <div class="stack">
+        <div class="ledger">
+          <div class="ledger-row">
+            <span class="ledger-f">chosen split</span>
+            <span class="ledger-s">a = {{surface.allocation.fitted.a:.1f}},
+              b = {{surface.allocation.fitted.b:.1f}} — from the fitted posterior, which is
+              all you would have in real work</span>
+            <span class="ledger-v">{{surface.allocation.status}}</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">oracle split</span>
+            <span class="ledger-s">a = {{surface.allocation.oracle.a:.1f}},
+              b = {{surface.allocation.oracle.b:.1f}} — what you would choose knowing the
+              true parameters</span>
+            <span class="ledger-v">{{surface.allocation.oracle_outcome:.3f}}</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">regret</span>
+            <span class="ledger-s">the outcome actually lost by acting on the fit instead of
+              the truth</span>
+            <span class="ledger-v">{{surface.allocation.regret:.4f}}</span>
+          </div>
+        </div>
+        <div class="note">
+          <p class="note-t">Regret is the number that matters</p>
+          <p class="small" style="margin:0">The fitted allocation puts
+            {{surface.allocation.fitted.a:.1f}} on <code>a</code> where the oracle would put
+            {{surface.allocation.oracle.a:.1f}} — a visible gap in the parameters. The
+            outcome cost of that gap is <strong>{{surface.allocation.regret:.4f}}</strong>
+            against an achievable {{surface.allocation.oracle_outcome:.2f}}. Near an optimum
+            the surface is flat, so being somewhat wrong about where the peak is costs far
+            less than being wrong about the shape. That is worth knowing before spending more
+            on precision you will not use.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-lg">
+      <h3>The budget frontier</h3>
+      <p class="prose muted small">Re-solving the allocation across budgets gives the
+        frontier and, from its slope, the shadow price — what the next unit of budget is
+        worth. It falls monotonically, which is saturation showing up where a decision-maker
+        can actually use it.</p>
+      <figure class="fig mt">
+        <div class="fig-head">
+          <p class="fig-t">Marginal value of the next unit of budget</p>
+          <p class="fig-s">Shadow price at each budget on the frontier.</p>
+        </div>
+        <div class="chart" data-chart="lines" data-file="surface"
+             data-opt='{"series":[{"label":"shadow price",
+                        "x":"allocation.frontier.budgets",
+                        "y":"allocation.frontier.shadow_prices"}],
+                        "direct":false,"xLabel":"total budget",
+                        "yLabel":"outcome per unit of budget","height":260}'></div>
+        <p class="stamp"><b>axiom.surface.frontier</b>(surface, theta, budgets=…, bounds=…)
+          then <code>.shadow_prices()</code> · seven budgets, warm-started</p>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Rule five, in the wild</p>
+      <h2>When the answer does not exist, you get a refusal</h2>
+      <p>Asking for the slope of the response at zero dose looks like a reasonable request.
+        For a Hill curve with a shape parameter below one it is not: the slope at zero is
+        infinite. Here is what axiom does with that.</p>
+    </div>
+    <div class="note is-refusal" style="max-width:var(--measure)">
+      <p class="note-t">Unsupported — returned, not raised, and not fudged</p>
+      <p class="small mono" style="margin-bottom:10px">
+        <code>{{surface.refusals[0].call}}</code></p>
+      <p class="small" style="margin:0">→ <strong>{{surface.refusals[0].type}}</strong>:
+        “{{surface.refusals[0].reason}}”</p>
+    </div>
+    <p class="prose small muted mt">It names the count and the cause. It does not return
+      <code>inf</code>, it does not silently drop the offending draws, and it does not raise
+      an exception that a caller might catch broadly and lose. The marginal curves on this
+      page are computed on a grid that starts one step above zero — which is a choice the
+      caller makes, having been told why.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div>
+        <h3>What is in <code>axiom.surface</code></h3>
+        <p class="small muted">{{overview.by_name.surface.n}} public symbols. Seven response
+          kernels including Hill, logistic, power, splines and a Gaussian process; four
+          carryover families; nuisance terms for trend, seasonality and events; classical
+          designs; the optimizer, frontier and steepest ascent; and the one
+          <code>forward</code> they all go through.</p>
+        <p class="small"><a href="api.html#surface">Browse every symbol →</a></p>
+      </div>
+      <div>
+        <h3>Next: everything you have ever measured</h3>
+        <p class="small muted">One study gives you one surface. A programme gives you dozens
+          of studies of varying quality, which have to be pooled before they mean anything
+          together.</p>
+        <p class="small"><a href="meta.html">Go to Pool →</a></p>
+      </div>
+    </div>
+  </div>
+</section>

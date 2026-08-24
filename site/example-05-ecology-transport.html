@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 · Borrowing an answer from a reserve you did not study — Conservation ecology · axiom</title>
+<meta name="description" content="Conservation ecology: Does a result from one reserve apply to another, and what must you measure there first? A 5-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:title" content="05 · Borrowing an answer from a reserve you did not study — Conservation ecology · axiom">
+<meta property="og:description" content="Conservation ecology: Does a result from one reserve apply to another, and what must you measure there first? A 5-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="example">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Example 05 · Conservation ecology</p>
+    <h1 style="max-width:18ch">Borrowing an answer from a reserve you did not study</h1>
+    <p class="lede prose mt">A grazing-exclusion trial worked in one reserve. A second reserve, with different rainfall and a different herbivore community, wants to know what to expect. Does the first reserve&#x27;s number apply, and if not, what has to be measured before it can?</p>
+    <div class="ex-meta"><a class="pkg" href="identify.html">Identify</a>
+      <span class="pkg">5 steps</span>
+      <span class="pkg">3 figures</span>
+      <span class="pkg">292 lines</span>
+      <span class="pkg">runs in 0.8s</span></div>
+    <div class="hero-cta">
+      <a class="btn btn-1" href="#step-1">Start the walkthrough</a>
+      <a class="btn btn-2" href="https://github.com/redam94/axiom/blob/main/examples/05_ecology_transport.py">The whole file on GitHub &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div class="prose wt-framing"><p>Conservation ecology — does a result from one reserve apply to another?</p><p class="wt-h">The question</p><p>A grazing-exclusion trial ran in one reserve and worked. A second reserve wants to know what to expect. The two differ in rainfall, soil, and the composition of the herbivore community. Is the first reserve&#x27;s number the second reserve&#x27;s number, and if not, what would make it so?</p><p class="wt-h">Why this is not a statistics question</p><p>No amount of data from the source reserve tells you whether it transports. That depends on *what differs* between the two populations and where those differences sit relative to the causal path. axiom takes a selection diagram -- the graph, annotated with where the populations differ -- and reads off whether the effect transports, and what you would have to measure in the target to license it.</p><p>Pillars: identify (transportability)</p></div>
+      <div>
+        <p class="eyebrow">The route</p>
+        <nav class="wt-toc"><a class="wt-toc-i" href="#step-1"><span class="wt-toc-n">1</span>Say where the two populations differ, not just that they do</a><a class="wt-toc-i" href="#step-2"><span class="wt-toc-n">2</span>Ask the three transport questions, before collecting anything</a><a class="wt-toc-i" href="#step-3"><span class="wt-toc-n">3</span>Turn the verdict into a shopping list for the second reserve</a><a class="wt-toc-i" href="#step-4"><span class="wt-toc-n">4</span>Check the borrowed number against the target&#x27;s own</a><a class="wt-toc-i" href="#step-5"><span class="wt-toc-n">5</span>Move the S-node onto the mechanism and watch the route change</a></nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Before the first step</p>
+      <h2>What this example imports, and why that list is short</h2>
+      <p>Everything below runs on the four core dependencies. No sampler, no extras.</p>
+    </div>
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>examples/05_ecology_transport.py</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>import numpy as np
+from _walkthrough import Walkthrough
+
+from axiom.identify import (
+    directly_transportable,
+    identify,
+    ols,
+    s_admissible_sets,
+    selection_diagram,
+    transport_verdict,
+    trivially_transportable,
+)
+from axiom.sim import transport_pair
+
+N, SEED = 6_000, 0
+
+w = Walkthrough(
+    field=&quot;Conservation ecology&quot;,
+    title=&quot;Borrowing an answer from a reserve you did not study&quot;,
+    question=&quot;&quot;&quot;A grazing-exclusion trial worked in one reserve. A second reserve,
+        with different rainfall and a different herbivore community, wants to know
+        what to expect. Does the first reserve&#x27;s number apply, and if not, what has
+        to be measured before it can?&quot;&quot;&quot;,
+)</pre>
+    </div>
+  </div>
+</section>
+
+<section class="wt-step" id="step-1">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 1 <span>of 5</span></p>
+      <h2>Say where the two populations differ, not just that they do</h2>
+      <div class="wt-why prose"><p>A selection diagram is the ordinary causal graph with one extra piece of information: which mechanisms differ between the populations. Here the S-node points into Z — the reserves have different herbivore communities, but grazing exclusion works the same way in both. That distinction, between differing in who is in the population and differing in how the world works, is the entire question, and no dataset contains it.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Pooling the two reserves and adding a site indicator. That estimates a blend of two populations, which is not the target reserve&#x27;s answer and is not the source reserve&#x27;s either. It also cannot represent the case that matters most: the mechanism itself differing.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/05_ecology_transport.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>source, target = transport_pair()
+w.out(f&quot;source reserve : {source.graph.to_text()}&quot;)
+w.out(f&quot;target reserve : {target.graph.to_text()}&quot;)
+w.out(f&quot;S-node on      : {list(source.graph.selection)}&quot;)
+w.out(&quot;&quot;)
+diagram = selection_diagram(source.graph)
+w.out(f&quot;selection diagram : {diagram.to_text()}&quot;)
+w.out(&quot;  S[Z] is a population indicator, not a variable anyone records --&quot;)
+w.out(&quot;  which is why it is marked unmeasured and never appears in a fit.&quot;)
+
+source_frame = source.observed(source.simulate(N, seed=SEED))
+target_frame = target.observed(target.simulate(N, seed=SEED + 17))
+w.figure(
+    &quot;populations&quot;,
+    kind=&quot;dumbbell&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: f&quot;mean {col}&quot;,
+                &quot;a&quot;: float(source_frame[col].mean()),
+                &quot;b&quot;: float(target_frame[col].mean()),
+            }
+            for col in (&quot;Z&quot;, &quot;X&quot;, &quot;Y&quot;)
+        ]
+    },
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;xLabel&quot;: &quot;population mean&quot;,
+        &quot;aLabel&quot;: &quot;source reserve&quot;,
+        &quot;bLabel&quot;: &quot;target reserve&quot;,
+        &quot;labelWidth&quot;: 120,
+    },
+    # title, note and legend: the caption shown with the chart
+)
+
+edges = np.linspace(-4.5, 6.0, 41)
+centres = ((edges[:-1] + edges[1:]) / 2).tolist()
+w.figure(
+    &quot;shift&quot;,
+    kind=&quot;lines&quot;,
+    data={
+        &quot;z&quot;: centres,
+        &quot;source&quot;: (np.histogram(source_frame[&quot;Z&quot;], bins=edges, density=True)[0]).tolist(),
+        &quot;target&quot;: (np.histogram(target_frame[&quot;Z&quot;], bins=edges, density=True)[0]).tolist(),
+    },
+    opt={
+        &quot;series&quot;: [
+            {&quot;label&quot;: &quot;source&quot;, &quot;x&quot;: &quot;@z&quot;, &quot;y&quot;: &quot;@source&quot;, &quot;colour&quot;: &quot;ink-2&quot;},
+            {&quot;label&quot;: &quot;target&quot;, &quot;x&quot;: &quot;@z&quot;, &quot;y&quot;: &quot;@target&quot;, &quot;colour&quot;: &quot;accent&quot;},
+        ],
+        &quot;xLabel&quot;: &quot;Z — herbivore community composition&quot;,
+        &quot;yLabel&quot;: &quot;density&quot;,
+        &quot;height&quot;: 250,
+        &quot;rightPad&quot;: 70,
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>source reserve : X -&gt; Y, Z -&gt; X, Z -&gt; Y
+target reserve : X -&gt; Y, Z -&gt; X, Z -&gt; Y
+S-node on      : [&#x27;Z&#x27;]
+
+selection diagram : S[Z] -&gt; Z, X -&gt; Y, Z -&gt; X, Z -&gt; Y
+  S[Z] is a population indicator, not a variable anyone records --
+  which is why it is marked unmeasured and never appears in a fit.</pre></div>
+<figure class="fig" id="05_ecology_transport-populations">
+  <div class="fig-head"><p class="fig-t">What actually differs between the two reserves</p><p class="fig-s">Z moved, and X and Y moved with it because Z causes them both. Nothing about the mechanism changed — which is precisely the claim the S-node makes, and precisely what makes the effect borrowable.</p></div>
+  <div class="legend"><span><i style="--k:var(--ink-2)"></i>source reserve</span><span><i style="--k:var(--accent)"></i>target reserve</span></div>
+  <div class="chart" data-chart="dumbbell" data-file="figures-05_ecology_transport"
+       data-opt='{&quot;rows&quot;: &quot;populations.rows&quot;, &quot;xLabel&quot;: &quot;population mean&quot;, &quot;aLabel&quot;: &quot;source reserve&quot;, &quot;bLabel&quot;: &quot;target reserve&quot;, &quot;labelWidth&quot;: 120}'></div>
+</figure>
+<figure class="fig" id="05_ecology_transport-shift">
+  <div class="fig-head"><p class="fig-t">The same mechanism, a different population inside it</p><p class="fig-s">Two reserves drawn from different parts of the same covariate space. If the effect of exclusion varied with Z, this shift alone would make the source number wrong for the target — which is why the answer depends on the shape of the graph and not on how far apart these two curves are.</p></div>
+  <div class="legend"><span><i style="--k:var(--ink-2)"></i>source reserve</span><span><i style="--k:var(--accent)"></i>target reserve</span></div>
+  <div class="chart" data-chart="lines" data-file="figures-05_ecology_transport"
+       data-opt='{&quot;series&quot;: [{&quot;label&quot;: &quot;source&quot;, &quot;x&quot;: &quot;shift.z&quot;, &quot;y&quot;: &quot;shift.source&quot;, &quot;colour&quot;: &quot;ink-2&quot;}, {&quot;label&quot;: &quot;target&quot;, &quot;x&quot;: &quot;shift.z&quot;, &quot;y&quot;: &quot;shift.target&quot;, &quot;colour&quot;: &quot;accent&quot;}], &quot;xLabel&quot;: &quot;Z \u2014 herbivore community composition&quot;, &quot;yLabel&quot;: &quot;density&quot;, &quot;height&quot;: 250, &quot;rightPad&quot;: 70}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-2">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 2 <span>of 5</span></p>
+      <h2>Ask the three transport questions, before collecting anything</h2>
+      <div class="wt-why prose"><p>They are increasingly demanding and each has a different consequence. Directly transportable would mean the source number is the target number untouched. Trivially transportable would mean the target&#x27;s own data suffices and the source is irrelevant. The general verdict is the interesting middle: transportable, but only after re-weighting on a specific set.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Running the analysis in the source, then arguing about external validity in the discussion section. By then the target&#x27;s data collection has already happened, and the covariates that would have licensed the transfer were not on the form.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/05_ecology_transport.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>w.table(
+    [&quot;question&quot;, &quot;answer&quot;, &quot;what it would have meant&quot;],
+    [
+        [
+            &quot;directly transportable&quot;,
+            str(directly_transportable(source.graph, &quot;X&quot;, &quot;Y&quot;)),
+            &quot;the source estimate is the target estimate, untouched&quot;,
+        ],
+        [
+            &quot;trivially transportable&quot;,
+            str(trivially_transportable(source.graph, &quot;X&quot;, &quot;Y&quot;)),
+            &quot;the target&#x27;s own data is enough; ignore the source&quot;,
+        ],
+    ],
+)
+verdict = transport_verdict(source.graph, &quot;X&quot;, &quot;Y&quot;)
+w.out(f&quot;transport verdict : {verdict.status}&quot;)
+for f in (&quot;route&quot;, &quot;reason&quot;):
+    value = getattr(verdict, f, None)
+    if value:
+        w.out(f&quot;  {f:8s}: {value}&quot;)
+w.say(f&quot;&quot;&quot;Read the middle row carefully: trivially transportable is
+    {trivially_transportable(source.graph, &quot;X&quot;, &quot;Y&quot;)}, which says the target could
+    answer this from its own data — if it ran its own trial. It has not, and that is
+    the whole reason the question is being asked. The verdict&#x27;s route is
+    &#x27;{verdict.route}&#x27;: borrow the source, re-weighted on a set the target must
+    measure. Transport is what you use when the target has covariates but no
+    experiment.&quot;&quot;&quot;)</pre>
+</div>
+      <div class="tbl-wrap"><table class="t"><thead><tr><th>question</th><th>answer</th><th>what it would have meant</th></tr></thead><tbody><tr><td>directly transportable</td><td>False</td><td>the source estimate is the target estimate, untouched</td></tr><tr><td>trivially transportable</td><td>True</td><td>the target&#x27;s own data is enough; ignore the source</td></tr></tbody></table></div>
+<div class="out"><div class="out-h">what it printed</div><pre>transport verdict : identified
+  route   : s_admissible_adjustment</pre></div>
+<div class="prose"><p>Read the middle row carefully: trivially transportable is True, which says the target could answer this from its own data — if it ran its own trial. It has not, and that is the whole reason the question is being asked. The verdict&#x27;s route is &#x27;s_admissible_adjustment&#x27;: borrow the source, re-weighted on a set the target must measure. Transport is what you use when the target has covariates but no experiment.</p></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-3">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 3 <span>of 5</span></p>
+      <h2>Turn the verdict into a shopping list for the second reserve</h2>
+      <div class="wt-why prose"><p>The S-admissible sets are the useful output of this entire example. They say which covariates must be measured in the TARGET so the source effect can be re-weighted onto it. That is a decision about a field protocol, made before anyone flies out, and it is the thing a discussion-section paragraph about generalisability never delivers.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Measuring everything. Field time in a remote reserve is the binding constraint, and &#x27;collect all covariates&#x27; is how the two that mattered end up recorded badly alongside forty that did not.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/05_ecology_transport.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>sets = s_admissible_sets(source.graph, &quot;X&quot;, &quot;Y&quot;)
+w.out(f&quot;S-admissible sets : {[sorted(s) for s in sets]}&quot;)
+w.out(&quot;&quot;)
+w.out(&quot;Measure these in the target and the source effect can be re-weighted onto&quot;)
+w.out(&quot;the target population. Anything else is optional.&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>S-admissible sets : [[&#x27;Z&#x27;]]
+
+Measure these in the target and the source effect can be re-weighted onto
+the target population. Anything else is optional.</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-4">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 4 <span>of 5</span></p>
+      <h2>Check the borrowed number against the target&#x27;s own</h2>
+      <div class="wt-why prose"><p>The transfer is licensed by the diagram, but this is a synthetic pair, so the claim can also be checked: estimate in the source, estimate in the target, and compare both to the target&#x27;s true effect. In a real study only the first of those three exists, which is why the diagram had to carry the argument.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Treating agreement here as the evidence that transport works. It is not — it is a check that the implementation matches the theorem. The evidence that transport works is the S-node claim, and that is an ecological judgement.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/05_ecology_transport.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>v = identify(source.graph, &quot;X&quot;, &quot;Y&quot;)
+source_est = ols(source_frame, &quot;Y&quot;, &quot;X&quot;, covariates=v.adjustment_set)
+target_est = ols(target_frame, &quot;Y&quot;, &quot;X&quot;, covariates=v.adjustment_set)
+target_truth = target.total_effect(&quot;X&quot;, &quot;Y&quot;)
+naive_source = ols(source_frame, &quot;Y&quot;, &quot;X&quot;)
+
+rows = []
+for label, est in (
+    (&quot;source, unadjusted&quot;, naive_source),
+    (&quot;source, adjusted&quot;, source_est),
+    (&quot;target, adjusted&quot;, target_est),
+):
+    ci = est.ci(0.95)
+    w.out(f&quot;{label:20s} {est.estimate:6.3f} +/- {est.se:.3f}  [{ci.lower:6.3f}, {ci.upper:6.3f}]&quot;)
+    rows.append(
+        {
+            &quot;label&quot;: label,
+            &quot;estimate&quot;: est.estimate,
+            &quot;lower&quot;: ci.lower,
+            &quot;upper&quot;: ci.upper,
+            &quot;note&quot;: f&quot;error against the target truth {est.estimate - target_truth:+.3f}&quot;,
+            &quot;bad&quot;: abs(est.estimate - target_truth) &gt; 2 * est.se,
+        }
+    )
+w.out(f&quot;{&#x27;target truth&#x27;:20s} {target_truth:6.3f}&quot;)
+w.figure(
+    &quot;transfer&quot;,
+    kind=&quot;intervals&quot;,
+    data={&quot;rows&quot;: rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: target_truth,
+        &quot;truthLabel&quot;: &quot;the target&#x27;s true effect&quot;,
+        &quot;xLabel&quot;: &quot;effect of grazing exclusion&quot;,
+        &quot;labelWidth&quot;: 155,
+        &quot;rowHeight&quot;: 38,
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>source, unadjusted    2.721 +/- 0.015  [ 2.692,  2.751]
+source, adjusted      2.004 +/- 0.013  [ 1.979,  2.029]
+target, adjusted      2.002 +/- 0.013  [ 1.976,  2.027]
+target truth          2.000</pre></div>
+<figure class="fig" id="05_ecology_transport-transfer">
+  <div class="fig-head"><p class="fig-t">The source reserve&#x27;s adjusted answer is the target reserve&#x27;s answer</p><p class="fig-s">Conditioning on the S-admissible set is what carries it across. The unadjusted source estimate is wrong in both reserves, for the ordinary confounding reason rather than for a transport reason — worth keeping on the chart so the two failures are not confused.</p></div>
+  
+  <div class="chart" data-chart="intervals" data-file="figures-05_ecology_transport"
+       data-opt='{&quot;rows&quot;: &quot;transfer.rows&quot;, &quot;truth&quot;: 2.0, &quot;truthLabel&quot;: &quot;the target&#x27;s true effect&quot;, &quot;xLabel&quot;: &quot;effect of grazing exclusion&quot;, &quot;labelWidth&quot;: 155, &quot;rowHeight&quot;: 38}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-5">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 5 <span>of 5</span></p>
+      <h2>Move the S-node onto the mechanism and watch the route change</h2>
+      <div class="wt-why prose"><p>Everything above rests on where the populations differ. Put the S-node on Y as well — the reserves now respond to exclusion differently, rather than merely containing different herbivores — and the same call on the same data comes back by a different route. The answer tracks the ecology, not the sample size.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Assuming a difference in outcomes implies a difference in mechanism. The first chart in this walkthrough shows Y differing between the reserves while the mechanism is identical. Outcome differences are what a population shift looks like; they are not evidence about the mechanism either way.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/05_ecology_transport.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>mechanism_differs = source.graph.with_selection(&quot;Y&quot;)
+harder = transport_verdict(mechanism_differs, &quot;X&quot;, &quot;Y&quot;)
+w.out(f&quot;S-node on          : {list(mechanism_differs.selection)}&quot;)
+w.out(f&quot;transport verdict  : {harder.status}&quot;)
+for f in (&quot;route&quot;, &quot;reason&quot;):
+    value = getattr(harder, f, None)
+    if value:
+        w.out(f&quot;  {f:8s}: {value}&quot;)
+w.out(f&quot;directly transportable : {directly_transportable(mechanism_differs, &#x27;X&#x27;, &#x27;Y&#x27;)}&quot;)
+w.say(f&quot;&quot;&quot;The status is still &#x27;{harder.status}&#x27;, which is easy to misread as &#x27;nothing
+    changed&#x27;. The route is what changed: from &#x27;{verdict.route}&#x27; to &#x27;{harder.route}&#x27;.
+    &#x27;Trivial&#x27; means the effect is identifiable from the target&#x27;s own data and the
+    source contributes nothing — which is the correct answer, and an expensive one.
+    Once the mechanism differs, the first reserve&#x27;s trial is no longer evidence about
+    the second, and the second has to run its own.&quot;&quot;&quot;)
+
+
+w.finding(f&quot;&quot;&quot;The source reserve&#x27;s adjusted estimate was {source_est.estimate:.3f} and the
+    target&#x27;s true effect was {target_truth:.3f}. The transfer worked, and it worked
+    because the mechanism is shared and only Z&#x27;s distribution differs — which is a
+    claim about ecology that the diagram records and no amount of data from either
+    reserve could establish.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;The useful output is not that number. It is the list {[sorted(s) for s in sets]}:
+    measure that in the target and the borrowed effect is licensed. Decided before
+    the field season, it is a line on a protocol. Decided afterwards, it is a
+    limitation.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;And the call is not automatic. Adding an S-node on the mechanism moved the
+    route from &#x27;{verdict.route}&#x27; to &#x27;{harder.route}&#x27; with no change to the data at
+    all — from &#x27;borrow the source, re-weighted&#x27; to &#x27;the source tells you nothing, run
+    your own trial&#x27;. The same three lines of code give opposite operational advice
+    depending on a claim an ecologist makes about the two reserves, which is exactly
+    where that decision belongs.&quot;&quot;&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>S-node on          : [&#x27;Y&#x27;, &#x27;Z&#x27;]
+transport verdict  : identified
+  route   : trivial
+directly transportable : False</pre></div>
+<div class="prose"><p>The status is still &#x27;identified&#x27;, which is easy to misread as &#x27;nothing changed&#x27;. The route is what changed: from &#x27;s_admissible_adjustment&#x27; to &#x27;trivial&#x27;. &#x27;Trivial&#x27; means the effect is identifiable from the target&#x27;s own data and the source contributes nothing — which is the correct answer, and an expensive one. Once the mechanism differs, the first reserve&#x27;s trial is no longer evidence about the second, and the second has to run its own.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="wt-close">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The close</p>
+      <h2>What it actually showed</h2>
+      <p>Written after looking at the output, which is why it does not always agree
+        with the setup.</p>
+    </div>
+    <div class="prose wt-findings"><p>The source reserve&#x27;s adjusted estimate was 2.004 and the target&#x27;s true effect was 2.000. The transfer worked, and it worked because the mechanism is shared and only Z&#x27;s distribution differs — which is a claim about ecology that the diagram records and no amount of data from either reserve could establish.</p><p>The useful output is not that number. It is the list [[&#x27;Z&#x27;]]: measure that in the target and the borrowed effect is licensed. Decided before the field season, it is a line on a protocol. Decided afterwards, it is a limitation.</p><p>And the call is not automatic. Adding an S-node on the mechanism moved the route from &#x27;s_admissible_adjustment&#x27; to &#x27;trivial&#x27; with no change to the data at all — from &#x27;borrow the source, re-weighted&#x27; to &#x27;the source tells you nothing, run your own trial&#x27;. The same three lines of code give opposite operational advice depending on a claim an ecologist makes about the two reserves, which is exactly where that decision belongs.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <details class="ex-more">
+      <summary>The whole file, and everything this run printed</summary>
+      <div class="ex-body">
+        <div class="pair">
+          <div class="code">
+            <div class="code-h"><span>examples/05_ecology_transport.py</span>
+              <button class="copy" type="button">Copy</button></div>
+            <pre>import numpy as np
+from _walkthrough import Walkthrough
+
+from axiom.identify import (
+    directly_transportable,
+    identify,
+    ols,
+    s_admissible_sets,
+    selection_diagram,
+    transport_verdict,
+    trivially_transportable,
+)
+from axiom.sim import transport_pair
+
+N, SEED = 6_000, 0
+
+w = Walkthrough(
+    field=&quot;Conservation ecology&quot;,
+    title=&quot;Borrowing an answer from a reserve you did not study&quot;,
+    question=&quot;&quot;&quot;A grazing-exclusion trial worked in one reserve. A second reserve,
+        with different rainfall and a different herbivore community, wants to know
+        what to expect. Does the first reserve&#x27;s number apply, and if not, what has
+        to be measured before it can?&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Say where the two populations differ, not just that they do&quot;,
+    why=&quot;&quot;&quot;A selection diagram is the ordinary causal graph with one extra piece of
+        information: which mechanisms differ between the populations. Here the S-node
+        points into Z — the reserves have different herbivore communities, but
+        grazing exclusion works the same way in both. That distinction, between
+        differing in who is in the population and differing in how the world works,
+        is the entire question, and no dataset contains it.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Pooling the two reserves and adding a site indicator. That estimates a
+        blend of two populations, which is not the target reserve&#x27;s answer and is not
+        the source reserve&#x27;s either. It also cannot represent the case that matters
+        most: the mechanism itself differing.&quot;&quot;&quot;,
+)
+source, target = transport_pair()
+w.out(f&quot;source reserve : {source.graph.to_text()}&quot;)
+w.out(f&quot;target reserve : {target.graph.to_text()}&quot;)
+w.out(f&quot;S-node on      : {list(source.graph.selection)}&quot;)
+w.out(&quot;&quot;)
+diagram = selection_diagram(source.graph)
+w.out(f&quot;selection diagram : {diagram.to_text()}&quot;)
+w.out(&quot;  S[Z] is a population indicator, not a variable anyone records --&quot;)
+w.out(&quot;  which is why it is marked unmeasured and never appears in a fit.&quot;)
+
+source_frame = source.observed(source.simulate(N, seed=SEED))
+target_frame = target.observed(target.simulate(N, seed=SEED + 17))
+w.figure(
+    &quot;populations&quot;,
+    kind=&quot;dumbbell&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: f&quot;mean {col}&quot;,
+                &quot;a&quot;: float(source_frame[col].mean()),
+                &quot;b&quot;: float(target_frame[col].mean()),
+            }
+            for col in (&quot;Z&quot;, &quot;X&quot;, &quot;Y&quot;)
+        ]
+    },
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;xLabel&quot;: &quot;population mean&quot;,
+        &quot;aLabel&quot;: &quot;source reserve&quot;,
+        &quot;bLabel&quot;: &quot;target reserve&quot;,
+        &quot;labelWidth&quot;: 120,
+    },
+    title=&quot;What actually differs between the two reserves&quot;,
+    note=&quot;&quot;&quot;Z moved, and X and Y moved with it because Z causes them both. Nothing
+        about the mechanism changed — which is precisely the claim the S-node makes,
+        and precisely what makes the effect borrowable.&quot;&quot;&quot;,
+    legend=((&quot;ink-2&quot;, &quot;source reserve&quot;), (&quot;accent&quot;, &quot;target reserve&quot;)),
+)
+
+edges = np.linspace(-4.5, 6.0, 41)
+centres = ((edges[:-1] + edges[1:]) / 2).tolist()
+w.figure(
+    &quot;shift&quot;,
+    kind=&quot;lines&quot;,
+    data={
+        &quot;z&quot;: centres,
+        &quot;source&quot;: (np.histogram(source_frame[&quot;Z&quot;], bins=edges, density=True)[0]).tolist(),
+        &quot;target&quot;: (np.histogram(target_frame[&quot;Z&quot;], bins=edges, density=True)[0]).tolist(),
+    },
+    opt={
+        &quot;series&quot;: [
+            {&quot;label&quot;: &quot;source&quot;, &quot;x&quot;: &quot;@z&quot;, &quot;y&quot;: &quot;@source&quot;, &quot;colour&quot;: &quot;ink-2&quot;},
+            {&quot;label&quot;: &quot;target&quot;, &quot;x&quot;: &quot;@z&quot;, &quot;y&quot;: &quot;@target&quot;, &quot;colour&quot;: &quot;accent&quot;},
+        ],
+        &quot;xLabel&quot;: &quot;Z — herbivore community composition&quot;,
+        &quot;yLabel&quot;: &quot;density&quot;,
+        &quot;height&quot;: 250,
+        &quot;rightPad&quot;: 70,
+    },
+    title=&quot;The same mechanism, a different population inside it&quot;,
+    note=&quot;&quot;&quot;Two reserves drawn from different parts of the same covariate space. If
+        the effect of exclusion varied with Z, this shift alone would make the source
+        number wrong for the target — which is why the answer depends on the shape of
+        the graph and not on how far apart these two curves are.&quot;&quot;&quot;,
+    legend=((&quot;ink-2&quot;, &quot;source reserve&quot;), (&quot;accent&quot;, &quot;target reserve&quot;)),
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Ask the three transport questions, before collecting anything&quot;,
+    why=&quot;&quot;&quot;They are increasingly demanding and each has a different consequence.
+        Directly transportable would mean the source number is the target number
+        untouched. Trivially transportable would mean the target&#x27;s own data suffices
+        and the source is irrelevant. The general verdict is the interesting middle:
+        transportable, but only after re-weighting on a specific set.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Running the analysis in the source, then arguing about external
+        validity in the discussion section. By then the target&#x27;s data collection has
+        already happened, and the covariates that would have licensed the transfer
+        were not on the form.&quot;&quot;&quot;,
+)
+w.table(
+    [&quot;question&quot;, &quot;answer&quot;, &quot;what it would have meant&quot;],
+    [
+        [
+            &quot;directly transportable&quot;,
+            str(directly_transportable(source.graph, &quot;X&quot;, &quot;Y&quot;)),
+            &quot;the source estimate is the target estimate, untouched&quot;,
+        ],
+        [
+            &quot;trivially transportable&quot;,
+            str(trivially_transportable(source.graph, &quot;X&quot;, &quot;Y&quot;)),
+            &quot;the target&#x27;s own data is enough; ignore the source&quot;,
+        ],
+    ],
+)
+verdict = transport_verdict(source.graph, &quot;X&quot;, &quot;Y&quot;)
+w.out(f&quot;transport verdict : {verdict.status}&quot;)
+for f in (&quot;route&quot;, &quot;reason&quot;):
+    value = getattr(verdict, f, None)
+    if value:
+        w.out(f&quot;  {f:8s}: {value}&quot;)
+w.say(f&quot;&quot;&quot;Read the middle row carefully: trivially transportable is
+    {trivially_transportable(source.graph, &quot;X&quot;, &quot;Y&quot;)}, which says the target could
+    answer this from its own data — if it ran its own trial. It has not, and that is
+    the whole reason the question is being asked. The verdict&#x27;s route is
+    &#x27;{verdict.route}&#x27;: borrow the source, re-weighted on a set the target must
+    measure. Transport is what you use when the target has covariates but no
+    experiment.&quot;&quot;&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Turn the verdict into a shopping list for the second reserve&quot;,
+    why=&quot;&quot;&quot;The S-admissible sets are the useful output of this entire example. They
+        say which covariates must be measured in the TARGET so the source effect can
+        be re-weighted onto it. That is a decision about a field protocol, made
+        before anyone flies out, and it is the thing a discussion-section paragraph
+        about generalisability never delivers.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Measuring everything. Field time in a remote reserve is the binding
+        constraint, and &#x27;collect all covariates&#x27; is how the two that mattered end up
+        recorded badly alongside forty that did not.&quot;&quot;&quot;,
+)
+sets = s_admissible_sets(source.graph, &quot;X&quot;, &quot;Y&quot;)
+w.out(f&quot;S-admissible sets : {[sorted(s) for s in sets]}&quot;)
+w.out(&quot;&quot;)
+w.out(&quot;Measure these in the target and the source effect can be re-weighted onto&quot;)
+w.out(&quot;the target population. Anything else is optional.&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Check the borrowed number against the target&#x27;s own&quot;,
+    why=&quot;&quot;&quot;The transfer is licensed by the diagram, but this is a synthetic pair, so
+        the claim can also be checked: estimate in the source, estimate in the target,
+        and compare both to the target&#x27;s true effect. In a real study only the first
+        of those three exists, which is why the diagram had to carry the argument.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Treating agreement here as the evidence that transport works. It is
+        not — it is a check that the implementation matches the theorem. The evidence
+        that transport works is the S-node claim, and that is an ecological
+        judgement.&quot;&quot;&quot;,
+)
+v = identify(source.graph, &quot;X&quot;, &quot;Y&quot;)
+source_est = ols(source_frame, &quot;Y&quot;, &quot;X&quot;, covariates=v.adjustment_set)
+target_est = ols(target_frame, &quot;Y&quot;, &quot;X&quot;, covariates=v.adjustment_set)
+target_truth = target.total_effect(&quot;X&quot;, &quot;Y&quot;)
+naive_source = ols(source_frame, &quot;Y&quot;, &quot;X&quot;)
+
+rows = []
+for label, est in (
+    (&quot;source, unadjusted&quot;, naive_source),
+    (&quot;source, adjusted&quot;, source_est),
+    (&quot;target, adjusted&quot;, target_est),
+):
+    ci = est.ci(0.95)
+    w.out(f&quot;{label:20s} {est.estimate:6.3f} +/- {est.se:.3f}  [{ci.lower:6.3f}, {ci.upper:6.3f}]&quot;)
+    rows.append(
+        {
+            &quot;label&quot;: label,
+            &quot;estimate&quot;: est.estimate,
+            &quot;lower&quot;: ci.lower,
+            &quot;upper&quot;: ci.upper,
+            &quot;note&quot;: f&quot;error against the target truth {est.estimate - target_truth:+.3f}&quot;,
+            &quot;bad&quot;: abs(est.estimate - target_truth) &gt; 2 * est.se,
+        }
+    )
+w.out(f&quot;{&#x27;target truth&#x27;:20s} {target_truth:6.3f}&quot;)
+w.figure(
+    &quot;transfer&quot;,
+    kind=&quot;intervals&quot;,
+    data={&quot;rows&quot;: rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: target_truth,
+        &quot;truthLabel&quot;: &quot;the target&#x27;s true effect&quot;,
+        &quot;xLabel&quot;: &quot;effect of grazing exclusion&quot;,
+        &quot;labelWidth&quot;: 155,
+        &quot;rowHeight&quot;: 38,
+    },
+    title=&quot;The source reserve&#x27;s adjusted answer is the target reserve&#x27;s answer&quot;,
+    note=&quot;&quot;&quot;Conditioning on the S-admissible set is what carries it across. The
+        unadjusted source estimate is wrong in both reserves, for the ordinary
+        confounding reason rather than for a transport reason — worth keeping on the
+        chart so the two failures are not confused.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Move the S-node onto the mechanism and watch the route change&quot;,
+    why=&quot;&quot;&quot;Everything above rests on where the populations differ. Put the S-node on
+        Y as well — the reserves now respond to exclusion differently, rather than
+        merely containing different herbivores — and the same call on the same data
+        comes back by a different route. The answer tracks the ecology, not the
+        sample size.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Assuming a difference in outcomes implies a difference in mechanism.
+        The first chart in this walkthrough shows Y differing between the reserves
+        while the mechanism is identical. Outcome differences are what a population
+        shift looks like; they are not evidence about the mechanism either way.&quot;&quot;&quot;,
+)
+mechanism_differs = source.graph.with_selection(&quot;Y&quot;)
+harder = transport_verdict(mechanism_differs, &quot;X&quot;, &quot;Y&quot;)
+w.out(f&quot;S-node on          : {list(mechanism_differs.selection)}&quot;)
+w.out(f&quot;transport verdict  : {harder.status}&quot;)
+for f in (&quot;route&quot;, &quot;reason&quot;):
+    value = getattr(harder, f, None)
+    if value:
+        w.out(f&quot;  {f:8s}: {value}&quot;)
+w.out(f&quot;directly transportable : {directly_transportable(mechanism_differs, &#x27;X&#x27;, &#x27;Y&#x27;)}&quot;)
+w.say(f&quot;&quot;&quot;The status is still &#x27;{harder.status}&#x27;, which is easy to misread as &#x27;nothing
+    changed&#x27;. The route is what changed: from &#x27;{verdict.route}&#x27; to &#x27;{harder.route}&#x27;.
+    &#x27;Trivial&#x27; means the effect is identifiable from the target&#x27;s own data and the
+    source contributes nothing — which is the correct answer, and an expensive one.
+    Once the mechanism differs, the first reserve&#x27;s trial is no longer evidence about
+    the second, and the second has to run its own.&quot;&quot;&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.finding(f&quot;&quot;&quot;The source reserve&#x27;s adjusted estimate was {source_est.estimate:.3f} and the
+    target&#x27;s true effect was {target_truth:.3f}. The transfer worked, and it worked
+    because the mechanism is shared and only Z&#x27;s distribution differs — which is a
+    claim about ecology that the diagram records and no amount of data from either
+    reserve could establish.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;The useful output is not that number. It is the list {[sorted(s) for s in sets]}:
+    measure that in the target and the borrowed effect is licensed. Decided before
+    the field season, it is a line on a protocol. Decided afterwards, it is a
+    limitation.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;And the call is not automatic. Adding an S-node on the mechanism moved the
+    route from &#x27;{verdict.route}&#x27; to &#x27;{harder.route}&#x27; with no change to the data at
+    all — from &#x27;borrow the source, re-weighted&#x27; to &#x27;the source tells you nothing, run
+    your own trial&#x27;. The same three lines of code give opposite operational advice
+    depending on a claim an ecologist makes about the two reserves, which is exactly
+    where that decision belongs.&quot;&quot;&quot;)</pre>
+          </div>
+          <div class="out">
+            <div class="out-h">stdout, captured on this build</div>
+            <pre>========================================================================================
+CONSERVATION ECOLOGY  ---  Borrowing an answer from a reserve you did not study
+========================================================================================
+  A grazing-exclusion trial worked in one reserve. A second reserve, with different
+  rainfall and a different herbivore community, wants to know what to expect. Does the
+  first reserve&#x27;s number apply, and if not, what has to be measured before it can?
+
+----------------------------------------------------------------------------------------
+STEP 1  Say where the two populations differ, not just that they do
+----------------------------------------------------------------------------------------
+  A selection diagram is the ordinary causal graph with one extra piece of information:
+  which mechanisms differ between the populations. Here the S-node points into Z — the
+  reserves have different herbivore communities, but grazing exclusion works the same
+  way in both. That distinction, between differing in who is in the population and
+  differing in how the world works, is the entire question, and no dataset contains it.
+
+  INSTEAD OF: Pooling the two reserves and adding a site indicator. That estimates a
+  blend of two populations, which is not the target reserve&#x27;s answer and is not the
+  source reserve&#x27;s either. It also cannot represent the case that matters most: the
+  mechanism itself differing.
+
+  source reserve : X -&gt; Y, Z -&gt; X, Z -&gt; Y
+  target reserve : X -&gt; Y, Z -&gt; X, Z -&gt; Y
+  S-node on      : [&#x27;Z&#x27;]
+
+  selection diagram : S[Z] -&gt; Z, X -&gt; Y, Z -&gt; X, Z -&gt; Y
+    S[Z] is a population indicator, not a variable anyone records --
+    which is why it is marked unmeasured and never appears in a fit.
+  [figure: What actually differs between the two reserves]
+
+  [figure: The same mechanism, a different population inside it]
+
+
+----------------------------------------------------------------------------------------
+STEP 2  Ask the three transport questions, before collecting anything
+----------------------------------------------------------------------------------------
+  They are increasingly demanding and each has a different consequence. Directly
+  transportable would mean the source number is the target number untouched. Trivially
+  transportable would mean the target&#x27;s own data suffices and the source is irrelevant.
+  The general verdict is the interesting middle: transportable, but only after re-
+  weighting on a specific set.
+
+  INSTEAD OF: Running the analysis in the source, then arguing about external validity
+  in the discussion section. By then the target&#x27;s data collection has already happened,
+  and the covariates that would have licensed the transfer were not on the form.
+
+  question                 answer  what it would have meant
+  -----------------------  ------  -----------------------------------------------------
+  directly transportable   False   the source estimate is the target estimate, untouched
+  trivially transportable  True    the target&#x27;s own data is enough; ignore the source
+
+  transport verdict : identified
+    route   : s_admissible_adjustment
+  Read the middle row carefully: trivially transportable is True, which says the target
+  could answer this from its own data — if it ran its own trial. It has not, and that is
+  the whole reason the question is being asked. The verdict&#x27;s route is
+  &#x27;s_admissible_adjustment&#x27;: borrow the source, re-weighted on a set the target must
+  measure. Transport is what you use when the target has covariates but no experiment.
+
+
+----------------------------------------------------------------------------------------
+STEP 3  Turn the verdict into a shopping list for the second reserve
+----------------------------------------------------------------------------------------
+  The S-admissible sets are the useful output of this entire example. They say which
+  covariates must be measured in the TARGET so the source effect can be re-weighted onto
+  it. That is a decision about a field protocol, made before anyone flies out, and it is
+  the thing a discussion-section paragraph about generalisability never delivers.
+
+  INSTEAD OF: Measuring everything. Field time in a remote reserve is the binding
+  constraint, and &#x27;collect all covariates&#x27; is how the two that mattered end up recorded
+  badly alongside forty that did not.
+
+  S-admissible sets : [[&#x27;Z&#x27;]]
+
+  Measure these in the target and the source effect can be re-weighted onto
+  the target population. Anything else is optional.
+
+----------------------------------------------------------------------------------------
+STEP 4  Check the borrowed number against the target&#x27;s own
+----------------------------------------------------------------------------------------
+  The transfer is licensed by the diagram, but this is a synthetic pair, so the claim
+  can also be checked: estimate in the source, estimate in the target, and compare both
+  to the target&#x27;s true effect. In a real study only the first of those three exists,
+  which is why the diagram had to carry the argument.
+
+  INSTEAD OF: Treating agreement here as the evidence that transport works. It is not —
+  it is a check that the implementation matches the theorem. The evidence that transport
+  works is the S-node claim, and that is an ecological judgement.
+
+  source, unadjusted    2.721 +/- 0.015  [ 2.692,  2.751]
+  source, adjusted      2.004 +/- 0.013  [ 1.979,  2.029]
+  target, adjusted      2.002 +/- 0.013  [ 1.976,  2.027]
+  target truth          2.000
+  [figure: The source reserve&#x27;s adjusted answer is the target reserve&#x27;s answer]
+
+
+----------------------------------------------------------------------------------------
+STEP 5  Move the S-node onto the mechanism and watch the route change
+----------------------------------------------------------------------------------------
+  Everything above rests on where the populations differ. Put the S-node on Y as well —
+  the reserves now respond to exclusion differently, rather than merely containing
+  different herbivores — and the same call on the same data comes back by a different
+  route. The answer tracks the ecology, not the sample size.
+
+  INSTEAD OF: Assuming a difference in outcomes implies a difference in mechanism. The
+  first chart in this walkthrough shows Y differing between the reserves while the
+  mechanism is identical. Outcome differences are what a population shift looks like;
+  they are not evidence about the mechanism either way.
+
+  S-node on          : [&#x27;Y&#x27;, &#x27;Z&#x27;]
+  transport verdict  : identified
+    route   : trivial
+  directly transportable : False
+  The status is still &#x27;identified&#x27;, which is easy to misread as &#x27;nothing changed&#x27;. The
+  route is what changed: from &#x27;s_admissible_adjustment&#x27; to &#x27;trivial&#x27;. &#x27;Trivial&#x27; means
+  the effect is identifiable from the target&#x27;s own data and the source contributes
+  nothing — which is the correct answer, and an expensive one. Once the mechanism
+  differs, the first reserve&#x27;s trial is no longer evidence about the second, and the
+  second has to run its own.
+
+
+========================================================================================
+WHAT IT ACTUALLY SHOWED
+========================================================================================
+  The source reserve&#x27;s adjusted estimate was 2.004 and the target&#x27;s true effect was
+  2.000. The transfer worked, and it worked because the mechanism is shared and only Z&#x27;s
+  distribution differs — which is a claim about ecology that the diagram records and no
+  amount of data from either reserve could establish.
+
+  The useful output is not that number. It is the list [[&#x27;Z&#x27;]]: measure that in the
+  target and the borrowed effect is licensed. Decided before the field season, it is a
+  line on a protocol. Decided afterwards, it is a limitation.
+
+  And the call is not automatic. Adding an S-node on the mechanism moved the route from
+  &#x27;s_admissible_adjustment&#x27; to &#x27;trivial&#x27; with no change to the data at all — from
+  &#x27;borrow the source, re-weighted&#x27; to &#x27;the source tells you nothing, run your own
+  trial&#x27;. The same three lines of code give opposite operational advice depending on a
+  claim an ecologist makes about the two reserves, which is exactly where that decision
+  belongs.</pre>
+          </div>
+        </div>
+      </div>
+    </details>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="example-04-epidemiology-frontdoor.html">&larr; 04 · Epidemiology</a><a class="btn btn-2" href="examples.html">All twelve</a><a class="btn btn-2" href="example-06-public-health-cluster-trial.html">06 · Public health &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

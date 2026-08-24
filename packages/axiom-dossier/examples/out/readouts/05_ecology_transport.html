@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="axiom.report">
+<meta name="axiom-report-hash" content="242f472101644c5dd128b7b6cbffe52767aa8647f9878f197ff92f0f7cb9a43a">
+<title>Borrowing an answer from a reserve you did not study</title>
+<style>
+:root {
+  color-scheme: light;
+  --ink: #111111;
+  --muted: #555555;
+  --accent: #1a1a1a;
+  --bg: #ffffff;
+  --rule: #c9c9c9;
+  --tint: rgba(26,26,26,0.055);
+  --wash: rgba(17,17,17,0.032);
+  --serif: Times-Roman, Georgia, "Times New Roman", Times, serif;
+  --mono: Courier, ui-monospace, SFMono-Regular, Menlo, monospace;
+  --size-title: 19.0pt;
+  --size-h2: 13.5pt;
+  --size-h3: 11.5pt;
+  --size-h4: 10.5pt;
+  --measure: 34em;
+  --wide: 46em;
+  --rail: 12.5em;
+  --gutter: clamp(1.15rem, 4vw, 64.0pt);
+}
+html { font-size: 10.5pt; }
+@page { margin: 64.0pt; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  padding: var(--gutter) var(--gutter) calc(var(--gutter) * 1.6);
+  background: var(--bg); color: var(--ink);
+  font-family: var(--serif); font-size: 1rem; line-height: 1.62;
+  font-kerning: normal; text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- the page: the article centred, a contents rail in the left margin --- */
+.paper { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+main { width: 100%; max-width: var(--wide); margin-inline: auto; min-width: 0; }
+@media (min-width: 68em) {
+  /* Out of the flow, so the rail cannot pull the article off centre: a reader
+     navigating by contents and one reading straight through see the same page. */
+  .toc {
+    position: fixed; top: var(--gutter); width: var(--rail);
+    left: max(var(--gutter), calc(50% - var(--wide) / 2 - var(--rail) - 2.5em));
+    max-height: calc(100vh - 2 * var(--gutter)); overflow: auto;
+  }
+}
+
+.toc { font-size: .8em; line-height: 1.4; }
+.toc-title {
+  margin: 0 0 .7em; padding: 0; border: 0; font-size: 1em; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .11em; color: var(--muted);
+}
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc a {
+  display: flex; gap: .5em; padding: .32em .7em; color: var(--muted);
+  text-decoration: none; border-left: 2px solid var(--rule);
+}
+.toc a:hover, .toc a:focus-visible {
+  color: var(--ink); border-left-color: var(--accent); background: var(--wash);
+}
+.toc .n { flex: 0 0 .9em; text-align: right; font-variant-numeric: tabular-nums; opacity: .75; }
+@media (max-width: 67.99em) {
+  .toc {
+    border: 1px solid var(--rule); padding: 1em 1.2em;
+    width: 100%; max-width: var(--wide); margin-inline: auto;
+  }
+  .toc ol { columns: 2 11em; column-gap: 2em; }
+  .toc a { border-left: 0; padding: .22em 0; }
+  .toc a:hover, .toc a:focus-visible { background: none; }
+}
+
+/* --- title block --- */
+.titleblock {
+  text-align: center; margin: 0 0 2.6em;
+  padding-bottom: 1.4em; border-bottom: 1px solid var(--rule);
+}
+h1 {
+  font-size: var(--size-title); line-height: 1.18; font-weight: 700;
+  letter-spacing: -.008em; margin: 0 0 .4em; text-wrap: balance;
+}
+.subtitle {
+  color: var(--muted); font-size: 1.06em; font-style: italic; line-height: 1.45;
+  margin: 0 auto; max-width: 32em; text-align: center; text-wrap: pretty;
+}
+
+/* --- sections: prose on the measure, figures wider than it --- */
+.section {
+  display: grid;
+  grid-template-columns:
+    [wide-start] minmax(0, 1fr)
+    [text-start] minmax(0, var(--measure))
+    [text-end] minmax(0, 1fr) [wide-end];
+}
+.section > * { grid-column: text; min-width: 0; }
+.section > figure, .section > .metrics { grid-column: wide; }
+.section.abstract { font-size: .96em; }
+.section.abstract > h2 {
+  text-align: center; border: 0; padding: 0; font-size: 1em; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .12em; margin: 0 0 .5em;
+}
+.section.abstract > * { grid-column: text; }
+
+h2, h3, h4 { break-after: avoid; scroll-margin-top: 1.2rem; text-wrap: balance; }
+h2 {
+  font-size: var(--size-h2); font-weight: 700; line-height: 1.25;
+  letter-spacing: -.005em; margin: 2.3em 0 .55em;
+  padding-bottom: .28em; border-bottom: 1px solid var(--rule);
+}
+.section:first-of-type h2 { margin-top: .4em; }
+h3 { font-size: var(--size-h3); font-weight: 700; margin: 1.9em 0 .35em; }
+h4 { font-size: var(--size-h4); font-weight: 700; margin: 1.7em 0 .3em; }
+h2 .anchor, h3 .anchor {
+  float: right; margin-left: .5em; color: var(--rule); text-decoration: none;
+  font-size: .72em; font-weight: 400; opacity: 0; transition: opacity .12s;
+}
+h2:hover .anchor, h3:hover .anchor, .anchor:focus-visible { opacity: 1; color: var(--accent); }
+
+p { margin: 0 0 .8em; text-align: justify; hyphens: auto; }
+p:last-child { margin-bottom: 0; }
+.summary { color: var(--muted); margin: 0 0 1.1em; }
+a { color: var(--accent); text-underline-offset: .16em; text-decoration-thickness: .06em; }
+strong { font-weight: 700; }
+/* `white-space: pre-wrap` is not a detail: a readout is column-aligned output,
+   and HTML collapses the columns away without it. */
+code {
+  font-family: var(--mono); font-size: .86em; background: var(--wash);
+  border-radius: 2px; padding: .1em .35em; white-space: pre-wrap;
+}
+hr { border: 0; border-top: 1px solid var(--rule); margin: 2em 0; }
+
+/* A pulled-out line: the parameters a step ran with, or a remark on a number. */
+p.emphasis {
+  margin: 1em 0 1.1em; padding: .6em .95em; text-align: left;
+  border-left: 2px solid var(--accent); background: var(--tint);
+  font-size: .95em; line-height: 1.5;
+}
+
+/* --- figures and tables --- */
+figure { margin: 1.9em 0; padding: 0; }
+figcaption {
+  color: var(--muted); font-size: .85em; line-height: 1.45;
+  margin-top: .75em; text-align: left;
+}
+figcaption .label { color: var(--ink); font-weight: 700; }
+.table-figure { overflow-x: auto; }
+/* A table is read from its caption down; a figure is read up to it. */
+.table-figure > figcaption:first-child { margin: 0 0 .6em; }
+table {
+  border-collapse: collapse; width: 100%; margin: 0;
+  font-size: .88em; line-height: 1.42; font-variant-numeric: tabular-nums;
+}
+thead th {
+  text-align: left; font-weight: 700; padding: .5em .7em; vertical-align: bottom;
+  border-top: 1.5px solid var(--ink); border-bottom: 1px solid var(--ink);
+}
+tbody td { padding: .42em .7em; vertical-align: top; border: 0; }
+tbody tr:nth-child(even) { background: var(--wash); }
+tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
+td.num, th.num { text-align: right; }
+
+/* --- the numbers, as a panel of hairline-separated cells --- */
+.metrics {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(12em, 1fr));
+  gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+  margin: 1.7em 0;
+}
+.metric {
+  background: var(--bg); padding: .8em .95em;
+  display: flex; flex-direction: column;
+}
+.metric .label { color: var(--muted); font-size: .8em; font-weight: 600; line-height: 1.35; }
+.metric .value {
+  font-size: 1.22em; font-weight: 600; line-height: 1.28; margin-top: .3em;
+  color: var(--accent); font-variant-numeric: tabular-nums; text-wrap: balance;
+}
+/* The interval sits on the floor of its cell, so a row of them reads as a row
+   however differently the values above them wrap. */
+.metric .interval {
+  color: var(--muted); font-size: .8em; line-height: 1.35; margin-top: auto;
+  padding-top: .25em; font-variant-numeric: tabular-nums;
+}
+.metric .interval:empty { display: none; }
+
+/* --- the assumption trail --- */
+.ledger {
+  margin: 1.7em 0; padding: .9em 1.1em;
+  background: var(--wash); border-left: 2px solid var(--accent);
+  font-size: .93em; line-height: 1.5;
+}
+.ledger > figcaption:first-child {
+  margin: 0 0 .7em; color: var(--ink); font-weight: 700;
+  font-size: .88em; text-transform: uppercase; letter-spacing: .07em;
+}
+.ledger .line { margin: 0 0 .75em; }
+.ledger .line:last-child { margin-bottom: 0; }
+.ledger .kind {
+  display: inline-block; font-family: var(--mono); font-size: .78em;
+  color: var(--muted); background: var(--bg); border: 1px solid var(--rule);
+  border-radius: 2px; padding: .05em .4em; margin-right: .4em;
+  vertical-align: baseline;
+}
+.ledger .assumption { color: var(--muted); font-size: .93em; margin-top: .25em; }
+.ledger .assumption code { font-size: .95em; }
+
+footer {
+  margin-top: 3em; padding-top: .9em; border-top: 1px solid var(--rule);
+  color: var(--muted); font-size: .82em; line-height: 1.5;
+}
+
+@media print {
+  html { scroll-behavior: auto; }
+  body { padding: 0; }
+  .toc, .anchor { display: none !important; }
+  .paper { display: block; }
+  main { max-width: none; }
+  .section { display: block; }
+  a { color: inherit; text-decoration: none; }
+  /* An article flows: a section does not start a fresh sheet, it starts where
+     the last one ended, and only the things that break badly are held together. */
+  p { orphans: 3; widows: 3; }
+  figure, .metrics, .ledger { break-inside: avoid; }
+  thead { display: table-header-group; }
+}
+</style>
+</head><body><div class="paper">
+<nav class="toc" aria-label="Contents"><div class="toc-title">Contents</div><ol><li><a href="#section-1"><span>Abstract</span></a></li><li><a href="#section-2"><span class="n">1</span><span>Introduction</span></a></li><li><a href="#section-3"><span class="n">2</span><span>Methods</span></a></li><li><a href="#section-4"><span class="n">3</span><span>Results</span></a></li><li><a href="#section-5"><span class="n">4</span><span>What the run showed</span></a></li><li><a href="#section-6"><span class="n">5</span><span>Model checking</span></a></li><li><a href="#section-7"><span class="n">6</span><span>Discussion</span></a></li><li><a href="#section-8"><span class="n">7</span><span>Conclusions</span></a></li><li><a href="#section-9"><span class="n">8</span><span>Limitations</span></a></li><li><a href="#section-10"><span class="n">9</span><span>Provenance</span></a></li></ol></nav>
+<main>
+<header class="titleblock">
+<h1>Borrowing an answer from a reserve you did not study</h1>
+<p class="subtitle">A grazing-exclusion trial worked in one reserve. A second reserve, with different rainfall and a different herbivore community, wants to know what to expect. Does the first reserve&#x27;s number apply, and if not, what has to be measured before it can?</p>
+</header>
+<section id="section-1" class="section abstract">
+<h2><a class="anchor" href="#section-1" aria-hidden="true">§</a>Abstract</h2>
+<p>A grazing-exclusion trial worked in one reserve. A second reserve, with different rainfall and a different herbivore community, wants to know what to expect. Does the first reserve&#x27;s number apply, and if not, what has to be measured before it can? Say where the two populations differ, not just that they do. 5 steps are recorded in full below. The source reserve&#x27;s adjusted estimate was 2.004 and the target&#x27;s true effect was 2.000. The transfer worked, and it worked because the mechanism is shared and only Z&#x27;s distribution differs — which is a claim about ecology that the diagram records and no amount of data from either reserve could establish. No assumptions were recorded for this run, which is not the same as none being required.</p>
+</section>
+<section id="section-2" class="section">
+<h2><a class="anchor" href="#section-2" aria-hidden="true">§</a>1. Introduction</h2>
+<p>This report addresses one question: A grazing-exclusion trial worked in one reserve. A second reserve, with different rainfall and a different herbivore community, wants to know what to expect. Does the first reserve&#x27;s number apply, and if not, what has to be measured before it can?</p>
+</section>
+<section id="section-3" class="section">
+<h2><a class="anchor" href="#section-3" aria-hidden="true">§</a>2. Methods</h2>
+<p>Question: A grazing-exclusion trial worked in one reserve. A second reserve, with different rainfall and a different herbivore community, wants to know what to expect. Does the first reserve&#x27;s number apply, and if not, what has to be measured before it can?</p>
+<h4>Say where the two populations differ, not just that they do</h4>
+<p>A selection diagram is the ordinary causal graph with one extra piece of information: which mechanisms differ between the populations. Here the S-node points into Z — the reserves have different herbivore communities, but grazing exclusion works the same way in both. That distinction, between differing in who is in the population and differing in how the world works, is the entire question, and no dataset contains it.</p>
+<p>Considered instead: Pooling the two reserves and adding a site indicator. That estimates a blend of two populations, which is not the target reserve&#x27;s answer and is not the source reserve&#x27;s either. It also cannot represent the case that matters most: the mechanism itself differing.</p>
+<p><code>source reserve : X -&gt; Y, Z -&gt; X, Z -&gt; Y</code><br><code>target reserve : X -&gt; Y, Z -&gt; X, Z -&gt; Y</code><br><code>S-node on      : [&#x27;Z&#x27;]</code><br><code>selection diagram : S[Z] -&gt; Z, X -&gt; Y, Z -&gt; X, Z -&gt; Y</code><br><code>  S[Z] is a population indicator, not a variable anyone records --</code><br><code>  which is why it is marked unmeasured and never appears in a fit.</code></p>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.7.0.min.js" integrity="sha256-jvTGqxNp8AGWEcvNLVuKr+8j5dGe9Yw51LQkmDH+IYA=" crossorigin="anonymous"></script>                <div id="46e9a0da-a133-41b9-9d47-27f64cbdc45f" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("46e9a0da-a133-41b9-9d47-27f64cbdc45f")) {                    Plotly.newPlot(                        "46e9a0da-a133-41b9-9d47-27f64cbdc45f",                        [{"hoverinfo":"skip","line":{"color":"#c9c9c9","width":3},"mode":"lines","showlegend":false,"x":[-0.0014060966616027766,1.5205170556516854],"y":["mean Z","mean Z"],"type":"scatter"},{"hoverinfo":"skip","line":{"color":"#c9c9c9","width":3},"mode":"lines","showlegend":false,"x":[0.010675109288501024,1.2032721366798467],"y":["mean X","mean X"],"type":"scatter"},{"hoverinfo":"skip","line":{"color":"#c9c9c9","width":3},"mode":"lines","showlegend":false,"x":[0.02642135811194969,4.685752141689501],"y":["mean Y","mean Y"],"type":"scatter"},{"hovertemplate":"%{y}\u003cbr\u003esource reserve %{x:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#555555","size":9},"mode":"markers","name":"source reserve","x":[-0.0014060966616027766,0.010675109288501024,0.02642135811194969],"y":["mean Z","mean X","mean Y"],"type":"scatter"},{"hovertemplate":"%{y}\u003cbr\u003etarget reserve %{x:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#2f7fd1","size":11},"mode":"markers","name":"target reserve","x":[1.5205170556516854,1.2032721366798467,4.685752141689501],"y":["mean Z","mean X","mean Y"],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"population mean"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"yaxis":{"title":{"text":""},"gridcolor":"#c9c9c9","zeroline":false,"autorange":"reversed","automargin":true},"showlegend":true,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"legend":{"orientation":"h","y":-0.25,"x":0},"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 1.</span> What actually differs between the two reserves. Z moved, and X and Y moved with it because Z causes them both. Nothing about the mechanism changed — which is precisely the claim the S-node makes, and precisely what makes the effect borrowable</figcaption></figure>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                            <div id="0644f1a4-4c43-47f8-99bc-d4bfd8f87806" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("0644f1a4-4c43-47f8-99bc-d4bfd8f87806")) {                    Plotly.newPlot(                        "0644f1a4-4c43-47f8-99bc-d4bfd8f87806",                        [{"hovertemplate":"%{x:.4g}\u003cbr\u003e%{y:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#2f7fd1","width":2},"mode":"lines","name":"source","x":[-4.36875,-4.10625,-3.84375,-3.58125,-3.31875,-3.05625,-2.7937499999999997,-2.53125,-2.26875,-2.0062499999999996,-1.74375,-1.4812499999999997,-1.2187499999999998,-0.9562499999999998,-0.6937499999999999,-0.4312499999999999,-0.16874999999999973,0.09375000000000044,0.3562500000000002,0.6187499999999999,0.8812500000000001,1.1437500000000003,1.4062500000000004,1.6687500000000006,1.9312500000000004,2.19375,2.4562500000000003,2.7187500000000004,2.9812500000000006,3.2437500000000004,3.5062500000000005,3.7687500000000007,4.03125,4.29375,4.55625,4.8187500000000005,5.081250000000001,5.34375,5.60625,5.86875],"y":[0.0,0.0,0.001269841269841269,0.0,0.0006349206349206345,0.004444444444444442,0.007619047619047615,0.01269841269841271,0.027301587301587285,0.05968253968253975,0.07746031746031741,0.1212698412698412,0.20952380952380975,0.25333333333333313,0.3295238095238099,0.3676190476190474,0.408253968253968,0.3720634920634918,0.36952380952381053,0.32317460317460295,0.2634920634920633,0.203174603174603,0.15492063492063482,0.09777777777777771,0.07174603174603193,0.036825396825396796,0.01968253968253967,0.010158730158730152,0.004444444444444442,0.0019047619047619097,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"type":"scatter"},{"hovertemplate":"%{x:.4g}\u003cbr\u003e%{y:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#b5453b","width":2},"mode":"lines","name":"target","x":[-4.36875,-4.10625,-3.84375,-3.58125,-3.31875,-3.05625,-2.7937499999999997,-2.53125,-2.26875,-2.0062499999999996,-1.74375,-1.4812499999999997,-1.2187499999999998,-0.9562499999999998,-0.6937499999999999,-0.4312499999999999,-0.16874999999999973,0.09375000000000044,0.3562500000000002,0.6187499999999999,0.8812500000000001,1.1437500000000003,1.4062500000000004,1.6687500000000006,1.9312500000000004,2.19375,2.4562500000000003,2.7187500000000004,2.9812500000000006,3.2437500000000004,3.5062500000000005,3.7687500000000007,4.03125,4.29375,4.55625,4.8187500000000005,5.081250000000001,5.34375,5.60625,5.86875],"y":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0006349206349206345,0.0006349206349206356,0.001269841269841269,0.006349206349206344,0.010158730158730169,0.01587301587301586,0.03428571428571432,0.06349206349206345,0.09142857142857137,0.14476190476190468,0.19619047619047672,0.302222222222222,0.2996825396825395,0.3663492063492061,0.3974603174603172,0.39555555555555527,0.3619047619047629,0.3066666666666665,0.2730158730158728,0.19111111111111098,0.1307936507936507,0.09904761904761931,0.052063492063491854,0.03555555555555565,0.019682539682539735,0.0050793650793650585,0.005079365079365093,0.0006349206349206323,0.0025396825396825466,0.0,0.0,0.0],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"Z — herbivore community composition"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"yaxis":{"title":{"text":"density"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"showlegend":true,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"legend":{"orientation":"h","y":-0.22,"x":0},"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 2.</span> The same mechanism, a different population inside it. Two reserves drawn from different parts of the same covariate space. If the effect of exclusion varied with Z, this shift alone would make the source number wrong for the target — which is why the answer depends on the shape of the graph and not on how far apart these two curves are</figcaption></figure>
+<h4>Ask the three transport questions, before collecting anything</h4>
+<p>Read the middle row carefully: trivially transportable is True, which says the target could answer this from its own data — if it ran its own trial. It has not, and that is the whole reason the question is being asked. The verdict&#x27;s route is &#x27;s_admissible_adjustment&#x27;: borrow the source, re-weighted on a set the target must measure. Transport is what you use when the target has covariates but no experiment. They are increasingly demanding and each has a different consequence. Directly transportable would mean the source number is the target number untouched. Trivially transportable would mean the target&#x27;s own data suffices and the source is irrelevant. The general verdict is the interesting middle: transportable, but only after re-weighting on a specific set.</p>
+<p>Considered instead: Running the analysis in the source, then arguing about external validity in the discussion section. By then the target&#x27;s data collection has already happened, and the covariates that would have licensed the transfer were not on the form.</p>
+<p><code>transport verdict : identified</code><br><code>  route   : s_admissible_adjustment</code></p>
+<figure class="table-figure"><figcaption><span class="label">Table 1</span></figcaption><table><thead><tr><th class="">question</th><th class="">answer</th><th class="">what it would have meant</th></tr></thead><tbody><tr><td class="">directly transportable</td><td class="">False</td><td class="">the source estimate is the target estimate, untouched</td></tr><tr><td class="">trivially transportable</td><td class="">True</td><td class="">the target&#x27;s own data is enough; ignore the source</td></tr></tbody></table></figure>
+<h4>Turn the verdict into a shopping list for the second reserve</h4>
+<p>The S-admissible sets are the useful output of this entire example. They say which covariates must be measured in the TARGET so the source effect can be re-weighted onto it. That is a decision about a field protocol, made before anyone flies out, and it is the thing a discussion-section paragraph about generalisability never delivers.</p>
+<p>Considered instead: Measuring everything. Field time in a remote reserve is the binding constraint, and &#x27;collect all covariates&#x27; is how the two that mattered end up recorded badly alongside forty that did not.</p>
+<p><code>S-admissible sets : [[&#x27;Z&#x27;]]</code><br><code>Measure these in the target and the source effect can be re-weighted onto</code><br><code>the target population. Anything else is optional.</code></p>
+<h4>Check the borrowed number against the target&#x27;s own</h4>
+<p>The transfer is licensed by the diagram, but this is a synthetic pair, so the claim can also be checked: estimate in the source, estimate in the target, and compare both to the target&#x27;s true effect. In a real study only the first of those three exists, which is why the diagram had to carry the argument.</p>
+<p>Considered instead: Treating agreement here as the evidence that transport works. It is not — it is a check that the implementation matches the theorem. The evidence that transport works is the S-node claim, and that is an ecological judgement.</p>
+<p><code>source, unadjusted    2.721 +/- 0.015  [ 2.692,  2.751]</code><br><code>source, adjusted      2.004 +/- 0.013  [ 1.979,  2.029]</code><br><code>target, adjusted      2.002 +/- 0.013  [ 1.976,  2.027]</code><br><code>target truth          2.000</code></p>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                            <div id="5b49ee50-df11-4b4d-8a9e-2c3c15cb69de" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("5b49ee50-df11-4b4d-8a9e-2c3c15cb69de")) {                    Plotly.newPlot(                        "5b49ee50-df11-4b4d-8a9e-2c3c15cb69de",                        [{"error_x":{"array":[0.02978090672860212,0.025015820527009236,0.025452574074273926],"arrayminus":[0.02978090672860212,0.025015820527009236,0.025452574074273704],"color":"#555555","symmetric":false,"thickness":1.4,"type":"data","width":6},"hovertemplate":"%{y}\u003cbr\u003e%{x:.4g}\u003cbr\u003e%{text}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":["#b5453b","#2f7fd1","#2f7fd1"],"size":10,"symbol":"square"},"mode":"markers","text":["error against the target truth +0.721","error against the target truth +0.004","error against the target truth +0.002"],"x":[2.7214451183369355,2.0037576092944227,2.0019476160558205],"y":["source, unadjusted","source, adjusted","target, adjusted"],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"shapes":[{"line":{"color":"#555555","dash":"dash","width":1.2},"type":"line","x0":2.0,"x1":2.0,"xref":"x","y0":0,"y1":1,"yref":"y domain"}],"annotations":[{"font":{"color":"#555555","size":8.924999999999999},"showarrow":false,"text":"the target's true effect","x":2.0,"xanchor":"center","xref":"x","y":1,"yanchor":"bottom","yref":"y domain"}],"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"effect of grazing exclusion"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"yaxis":{"title":{"text":""},"gridcolor":"#c9c9c9","zeroline":false,"autorange":"reversed","automargin":true},"showlegend":false,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 3.</span> The source reserve&#x27;s adjusted answer is the target reserve&#x27;s answer. Conditioning on the S-admissible set is what carries it across. The unadjusted source estimate is wrong in both reserves, for the ordinary confounding reason rather than for a transport reason — worth keeping on the chart so the two failures are not confused</figcaption></figure>
+<h4>Move the S-node onto the mechanism and watch the route change</h4>
+<p>The status is still &#x27;identified&#x27;, which is easy to misread as &#x27;nothing changed&#x27;. The route is what changed: from &#x27;s_admissible_adjustment&#x27; to &#x27;trivial&#x27;. &#x27;Trivial&#x27; means the effect is identifiable from the target&#x27;s own data and the source contributes nothing — which is the correct answer, and an expensive one. Once the mechanism differs, the first reserve&#x27;s trial is no longer evidence about the second, and the second has to run its own. Everything above rests on where the populations differ. Put the S-node on Y as well — the reserves now respond to exclusion differently, rather than merely containing different herbivores — and the same call on the same data comes back by a different route. The answer tracks the ecology, not the sample size.</p>
+<p>Considered instead: Assuming a difference in outcomes implies a difference in mechanism. The first chart in this walkthrough shows Y differing between the reserves while the mechanism is identical. Outcome differences are what a population shift looks like; they are not evidence about the mechanism either way.</p>
+<p><code>S-node on          : [&#x27;Y&#x27;, &#x27;Z&#x27;]</code><br><code>transport verdict  : identified</code><br><code>  route   : trivial</code><br><code>directly transportable : False</code></p>
+</section>
+<section id="section-4" class="section">
+<h2><a class="anchor" href="#section-4" aria-hidden="true">§</a>3. Results</h2>
+<p>No findings were recorded.</p>
+</section>
+<section id="section-5" class="section">
+<h2><a class="anchor" href="#section-5" aria-hidden="true">§</a>4. What the run showed</h2>
+<p class="emphasis">Written by the analyst after seeing the output, and reproduced unchanged. Nothing in this section is generated.</p>
+<p>The source reserve&#x27;s adjusted estimate was 2.004 and the target&#x27;s true effect was 2.000. The transfer worked, and it worked because the mechanism is shared and only Z&#x27;s distribution differs — which is a claim about ecology that the diagram records and no amount of data from either reserve could establish.</p>
+<p>The useful output is not that number. It is the list [[&#x27;Z&#x27;]]: measure that in the target and the borrowed effect is licensed. Decided before the field season, it is a line on a protocol. Decided afterwards, it is a limitation.</p>
+<p>And the call is not automatic. Adding an S-node on the mechanism moved the route from &#x27;s_admissible_adjustment&#x27; to &#x27;trivial&#x27; with no change to the data at all — from &#x27;borrow the source, re-weighted&#x27; to &#x27;the source tells you nothing, run your own trial&#x27;. The same three lines of code give opposite operational advice depending on a claim an ecologist makes about the two reserves, which is exactly where that decision belongs.</p>
+</section>
+<section id="section-6" class="section">
+<h2><a class="anchor" href="#section-6" aria-hidden="true">§</a>5. Model checking</h2>
+<p>No diagnostics were recorded. An analysis with no model checking is not therefore sound; it is unexamined.</p>
+</section>
+<section id="section-7" class="section">
+<h2><a class="anchor" href="#section-7" aria-hidden="true">§</a>6. Discussion</h2>
+<p>There are no findings to interpret.</p>
+</section>
+<section id="section-8" class="section">
+<h2><a class="anchor" href="#section-8" aria-hidden="true">§</a>7. Conclusions</h2>
+<p>A grazing-exclusion trial worked in one reserve. A second reserve, with different rainfall and a different herbivore community, wants to know what to expect. Does the first reserve&#x27;s number apply, and if not, what has to be measured before it can?</p>
+<p>No finding was recorded, so no conclusion follows.</p>
+</section>
+<section id="section-9" class="section">
+<h2><a class="anchor" href="#section-9" aria-hidden="true">§</a>8. Limitations</h2>
+<p>No assumption in the record is left unresolved. That is a statement about the record, not a guarantee about the world.</p>
+</section>
+<section id="section-10" class="section">
+<h2><a class="anchor" href="#section-10" aria-hidden="true">§</a>9. Provenance</h2>
+<p>Every number in this document resolves to a quantity in the evidence record below. Prose was checked against that record: any numeral not traceable to it, and any claim the record does not itself make, is reported rather than published.</p>
+<figure class="table-figure"><figcaption><span class="label">Table 2.</span> Run</figcaption><table><thead><tr><th class="">Field</th><th class="">Value</th></tr></thead><tbody><tr><td class="">field</td><td class="">Conservation ecology</td></tr><tr><td class="">source</td><td class="">examples/ walkthrough record</td></tr><tr><td class="">steps</td><td class="">5</td></tr><tr><td class="">evidence hash</td><td class="">bc1798d78c947f7018ac386b86650d18f80088bde7659da73da71f0f41135e6d</td></tr></tbody></table></figure>
+</section>
+
+</main>
+</div></body></html>

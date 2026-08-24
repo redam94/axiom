@@ -1,0 +1,366 @@
+<!--meta {
+  "title": "Identify — can the data answer the question? · axiom",
+  "description": "Causal graphs, back-door and front-door routes, instruments, and sensitivity analysis. axiom answers whether an effect is recoverable before you fit anything, and names what a confounder would have to look like to overturn the answer."
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Pillar 01 · axiom.identify · axiom.diagnose</p>
+    <h1 style="max-width:16ch">Can the data answer&nbsp;it?</h1>
+    <p class="lede prose mt">Every estimator returns a number. The question that decides
+      whether the number means anything comes first: given how the world is wired, is this
+      effect recoverable from what you measured? axiom answers that from the graph, before
+      any data is touched — and when the answer is no, it says which variable is missing
+      rather than returning a number anyway.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The good case</p>
+      <h2>A route exists, so take it</h2>
+      <p>A treatment <code>X</code>, an outcome <code>Y</code>, and a common cause
+        <code>Z</code> that drives both. The graph is
+        <code>{{identify.backdoor.graph}}</code>, and everything in it is measured. axiom
+        searches for a licensed route and finds the back door.</p>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <figure class="fig">
+          <div class="fig-head">
+            <p class="fig-t">Three estimates of the same effect</p>
+            <p class="fig-s">Same data, same 5,000 rows. The only difference is whether the
+              confounder was conditioned on.</p>
+          </div>
+          <div class="chart" data-chart="intervals" data-file="identify"
+               data-opt='{"rows":"backdoor.estimates","label_key":"label",
+                          "truth":2.0,"truthLabel":"truth = 2.0","labelWidth":168,
+                          "rowHeight":46,"xLabel":"estimated effect of X on Y","mass":95}'></div>
+          <p class="stamp"><b>axiom.identify.ols</b>(frame, "Y", "X", covariates=…) ·
+            n = 5,000 · 95% Wald · seed 0</p>
+        </figure>
+      </div>
+      <div class="stack">
+        <div>
+          <p class="readout-l">Naive estimate, ignoring <code>Z</code></p>
+          <div class="readout">
+            <div class="readout-v">{{identify.backdoor.estimates[0].estimate:.3f}}</div>
+            <div class="readout-bar" style="--pos:{{@ identify.backdoor.estimates[0].estimate identify.backdoor.estimates[0].lower identify.backdoor.estimates[0].upper }}"><i></i><i></i></div>
+            <div class="readout-e"><span>{{identify.backdoor.estimates[0].lower:.3f}}</span>
+              <span>{{identify.backdoor.estimates[0].upper:.3f}}</span></div>
+            <p class="readout-d">95% Wald · off by
+              {{identify.backdoor.estimates[0].error:+.3f}} — and the interval does not
+              contain the truth</p>
+          </div>
+        </div>
+        <div>
+          <p class="readout-l">Back-door adjusted, conditioning on
+            <code>{{identify.backdoor.adjustment_set}}</code></p>
+          <div class="readout">
+            <div class="readout-v">{{identify.backdoor.estimates[1].estimate:.3f}}</div>
+            <div class="readout-bar" style="--pos:{{@ identify.backdoor.estimates[1].estimate identify.backdoor.estimates[1].lower identify.backdoor.estimates[1].upper }}"><i></i><i></i></div>
+            <div class="readout-e"><span>{{identify.backdoor.estimates[1].lower:.3f}}</span>
+              <span>{{identify.backdoor.estimates[1].upper:.3f}}</span></div>
+            <p class="readout-d">95% Wald · off by
+              {{identify.backdoor.estimates[1].error:+.3f}} against a truth of
+              {{identify.backdoor.truth:.1f}}</p>
+          </div>
+        </div>
+        <div class="note">
+          <p class="note-t">The bias does not shrink with n</p>
+          <p class="small" style="margin:0">Collecting ten times the data would tighten the
+            naive interval around
+            <strong>{{identify.backdoor.estimates[0].estimate:.2f}}</strong>, not move it
+            toward <strong>{{identify.backdoor.truth:.1f}}</strong>. Confounding is not
+            noise, and no sample size fixes it.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-lg">
+      <h3>What the verdict carries</h3>
+      <p class="prose muted small">A verdict is not a boolean. It names the route, the set to
+        condition on, and every assumption that route rests on — each one with a state, so
+        you can see what has actually been checked and what is merely being assumed.</p>
+      <div class="ledger mt">
+        <div class="ledger-row">
+          <span class="ledger-f">status</span>
+          <span class="ledger-s">{{identify.backdoor.status}} via the
+            <b>{{identify.backdoor.route}}</b> route</span>
+          <span class="tag is-good">licensed</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">adjust for</span>
+          <span class="ledger-s">{{identify.backdoor.adjustment_set}} — the minimal sufficient
+            set. axiom also enumerates the alternatives:
+            {{identify.backdoor.minimal_sets}}</span>
+          <span class="ledger-v">1 set</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">assumptions</span>
+          <span class="ledger-s">none beyond the graph. With every node measured and a
+            back door available, there is nothing further to assume — so axiom lists
+            <b>nothing</b> rather than padding the verdict. The graph itself is still your
+            claim to defend, and it is hashed into the verdict.</span>
+          <span class="ledger-v">0 lines</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The honest case</p>
+      <h2>No route exists, and axiom says so</h2>
+      <p>Now the same structure with <code>Z</code> never measured — the observed columns are
+        {{identify.not_identified.observed_columns}}. There is nothing to condition on. A
+        library that hands back a coefficient here is not lying about the arithmetic; it is
+        answering a different question than the one you asked.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="ledger">
+        <div class="ledger-row">
+          <span class="ledger-f">status</span>
+          <span class="ledger-s"><b>{{identify.not_identified.status}}</b> —
+            route {{identify.not_identified.route}}</span>
+          <span class="tag is-bad">not licensed</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">needs</span>
+          <span class="ledger-s">{{identify.not_identified.unmeasured_required}}, which is
+            not in your data</span>
+          <span class="ledger-v">unmeasured</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">if you fit anyway</span>
+          <span class="ledger-s">the regression returns
+            <b>{{identify.not_identified.naive.estimate:.3f}}</b> against a truth of
+            {{identify.not_identified.truth:.1f}}</span>
+          <span class="ledger-v">{{identify.not_identified.naive.error:+.3f}}</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">no route at all</span>
+          <span class="ledger-s">for <code>{{identify.not_identified.blocked.graph}}</code>
+            the verdict is <b>{{identify.not_identified.blocked.status}}</b>:
+            “{{identify.not_identified.blocked.reason}}”</span>
+          <span class="tag is-bad">blocked</span>
+        </div>
+      </div>
+      <div>
+        <h3>Being told no is the feature</h3>
+        <p class="small muted">Three outcomes, three different things to do next.
+          <strong>Identified</strong> means adjust and proceed. <strong>Downgraded</strong>
+          means the route exists on paper but a variable it needs is missing — so either go
+          and measure it, find an instrument, or bound the damage with a sensitivity
+          analysis. <strong>Blocked</strong> means no observational route exists in this
+          graph at all, and the only way forward is to intervene: run the experiment.</p>
+        <p class="small muted">That last branch is the bridge to the next pillar. When
+          identification fails, the answer is not a cleverer estimator — it is a
+          <a href="design.html">design</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The rescue</p>
+      <h2>An instrument puts it back in reach</h2>
+      <p>If something shifts the treatment without touching the outcome except through it,
+        the effect becomes recoverable again. axiom finds the instrument in the graph, runs
+        two-stage least squares, and checks the relevance condition rather than assuming it.</p>
+    </div>
+    <div class="grid-2">
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">OLS versus 2SLS on a confounded treatment</p>
+          <p class="fig-s">The instrument is <code>{{identify.instrument.instrument}}</code>,
+            found by axiom from the graph — not nominated by hand.</p>
+        </div>
+        <div class="chart" data-chart="intervals" data-file="identify"
+             data-opt='{"rows":"instrument.estimates","label_key":"label",
+                        "truth":{{identify.instrument.truth:.4f}},"truthLabel":"truth",
+                        "labelWidth":90,"rowHeight":48,
+                        "xLabel":"estimated effect of X on Y","mass":95}'></div>
+        <p class="stamp"><b>axiom.identify.two_stage_least_squares</b>(frame, "Y", "X",
+          instruments=[{{identify.instrument.instrument}}]) · n = 5,000 · seed 1</p>
+      </figure>
+      <div class="stack">
+        <div class="ledger">
+          <div class="ledger-row">
+            <span class="ledger-f">route</span>
+            <span class="ledger-s">axiom picked <b>{{identify.instrument.route}}</b> from the
+              graph structure</span>
+            <span class="tag is-good">{{identify.instrument.status}}</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">relevance</span>
+            <span class="ledger-s">first-stage F of
+              <b>{{identify.instrument.first_stage_f:,.0f}}</b> — checked, not assumed.
+              A weak instrument is its own bias.</span>
+            <span class="tag is-good">{{identify.instrument.relevance.state}}</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">recovery</span>
+            <span class="ledger-s">2SLS lands
+              <b>{{identify.instrument.estimates[1].error:+.3f}}</b> from the truth where OLS
+              is off by {{identify.instrument.estimates[0].error:+.3f}}</span>
+            <span class="ledger-v">{{identify.instrument.estimates[1].estimate:.3f}}</span>
+          </div>
+        </div>
+        <p class="small muted">Exclusion — the assumption that the instrument affects the
+          outcome only through the treatment — is not testable from data, and axiom does not
+          pretend otherwise. It goes into the verdict as an unverified assumption, which is
+          where a reviewer can find it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">When you cannot fix it</p>
+      <h2>How strong would the confounder have to be?</h2>
+      <p>Sometimes there is no instrument and no way to measure the missing variable. The
+        remaining honest move is to say how bad the problem would have to be to change your
+        mind — and then let a reader judge whether a confounder that strong is plausible in
+        their setting.</p>
+    </div>
+
+    <div class="grid-2">
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">The estimate under every strength of confounder</p>
+          <p class="fig-s">Both axes are partial R², the share of variance an unobserved
+            confounder would explain. Darker is a larger surviving estimate.</p>
+        </div>
+        <div class="chart" data-chart="heatmap" data-file="identify"
+             data-opt='{"key":"sensitivity","x":"grid","y":"grid","z":"contour","pct":true,
+                        "xLabel":"confounder → treatment","yLabel":"confounder → outcome",
+                        "zLabel":"adjusted estimate","height":330}'></div>
+        <p class="stamp"><b>axiom.diagnose.bias_bounds</b>(estimate, se, df, r2_yz_dx,
+          r2_dz_x, mass=0.95) — Cinelli–Hazlett bounds over a 21×21 grid</p>
+      </figure>
+
+      <div class="stack">
+        <div>
+          <p class="readout-l">Robustness value</p>
+          <div class="readout">
+            <div class="readout-v">{{identify.sensitivity.rv:.1%}}</div>
+            <p class="readout-d" style="margin-top:10px">A confounder would have to explain
+              {{identify.sensitivity.rv:.1%}} of the residual variance in
+              <em>both</em> the treatment and the outcome to wipe the effect out entirely.
+              That is an enormous confounder — which is the point of quoting the number.</p>
+          </div>
+        </div>
+        <div>
+          <p class="readout-l">To produce the bias that is actually there</p>
+          <div class="readout">
+            <div class="readout-v">{{identify.sensitivity.rv_q:.1%}}</div>
+            <p class="readout-d" style="margin-top:10px">The real confounding in this
+              simulation moves the estimate by
+              {{identify.sensitivity.actual_bias:+.3f}}. A confounder explaining
+              {{identify.sensitivity.rv_q:.1%}} of the residual variance in each would do
+              that much damage.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-lg">
+      <h3>Bounding the damage at a stated confounder strength</h3>
+      <p class="prose muted small">Pick a benchmark — “no worse than the confounder I already
+        measured”, say — and axiom returns the adjusted estimate and interval under exactly
+        that assumption. Here the benchmark is the confounder the simulation really has, and
+        two weaker versions of it.</p>
+      <div class="tbl-wrap mt">
+        <table class="t">
+          <caption>Adjusted estimate under a hypothetical confounder of each strength.
+            Truth is {{identify.sensitivity.truth:.1f}}; the unadjusted estimate is
+            {{identify.sensitivity.estimate:.3f}}.</caption>
+          <thead>
+            <tr><th>benchmark</th><th>R² with treatment</th><th>R² with outcome</th>
+              <th>bias</th><th>adjusted</th><th>95% interval</th></tr>
+          </thead>
+          <tbody>
+            <tr class="hi">
+              <td>{{identify.sensitivity.bounds[0].label}}</td>
+              <td>{{identify.sensitivity.bounds[0].r2_dz_x:.3f}}</td>
+              <td>{{identify.sensitivity.bounds[0].r2_yz_dx:.3f}}</td>
+              <td>{{identify.sensitivity.bounds[0].bias:.3f}}</td>
+              <td>{{identify.sensitivity.bounds[0].adjusted:.3f}}</td>
+              <td>[{{identify.sensitivity.bounds[0].lower:.3f}},
+                {{identify.sensitivity.bounds[0].upper:.3f}}]</td>
+            </tr>
+            <tr>
+              <td>{{identify.sensitivity.bounds[1].label}}</td>
+              <td>{{identify.sensitivity.bounds[1].r2_dz_x:.3f}}</td>
+              <td>{{identify.sensitivity.bounds[1].r2_yz_dx:.3f}}</td>
+              <td>{{identify.sensitivity.bounds[1].bias:.3f}}</td>
+              <td>{{identify.sensitivity.bounds[1].adjusted:.3f}}</td>
+              <td>[{{identify.sensitivity.bounds[1].lower:.3f}},
+                {{identify.sensitivity.bounds[1].upper:.3f}}]</td>
+            </tr>
+            <tr>
+              <td>{{identify.sensitivity.bounds[2].label}}</td>
+              <td>{{identify.sensitivity.bounds[2].r2_dz_x:.3f}}</td>
+              <td>{{identify.sensitivity.bounds[2].r2_yz_dx:.3f}}</td>
+              <td>{{identify.sensitivity.bounds[2].bias:.3f}}</td>
+              <td>{{identify.sensitivity.bounds[2].adjusted:.3f}}</td>
+              <td>[{{identify.sensitivity.bounds[2].lower:.3f}},
+                {{identify.sensitivity.bounds[2].upper:.3f}}]</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted mt">The first row lands on
+        {{identify.sensitivity.bounds[0].adjusted:.3f}} against a truth of
+        {{identify.sensitivity.truth:.1f}} — the benchmark recovers the right answer, because
+        in a simulation we know exactly what the confounder is. In real work you do not, which
+        is why the output is a curve over strengths rather than a single corrected number.</p>
+    </div>
+
+    <div class="note mt-lg" style="max-width:var(--measure)">
+      <p class="note-t">Tipping point</p>
+      <p class="small" style="margin:0">Given a decision threshold of
+        {{identify.sensitivity.tipping.threshold:.1f}}, axiom also reports where the decision
+        flips. At zero bias the call is
+        <strong>{{identify.sensitivity.tipping.decision_at_zero}}</strong> with probability
+        {{identify.sensitivity.tipping.probability_at_zero:.2f}}; it only reverses once
+        bias reaches <strong>{{identify.sensitivity.tipping.bias:.1f}}</strong>. The
+        confounding actually present moves it by
+        {{identify.sensitivity.actual_bias:.3f}} — so on this decision, at this threshold,
+        the confounder is not large enough to matter.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div>
+        <h3>What is in <code>axiom.identify</code></h3>
+        <p class="small muted">{{overview.by_name.identify.n}} public symbols. Graph construction
+          and parsing, role assignment, all three route families, adjustment-set enumeration,
+          transport verdicts across populations, and the linear estimators that go with each
+          route.</p>
+        <p class="small"><a href="api.html#identify">Browse every symbol →</a></p>
+      </div>
+      <div>
+        <h3>Next: what to measure</h3>
+        <p class="small muted">Identification tells you whether the data you have can answer
+          the question. When it cannot — or when the interval is too wide to act on — the
+          next question is what experiment would fix that, at what size, and whether it is
+          worth running at all.</p>
+        <p class="small"><a href="design.html">Go to Design →</a></p>
+      </div>
+    </div>
+  </div>
+</section>

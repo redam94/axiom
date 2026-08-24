@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Benchmarks — checked against published results · axiom</title>
+<meta name="description" content="axiom run end to end on four real datasets collected by other people, and checked against results computed by R metafor, NIST certified values, Cinelli &amp; Hazlett (2020), and Dehejia &amp; Wahba (1999).">
+<meta property="og:title" content="Benchmarks — checked against published results · axiom">
+<meta property="og:description" content="axiom run end to end on four real datasets collected by other people, and checked against results computed by R metafor, NIST certified values, Cinelli &amp; Hazlett (2020), and Dehejia &amp; Wahba (1999).">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="benchmarks">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx" href="examples.html">Examples</a><a class="navx navx-on" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Benchmarks · 12 published values</p>
+    <h1 style="max-width:17ch">Numbers other people published</h1>
+    <p class="lede prose mt">Every other test in this repository checks axiom against a
+      world axiom made up. That is the right way to ask whether an estimator recovers a
+      truth, and it is circular in one respect: the data-generating process and the
+      likelihood are the same code.</p>
+    <p class="lede prose">These close the loop from outside — four datasets collected by
+      other people, and 12 results computed by other software before
+      this library existed. Largest relative disagreement anywhere:
+      <strong>3.3e-04</strong>.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The four</p>
+      <h2>What is checked, and against whom</h2>
+      <p>Each one covers a different pillar and a different reference implementation. Two
+        are committed to the repository and run anywhere; two carry licences a proprietary
+        repository cannot satisfy by redistributing them, and are fetched on request.</p>
+    </div>
+
+    <div class="cards">
+      <a class="card" href="#bcg">
+        <p class="card-n">META · R METAFOR</p>
+        <h3>BCG vaccine, 13 trials</h3>
+        <p>Colditz et al. (1994), the standard worked example in meta-analysis. Pooled log
+          risk ratio, τ², Cochran's Q, I² and H².</p>
+        <div class="card-f"><p class="card-stat">8 of 8
+          <small>published quantities reproduced</small></p></div>
+      </a>
+      <a class="card" href="#misra1a">
+        <p class="card-n">SURFACE · NIST CERTIFIED</p>
+        <h3>Monomolecular adsorption</h3>
+        <p>A NIST Statistical Reference Dataset, whose parameters are certified to eleven
+          digits precisely so software can be checked against them.</p>
+        <div class="card-f"><p class="card-stat">1 in 10,000
+          <small>relative error on both certified parameters</small></p></div>
+      </a>
+      <a class="card" href="#darfur">
+        <p class="card-n">IDENTIFY · CINELLI &amp; HAZLETT</p>
+        <h3>Darfur, 1,276 refugees</h3>
+        <p>The running example of the modern sensitivity-analysis literature. Coefficient,
+          standard error, residual df, and the robustness values built on them.</p>
+        <div class="card-f"><p class="card-stat">df 783
+          <small>exactly, from 486 village fixed effects</small></p></div>
+      </a>
+      <a class="card" href="#lalonde_nsw">
+        <p class="card-n">IDENTIFY · DEHEJIA &amp; WAHBA</p>
+        <h3>A randomized training programme</h3>
+        <p>The canonical demonstration that a careful observational estimate can be
+          confidently wrong, with an experiment to prove it.</p>
+        <div class="card-f"><p class="card-stat">$1,794
+          <small>experimental benchmark, reproduced to the dollar</small></p></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What this found</p>
+      <h2>An 0.001 disagreement worth chasing</h2>
+      <p>The first BCG run disagreed with metafor on I² by 0.001 — small enough to look
+        like a rounding error, and the sort of thing a tolerance quietly absorbs.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="ledger">
+        <div class="ledger-row">
+          <span class="ledger-f">Q-based</span>
+          <span class="ledger-s"><code>(Q − df) / Q</code> — the original Higgins &amp;
+            Thompson definition, and what
+            <code>axiom.meta.heterogeneity</code> returns</span>
+          <span class="ledger-v">0.9212</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">model-based</span>
+          <span class="ledger-s"><code>τ² / (τ² + s²)</code> with <code>s²</code> the
+            typical within-study variance — what metafor's <code>rma()</code> prints</span>
+          <span class="ledger-v">0.9222</span>
+        </div>
+        <div class="ledger-row">
+          <span class="ledger-f">verdict</span>
+          <span class="ledger-s">Neither is wrong. They answer slightly different
+            questions, and reconstructing metafor's definition from axiom's outputs
+            reproduces its published value exactly.</span>
+          <span class="tag is-good">both pinned</span>
+        </div>
+      </div>
+      <div>
+        <div class="note">
+          <p class="note-t">The wrong fix</p>
+          <p class="small" style="margin:0">Widening the tolerance until the table went
+            green. It would have passed, it would have looked identical in CI, and it
+            would have thrown away the only interesting thing the benchmark had to say.
+            Both definitions are now asserted, so if either moves it is a deliberate
+            change rather than a silent one.</p>
+        </div>
+        <p class="small muted">This is what benchmarks against other people's software are
+          for. Self-consistency tests cannot find a definitional difference, because both
+          sides of the comparison share the definition.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Every check</p>
+      <h2>The comparisons in full</h2>
+      <p>Tolerances are set by the precision of the published value, not by what passes.
+        Expand any dataset to read the whole run.</p>
+    </div>
+    <div class="ex-list">
+      <article class="ex" id="bcg">
+  <div class="ex-head">
+    <p class="ex-n">EPIDEMIOLOGY / PUBLIC HEALTH &middot; meta</p>
+    <h3>BCG vaccine against tuberculosis: 13 randomized trials</h3>
+    <p class="ex-q">Checked against <strong>R metafor</strong> &mdash;
+      357,347 people.</p>
+    <div class="ex-meta"><span class="tag is-good">committed</span>
+      <span class="pkg">8 published values</span>
+      <span class="pkg">worst relative error 3.3e-04</span></div>
+  </div>
+  <div class="ex-body" style="padding-top:16px">
+    <div class="tbl-wrap">
+      <table class="t">
+        <caption>Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., &amp; Mosteller, F. (1994). Efficacy of BCG vaccine in the prevention of tuberculosis: meta-analysis of the published literature. JAMA, 271(9), 698-702.</caption>
+        <thead><tr><th>quantity</th><th>axiom</th><th>published</th>
+          <th>relative error</th><th></th></tr></thead>
+        <tbody><tr><td>pooled log risk ratio</td><td>-0.7145</td><td>-0.7145</td><td>4.5e-05</td><td class="num-good">match</td></tr><tr><td>standard error</td><td>0.1798</td><td>0.1798</td><td>1.0e-04</td><td class="num-good">match</td></tr><tr><td>95% interval, lower</td><td>-1.0669</td><td>-1.0669</td><td>2.0e-06</td><td class="num-good">match</td></tr><tr><td>95% interval, upper</td><td>-0.3622</td><td>-0.3622</td><td>9.1e-05</td><td class="num-good">match</td></tr><tr><td>tau^2 (REML)</td><td>0.3132</td><td>0.3132</td><td>1.4e-04</td><td class="num-good">match</td></tr><tr><td>Cochran&#x27;s Q</td><td>152.2330</td><td>152.2330</td><td>0.0e+00</td><td class="num-good">match</td></tr><tr><td>I^2 (model-based)</td><td>0.9222</td><td>0.9222</td><td>1.5e-05</td><td class="num-good">match</td></tr><tr><td>H^2 (model-based)</td><td>12.856</td><td>12.860</td><td>3.3e-04</td><td class="num-good">match</td></tr></tbody>
+      </table>
+    </div>
+    <p class="stamp"><b>licence</b> &middot; Thirteen rows of event counts published in a 1994 JAMA meta-analysis; redistributed in many textbooks and packages. Attribution above.</p>
+  </div>
+  <details class="ex-more">
+    <summary>Read the full run</summary>
+    <div class="ex-body">
+      <div class="out">
+        <div class="out-h">benchmarks/case_bcg.py</div>
+        <pre>BCG vaccine against tuberculosis: 13 randomized trials
+  Colditz, G. A., Brewer, T. F., Berkey, C. S., Wilson, M. E., Burdick, E., Fineberg, H. V., &amp; Mosteller, F. (1994). Efficacy of BCG vaccine in the prevention of tuberculosis: meta-analysis of the published literature. JAMA, 271(9), 698-702.
+  licence: Thirteen rows of event counts published in a 1994 JAMA meta-analysis; redistributed in many textbooks and packages. Attribution above.
+  sha256 : 892192ea82a30c6ae3aadd1f82566139...
+
+  Two things bite here. Sign convention: the log risk ratio below is vaccinated-versus-control, so NEGATIVE means the vaccine helped; some metafor examples reverse the arms and print +0.7145 for the same data. And I-squared has two standard definitions that differ by about a tenth of a percentage point on this dataset -- axiom reports the Q-based one, metafor&#x27;s rma() prints the model-based one.
+
+trial                     year            vaccinated             control    log RR      se
+Aronson                   1948          4/123              11/139          -0.8893  0.5706
+Ferguson &amp; Simes          1949          6/306              29/303          -1.5854  0.4411
+Rosenthal et al           1960          3/231              11/220          -1.3481  0.6445
+Hart &amp; Sutherland         1977         62/13598           248/12867        -1.4416  0.1415
+Frimodt-Moller et al      1973         33/5069             47/5808         -0.2175  0.2263
+Stein &amp; Aronson           1953        180/1541            372/1451         -0.7861  0.0831
+Vandiviere et al          1973          8/2545             10/629          -1.6209  0.4722
+TPT Madras                1980        505/88391           499/88391         0.0120  0.0629
+Coetzee &amp; Berjak          1968         29/7499             45/7277         -0.4694  0.2376
+Rosenthal et al           1961         17/1716             65/1665         -1.3713  0.2702
+Comstock et al            1974        186/50634           141/27338        -0.3394  0.1114
+Comstock &amp; Webster        1969          5/2498              3/2341          0.4459  0.7297
+Comstock et al            1976         27/16913            29/17854        -0.0173  0.2672
+
+13 trials, 357,347 people
+
+quantity                         axiom     metafor   difference   agrees
+pooled log risk ratio          -0.7145     -0.7145     3.23e-05   yes
+standard error                  0.1798      0.1798     1.85e-05   yes
+95% lower                      -1.0669     -1.0669     2.36e-06   yes
+95% upper                      -0.3622     -0.3622     3.30e-05   yes
+tau^2 (REML)                    0.3132      0.3132     4.33e-05   yes
+Cochran&#x27;s Q                   152.2330    152.2330     8.08e-06   yes
+I^2 (model-based)               0.9222      0.9222     1.38e-05   yes
+H^2 (model-based)              12.8558     12.8600     4.24e-03   yes
+
+largest disagreement anywhere: 4.24e-03
+df for Q: axiom 12, published 12
+
+A word about that I^2, because the first run of this file looked like a bug.
+    axiom&#x27;s heterogeneity() returns the Q-BASED I^2, (Q - df) / Q = 0.9212.
+    metafor&#x27;s rma() prints the MODEL-BASED one, tau^2 / (tau^2 + s^2) = 0.9222,
+    where s^2 is Higgins &amp; Thompson&#x27;s typical within-study variance.
+
+    They differ by 0.0010 here -- small enough to look like a rounding
+    error and large enough to be worth chasing. Neither is wrong; they answer
+    slightly different questions. What would have been wrong is quietly widening
+    the tolerance until the table went green.
+
+as a risk ratio: 0.489  [0.344, 0.696]
+  the vaccine cut tuberculosis risk by about 51% on average
+
+but I^2 is 92%, so &#x27;on average&#x27; is carrying a lot of weight.
+  interval on the MEAN effect     [-1.108, -0.321]
+  interval for the NEXT trial     [-2.009, +0.580]
+  as risk ratios                  [0.13, 1.79]
+  A new trial could plausibly see almost no benefit. That is not noise --
+  it is the trials genuinely disagreeing, and it is the finding.
+
+split by absolute latitude, the classic moderator:
+  within 35 degrees of equator   k= 7  log RR -0.265  RR 0.77
+  further than 35 degrees        k= 6  log RR -1.197  RR 0.30
+  Two very different vaccines, or one vaccine and two very different settings.
+
+Egger&#x27;s test: intercept -2.112 (p = 0.189)
+
+most influential trials when dropped (shift in pooled-se units):
+  Hart &amp; Sutherland           -0.479
+  TPT Madras                  +0.446
+  Comstock et al              +0.350
+
+Reading it
+    Every published quantity reproduced. That is the claim worth making: not that
+    axiom&#x27;s formulas are self-consistent -- the unit tests already cover that --
+    but that running this library end to end on somebody else&#x27;s data lands where
+    somebody else&#x27;s software landed.
+
+    The substantive reading is the second half. A pooled risk ratio around 0.49
+    looks decisive until you notice I-squared above 90% and a prediction interval
+    that reaches almost to 1.0. The average of thirteen trials that disagree this
+    much is a number about the thirteen trials, not about the vaccine.</pre>
+      </div>
+    </div>
+  </details>
+</article>
+<article class="ex" id="misra1a">
+  <div class="ex-head">
+    <p class="ex-n">PHYSICAL CHEMISTRY / DENTAL RESEARCH &middot; surface</p>
+    <h3>NIST StRD Misra1a: monomolecular adsorption, volume against pressure</h3>
+    <p class="ex-q">Checked against <strong>NIST certified values</strong> &mdash;
+      14 observations, 2 parameters.</p>
+    <div class="ex-meta"><span class="tag is-good">committed</span>
+      <span class="pkg">4 published values</span>
+      <span class="pkg">worst relative error 8.7e-05</span></div>
+  </div>
+  <div class="ex-body" style="padding-top:16px">
+    <div class="tbl-wrap">
+      <table class="t">
+        <caption>Misra, D. (1978). Dental Research Monomolecular Adsorption Study. National Institute of Standards and Technology, Statistical Reference Datasets (StRD), Nonlinear Regression.</caption>
+        <thead><tr><th>quantity</th><th>axiom</th><th>published</th>
+          <th>relative error</th><th></th></tr></thead>
+        <tbody><tr><td>beta  (NIST b1)</td><td>238.9577</td><td>238.9421</td><td>6.5e-05</td><td class="num-good">match</td></tr><tr><td>k     (NIST 1/b2)</td><td>1817.82</td><td>1817.66</td><td>8.7e-05</td><td class="num-good">match</td></tr><tr><td>implied b2</td><td>5.500e-04</td><td>5.500e-04</td><td>8.7e-05</td><td class="num-good">match</td></tr><tr><td>residual sum of squares</td><td>0.124555</td><td>0.124551</td><td>2.7e-05</td><td class="num-good">match</td></tr></tbody>
+      </table>
+    </div>
+    <p class="stamp"><b>licence</b> &middot; Work of the US federal government: public domain in the United States (17 U.S.C. 105). NIST asks that it be cited, not that permission be sought.</p>
+  </div>
+  <details class="ex-more">
+    <summary>Read the full run</summary>
+    <div class="ex-body">
+      <div class="out">
+        <div class="out-h">benchmarks/case_misra1a.py</div>
+        <pre>NIST StRD Misra1a: monomolecular adsorption, volume against pressure
+  Misra, D. (1978). Dental Research Monomolecular Adsorption Study. National Institute of Standards and Technology, Statistical Reference Datasets (StRD), Nonlinear Regression.
+  licence: Work of the US federal government: public domain in the United States (17 U.S.C. 105). NIST asks that it be cited, not that permission be sought.
+  sha256 : d6195ad5e64326bc3fb72ae877c79f0c...
+
+ volume  pressure
+  10.07      77.6
+  14.73     114.9
+  17.94     141.1
+  23.93     190.8
+  29.61     239.9
+  35.18     289.0
+  40.02     332.8
+  44.82     378.4
+  50.76     434.8
+  55.05     477.3
+  61.01     536.8
+  66.40     593.1
+  75.47     689.1
+  81.78     760.0
+
+outcome  volume [V] in cc
+dose     pressure [P] in mmHg
+
+model    volume = beta * (1 - exp(-pressure / k)),  intercept &#x27;none&#x27;
+panel    specimen, 14 observations, hash 733391520fb271ce...
+
+converged: True
+
+parameter               axiom mean  posterior sd   NIST certified  rel. error
+beta   (NIST b1)        238.957689      2.583069       238.942129    6.51e-05
+k      (NIST 1/b2)     1817.822784     22.911234      1817.664835    8.69e-05
+
+                                             95% HDI   contains certified?
+beta                            [233.8618, 243.8901]   yes
+k                             [1773.3390, 1862.2006]   yes
+
+implied b2 = 1/k      5.5010862915e-04
+NIST certified b2     5.5015643181e-04
+relative error        8.69e-05
+
+residual sum of squares at the posterior mean  0.12455471
+NIST certified minimum                        0.12455139
+excess over the certified optimum             +3.32e-06
+  The posterior mean cannot beat the least-squares optimum -- if it did, the
+  certified value would be wrong. Sitting a hair above it is the correct
+  result, and the size of that hair is the whole check.
+
+posterior sigma                0.099736 +/- 0.019722
+NIST residual sd (df = 12)   0.101879
+sqrt(RSS / n) for comparison   0.094321
+  These three are different estimators of the same scale, not disagreements:
+  NIST divides by the degrees of freedom, maximum likelihood divides by n,
+  and the posterior mean sits between them.
+
+fitted adsorption curve, with 95% intervals:
+    pressure    volume     lower     upper
+         100    12.790    12.751    12.829
+         250    30.704    30.637    30.769
+         400    47.198    47.131    47.264
+         550    62.386    62.319    62.452
+         700    76.371    76.261    76.475
+         900    93.309    93.086    93.521
+        1200   115.466   115.012   115.904
+
+Reading it
+    Both certified parameters recovered to about one part in ten thousand, with
+    the certified values inside the 95% intervals, and a residual sum of squares
+    that sits just above the certified minimum rather than below it.
+
+    That last point is the one worth dwelling on. A fit that reported a LOWER
+    residual sum of squares than NIST&#x27;s certified optimum would not be a better
+    fit -- it would be a bug, either in the model being fitted or in the arithmetic
+    reporting it. Benchmarks with certified answers catch that class of error,
+    which is exactly why NIST publishes them.
+
+    What axiom adds beyond the certified numbers is the last table: NIST reports
+    two parameters and their standard deviations, and axiom will also tell you what
+    the curve does at a pressure of 1200 and how sure it is.</pre>
+      </div>
+    </div>
+  </details>
+</article>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Licensing</p>
+      <h2>Why half the data is not in the repository</h2>
+    </div>
+    <div class="grid-2">
+      <div>
+        <p class="small muted">axiom is proprietary. Two of these four datasets carry
+          licences that a proprietary repository cannot satisfy by redistributing them:
+          the Darfur survey ships inside a GPL-3 R package, and the NSW data is CC BY-NC —
+          attributable <em>non-commercial</em> use.</p>
+        <p class="small muted">So they are not vendored. A fetch script downloads them into
+          a git-ignored cache on request, prints the licence before doing it, and records
+          the sha256. The tests over them skip when the data is absent, so a fresh clone
+          runs ten passed and four skipped rather than failing.</p>
+        <p class="small muted">The two that are committed are safe by a wide margin: the
+          NIST dataset is a work of the US federal government and public domain, and the
+          BCG table is thirteen rows of event counts from a 1994 JAMA paper, reproduced in
+          dozens of textbooks and packages.</p>
+      </div>
+      <div>
+        <div class="code">
+          <div class="code-h"><span>shell</span>
+            <button class="copy" type="button">Copy</button></div>
+          <pre><span class="c"># what is here, and on what terms</span>
+python benchmarks/registry.py
+
+<span class="c"># download the restricted ones, licence shown first</span>
+python benchmarks/fetch.py
+python benchmarks/fetch.py --all
+
+<span class="c"># the assertions, and the case studies</span>
+pytest tests/benchmarks -q
+python benchmarks/run_all.py</pre>
+        </div>
+        <p class="small muted">Adding one: the bar is a dataset somebody else collected with
+          a result somebody else published. Without a published number to hit, it is an
+          <a href="examples.html">example</a>, not a benchmark.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

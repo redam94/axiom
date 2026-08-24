@@ -78,10 +78,14 @@ from axiom.surface.forward import marginal as surface_marginal
 from axiom.surface.forward import marginal_total as surface_marginal_total
 from axiom.surface.kernels import (
     ExponentialKernel,
+    GaussianProcessKernel,
     HillKernel,
     LinearKernel,
     LogisticKernel,
+    PiecewiseLinearKernel,
+    PolynomialKernel,
     PowerKernel,
+    SplineKernel,
 )
 from axiom.surface.model import InterceptKind, Surface, SurfaceSpec, build, prepare
 from axiom.surface.nuisance import NuisanceSet
@@ -101,7 +105,17 @@ TruthMode = Literal["centre", "prior"]
 Horizon = Literal["period", "total"]
 """``period``: same-period marginal (lag-zero weight); ``total``: summed over all lags."""
 
-Kernel = HillKernel | LogisticKernel | ExponentialKernel | PowerKernel | LinearKernel
+Kernel = (
+    HillKernel
+    | LogisticKernel
+    | ExponentialKernel
+    | PowerKernel
+    | LinearKernel
+    | PolynomialKernel
+    | SplineKernel
+    | PiecewiseLinearKernel
+    | GaussianProcessKernel
+)
 Carryover = GeometricCarryover | DelayedCarryover | WeibullCarryover | NoCarryover
 
 _MAX_NAMED_CELLS = 20

@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · An effect you can only see sideways — Labour economics · axiom</title>
+<meta name="description" content="Labour economics: Does a training programme raise earnings, when enrolment is self-selected? A 5-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:title" content="02 · An effect you can only see sideways — Labour economics · axiom">
+<meta property="og:description" content="Labour economics: Does a training programme raise earnings, when enrolment is self-selected? A 5-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="example">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Example 02 · Labour economics</p>
+    <h1 style="max-width:18ch">An effect you can only see sideways</h1>
+    <p class="lede prose mt">Does a training programme raise earnings, when the people who enrol are exactly the people who would have earned more anyway?</p>
+    <div class="ex-meta"><a class="pkg" href="identify.html">Identify</a>
+      <span class="pkg">5 steps</span>
+      <span class="pkg">3 figures</span>
+      <span class="pkg">282 lines</span>
+      <span class="pkg">runs in 1.0s</span></div>
+    <div class="hero-cta">
+      <a class="btn btn-1" href="#step-1">Start the walkthrough</a>
+      <a class="btn btn-2" href="https://github.com/redam94/axiom/blob/main/examples/02_economics_instrument.py">The whole file on GitHub &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div class="prose wt-framing"><p>Labour economics — does a training programme raise earnings?</p><p class="wt-h">The question</p><p>Workers choose whether to enrol in a training programme. Enrolment is not random: the same drive and circumstances that lead someone to enrol also raise their earnings directly. Comparing enrolees to non-enrolees measures the programme plus the selection.</p><p class="wt-h">The move</p><p>Find something that shifts enrolment without touching earnings except through enrolment — distance to the nearest training centre, a lottery, an administrative cutoff. axiom looks for such an instrument in the graph rather than taking one on trust, and checks its relevance instead of assuming it.</p><p class="wt-h">What is not testable</p><p>Exclusion — that the instrument affects earnings only through enrolment — is an assumption, not a finding. axiom records it as one, in the verdict, unverified, which is where a referee should look first.</p><p>Pillars: identify (instrumental variables)</p></div>
+      <div>
+        <p class="eyebrow">The route</p>
+        <nav class="wt-toc"><a class="wt-toc-i" href="#step-1"><span class="wt-toc-n">1</span>Write down the world, including the part nobody measured</a><a class="wt-toc-i" href="#step-2"><span class="wt-toc-n">2</span>Ask whether the effect is recoverable at all, before estimating anything</a><a class="wt-toc-i" href="#step-3"><span class="wt-toc-n">3</span>Estimate it twice: once naively, once through the instrument</a><a class="wt-toc-i" href="#step-4"><span class="wt-toc-n">4</span>Watch what more data does to each one</a><a class="wt-toc-i" href="#step-5"><span class="wt-toc-n">5</span>Check the instrument is actually doing work</a></nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Before the first step</p>
+      <h2>What this example imports, and why that list is short</h2>
+      <p>Everything below runs on the four core dependencies. No sampler, no extras.</p>
+    </div>
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>examples/02_economics_instrument.py</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>from _walkthrough import Walkthrough
+
+from axiom.identify import (
+    identify,
+    ols,
+    two_stage_least_squares,
+    weak_instrument_check,
+)
+from axiom.sim import LinearSCM, iv_world
+
+N, SEED = 5_000, 1
+
+w = Walkthrough(
+    field=&quot;Labour economics&quot;,
+    title=&quot;An effect you can only see sideways&quot;,
+    question=&quot;&quot;&quot;Does a training programme raise earnings, when the people who enrol
+        are exactly the people who would have earned more anyway?&quot;&quot;&quot;,
+)</pre>
+    </div>
+  </div>
+</section>
+
+<section class="wt-step" id="step-1">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 1 <span>of 5</span></p>
+      <h2>Write down the world, including the part nobody measured</h2>
+      <div class="wt-why prose"><p>The obstacle here is not a missing column, it is a structure: drive and circumstance push both enrolment and earnings, and they were never recorded. Writing that down as an edge — X &lt;-&gt; Y, a latent common cause — is what makes the problem statable. An analysis that cannot say what is confounding it cannot say what would fix it either.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Starting from the estimator. &#x27;We ran 2SLS with distance as an instrument&#x27; skips the only question that determines whether the number means anything: does the graph you believe in actually license that move?</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/02_economics_instrument.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>world = iv_world()
+w.out(f&quot;graph    : {world.graph.to_text()}&quot;)
+w.out(f&quot;measured : {sorted(world.graph.measured)}&quot;)
+w.out(&quot;&quot;)
+w.out(&quot;X &lt;-&gt; Y is the bidirected edge: a common cause of enrolment and earnings&quot;)
+w.out(&quot;that is not in the data and never will be. Z is the shifter -- distance to&quot;)
+w.out(&quot;the nearest centre, say -- which moves enrolment for reasons of geography.&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>graph    : X -&gt; Y, Z -&gt; X, X &lt;-&gt; Y
+measured : [&#x27;X&#x27;, &#x27;Y&#x27;, &#x27;Z&#x27;]
+
+X &lt;-&gt; Y is the bidirected edge: a common cause of enrolment and earnings
+that is not in the data and never will be. Z is the shifter -- distance to
+the nearest centre, say -- which moves enrolment for reasons of geography.</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-2">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 2 <span>of 5</span></p>
+      <h2>Ask whether the effect is recoverable at all, before estimating anything</h2>
+      <div class="wt-why prose"><p>identify() is a question about the graph, not about the data, and it can be asked before a single row is collected. It returns the route, the instrument it found, and — the part that matters most in a referee report — the assumptions the route rests on, each tagged with whether the data can check it.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Nominating the instrument yourself and checking the first-stage F. That tests relevance, which is the assumption you can test, and quietly skips exclusion, which is the one that actually fails in practice.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/02_economics_instrument.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>verdict = identify(world.graph, &quot;X&quot;, &quot;Y&quot;)
+w.out(f&quot;status     : {verdict.status}&quot;)
+w.out(f&quot;route      : {verdict.route}&quot;)
+w.out(f&quot;instrument : {verdict.instrument}   (found in the graph, not nominated by hand)&quot;)
+w.table(
+    [&quot;assumption&quot;, &quot;state&quot;, &quot;what it claims&quot;, &quot;what would challenge it&quot;],
+    [
+        [a.name, a.state, a.statement, &quot;, &quot;.join(a.challenged_by) or &quot;—&quot;]
+        for a in verdict.verdict.assumptions
+    ],
+    caption=&quot;&quot;&quot;The verdict carries its own assumptions. &#x27;unverified&#x27; is not a
+        weasel word — it is the correct state for a claim no dataset can settle.&quot;&quot;&quot;,
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>status     : downgraded
+route      : instrument
+instrument : Z   (found in the graph, not nominated by hand)</pre></div>
+<div class="tbl-wrap"><table class="t"><caption>The verdict carries its own assumptions. &#x27;unverified&#x27; is not a
+        weasel word — it is the correct state for a claim no dataset can settle.</caption><thead><tr><th>assumption</th><th>state</th><th>what it claims</th><th>what would challenge it</th></tr></thead><tbody><tr><td>exclusion</td><td>satisfied</td><td>Z affects Y only through X</td><td>a,  , d, i, r, e, c, t,  , o, r,  , c, o, n, f, o, u, n, d, e, d,  , p, a, t, h,  , i, n,  , t, h, e,  , g, r, a, p, h</td></tr><tr><td>relevance</td><td>unverified</td><td>Z is associated with X (first-stage strength)</td><td>f, i, r, s, t, -, s, t, a, g, e,  , F,  , b, e, l, o, w,  , 1, 0</td></tr><tr><td>effect_homogeneity_or_monotonicity</td><td>unverified</td><td>the IV estimand equals the average effect (homogeneous/linear effect) or is read as a LATE under monotonicity</td><td>h, e, t, e, r, o, g, e, n, e, o, u, s,  , e, f, f, e, c, t, s, ;,  , d, e, f, i, e, r, s</td></tr></tbody></table></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-3">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 3 <span>of 5</span></p>
+      <h2>Estimate it twice: once naively, once through the instrument</h2>
+      <div class="wt-why prose"><p>Both estimators are run on the same 5,000 workers so the difference between them is the method and nothing else. The naive comparison is not a straw man — it is what a well-run analysis of this dataset would report if nobody had drawn the graph.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Reporting only the instrumented estimate. The gap between the two is the size of the selection, and it is the most informative number on the page: it says how much of the raw programme effect was never the programme.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/02_economics_instrument.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>frame = world.observed(world.simulate(N, seed=SEED))
+truth = world.total_effect(&quot;X&quot;, &quot;Y&quot;)
+naive = ols(frame, &quot;Y&quot;, &quot;X&quot;)
+iv = two_stage_least_squares(frame, &quot;Y&quot;, &quot;X&quot;, instruments=[verdict.instrument])
+
+rows = []
+for label, est in ((&quot;naive OLS&quot;, naive), (&quot;2SLS&quot;, iv)):
+    ci = est.ci(0.95)
+    w.out(
+        f&quot;{label:12s} {est.estimate:6.3f} +/- {est.se:.3f}   &quot;
+        f&quot;[{ci.lower:6.3f}, {ci.upper:6.3f}]   error {est.estimate - truth:+.3f}&quot;
+    )
+    rows.append(
+        {
+            &quot;label&quot;: label,
+            &quot;estimate&quot;: est.estimate,
+            &quot;lower&quot;: ci.lower,
+            &quot;upper&quot;: ci.upper,
+            &quot;note&quot;: f&quot;standard error {est.se:.3f}&quot;,
+            &quot;bad&quot;: abs(est.estimate - truth) &gt; 2 * est.se,
+        }
+    )
+w.out(f&quot;{&#x27;truth&#x27;:12s} {truth:6.3f}&quot;)
+
+w.figure(
+    &quot;estimates&quot;,
+    kind=&quot;intervals&quot;,
+    data={&quot;rows&quot;: rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: truth,
+        &quot;truthLabel&quot;: &quot;the truth&quot;,
+        &quot;xLabel&quot;: &quot;effect of the programme on earnings&quot;,
+        &quot;labelWidth&quot;: 110,
+        &quot;rowHeight&quot;: 38,
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>naive OLS     2.347 +/- 0.011   [ 2.326,  2.367]   error +0.347
+2SLS          1.999 +/- 0.021   [ 1.958,  2.040]   error -0.001
+truth         2.000</pre></div>
+<figure class="fig" id="02_economics_instrument-estimates">
+  <div class="fig-head"><p class="fig-t">What each method says the programme is worth</p><p class="fig-s">The naive interval does not merely miss the truth, it excludes it confidently — the interval is narrow and in the wrong place. 2SLS lands on the truth and pays for it in width.</p></div>
+  <div class="legend"><span><i style="--k:var(--accent)"></i>95% interval</span><span><i style="--k:var(--boundary)"></i>excludes the truth</span></div>
+  <div class="chart" data-chart="intervals" data-file="figures-02_economics_instrument"
+       data-opt='{&quot;rows&quot;: &quot;estimates.rows&quot;, &quot;truth&quot;: 2.0, &quot;truthLabel&quot;: &quot;the truth&quot;, &quot;xLabel&quot;: &quot;effect of the programme on earnings&quot;, &quot;labelWidth&quot;: 110, &quot;rowHeight&quot;: 38}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-4">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 4 <span>of 5</span></p>
+      <h2>Watch what more data does to each one</h2>
+      <div class="wt-why prose"><p>This is the distinction the whole example turns on. Noise shrinks as the square root of n; bias does not shrink at all. Re-running both estimators across sample sizes from 250 to 32,000 draws the difference rather than asserting it — the naive line converges, confidently, on the wrong number.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Saying &#x27;OLS is biased&#x27; and moving on. Every analyst agrees with that sentence in the abstract and then, under deadline, argues that a large enough sample makes it academic. The chart is the answer to that argument.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/02_economics_instrument.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>sizes = [250, 500, 1_000, 2_000, 4_000, 8_000, 16_000, 32_000]
+naive_path, iv_path = [], []
+for n in sizes:
+    f = world.observed(world.simulate(n, seed=SEED))
+    naive_path.append(float(ols(f, &quot;Y&quot;, &quot;X&quot;).estimate))
+    iv_path.append(float(two_stage_least_squares(f, &quot;Y&quot;, &quot;X&quot;, instruments=[&quot;Z&quot;]).estimate))
+w.table(
+    [&quot;workers&quot;, &quot;naive OLS&quot;, &quot;2SLS&quot;],
+    [
+        [f&quot;{n:,}&quot;, f&quot;{a:.3f}&quot;, f&quot;{b:.3f}&quot;]
+        for n, a, b in zip(sizes, naive_path, iv_path, strict=True)
+    ],
+)
+w.figure(
+    &quot;convergence&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;n&quot;: sizes, &quot;naive&quot;: naive_path, &quot;iv&quot;: iv_path},
+    opt={
+        &quot;series&quot;: [
+            {&quot;label&quot;: &quot;naive OLS&quot;, &quot;x&quot;: &quot;@n&quot;, &quot;y&quot;: &quot;@naive&quot;, &quot;colour&quot;: &quot;boundary&quot;},
+            {&quot;label&quot;: &quot;2SLS&quot;, &quot;x&quot;: &quot;@n&quot;, &quot;y&quot;: &quot;@iv&quot;, &quot;colour&quot;: &quot;accent&quot;},
+        ],
+        &quot;xLabel&quot;: &quot;workers in the sample&quot;,
+        &quot;yLabel&quot;: &quot;estimated effect&quot;,
+        &quot;hline&quot;: truth,
+        &quot;hlineLabel&quot;: &quot;the truth&quot;,
+        &quot;height&quot;: 300,
+        &quot;rightPad&quot;: 80,
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="tbl-wrap"><table class="t"><thead><tr><th>workers</th><th>naive OLS</th><th>2SLS</th></tr></thead><tbody><tr><td>250</td><td>2.292</td><td>2.117</td></tr><tr><td>500</td><td>2.291</td><td>2.046</td></tr><tr><td>1,000</td><td>2.318</td><td>2.014</td></tr><tr><td>2,000</td><td>2.316</td><td>1.961</td></tr><tr><td>4,000</td><td>2.343</td><td>1.985</td></tr><tr><td>8,000</td><td>2.334</td><td>2.035</td></tr><tr><td>16,000</td><td>2.331</td><td>2.001</td></tr><tr><td>32,000</td><td>2.319</td><td>1.980</td></tr></tbody></table></div>
+<figure class="fig" id="02_economics_instrument-convergence">
+  <div class="fig-head"><p class="fig-t">More data does not fix a bias</p><p class="fig-s">Both lines settle down. Only one settles on the right answer. Everything the naive estimator gains from a larger sample it spends on being more certain of the selection it cannot see.</p></div>
+  <div class="legend"><span><i style="--k:var(--boundary)"></i>naive OLS</span><span><i style="--k:var(--accent)"></i>2SLS</span><span><i class="dash" style="--k:var(--ink-3)"></i>the truth</span></div>
+  <div class="chart" data-chart="lines" data-file="figures-02_economics_instrument"
+       data-opt='{&quot;series&quot;: [{&quot;label&quot;: &quot;naive OLS&quot;, &quot;x&quot;: &quot;convergence.n&quot;, &quot;y&quot;: &quot;convergence.naive&quot;, &quot;colour&quot;: &quot;boundary&quot;}, {&quot;label&quot;: &quot;2SLS&quot;, &quot;x&quot;: &quot;convergence.n&quot;, &quot;y&quot;: &quot;convergence.iv&quot;, &quot;colour&quot;: &quot;accent&quot;}], &quot;xLabel&quot;: &quot;workers in the sample&quot;, &quot;yLabel&quot;: &quot;estimated effect&quot;, &quot;hline&quot;: 2.0, &quot;hlineLabel&quot;: &quot;the truth&quot;, &quot;height&quot;: 300, &quot;rightPad&quot;: 80}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-5">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 5 <span>of 5</span></p>
+      <h2>Check the instrument is actually doing work</h2>
+      <div class="wt-why prose"><p>A weak instrument is not a neutral loss of precision. When the first stage barely moves, 2SLS becomes biased towards OLS and its intervals stop covering, so a weak-instrument analysis can be worse than the naive one it was meant to replace. The first-stage F is the standard diagnostic, and axiom returns it as an assumption with a state rather than a number to eyeball.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Assuming relevance because the instrument is clever. Cleverness is an argument for exclusion, which cannot be tested; relevance is the part that can be, so it should be.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/02_economics_instrument.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>relevance = weak_instrument_check(iv)
+w.out(f&quot;first-stage F : {iv.detail[&#x27;first_stage_f&#x27;]:.1f}&quot;)
+w.out(f&quot;relevance     : {relevance.name} -&gt; {relevance.state}&quot;)
+w.out(&quot;&quot;)
+
+# The same structure with the instrument&#x27;s first stage turned almost off, so the
+# cost of weakness is visible rather than argued for.
+weak_world = LinearSCM.from_text(&quot;Z -&gt; X: 0.05, X -&gt; Y: 2.0, X &lt;-&gt; Y: 1.0&quot;, name=&quot;weak-iv&quot;)
+weak_frame = weak_world.observed(weak_world.simulate(N, seed=SEED))
+weak_iv = two_stage_least_squares(weak_frame, &quot;Y&quot;, &quot;X&quot;, instruments=[&quot;Z&quot;])
+weak_check = weak_instrument_check(weak_iv)
+w.out(&quot;a nearly irrelevant instrument (Z -&gt; X of 0.05 instead of 1.0):&quot;)
+w.out(f&quot;  first-stage F : {weak_iv.detail[&#x27;first_stage_f&#x27;]:.1f}&quot;)
+w.out(f&quot;  relevance     : {weak_check.state}&quot;)
+w.out(f&quot;  estimate      : {weak_iv.estimate:.3f} +/- {weak_iv.se:.3f}&quot;)
+
+strong_ci, weak_ci = iv.ci(0.95), weak_iv.ci(0.95)
+w.figure(
+    &quot;relevance&quot;,
+    kind=&quot;intervals&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: &quot;strong instrument&quot;,
+                &quot;estimate&quot;: iv.estimate,
+                &quot;lower&quot;: strong_ci.lower,
+                &quot;upper&quot;: strong_ci.upper,
+                &quot;note&quot;: f&quot;first-stage F = {iv.detail[&#x27;first_stage_f&#x27;]:.0f}&quot;,
+            },
+            {
+                &quot;label&quot;: &quot;weak instrument&quot;,
+                &quot;estimate&quot;: weak_iv.estimate,
+                &quot;lower&quot;: weak_ci.lower,
+                &quot;upper&quot;: weak_ci.upper,
+                &quot;note&quot;: f&quot;first-stage F = {weak_iv.detail[&#x27;first_stage_f&#x27;]:.1f}&quot;,
+                &quot;bad&quot;: True,
+            },
+        ]
+    },
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: truth,
+        &quot;truthLabel&quot;: &quot;the truth&quot;,
+        &quot;xLabel&quot;: &quot;effect of the programme on earnings&quot;,
+        &quot;labelWidth&quot;: 150,
+        &quot;rowHeight&quot;: 38,
+    },
+    # title, note and legend: the caption shown with the chart
+)
+
+
+w.finding(f&quot;&quot;&quot;OLS overstates the programme by {naive.estimate - truth:+.2f}, and the chart of
+    sample sizes shows that no amount of data would have helped: the naive line
+    converges on {naive_path[-1]:.2f} against a truth of {truth:.2f}. Bias is not a
+    small-sample problem.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;What 2SLS bought was accuracy, and what it cost was width: its interval is
+    {(iv.ci(0.95).upper - iv.ci(0.95).lower) / (naive.ci(0.95).upper - naive.ci(0.95).lower):.1f}
+    times wider than the naive one. That is the honest price of using only the part
+    of the variation in enrolment that geography explains, and it is the right trade
+    — a wide interval around the truth is usable, a narrow one around the wrong
+    number is not.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;The assumption table is the part to take to a referee. Relevance was checked
+    and passed. Exclusion — that distance to a training centre affects earnings only
+    through enrolment — is recorded as unverified, because it is unverifiable from
+    this data. If it fails, everything above fails with it, and the verdict says so
+    rather than burying it in a methods appendix.&quot;&quot;&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>first-stage F : 2214.6
+relevance     : instrument_strength -&gt; satisfied
+
+a nearly irrelevant instrument (Z -&gt; X of 0.05 instead of 1.0):
+  first-stage F : 0.1
+  relevance     : violated
+  estimate      : 1.810 +/- 3.968</pre></div>
+<figure class="fig" id="02_economics_instrument-relevance">
+  <div class="fig-head"><p class="fig-t">The same estimator, on an instrument that barely moves enrolment</p><p class="fig-s">Same graph, same route, same code. Only the strength of the first stage changed, and the answer became useless — which is why relevance is checked rather than assumed.</p></div>
+  
+  <div class="chart" data-chart="intervals" data-file="figures-02_economics_instrument"
+       data-opt='{&quot;rows&quot;: &quot;relevance.rows&quot;, &quot;truth&quot;: 2.0, &quot;truthLabel&quot;: &quot;the truth&quot;, &quot;xLabel&quot;: &quot;effect of the programme on earnings&quot;, &quot;labelWidth&quot;: 150, &quot;rowHeight&quot;: 38}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+
+<section class="wt-close">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The close</p>
+      <h2>What it actually showed</h2>
+      <p>Written after looking at the output, which is why it does not always agree
+        with the setup.</p>
+    </div>
+    <div class="prose wt-findings"><p>OLS overstates the programme by +0.35, and the chart of sample sizes shows that no amount of data would have helped: the naive line converges on 2.32 against a truth of 2.00. Bias is not a small-sample problem.</p><p>What 2SLS bought was accuracy, and what it cost was width: its interval is 2.0 times wider than the naive one. That is the honest price of using only the part of the variation in enrolment that geography explains, and it is the right trade — a wide interval around the truth is usable, a narrow one around the wrong number is not.</p><p>The assumption table is the part to take to a referee. Relevance was checked and passed. Exclusion — that distance to a training centre affects earnings only through enrolment — is recorded as unverified, because it is unverifiable from this data. If it fails, everything above fails with it, and the verdict says so rather than burying it in a methods appendix.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <details class="ex-more">
+      <summary>The whole file, and everything this run printed</summary>
+      <div class="ex-body">
+        <div class="pair">
+          <div class="code">
+            <div class="code-h"><span>examples/02_economics_instrument.py</span>
+              <button class="copy" type="button">Copy</button></div>
+            <pre>from _walkthrough import Walkthrough
+
+from axiom.identify import (
+    identify,
+    ols,
+    two_stage_least_squares,
+    weak_instrument_check,
+)
+from axiom.sim import LinearSCM, iv_world
+
+N, SEED = 5_000, 1
+
+w = Walkthrough(
+    field=&quot;Labour economics&quot;,
+    title=&quot;An effect you can only see sideways&quot;,
+    question=&quot;&quot;&quot;Does a training programme raise earnings, when the people who enrol
+        are exactly the people who would have earned more anyway?&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Write down the world, including the part nobody measured&quot;,
+    why=&quot;&quot;&quot;The obstacle here is not a missing column, it is a structure: drive and
+        circumstance push both enrolment and earnings, and they were never recorded.
+        Writing that down as an edge — X &lt;-&gt; Y, a latent common cause — is what makes
+        the problem statable. An analysis that cannot say what is confounding it
+        cannot say what would fix it either.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Starting from the estimator. &#x27;We ran 2SLS with distance as an
+        instrument&#x27; skips the only question that determines whether the number means
+        anything: does the graph you believe in actually license that move?&quot;&quot;&quot;,
+)
+world = iv_world()
+w.out(f&quot;graph    : {world.graph.to_text()}&quot;)
+w.out(f&quot;measured : {sorted(world.graph.measured)}&quot;)
+w.out(&quot;&quot;)
+w.out(&quot;X &lt;-&gt; Y is the bidirected edge: a common cause of enrolment and earnings&quot;)
+w.out(&quot;that is not in the data and never will be. Z is the shifter -- distance to&quot;)
+w.out(&quot;the nearest centre, say -- which moves enrolment for reasons of geography.&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Ask whether the effect is recoverable at all, before estimating anything&quot;,
+    why=&quot;&quot;&quot;identify() is a question about the graph, not about the data, and it can
+        be asked before a single row is collected. It returns the route, the
+        instrument it found, and — the part that matters most in a referee report —
+        the assumptions the route rests on, each tagged with whether the data can
+        check it.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Nominating the instrument yourself and checking the first-stage F. That
+        tests relevance, which is the assumption you can test, and quietly skips
+        exclusion, which is the one that actually fails in practice.&quot;&quot;&quot;,
+)
+verdict = identify(world.graph, &quot;X&quot;, &quot;Y&quot;)
+w.out(f&quot;status     : {verdict.status}&quot;)
+w.out(f&quot;route      : {verdict.route}&quot;)
+w.out(f&quot;instrument : {verdict.instrument}   (found in the graph, not nominated by hand)&quot;)
+w.table(
+    [&quot;assumption&quot;, &quot;state&quot;, &quot;what it claims&quot;, &quot;what would challenge it&quot;],
+    [
+        [a.name, a.state, a.statement, &quot;, &quot;.join(a.challenged_by) or &quot;—&quot;]
+        for a in verdict.verdict.assumptions
+    ],
+    caption=&quot;&quot;&quot;The verdict carries its own assumptions. &#x27;unverified&#x27; is not a
+        weasel word — it is the correct state for a claim no dataset can settle.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Estimate it twice: once naively, once through the instrument&quot;,
+    why=&quot;&quot;&quot;Both estimators are run on the same 5,000 workers so the difference
+        between them is the method and nothing else. The naive comparison is not a
+        straw man — it is what a well-run analysis of this dataset would report if
+        nobody had drawn the graph.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Reporting only the instrumented estimate. The gap between the two is
+        the size of the selection, and it is the most informative number on the
+        page: it says how much of the raw programme effect was never the
+        programme.&quot;&quot;&quot;,
+)
+frame = world.observed(world.simulate(N, seed=SEED))
+truth = world.total_effect(&quot;X&quot;, &quot;Y&quot;)
+naive = ols(frame, &quot;Y&quot;, &quot;X&quot;)
+iv = two_stage_least_squares(frame, &quot;Y&quot;, &quot;X&quot;, instruments=[verdict.instrument])
+
+rows = []
+for label, est in ((&quot;naive OLS&quot;, naive), (&quot;2SLS&quot;, iv)):
+    ci = est.ci(0.95)
+    w.out(
+        f&quot;{label:12s} {est.estimate:6.3f} +/- {est.se:.3f}   &quot;
+        f&quot;[{ci.lower:6.3f}, {ci.upper:6.3f}]   error {est.estimate - truth:+.3f}&quot;
+    )
+    rows.append(
+        {
+            &quot;label&quot;: label,
+            &quot;estimate&quot;: est.estimate,
+            &quot;lower&quot;: ci.lower,
+            &quot;upper&quot;: ci.upper,
+            &quot;note&quot;: f&quot;standard error {est.se:.3f}&quot;,
+            &quot;bad&quot;: abs(est.estimate - truth) &gt; 2 * est.se,
+        }
+    )
+w.out(f&quot;{&#x27;truth&#x27;:12s} {truth:6.3f}&quot;)
+
+w.figure(
+    &quot;estimates&quot;,
+    kind=&quot;intervals&quot;,
+    data={&quot;rows&quot;: rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: truth,
+        &quot;truthLabel&quot;: &quot;the truth&quot;,
+        &quot;xLabel&quot;: &quot;effect of the programme on earnings&quot;,
+        &quot;labelWidth&quot;: 110,
+        &quot;rowHeight&quot;: 38,
+    },
+    title=&quot;What each method says the programme is worth&quot;,
+    note=&quot;&quot;&quot;The naive interval does not merely miss the truth, it excludes it
+        confidently — the interval is narrow and in the wrong place. 2SLS lands on
+        the truth and pays for it in width.&quot;&quot;&quot;,
+    legend=((&quot;accent&quot;, &quot;95% interval&quot;), (&quot;boundary&quot;, &quot;excludes the truth&quot;)),
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Watch what more data does to each one&quot;,
+    why=&quot;&quot;&quot;This is the distinction the whole example turns on. Noise shrinks as the
+        square root of n; bias does not shrink at all. Re-running both estimators
+        across sample sizes from 250 to 32,000 draws the difference rather than
+        asserting it — the naive line converges, confidently, on the wrong
+        number.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Saying &#x27;OLS is biased&#x27; and moving on. Every analyst agrees with that
+        sentence in the abstract and then, under deadline, argues that a large
+        enough sample makes it academic. The chart is the answer to that argument.&quot;&quot;&quot;,
+)
+sizes = [250, 500, 1_000, 2_000, 4_000, 8_000, 16_000, 32_000]
+naive_path, iv_path = [], []
+for n in sizes:
+    f = world.observed(world.simulate(n, seed=SEED))
+    naive_path.append(float(ols(f, &quot;Y&quot;, &quot;X&quot;).estimate))
+    iv_path.append(float(two_stage_least_squares(f, &quot;Y&quot;, &quot;X&quot;, instruments=[&quot;Z&quot;]).estimate))
+w.table(
+    [&quot;workers&quot;, &quot;naive OLS&quot;, &quot;2SLS&quot;],
+    [
+        [f&quot;{n:,}&quot;, f&quot;{a:.3f}&quot;, f&quot;{b:.3f}&quot;]
+        for n, a, b in zip(sizes, naive_path, iv_path, strict=True)
+    ],
+)
+w.figure(
+    &quot;convergence&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;n&quot;: sizes, &quot;naive&quot;: naive_path, &quot;iv&quot;: iv_path},
+    opt={
+        &quot;series&quot;: [
+            {&quot;label&quot;: &quot;naive OLS&quot;, &quot;x&quot;: &quot;@n&quot;, &quot;y&quot;: &quot;@naive&quot;, &quot;colour&quot;: &quot;boundary&quot;},
+            {&quot;label&quot;: &quot;2SLS&quot;, &quot;x&quot;: &quot;@n&quot;, &quot;y&quot;: &quot;@iv&quot;, &quot;colour&quot;: &quot;accent&quot;},
+        ],
+        &quot;xLabel&quot;: &quot;workers in the sample&quot;,
+        &quot;yLabel&quot;: &quot;estimated effect&quot;,
+        &quot;hline&quot;: truth,
+        &quot;hlineLabel&quot;: &quot;the truth&quot;,
+        &quot;height&quot;: 300,
+        &quot;rightPad&quot;: 80,
+    },
+    title=&quot;More data does not fix a bias&quot;,
+    note=&quot;&quot;&quot;Both lines settle down. Only one settles on the right answer. Everything
+        the naive estimator gains from a larger sample it spends on being more
+        certain of the selection it cannot see.&quot;&quot;&quot;,
+    legend=(
+        (&quot;boundary&quot;, &quot;naive OLS&quot;),
+        (&quot;accent&quot;, &quot;2SLS&quot;),
+        (&quot;ink-3:dash&quot;, &quot;the truth&quot;),
+    ),
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Check the instrument is actually doing work&quot;,
+    why=&quot;&quot;&quot;A weak instrument is not a neutral loss of precision. When the first stage
+        barely moves, 2SLS becomes biased towards OLS and its intervals stop
+        covering, so a weak-instrument analysis can be worse than the naive one it
+        was meant to replace. The first-stage F is the standard diagnostic, and
+        axiom returns it as an assumption with a state rather than a number to
+        eyeball.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Assuming relevance because the instrument is clever. Cleverness is an
+        argument for exclusion, which cannot be tested; relevance is the part that
+        can be, so it should be.&quot;&quot;&quot;,
+)
+relevance = weak_instrument_check(iv)
+w.out(f&quot;first-stage F : {iv.detail[&#x27;first_stage_f&#x27;]:.1f}&quot;)
+w.out(f&quot;relevance     : {relevance.name} -&gt; {relevance.state}&quot;)
+w.out(&quot;&quot;)
+
+# The same structure with the instrument&#x27;s first stage turned almost off, so the
+# cost of weakness is visible rather than argued for.
+weak_world = LinearSCM.from_text(&quot;Z -&gt; X: 0.05, X -&gt; Y: 2.0, X &lt;-&gt; Y: 1.0&quot;, name=&quot;weak-iv&quot;)
+weak_frame = weak_world.observed(weak_world.simulate(N, seed=SEED))
+weak_iv = two_stage_least_squares(weak_frame, &quot;Y&quot;, &quot;X&quot;, instruments=[&quot;Z&quot;])
+weak_check = weak_instrument_check(weak_iv)
+w.out(&quot;a nearly irrelevant instrument (Z -&gt; X of 0.05 instead of 1.0):&quot;)
+w.out(f&quot;  first-stage F : {weak_iv.detail[&#x27;first_stage_f&#x27;]:.1f}&quot;)
+w.out(f&quot;  relevance     : {weak_check.state}&quot;)
+w.out(f&quot;  estimate      : {weak_iv.estimate:.3f} +/- {weak_iv.se:.3f}&quot;)
+
+strong_ci, weak_ci = iv.ci(0.95), weak_iv.ci(0.95)
+w.figure(
+    &quot;relevance&quot;,
+    kind=&quot;intervals&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: &quot;strong instrument&quot;,
+                &quot;estimate&quot;: iv.estimate,
+                &quot;lower&quot;: strong_ci.lower,
+                &quot;upper&quot;: strong_ci.upper,
+                &quot;note&quot;: f&quot;first-stage F = {iv.detail[&#x27;first_stage_f&#x27;]:.0f}&quot;,
+            },
+            {
+                &quot;label&quot;: &quot;weak instrument&quot;,
+                &quot;estimate&quot;: weak_iv.estimate,
+                &quot;lower&quot;: weak_ci.lower,
+                &quot;upper&quot;: weak_ci.upper,
+                &quot;note&quot;: f&quot;first-stage F = {weak_iv.detail[&#x27;first_stage_f&#x27;]:.1f}&quot;,
+                &quot;bad&quot;: True,
+            },
+        ]
+    },
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: truth,
+        &quot;truthLabel&quot;: &quot;the truth&quot;,
+        &quot;xLabel&quot;: &quot;effect of the programme on earnings&quot;,
+        &quot;labelWidth&quot;: 150,
+        &quot;rowHeight&quot;: 38,
+    },
+    title=&quot;The same estimator, on an instrument that barely moves enrolment&quot;,
+    note=&quot;&quot;&quot;Same graph, same route, same code. Only the strength of the first stage
+        changed, and the answer became useless — which is why relevance is checked
+        rather than assumed.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.finding(f&quot;&quot;&quot;OLS overstates the programme by {naive.estimate - truth:+.2f}, and the chart of
+    sample sizes shows that no amount of data would have helped: the naive line
+    converges on {naive_path[-1]:.2f} against a truth of {truth:.2f}. Bias is not a
+    small-sample problem.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;What 2SLS bought was accuracy, and what it cost was width: its interval is
+    {(iv.ci(0.95).upper - iv.ci(0.95).lower) / (naive.ci(0.95).upper - naive.ci(0.95).lower):.1f}
+    times wider than the naive one. That is the honest price of using only the part
+    of the variation in enrolment that geography explains, and it is the right trade
+    — a wide interval around the truth is usable, a narrow one around the wrong
+    number is not.&quot;&quot;&quot;)
+w.finding(&quot;&quot;&quot;The assumption table is the part to take to a referee. Relevance was checked
+    and passed. Exclusion — that distance to a training centre affects earnings only
+    through enrolment — is recorded as unverified, because it is unverifiable from
+    this data. If it fails, everything above fails with it, and the verdict says so
+    rather than burying it in a methods appendix.&quot;&quot;&quot;)</pre>
+          </div>
+          <div class="out">
+            <div class="out-h">stdout, captured on this build</div>
+            <pre>========================================================================================
+LABOUR ECONOMICS  ---  An effect you can only see sideways
+========================================================================================
+  Does a training programme raise earnings, when the people who enrol are exactly the
+  people who would have earned more anyway?
+
+----------------------------------------------------------------------------------------
+STEP 1  Write down the world, including the part nobody measured
+----------------------------------------------------------------------------------------
+  The obstacle here is not a missing column, it is a structure: drive and circumstance
+  push both enrolment and earnings, and they were never recorded. Writing that down as
+  an edge — X &lt;-&gt; Y, a latent common cause — is what makes the problem statable. An
+  analysis that cannot say what is confounding it cannot say what would fix it either.
+
+  INSTEAD OF: Starting from the estimator. &#x27;We ran 2SLS with distance as an instrument&#x27;
+  skips the only question that determines whether the number means anything: does the
+  graph you believe in actually license that move?
+
+  graph    : X -&gt; Y, Z -&gt; X, X &lt;-&gt; Y
+  measured : [&#x27;X&#x27;, &#x27;Y&#x27;, &#x27;Z&#x27;]
+
+  X &lt;-&gt; Y is the bidirected edge: a common cause of enrolment and earnings
+  that is not in the data and never will be. Z is the shifter -- distance to
+  the nearest centre, say -- which moves enrolment for reasons of geography.
+
+----------------------------------------------------------------------------------------
+STEP 2  Ask whether the effect is recoverable at all, before estimating anything
+----------------------------------------------------------------------------------------
+  identify() is a question about the graph, not about the data, and it can be asked
+  before a single row is collected. It returns the route, the instrument it found, and —
+  the part that matters most in a referee report — the assumptions the route rests on,
+  each tagged with whether the data can check it.
+
+  INSTEAD OF: Nominating the instrument yourself and checking the first-stage F. That
+  tests relevance, which is the assumption you can test, and quietly skips exclusion,
+  which is the one that actually fails in practice.
+
+  status     : downgraded
+  route      : instrument
+  instrument : Z   (found in the graph, not nominated by hand)
+  The verdict carries its own assumptions. &#x27;unverified&#x27; is not a weasel word — it is the
+  correct state for a claim no dataset can settle.
+  assumption                          state       what it claims                                                                                                 what would challenge it
+  ----------------------------------  ----------  -------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------
+  exclusion                           satisfied   Z affects Y only through X                                                                                     a,  , d, i, r, e, c, t,  , o, r,  , c, o, n, f, o, u, n, d, e, d,  , p, a, t, h,  , i, n,  , t, h, e,  , g, r, a, p, h
+  relevance                           unverified  Z is associated with X (first-stage strength)                                                                  f, i, r, s, t, -, s, t, a, g, e,  , F,  , b, e, l, o, w,  , 1, 0
+  effect_homogeneity_or_monotonicity  unverified  the IV estimand equals the average effect (homogeneous/linear effect) or is read as a LATE under monotonicity  h, e, t, e, r, o, g, e, n, e, o, u, s,  , e, f, f, e, c, t, s, ;,  , d, e, f, i, e, r, s
+
+
+----------------------------------------------------------------------------------------
+STEP 3  Estimate it twice: once naively, once through the instrument
+----------------------------------------------------------------------------------------
+  Both estimators are run on the same 5,000 workers so the difference between them is
+  the method and nothing else. The naive comparison is not a straw man — it is what a
+  well-run analysis of this dataset would report if nobody had drawn the graph.
+
+  INSTEAD OF: Reporting only the instrumented estimate. The gap between the two is the
+  size of the selection, and it is the most informative number on the page: it says how
+  much of the raw programme effect was never the programme.
+
+  naive OLS     2.347 +/- 0.011   [ 2.326,  2.367]   error +0.347
+  2SLS          1.999 +/- 0.021   [ 1.958,  2.040]   error -0.001
+  truth         2.000
+  [figure: What each method says the programme is worth]
+
+
+----------------------------------------------------------------------------------------
+STEP 4  Watch what more data does to each one
+----------------------------------------------------------------------------------------
+  This is the distinction the whole example turns on. Noise shrinks as the square root
+  of n; bias does not shrink at all. Re-running both estimators across sample sizes from
+  250 to 32,000 draws the difference rather than asserting it — the naive line
+  converges, confidently, on the wrong number.
+
+  INSTEAD OF: Saying &#x27;OLS is biased&#x27; and moving on. Every analyst agrees with that
+  sentence in the abstract and then, under deadline, argues that a large enough sample
+  makes it academic. The chart is the answer to that argument.
+
+  workers  naive OLS  2SLS
+  -------  ---------  -----
+  250      2.292      2.117
+  500      2.291      2.046
+  1,000    2.318      2.014
+  2,000    2.316      1.961
+  4,000    2.343      1.985
+  8,000    2.334      2.035
+  16,000   2.331      2.001
+  32,000   2.319      1.980
+
+  [figure: More data does not fix a bias]
+
+
+----------------------------------------------------------------------------------------
+STEP 5  Check the instrument is actually doing work
+----------------------------------------------------------------------------------------
+  A weak instrument is not a neutral loss of precision. When the first stage barely
+  moves, 2SLS becomes biased towards OLS and its intervals stop covering, so a weak-
+  instrument analysis can be worse than the naive one it was meant to replace. The
+  first-stage F is the standard diagnostic, and axiom returns it as an assumption with a
+  state rather than a number to eyeball.
+
+  INSTEAD OF: Assuming relevance because the instrument is clever. Cleverness is an
+  argument for exclusion, which cannot be tested; relevance is the part that can be, so
+  it should be.
+
+  first-stage F : 2214.6
+  relevance     : instrument_strength -&gt; satisfied
+
+  a nearly irrelevant instrument (Z -&gt; X of 0.05 instead of 1.0):
+    first-stage F : 0.1
+    relevance     : violated
+    estimate      : 1.810 +/- 3.968
+  [figure: The same estimator, on an instrument that barely moves enrolment]
+
+
+========================================================================================
+WHAT IT ACTUALLY SHOWED
+========================================================================================
+  OLS overstates the programme by +0.35, and the chart of sample sizes shows that no
+  amount of data would have helped: the naive line converges on 2.32 against a truth of
+  2.00. Bias is not a small-sample problem.
+
+  What 2SLS bought was accuracy, and what it cost was width: its interval is 2.0 times
+  wider than the naive one. That is the honest price of using only the part of the
+  variation in enrolment that geography explains, and it is the right trade — a wide
+  interval around the truth is usable, a narrow one around the wrong number is not.
+
+  The assumption table is the part to take to a referee. Relevance was checked and
+  passed. Exclusion — that distance to a training centre affects earnings only through
+  enrolment — is recorded as unverified, because it is unverifiable from this data. If
+  it fails, everything above fails with it, and the verdict says so rather than burying
+  it in a methods appendix.</pre>
+          </div>
+        </div>
+      </div>
+    </details>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="example-01-agriculture-response-surface.html">&larr; 01 · Agronomy</a><a class="btn btn-2" href="examples.html">All twelve</a><a class="btn btn-2" href="example-03-education-selection-bias.html">03 · Education &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

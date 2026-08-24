@@ -48,6 +48,9 @@ The executed series under `nbs/core/`:
 .. automodule:: axiom.core.interpret.latex
    :members:
 
+.. automodule:: axiom.core.interpret.pytensor
+   :members:
+
 .. automodule:: axiom.core.interpret.value
    :members:
 
@@ -64,6 +67,9 @@ The executed series under `nbs/core/`:
    :members:
 
 .. automodule:: axiom.core.result
+   :members:
+
+.. automodule:: axiom.core.rounding
    :members:
 
 .. automodule:: axiom.core.spec

@@ -1,0 +1,1230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 · Where the yield actually peaks — Agronomy · axiom</title>
+<meta name="description" content="Agronomy: Where does yield peak in nitrogen and irrigation, and how should a rationed budget be split? A 7-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:title" content="01 · Where the yield actually peaks — Agronomy · axiom">
+<meta property="og:description" content="Agronomy: Where does yield peak in nitrogen and irrigation, and how should a rationed budget be split? A 7-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="example">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Example 01 · Agronomy</p>
+    <h1 style="max-width:18ch">Where the yield actually peaks</h1>
+    <p class="lede prose mt">A field trial varies nitrogen and irrigation across plots. Yield saturates in both. Where is the optimum, and when water is rationed, how should the remaining input budget be split?</p>
+    <div class="ex-meta"><a class="pkg" href="surface.html">Surface</a>
+      <span class="pkg">7 steps</span>
+      <span class="pkg">6 figures</span>
+      <span class="pkg">453 lines</span>
+      <span class="pkg">runs in 7.2s</span></div>
+    <div class="hero-cta">
+      <a class="btn btn-1" href="#step-1">Start the walkthrough</a>
+      <a class="btn btn-2" href="https://github.com/redam94/axiom/blob/main/examples/01_agriculture_response_surface.py">The whole file on GitHub &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div class="prose wt-framing"><p>Agronomy — nitrogen and irrigation, and where the yield actually peaks.</p><p class="wt-h">The question</p><p>A field trial varies nitrogen (kg/ha) and irrigation (mm) across plots. Yield responds to both, and saturates in both. Where is the optimum, and if water is rationed, how should the remaining budget be split?</p><p class="wt-h">Why a response surface and not a regression</p><p>Fitting a straight line to a saturating response puts the predicted optimum at whichever corner of the design happens to be highest. The whole point of the surface layer is to keep the curvature, so the optimizer is asked about the shape the data actually support.</p><p>Pillars: surface (kernels, allocation, frontier)</p></div>
+      <div>
+        <p class="eyebrow">The route</p>
+        <nav class="wt-toc"><a class="wt-toc-i" href="#step-1"><span class="wt-toc-n">1</span>State the box the doses can live in</a><a class="wt-toc-i" href="#step-2"><span class="wt-toc-n">2</span>Spend the plots where the curvature is</a><a class="wt-toc-i" href="#step-3"><span class="wt-toc-n">3</span>Grow a field whose answer is already known</a><a class="wt-toc-i" href="#step-4"><span class="wt-toc-n">4</span>Fit once, and check the truth is inside the interval</a><a class="wt-toc-i" href="#step-5"><span class="wt-toc-n">5</span>Ask where the response flattens out</a><a class="wt-toc-i" href="#step-6"><span class="wt-toc-n">6</span>Now ration the water and split the budget</a><a class="wt-toc-i" href="#step-7"><span class="wt-toc-n">7</span>Price the next unit of input</a></nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Before the first step</p>
+      <h2>What this example imports, and why that list is short</h2>
+      <p>Everything below runs on the four core dependencies. No sampler, no extras.</p>
+    </div>
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>examples/01_agriculture_response_surface.py</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>import numpy as np
+from _walkthrough import Walkthrough
+
+from axiom.core import Intervention
+from axiom.sim import arms_world
+from axiom.surface import (
+    Bounds,
+    HillKernel,
+    allocate,
+    central_composite,
+    counterfactual_doses,
+    fit,
+    frontier,
+    response_band,
+)
+
+SEED = 0
+
+w = Walkthrough(
+    field=&quot;Agronomy&quot;,
+    title=&quot;Where the yield actually peaks&quot;,
+    question=&quot;&quot;&quot;A field trial varies nitrogen and irrigation across plots. Yield
+        saturates in both. Where is the optimum, and when water is rationed, how
+        should the remaining input budget be split?&quot;&quot;&quot;,
+)</pre>
+    </div>
+  </div>
+</section>
+
+<section class="wt-step" id="step-1">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 1 <span>of 7</span></p>
+      <h2>State the box the doses can live in</h2>
+      <div class="wt-why prose"><p>Bounds are not a plotting range. They are a claim about the world — no plot on this farm will receive 400 kg/ha of nitrogen, so no optimizer should ever propose it and no fitted curve should be trusted out there. Saying it once, in an object, means the design, the allocation and the frontier all obey the same box instead of each carrying its own copy of the farm&#x27;s limits.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Fitting on whatever doses happened to occur and reading the optimum off the curve. That silently extrapolates: a Hill curve is still increasing at every dose, so the unconstrained answer to &#x27;how much nitrogen&#x27; is always &#x27;more&#x27;.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/01_agriculture_response_surface.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>bounds = Bounds(treatments=(&quot;nitrogen&quot;, &quot;irrigation&quot;), low=(0.0, 0.0), high=(200.0, 120.0))
+w.out(f&quot;treatments : {bounds.treatments}&quot;)
+w.out(f&quot;nitrogen   : {bounds.low[0]:.0f} to {bounds.high[0]:.0f} kg/ha&quot;)
+w.out(f&quot;irrigation : {bounds.low[1]:.0f} to {bounds.high[1]:.0f} mm&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>treatments : (&#x27;nitrogen&#x27;, &#x27;irrigation&#x27;)
+nitrogen   : 0 to 200 kg/ha
+irrigation : 0 to 120 mm</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-2">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 2 <span>of 7</span></p>
+      <h2>Spend the plots where the curvature is</h2>
+      <div class="wt-why prose"><p>Curvature is what this whole analysis turns on, and curvature is estimated from runs placed to see it bending. A rotatable central composite design is a factorial cube, plus axial points pushed out along each treatment, plus replicated centre points. The axial points are what make the quadratic terms estimable; the replicated centre is what separates pure noise from lack of fit. &#x27;Rotatable&#x27; means the prediction variance depends only on distance from the centre, so no direction in the dose box is privileged by accident.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>A 5x5 grid over the same box. It costs 25 plots instead of twelve, spends most of them re-measuring the flat regions, and still gives no replicated centre — so it cannot tell a bad model from a noisy one. One factor at a time is worse again: it cannot see an interaction at all.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/01_agriculture_response_surface.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>design = central_composite(bounds, alpha=&quot;rotatable&quot;, center_points=4, inscribed=True)
+w.out(f&quot;design : {design.kind}, {design.n} plots&quot;)
+w.out(f&quot;detail : {dict(design.detail)}&quot;)
+
+frame = design.as_frame().round(1)
+w.table(
+    list(frame.columns),
+    frame.to_numpy().tolist(),
+    caption=&quot;Every plot the trial will plant, in the units an agronomist works in.&quot;,
+)
+
+points = [[float(a), float(b)] for a, b in design.points]
+counts: dict[tuple[float, float], int] = {}
+for a, b in points:
+    counts[(round(a, 3), round(b, 3))] = counts.get((round(a, 3), round(b, 3)), 0) + 1
+w.figure(
+    &quot;design&quot;,
+    kind=&quot;scatter&quot;,
+    data={
+        &quot;x&quot;: [p[0] for p in counts],
+        &quot;y&quot;: [p[1] for p in counts],
+        &quot;labels&quot;: [f&quot;x{n}&quot; if n &gt; 1 else &quot;&quot; for n in counts.values()],
+    },
+    opt={
+        &quot;key&quot;: &quot;@&quot;,
+        &quot;x&quot;: &quot;x&quot;,
+        &quot;y&quot;: &quot;y&quot;,
+        &quot;labels&quot;: &quot;labels&quot;,
+        &quot;xLabel&quot;: &quot;nitrogen (kg/ha)&quot;,
+        &quot;yLabel&quot;: &quot;irrigation (mm)&quot;,
+        &quot;height&quot;: 300,
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>design : central_composite, 12 plots
+detail : {&#x27;alpha&#x27;: 1.4142135623730951, &#x27;n_cube&#x27;: 4.0, &#x27;n_axial&#x27;: 4.0, &#x27;n_center&#x27;: 4.0, &#x27;fraction&#x27;: 0.0}</pre></div>
+<div class="tbl-wrap"><table class="t"><caption>Every plot the trial will plant, in the units an agronomist works in.</caption><thead><tr><th>nitrogen</th><th>irrigation</th></tr></thead><tbody><tr><td>29.3</td><td>17.6</td></tr><tr><td>170.7</td><td>17.6</td></tr><tr><td>29.3</td><td>102.4</td></tr><tr><td>170.7</td><td>102.4</td></tr><tr><td>0</td><td>60</td></tr><tr><td>200</td><td>60</td></tr><tr><td>100</td><td>0</td></tr><tr><td>100</td><td>120</td></tr><tr><td>100</td><td>60</td></tr><tr><td>100</td><td>60</td></tr><tr><td>100</td><td>60</td></tr><tr><td>100</td><td>60</td></tr></tbody></table></div>
+<figure class="fig" id="01_agriculture_response_surface-design">
+  <div class="fig-head"><p class="fig-t">The twelve plots, in dose space</p><p class="fig-s">Four corners, four axial points pushed out along each treatment, and a centre planted four times over — that replication is the only thing in the design that can separate noise from a wrong model.</p></div>
+  
+  <div class="chart" data-chart="scatter" data-file="figures-01_agriculture_response_surface"
+       data-opt='{&quot;key&quot;: &quot;design&quot;, &quot;x&quot;: &quot;x&quot;, &quot;y&quot;: &quot;y&quot;, &quot;labels&quot;: &quot;labels&quot;, &quot;xLabel&quot;: &quot;nitrogen (kg/ha)&quot;, &quot;yLabel&quot;: &quot;irrigation (mm)&quot;, &quot;height&quot;: 300}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-3">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 3 <span>of 7</span></p>
+      <h2>Grow a field whose answer is already known</h2>
+      <div class="wt-why prose"><p>Every number below is checkable only because the truth was written down first. A recovery test is the difference between a method that works and a method that has never been graded: simulate from a known set of parameters, fit, and ask whether the intervals contain what generated the data.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>A real dataset. It would be more convincing about agronomy and completely uninformative about whether the estimator is right — with real data there is nothing to compare the answer to.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/01_agriculture_response_surface.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>truth = {
+    &quot;alpha&quot;: 3.0,  # baseline yield, t/ha
+    &quot;beta_nitrogen&quot;: 4.2,  # how much yield nitrogen can add at saturation
+    &quot;k_nitrogen&quot;: 90.0,  # the half-saturation dose
+    &quot;s_nitrogen&quot;: 2.0,  # how sharply it turns over
+    &quot;beta_irrigation&quot;: 2.6,
+    &quot;k_irrigation&quot;: 45.0,
+    &quot;s_irrigation&quot;: 1.6,
+}
+field = arms_world(
+    n_units=design.n,
+    treatments=(&quot;nitrogen&quot;, &quot;irrigation&quot;),
+    kernels={
+        &quot;nitrogen&quot;: HillKernel(reference_dose=90.0, amplitude_scale=5.0),
+        &quot;irrigation&quot;: HillKernel(reference_dose=45.0, amplitude_scale=5.0),
+    },
+    doses=design.doses(),
+    truth=truth,
+    noise_sd=0.35,
+    seed=SEED,
+)
+w.out(f&quot;plots      : {field.n_units}&quot;)
+w.out(
+    f&quot;true peak  : nitrogen k = {truth[&#x27;k_nitrogen&#x27;]:.0f}, &quot;
+    f&quot;irrigation k = {truth[&#x27;k_irrigation&#x27;]:.0f}&quot;
+)
+w.out(&quot;noise sd   : 0.35 t/ha, against a yield range of about 3 to 9&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>plots      : 12
+true peak  : nitrogen k = 90, irrigation k = 45
+noise sd   : 0.35 t/ha, against a yield range of about 3 to 9</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-4">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 4 <span>of 7</span></p>
+      <h2>Fit once, and check the truth is inside the interval</h2>
+      <div class="wt-why prose"><p>The likelihood calls exactly the same forward() the allocation and the frontier will call later. That is a design rule rather than an efficiency note: the moment the optimizer gets its own copy of the transform chain, the two drift, and the drift shows up as a recommendation the model cannot actually justify.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Reporting the point estimates and moving on. The comparison worth making is not &#x27;is the mean close&#x27; but &#x27;does the interval contain the truth&#x27; — an estimator can be nearly right and still badly overconfident, and only the second question catches that.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/01_agriculture_response_surface.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>result = fit(field.spec, field.panel, backend=&quot;laplace&quot;, draws=2000, seed=SEED)
+posterior = result.posterior
+theta = {name: float(posterior.summary(name).mean) for name in posterior.names()}
+w.out(f&quot;converged : {result.converged}&quot;)
+# sorted, because `names()` is a frozenset: joined unsorted it prints in a
+# different order on every run, which makes this walkthrough -- and the page and
+# the report generated from it -- differ from itself between builds.
+w.out(f&quot;parameters: {&#x27;, &#x27;.join(sorted(posterior.names()))}&quot;)
+
+shown = (&quot;beta_nitrogen&quot;, &quot;k_nitrogen&quot;, &quot;beta_irrigation&quot;, &quot;k_irrigation&quot;)
+rows, chart_rows = [], []
+for name in shown:
+    s = posterior.summary(name, definition=&quot;hdi&quot;, mass=0.9)
+    inside = s.interval.lower &lt;= truth[name] &lt;= s.interval.upper
+    rows.append(
+        [
+            name,
+            f&quot;{truth[name]:.1f}&quot;,
+            f&quot;{s.mean:.1f}&quot;,
+            f&quot;[{s.interval.lower:.1f}, {s.interval.upper:.1f}]&quot;,
+            &quot;yes&quot; if inside else &quot;NO&quot;,
+        ]
+    )
+    # Scaled by the truth so parameters of wildly different size share one axis —
+    # a 90 kg/ha half-saturation dose and a 4.2 t/ha amplitude are not comparable
+    # in their own units, and drawing them as if they were is how a forest plot lies.
+    chart_rows.append(
+        {
+            &quot;label&quot;: name,
+            &quot;estimate&quot;: (s.mean - truth[name]) / truth[name],
+            &quot;lower&quot;: (s.interval.lower - truth[name]) / truth[name],
+            &quot;upper&quot;: (s.interval.upper - truth[name]) / truth[name],
+            &quot;note&quot;: f&quot;truth {truth[name]:.1f}, posterior mean {s.mean:.1f}&quot;,
+            &quot;bad&quot;: not inside,
+        }
+    )
+w.table([&quot;parameter&quot;, &quot;truth&quot;, &quot;posterior mean&quot;, &quot;90% HDI&quot;, &quot;contains truth&quot;], rows)
+
+w.figure(
+    &quot;recovery&quot;,
+    kind=&quot;intervals&quot;,
+    data={&quot;rows&quot;: chart_rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: 0,
+        &quot;truthLabel&quot;: &quot;the truth&quot;,
+        &quot;xLabel&quot;: &quot;error, as a fraction of the true value&quot;,
+        &quot;mass&quot;: 90,
+        &quot;labelWidth&quot;: 150,
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>converged : True
+parameters: alpha, beta_irrigation, beta_nitrogen, k_irrigation, k_nitrogen, s_irrigation, s_nitrogen, sigma</pre></div>
+<div class="tbl-wrap"><table class="t"><thead><tr><th>parameter</th><th>truth</th><th>posterior mean</th><th>90% HDI</th><th>contains truth</th></tr></thead><tbody><tr><td>beta_nitrogen</td><td>4.2</td><td>5.1</td><td>[3.9, 6.3]</td><td>yes</td></tr><tr><td>k_nitrogen</td><td>90.0</td><td>108.2</td><td>[75.6, 137.4]</td><td>yes</td></tr><tr><td>beta_irrigation</td><td>2.6</td><td>2.9</td><td>[1.6, 4.1]</td><td>yes</td></tr><tr><td>k_irrigation</td><td>45.0</td><td>76.4</td><td>[43.6, 106.2]</td><td>yes</td></tr></tbody></table></div>
+<figure class="fig" id="01_agriculture_response_surface-recovery">
+  <div class="fig-head"><p class="fig-t">Parameter recovery, every parameter on one axis</p><p class="fig-s">Each interval is scaled by its own true value, which is the only way to put a half-saturation dose in kg/ha and an amplitude in t/ha on the same picture. An interval that misses the dashed line is a recovery failure and would be drawn in red.</p></div>
+  <div class="legend"><span><i style="--k:var(--accent)"></i>90% HDI, contains the truth</span><span><i class="dash" style="--k:var(--ink-2)"></i>the truth</span></div>
+  <div class="chart" data-chart="intervals" data-file="figures-01_agriculture_response_surface"
+       data-opt='{&quot;rows&quot;: &quot;recovery.rows&quot;, &quot;truth&quot;: 0, &quot;truthLabel&quot;: &quot;the truth&quot;, &quot;xLabel&quot;: &quot;error, as a fraction of the true value&quot;, &quot;mass&quot;: 90, &quot;labelWidth&quot;: 150}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-5">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 5 <span>of 7</span></p>
+      <h2>Ask where the response flattens out</h2>
+      <div class="wt-why prose"><p>The band is not a fitted line with error bars bolted on. It is every posterior draw pushed through forward() and summarised at each dose, so the width at a given dose is what the model genuinely does not know there — widest where the design placed fewest plots, which is exactly where a recommendation should be least confident.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Reading the optimum off the posterior mean curve alone. The mean crosses its own plateau somewhere; the band shows a whole region of doses the data cannot tell apart, and that region, not the point, is the honest answer to &#x27;how much nitrogen&#x27;.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/01_agriculture_response_surface.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>def truth_at(name: str, dose: float) -&gt; float:
+    &quot;&quot;&quot;The true curve on the same counterfactual the band uses.
+
+    ``response_band`` sets the named treatment to each dose and leaves every other
+    treatment at its observed level. Holding the others at zero instead would put
+    the two curves on different counterfactuals, and the overlay would be a
+    comparison of two different questions.
+    &quot;&quot;&quot;
+    data = counterfactual_doses(field.surface, field.data, Intervention(doses={name: dose}))
+    return float(field.surface.forward(data, field.theta).mean())
+
+
+doses = np.linspace(0.0, 200.0, 30)
+band = response_band(result, &quot;nitrogen&quot;, doses=doses.tolist(), mass=0.9, seed=SEED)
+true_curve = [truth_at(&quot;nitrogen&quot;, float(d)) for d in doses]
+
+w.table(
+    [&quot;nitrogen (kg/ha)&quot;, &quot;posterior mean (t/ha)&quot;, &quot;90% interval&quot;, &quot;truth&quot;],
+    [
+        [
+            f&quot;{doses[i]:.0f}&quot;,
+            f&quot;{band.mean[i]:.2f}&quot;,
+            f&quot;[{band.lower[i]:.2f}, {band.upper[i]:.2f}]&quot;,
+            f&quot;{true_curve[i]:.2f}&quot;,
+        ]
+        for i in range(0, len(doses), 4)
+    ],
+    caption=&quot;Every fourth grid point; the chart below has all thirty.&quot;,
+)
+w.figure(
+    &quot;band&quot;,
+    kind=&quot;band&quot;,
+    data={
+        &quot;treatment&quot;: &quot;nitrogen&quot;,
+        &quot;doses&quot;: doses.tolist(),
+        &quot;mean&quot;: list(band.mean),
+        &quot;lower&quot;: list(band.lower),
+        &quot;upper&quot;: list(band.upper),
+        &quot;truth&quot;: true_curve,
+        &quot;mass&quot;: 0.9,
+    },
+    opt={&quot;key&quot;: &quot;@&quot;, &quot;xLabel&quot;: &quot;nitrogen (kg/ha)&quot;, &quot;yLabel&quot;: &quot;yield (t/ha)&quot;, &quot;height&quot;: 320},
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="tbl-wrap"><table class="t"><caption>Every fourth grid point; the chart below has all thirty.</caption><thead><tr><th>nitrogen (kg/ha)</th><th>posterior mean (t/ha)</th><th>90% interval</th><th>truth</th></tr></thead><tbody><tr><td>0</td><td>4.33</td><td>[4.08, 4.58]</td><td>4.40</td></tr><tr><td>28</td><td>4.88</td><td>[4.71, 5.09]</td><td>4.76</td></tr><tr><td>55</td><td>5.67</td><td>[5.50, 5.88]</td><td>5.54</td></tr><tr><td>83</td><td>6.38</td><td>[6.24, 6.57]</td><td>6.32</td></tr><tr><td>110</td><td>6.95</td><td>[6.82, 7.12]</td><td>6.92</td></tr><tr><td>138</td><td>7.38</td><td>[7.26, 7.54]</td><td>7.34</td></tr><tr><td>166</td><td>7.70</td><td>[7.56, 7.87]</td><td>7.64</td></tr><tr><td>193</td><td>7.96</td><td>[7.76, 8.15]</td><td>7.85</td></tr></tbody></table></div>
+<figure class="fig" id="01_agriculture_response_surface-band">
+  <div class="fig-head"><p class="fig-t">Yield against nitrogen, with everything the model does not know</p><p class="fig-s">The dashed line is the curve the simulation actually used. It stays inside the band across the whole dose range, which is what a passed recovery test looks like when you draw it instead of tabulating it.</p></div>
+  <div class="legend"><span><i style="--k:var(--accent)"></i>posterior mean</span><span><i style="--k:var(--accent-wash)"></i>90% interval</span><span><i class="dash" style="--k:var(--ink-2)"></i>the truth</span></div>
+  <div class="chart" data-chart="band" data-file="figures-01_agriculture_response_surface"
+       data-opt='{&quot;key&quot;: &quot;band&quot;, &quot;xLabel&quot;: &quot;nitrogen (kg/ha)&quot;, &quot;yLabel&quot;: &quot;yield (t/ha)&quot;, &quot;height&quot;: 320}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-6">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 6 <span>of 7</span></p>
+      <h2>Now ration the water and split the budget</h2>
+      <div class="wt-why prose"><p>The decision is not &#x27;where is the peak&#x27; — it is &#x27;given a fixed total of input and a water cap, what mix&#x27;. allocate() searches the fitted surface under both constraints, using the posterior rather than a single fitted curve, so the recommendation reflects the uncertainty in the shape and not just its mean.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Splitting the budget in proportion to each input&#x27;s estimated amplitude. That is the right answer only for a linear response; with saturation it over-buys whichever input is already past its bend, which is precisely the mistake the surface layer exists to prevent.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/01_agriculture_response_surface.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>water_limited = Bounds(treatments=(&quot;nitrogen&quot;, &quot;irrigation&quot;), low=(0.0, 0.0), high=(200.0, 60.0))
+plan = allocate(
+    result.surface, posterior, budget=180.0, bounds=water_limited, objective=&quot;mean&quot;, seed=SEED
+)
+unconstrained = allocate(
+    result.surface, posterior, budget=180.0, bounds=bounds, objective=&quot;mean&quot;, seed=SEED
+)
+w.out(&quot;budget 180 units of input, water capped at 60 mm:&quot;)
+w.out(&quot;  &quot; + &quot;, &quot;.join(f&quot;{k} {v:.1f}&quot; for k, v in plan.doses.items()))
+w.out(f&quot;  expected yield {plan.expected_outcome:.3f} t/ha  ({plan.status})&quot;)
+w.out(&quot;the same budget with no water cap:&quot;)
+w.out(&quot;  &quot; + &quot;, &quot;.join(f&quot;{k} {v:.1f}&quot; for k, v in unconstrained.doses.items()))
+w.out(f&quot;  expected yield {unconstrained.expected_outcome:.3f} t/ha&quot;)
+w.out(f&quot;  the cap costs {unconstrained.expected_outcome - plan.expected_outcome:.3f} t/ha&quot;)
+
+grid_n = np.linspace(0.0, 200.0, 32)
+grid_i = np.linspace(0.0, 120.0, 32)
+w.figure(
+    &quot;surface&quot;,
+    kind=&quot;heatmap&quot;,
+    data={
+        &quot;nitrogen&quot;: grid_n.tolist(),
+        &quot;irrigation&quot;: grid_i.tolist(),
+        &quot;z&quot;: [
+            [
+                float(
+                    result.surface.forward(
+                        {&quot;nitrogen&quot;: float(n), &quot;irrigation&quot;: float(i)}, theta
+                    ).mean()
+                )
+                for n in grid_n
+            ]
+            for i in grid_i
+        ],
+    },
+    opt={
+        &quot;key&quot;: &quot;@&quot;,
+        &quot;x&quot;: &quot;nitrogen&quot;,
+        &quot;y&quot;: &quot;irrigation&quot;,
+        &quot;z&quot;: &quot;z&quot;,
+        &quot;xLabel&quot;: &quot;nitrogen (kg/ha)&quot;,
+        &quot;yLabel&quot;: &quot;irrigation (mm)&quot;,
+        &quot;zLabel&quot;: &quot;yield (t/ha)&quot;,
+        &quot;height&quot;: 340,
+        &quot;marks&quot;: [
+            {
+                &quot;x&quot;: float(plan.doses[&quot;nitrogen&quot;]),
+                &quot;y&quot;: float(plan.doses[&quot;irrigation&quot;]),
+                &quot;label&quot;: &quot;under the cap&quot;,
+            },
+            {
+                &quot;x&quot;: float(unconstrained.doses[&quot;nitrogen&quot;]),
+                &quot;y&quot;: float(unconstrained.doses[&quot;irrigation&quot;]),
+                &quot;label&quot;: &quot;uncapped&quot;,
+            },
+        ],
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>budget 180 units of input, water capped at 60 mm:
+  nitrogen 120.0, irrigation 60.0
+  expected yield 7.184 t/ha  (converged)
+the same budget with no water cap:
+  nitrogen 106.3, irrigation 73.7
+  expected yield 7.229 t/ha
+  the cap costs 0.045 t/ha</pre></div>
+<figure class="fig" id="01_agriculture_response_surface-surface">
+  <div class="fig-head"><p class="fig-t">The whole fitted surface, and the two allocations</p><p class="fig-s">Both marks sit on the same budget line — 180 units of input — and differ only in whether irrigation may exceed 60 mm. The surface is flat enough along its ridge that the cap costs surprisingly little.</p></div>
+  
+  <div class="chart" data-chart="heatmap" data-file="figures-01_agriculture_response_surface"
+       data-opt='{&quot;key&quot;: &quot;surface&quot;, &quot;x&quot;: &quot;nitrogen&quot;, &quot;y&quot;: &quot;irrigation&quot;, &quot;z&quot;: &quot;z&quot;, &quot;xLabel&quot;: &quot;nitrogen (kg/ha)&quot;, &quot;yLabel&quot;: &quot;irrigation (mm)&quot;, &quot;zLabel&quot;: &quot;yield (t/ha)&quot;, &quot;height&quot;: 340, &quot;marks&quot;: [{&quot;x&quot;: 120.0, &quot;y&quot;: 60.0, &quot;label&quot;: &quot;under the cap&quot;}, {&quot;x&quot;: 106.301486, &quot;y&quot;: 73.698514, &quot;label&quot;: &quot;uncapped&quot;}]}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-7">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 7 <span>of 7</span></p>
+      <h2>Price the next unit of input</h2>
+      <div class="wt-why prose"><p>A planner cannot act on &#x27;the optimum&#x27;. They can act on &#x27;the next hundred units of input are worth this much yield, the hundred after that are worth this much less&#x27;. The frontier re-solves the allocation at each budget, and the shadow price is the slope between neighbouring solutions — the number that says when to stop buying.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Quoting one average return per unit of input. On a saturating surface the average is a blend of a steep early region and a flat late one, so it overstates the value of the next unit whenever you are already past the bend — and understates it when you are below.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/01_agriculture_response_surface.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>budgets = [60.0, 120.0, 180.0, 240.0, 300.0]
+front = frontier(result.surface, theta, budgets=budgets, bounds=water_limited, seed=SEED)
+front_frame = front.as_frame().round(3)
+prices = [float(p) for p in front.shadow_prices()]
+w.table(
+    list(front_frame.columns),
+    front_frame.to_numpy().tolist(),
+    caption=&quot;The best achievable yield at each budget, and how it is spent.&quot;,
+)
+w.figure(
+    &quot;frontier&quot;,
+    kind=&quot;lines&quot;,
+    data={
+        &quot;budgets&quot;: budgets,
+        &quot;outcome&quot;: [float(v) for v in front_frame[&quot;expected_outcome&quot;]],
+    },
+    opt={
+        &quot;series&quot;: [{&quot;label&quot;: &quot;best achievable yield&quot;, &quot;x&quot;: &quot;@budgets&quot;, &quot;y&quot;: &quot;@outcome&quot;}],
+        &quot;xLabel&quot;: &quot;input budget&quot;,
+        &quot;yLabel&quot;: &quot;yield (t/ha)&quot;,
+        &quot;height&quot;: 260,
+        &quot;rightPad&quot;: 120,
+    },
+    # title, note and legend: the caption shown with the chart
+)
+w.figure(
+    &quot;shadow&quot;,
+    kind=&quot;bars&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: f&quot;budget {b:.0f}&quot;,
+                &quot;value&quot;: price,
+                &quot;display&quot;: f&quot;{price:+.4f}&quot;,
+                &quot;note&quot;: f&quot;the next input unit at a budget of {b:.0f} returns &quot; f&quot;{price:.4f} t/ha&quot;,
+            }
+            for b, price in zip(budgets, prices, strict=True)
+        ]
+    },
+    opt={&quot;rows&quot;: &quot;@rows&quot;, &quot;xLabel&quot;: &quot;t/ha per extra unit of input&quot;, &quot;labelWidth&quot;: 120},
+    # title, note and legend: the caption shown with the chart
+)
+
+
+w.finding(&quot;&quot;&quot;The design was twelve plots and it recovered a two-treatment saturating
+    surface well enough that the true curve sits inside the 90% band at every
+    nitrogen dose. That is the case for spending plots on curvature rather than
+    spreading them evenly: a 5x5 grid would have cost twice as much and learned the
+    shape less well.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;The water cap turned out to be cheap. Capping irrigation at 60 mm costs
+    {unconstrained.expected_outcome - plan.expected_outcome:.3f} t/ha at a budget of
+    180 — the surface has a broad ridge, so the constraint slides the answer along
+    it rather than down it. Had the ridge run the other way the same cap would have
+    been expensive, and nothing but the fitted shape tells you which case you are
+    in.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;The shadow price falls from {prices[0]:.4f} to {prices[-1]:.4f} t/ha per unit
+    across the budgets considered — a factor of {prices[0] / prices[-1]:.1f}. A single
+    average return per unit of input would have hidden that entirely, and it is the
+    only number in this whole run that answers the question a planner actually
+    asked: should we buy more?&quot;&quot;&quot;)</pre>
+</div>
+      <div class="tbl-wrap"><table class="t"><caption>The best achievable yield at each budget, and how it is spent.</caption><thead><tr><th>budget</th><th>expected_outcome</th><th>shadow_price</th><th>nitrogen</th><th>irrigation</th></tr></thead><tbody><tr><td>60</td><td>4.654</td><td>0.022</td><td>60</td><td>0</td></tr><tr><td>120</td><td>6.002</td><td>0.02</td><td>120</td><td>0</td></tr><tr><td>180</td><td>7.079</td><td>0.016</td><td>120</td><td>60</td></tr><tr><td>240</td><td>7.862</td><td>0.008</td><td>180</td><td>60</td></tr><tr><td>300</td><td>8.041</td><td>0.003</td><td>200</td><td>60</td></tr></tbody></table></div>
+<figure class="fig" id="01_agriculture_response_surface-frontier">
+  <div class="fig-head"><p class="fig-t">What each budget buys</p><p class="fig-s">The curve bends: equal increments of budget stop buying equal increments of yield.</p></div>
+  
+  <div class="chart" data-chart="lines" data-file="figures-01_agriculture_response_surface"
+       data-opt='{&quot;series&quot;: [{&quot;label&quot;: &quot;best achievable yield&quot;, &quot;x&quot;: &quot;frontier.budgets&quot;, &quot;y&quot;: &quot;frontier.outcome&quot;}], &quot;xLabel&quot;: &quot;input budget&quot;, &quot;yLabel&quot;: &quot;yield (t/ha)&quot;, &quot;height&quot;: 260, &quot;rightPad&quot;: 120}'></div>
+</figure>
+<figure class="fig" id="01_agriculture_response_surface-shadow">
+  <div class="fig-head"><p class="fig-t">The shadow price of the next unit, by budget</p><p class="fig-s">This is the frontier&#x27;s slope, and it is the number a budget conversation is actually about. It falls monotonically, and the budget worth funding is the largest one whose shadow price still beats the price of the input.</p></div>
+  
+  <div class="chart" data-chart="bars" data-file="figures-01_agriculture_response_surface"
+       data-opt='{&quot;rows&quot;: &quot;shadow.rows&quot;, &quot;xLabel&quot;: &quot;t/ha per extra unit of input&quot;, &quot;labelWidth&quot;: 120}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+
+<section class="wt-close">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The close</p>
+      <h2>What it actually showed</h2>
+      <p>Written after looking at the output, which is why it does not always agree
+        with the setup.</p>
+    </div>
+    <div class="prose wt-findings"><p>The design was twelve plots and it recovered a two-treatment saturating surface well enough that the true curve sits inside the 90% band at every nitrogen dose. That is the case for spending plots on curvature rather than spreading them evenly: a 5x5 grid would have cost twice as much and learned the shape less well.</p><p>The water cap turned out to be cheap. Capping irrigation at 60 mm costs 0.045 t/ha at a budget of 180 — the surface has a broad ridge, so the constraint slides the answer along it rather than down it. Had the ridge run the other way the same cap would have been expensive, and nothing but the fitted shape tells you which case you are in.</p><p>The shadow price falls from 0.0225 to 0.0030 t/ha per unit across the budgets considered — a factor of 7.6. A single average return per unit of input would have hidden that entirely, and it is the only number in this whole run that answers the question a planner actually asked: should we buy more?</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <details class="ex-more">
+      <summary>The whole file, and everything this run printed</summary>
+      <div class="ex-body">
+        <div class="pair">
+          <div class="code">
+            <div class="code-h"><span>examples/01_agriculture_response_surface.py</span>
+              <button class="copy" type="button">Copy</button></div>
+            <pre>import numpy as np
+from _walkthrough import Walkthrough
+
+from axiom.core import Intervention
+from axiom.sim import arms_world
+from axiom.surface import (
+    Bounds,
+    HillKernel,
+    allocate,
+    central_composite,
+    counterfactual_doses,
+    fit,
+    frontier,
+    response_band,
+)
+
+SEED = 0
+
+w = Walkthrough(
+    field=&quot;Agronomy&quot;,
+    title=&quot;Where the yield actually peaks&quot;,
+    question=&quot;&quot;&quot;A field trial varies nitrogen and irrigation across plots. Yield
+        saturates in both. Where is the optimum, and when water is rationed, how
+        should the remaining input budget be split?&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;State the box the doses can live in&quot;,
+    why=&quot;&quot;&quot;Bounds are not a plotting range. They are a claim about the world — no
+        plot on this farm will receive 400 kg/ha of nitrogen, so no optimizer should
+        ever propose it and no fitted curve should be trusted out there. Saying it
+        once, in an object, means the design, the allocation and the frontier all
+        obey the same box instead of each carrying its own copy of the farm&#x27;s
+        limits.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Fitting on whatever doses happened to occur and reading the optimum
+        off the curve. That silently extrapolates: a Hill curve is still increasing
+        at every dose, so the unconstrained answer to &#x27;how much nitrogen&#x27; is always
+        &#x27;more&#x27;.&quot;&quot;&quot;,
+)
+bounds = Bounds(treatments=(&quot;nitrogen&quot;, &quot;irrigation&quot;), low=(0.0, 0.0), high=(200.0, 120.0))
+w.out(f&quot;treatments : {bounds.treatments}&quot;)
+w.out(f&quot;nitrogen   : {bounds.low[0]:.0f} to {bounds.high[0]:.0f} kg/ha&quot;)
+w.out(f&quot;irrigation : {bounds.low[1]:.0f} to {bounds.high[1]:.0f} mm&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Spend the plots where the curvature is&quot;,
+    why=&quot;&quot;&quot;Curvature is what this whole analysis turns on, and curvature is estimated
+        from runs placed to see it bending. A rotatable central composite design is
+        a factorial cube, plus axial points pushed out along each treatment, plus
+        replicated centre points. The axial points are what make the quadratic terms
+        estimable; the replicated centre is what separates pure noise from lack of
+        fit. &#x27;Rotatable&#x27; means the prediction variance depends only on distance from
+        the centre, so no direction in the dose box is privileged by accident.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;A 5x5 grid over the same box. It costs 25 plots instead of twelve,
+        spends most of them re-measuring the flat regions, and still gives no
+        replicated centre — so it cannot tell a bad model from a noisy one. One
+        factor at a time is worse again: it cannot see an interaction at all.&quot;&quot;&quot;,
+)
+design = central_composite(bounds, alpha=&quot;rotatable&quot;, center_points=4, inscribed=True)
+w.out(f&quot;design : {design.kind}, {design.n} plots&quot;)
+w.out(f&quot;detail : {dict(design.detail)}&quot;)
+
+frame = design.as_frame().round(1)
+w.table(
+    list(frame.columns),
+    frame.to_numpy().tolist(),
+    caption=&quot;Every plot the trial will plant, in the units an agronomist works in.&quot;,
+)
+
+points = [[float(a), float(b)] for a, b in design.points]
+counts: dict[tuple[float, float], int] = {}
+for a, b in points:
+    counts[(round(a, 3), round(b, 3))] = counts.get((round(a, 3), round(b, 3)), 0) + 1
+w.figure(
+    &quot;design&quot;,
+    kind=&quot;scatter&quot;,
+    data={
+        &quot;x&quot;: [p[0] for p in counts],
+        &quot;y&quot;: [p[1] for p in counts],
+        &quot;labels&quot;: [f&quot;x{n}&quot; if n &gt; 1 else &quot;&quot; for n in counts.values()],
+    },
+    opt={
+        &quot;key&quot;: &quot;@&quot;,
+        &quot;x&quot;: &quot;x&quot;,
+        &quot;y&quot;: &quot;y&quot;,
+        &quot;labels&quot;: &quot;labels&quot;,
+        &quot;xLabel&quot;: &quot;nitrogen (kg/ha)&quot;,
+        &quot;yLabel&quot;: &quot;irrigation (mm)&quot;,
+        &quot;height&quot;: 300,
+    },
+    title=&quot;The twelve plots, in dose space&quot;,
+    note=&quot;&quot;&quot;Four corners, four axial points pushed out along each treatment, and a
+        centre planted four times over — that replication is the only thing in the
+        design that can separate noise from a wrong model.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Grow a field whose answer is already known&quot;,
+    why=&quot;&quot;&quot;Every number below is checkable only because the truth was written down
+        first. A recovery test is the difference between a method that works and a
+        method that has never been graded: simulate from a known set of parameters,
+        fit, and ask whether the intervals contain what generated the data.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;A real dataset. It would be more convincing about agronomy and
+        completely uninformative about whether the estimator is right — with real
+        data there is nothing to compare the answer to.&quot;&quot;&quot;,
+)
+truth = {
+    &quot;alpha&quot;: 3.0,  # baseline yield, t/ha
+    &quot;beta_nitrogen&quot;: 4.2,  # how much yield nitrogen can add at saturation
+    &quot;k_nitrogen&quot;: 90.0,  # the half-saturation dose
+    &quot;s_nitrogen&quot;: 2.0,  # how sharply it turns over
+    &quot;beta_irrigation&quot;: 2.6,
+    &quot;k_irrigation&quot;: 45.0,
+    &quot;s_irrigation&quot;: 1.6,
+}
+field = arms_world(
+    n_units=design.n,
+    treatments=(&quot;nitrogen&quot;, &quot;irrigation&quot;),
+    kernels={
+        &quot;nitrogen&quot;: HillKernel(reference_dose=90.0, amplitude_scale=5.0),
+        &quot;irrigation&quot;: HillKernel(reference_dose=45.0, amplitude_scale=5.0),
+    },
+    doses=design.doses(),
+    truth=truth,
+    noise_sd=0.35,
+    seed=SEED,
+)
+w.out(f&quot;plots      : {field.n_units}&quot;)
+w.out(
+    f&quot;true peak  : nitrogen k = {truth[&#x27;k_nitrogen&#x27;]:.0f}, &quot;
+    f&quot;irrigation k = {truth[&#x27;k_irrigation&#x27;]:.0f}&quot;
+)
+w.out(&quot;noise sd   : 0.35 t/ha, against a yield range of about 3 to 9&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Fit once, and check the truth is inside the interval&quot;,
+    why=&quot;&quot;&quot;The likelihood calls exactly the same forward() the allocation and the
+        frontier will call later. That is a design rule rather than an efficiency
+        note: the moment the optimizer gets its own copy of the transform chain, the
+        two drift, and the drift shows up as a recommendation the model cannot
+        actually justify.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Reporting the point estimates and moving on. The comparison worth
+        making is not &#x27;is the mean close&#x27; but &#x27;does the interval contain the truth&#x27; —
+        an estimator can be nearly right and still badly overconfident, and only the
+        second question catches that.&quot;&quot;&quot;,
+)
+result = fit(field.spec, field.panel, backend=&quot;laplace&quot;, draws=2000, seed=SEED)
+posterior = result.posterior
+theta = {name: float(posterior.summary(name).mean) for name in posterior.names()}
+w.out(f&quot;converged : {result.converged}&quot;)
+# sorted, because `names()` is a frozenset: joined unsorted it prints in a
+# different order on every run, which makes this walkthrough -- and the page and
+# the report generated from it -- differ from itself between builds.
+w.out(f&quot;parameters: {&#x27;, &#x27;.join(sorted(posterior.names()))}&quot;)
+
+shown = (&quot;beta_nitrogen&quot;, &quot;k_nitrogen&quot;, &quot;beta_irrigation&quot;, &quot;k_irrigation&quot;)
+rows, chart_rows = [], []
+for name in shown:
+    s = posterior.summary(name, definition=&quot;hdi&quot;, mass=0.9)
+    inside = s.interval.lower &lt;= truth[name] &lt;= s.interval.upper
+    rows.append(
+        [
+            name,
+            f&quot;{truth[name]:.1f}&quot;,
+            f&quot;{s.mean:.1f}&quot;,
+            f&quot;[{s.interval.lower:.1f}, {s.interval.upper:.1f}]&quot;,
+            &quot;yes&quot; if inside else &quot;NO&quot;,
+        ]
+    )
+    # Scaled by the truth so parameters of wildly different size share one axis —
+    # a 90 kg/ha half-saturation dose and a 4.2 t/ha amplitude are not comparable
+    # in their own units, and drawing them as if they were is how a forest plot lies.
+    chart_rows.append(
+        {
+            &quot;label&quot;: name,
+            &quot;estimate&quot;: (s.mean - truth[name]) / truth[name],
+            &quot;lower&quot;: (s.interval.lower - truth[name]) / truth[name],
+            &quot;upper&quot;: (s.interval.upper - truth[name]) / truth[name],
+            &quot;note&quot;: f&quot;truth {truth[name]:.1f}, posterior mean {s.mean:.1f}&quot;,
+            &quot;bad&quot;: not inside,
+        }
+    )
+w.table([&quot;parameter&quot;, &quot;truth&quot;, &quot;posterior mean&quot;, &quot;90% HDI&quot;, &quot;contains truth&quot;], rows)
+
+w.figure(
+    &quot;recovery&quot;,
+    kind=&quot;intervals&quot;,
+    data={&quot;rows&quot;: chart_rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: 0,
+        &quot;truthLabel&quot;: &quot;the truth&quot;,
+        &quot;xLabel&quot;: &quot;error, as a fraction of the true value&quot;,
+        &quot;mass&quot;: 90,
+        &quot;labelWidth&quot;: 150,
+    },
+    title=&quot;Parameter recovery, every parameter on one axis&quot;,
+    note=&quot;&quot;&quot;Each interval is scaled by its own true value, which is the only way to
+        put a half-saturation dose in kg/ha and an amplitude in t/ha on the same
+        picture. An interval that misses the dashed line is a recovery failure and
+        would be drawn in red.&quot;&quot;&quot;,
+    legend=((&quot;accent&quot;, &quot;90% HDI, contains the truth&quot;), (&quot;ink-2:dash&quot;, &quot;the truth&quot;)),
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Ask where the response flattens out&quot;,
+    why=&quot;&quot;&quot;The band is not a fitted line with error bars bolted on. It is every
+        posterior draw pushed through forward() and summarised at each dose, so the
+        width at a given dose is what the model genuinely does not know there —
+        widest where the design placed fewest plots, which is exactly where a
+        recommendation should be least confident.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Reading the optimum off the posterior mean curve alone. The mean
+        crosses its own plateau somewhere; the band shows a whole region of doses
+        the data cannot tell apart, and that region, not the point, is the honest
+        answer to &#x27;how much nitrogen&#x27;.&quot;&quot;&quot;,
+)
+
+
+def truth_at(name: str, dose: float) -&gt; float:
+    &quot;&quot;&quot;The true curve on the same counterfactual the band uses.
+
+    ``response_band`` sets the named treatment to each dose and leaves every other
+    treatment at its observed level. Holding the others at zero instead would put
+    the two curves on different counterfactuals, and the overlay would be a
+    comparison of two different questions.
+    &quot;&quot;&quot;
+    data = counterfactual_doses(field.surface, field.data, Intervention(doses={name: dose}))
+    return float(field.surface.forward(data, field.theta).mean())
+
+
+doses = np.linspace(0.0, 200.0, 30)
+band = response_band(result, &quot;nitrogen&quot;, doses=doses.tolist(), mass=0.9, seed=SEED)
+true_curve = [truth_at(&quot;nitrogen&quot;, float(d)) for d in doses]
+
+w.table(
+    [&quot;nitrogen (kg/ha)&quot;, &quot;posterior mean (t/ha)&quot;, &quot;90% interval&quot;, &quot;truth&quot;],
+    [
+        [
+            f&quot;{doses[i]:.0f}&quot;,
+            f&quot;{band.mean[i]:.2f}&quot;,
+            f&quot;[{band.lower[i]:.2f}, {band.upper[i]:.2f}]&quot;,
+            f&quot;{true_curve[i]:.2f}&quot;,
+        ]
+        for i in range(0, len(doses), 4)
+    ],
+    caption=&quot;Every fourth grid point; the chart below has all thirty.&quot;,
+)
+w.figure(
+    &quot;band&quot;,
+    kind=&quot;band&quot;,
+    data={
+        &quot;treatment&quot;: &quot;nitrogen&quot;,
+        &quot;doses&quot;: doses.tolist(),
+        &quot;mean&quot;: list(band.mean),
+        &quot;lower&quot;: list(band.lower),
+        &quot;upper&quot;: list(band.upper),
+        &quot;truth&quot;: true_curve,
+        &quot;mass&quot;: 0.9,
+    },
+    opt={&quot;key&quot;: &quot;@&quot;, &quot;xLabel&quot;: &quot;nitrogen (kg/ha)&quot;, &quot;yLabel&quot;: &quot;yield (t/ha)&quot;, &quot;height&quot;: 320},
+    title=&quot;Yield against nitrogen, with everything the model does not know&quot;,
+    note=&quot;&quot;&quot;The dashed line is the curve the simulation actually used. It stays inside
+        the band across the whole dose range, which is what a passed recovery test
+        looks like when you draw it instead of tabulating it.&quot;&quot;&quot;,
+    legend=(
+        (&quot;accent&quot;, &quot;posterior mean&quot;),
+        (&quot;accent-wash&quot;, &quot;90% interval&quot;),
+        (&quot;ink-2:dash&quot;, &quot;the truth&quot;),
+    ),
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Now ration the water and split the budget&quot;,
+    why=&quot;&quot;&quot;The decision is not &#x27;where is the peak&#x27; — it is &#x27;given a fixed total of
+        input and a water cap, what mix&#x27;. allocate() searches the fitted surface
+        under both constraints, using the posterior rather than a single fitted
+        curve, so the recommendation reflects the uncertainty in the shape and not
+        just its mean.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Splitting the budget in proportion to each input&#x27;s estimated
+        amplitude. That is the right answer only for a linear response; with
+        saturation it over-buys whichever input is already past its bend, which is
+        precisely the mistake the surface layer exists to prevent.&quot;&quot;&quot;,
+)
+water_limited = Bounds(treatments=(&quot;nitrogen&quot;, &quot;irrigation&quot;), low=(0.0, 0.0), high=(200.0, 60.0))
+plan = allocate(
+    result.surface, posterior, budget=180.0, bounds=water_limited, objective=&quot;mean&quot;, seed=SEED
+)
+unconstrained = allocate(
+    result.surface, posterior, budget=180.0, bounds=bounds, objective=&quot;mean&quot;, seed=SEED
+)
+w.out(&quot;budget 180 units of input, water capped at 60 mm:&quot;)
+w.out(&quot;  &quot; + &quot;, &quot;.join(f&quot;{k} {v:.1f}&quot; for k, v in plan.doses.items()))
+w.out(f&quot;  expected yield {plan.expected_outcome:.3f} t/ha  ({plan.status})&quot;)
+w.out(&quot;the same budget with no water cap:&quot;)
+w.out(&quot;  &quot; + &quot;, &quot;.join(f&quot;{k} {v:.1f}&quot; for k, v in unconstrained.doses.items()))
+w.out(f&quot;  expected yield {unconstrained.expected_outcome:.3f} t/ha&quot;)
+w.out(f&quot;  the cap costs {unconstrained.expected_outcome - plan.expected_outcome:.3f} t/ha&quot;)
+
+grid_n = np.linspace(0.0, 200.0, 32)
+grid_i = np.linspace(0.0, 120.0, 32)
+w.figure(
+    &quot;surface&quot;,
+    kind=&quot;heatmap&quot;,
+    data={
+        &quot;nitrogen&quot;: grid_n.tolist(),
+        &quot;irrigation&quot;: grid_i.tolist(),
+        &quot;z&quot;: [
+            [
+                float(
+                    result.surface.forward(
+                        {&quot;nitrogen&quot;: float(n), &quot;irrigation&quot;: float(i)}, theta
+                    ).mean()
+                )
+                for n in grid_n
+            ]
+            for i in grid_i
+        ],
+    },
+    opt={
+        &quot;key&quot;: &quot;@&quot;,
+        &quot;x&quot;: &quot;nitrogen&quot;,
+        &quot;y&quot;: &quot;irrigation&quot;,
+        &quot;z&quot;: &quot;z&quot;,
+        &quot;xLabel&quot;: &quot;nitrogen (kg/ha)&quot;,
+        &quot;yLabel&quot;: &quot;irrigation (mm)&quot;,
+        &quot;zLabel&quot;: &quot;yield (t/ha)&quot;,
+        &quot;height&quot;: 340,
+        &quot;marks&quot;: [
+            {
+                &quot;x&quot;: float(plan.doses[&quot;nitrogen&quot;]),
+                &quot;y&quot;: float(plan.doses[&quot;irrigation&quot;]),
+                &quot;label&quot;: &quot;under the cap&quot;,
+            },
+            {
+                &quot;x&quot;: float(unconstrained.doses[&quot;nitrogen&quot;]),
+                &quot;y&quot;: float(unconstrained.doses[&quot;irrigation&quot;]),
+                &quot;label&quot;: &quot;uncapped&quot;,
+            },
+        ],
+    },
+    title=&quot;The whole fitted surface, and the two allocations&quot;,
+    note=&quot;&quot;&quot;Both marks sit on the same budget line — 180 units of input — and differ
+        only in whether irrigation may exceed 60 mm. The surface is flat enough
+        along its ridge that the cap costs surprisingly little.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Price the next unit of input&quot;,
+    why=&quot;&quot;&quot;A planner cannot act on &#x27;the optimum&#x27;. They can act on &#x27;the next hundred
+        units of input are worth this much yield, the hundred after that are worth
+        this much less&#x27;. The frontier re-solves the allocation at each budget, and
+        the shadow price is the slope between neighbouring solutions — the number
+        that says when to stop buying.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Quoting one average return per unit of input. On a saturating surface
+        the average is a blend of a steep early region and a flat late one, so it
+        overstates the value of the next unit whenever you are already past the
+        bend — and understates it when you are below.&quot;&quot;&quot;,
+)
+budgets = [60.0, 120.0, 180.0, 240.0, 300.0]
+front = frontier(result.surface, theta, budgets=budgets, bounds=water_limited, seed=SEED)
+front_frame = front.as_frame().round(3)
+prices = [float(p) for p in front.shadow_prices()]
+w.table(
+    list(front_frame.columns),
+    front_frame.to_numpy().tolist(),
+    caption=&quot;The best achievable yield at each budget, and how it is spent.&quot;,
+)
+w.figure(
+    &quot;frontier&quot;,
+    kind=&quot;lines&quot;,
+    data={
+        &quot;budgets&quot;: budgets,
+        &quot;outcome&quot;: [float(v) for v in front_frame[&quot;expected_outcome&quot;]],
+    },
+    opt={
+        &quot;series&quot;: [{&quot;label&quot;: &quot;best achievable yield&quot;, &quot;x&quot;: &quot;@budgets&quot;, &quot;y&quot;: &quot;@outcome&quot;}],
+        &quot;xLabel&quot;: &quot;input budget&quot;,
+        &quot;yLabel&quot;: &quot;yield (t/ha)&quot;,
+        &quot;height&quot;: 260,
+        &quot;rightPad&quot;: 120,
+    },
+    title=&quot;What each budget buys&quot;,
+    note=&quot;The curve bends: equal increments of budget stop buying equal increments of yield.&quot;,
+)
+w.figure(
+    &quot;shadow&quot;,
+    kind=&quot;bars&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: f&quot;budget {b:.0f}&quot;,
+                &quot;value&quot;: price,
+                &quot;display&quot;: f&quot;{price:+.4f}&quot;,
+                &quot;note&quot;: f&quot;the next input unit at a budget of {b:.0f} returns &quot; f&quot;{price:.4f} t/ha&quot;,
+            }
+            for b, price in zip(budgets, prices, strict=True)
+        ]
+    },
+    opt={&quot;rows&quot;: &quot;@rows&quot;, &quot;xLabel&quot;: &quot;t/ha per extra unit of input&quot;, &quot;labelWidth&quot;: 120},
+    title=&quot;The shadow price of the next unit, by budget&quot;,
+    note=&quot;&quot;&quot;This is the frontier&#x27;s slope, and it is the number a budget conversation
+        is actually about. It falls monotonically, and the budget worth funding is
+        the largest one whose shadow price still beats the price of the input.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.finding(&quot;&quot;&quot;The design was twelve plots and it recovered a two-treatment saturating
+    surface well enough that the true curve sits inside the 90% band at every
+    nitrogen dose. That is the case for spending plots on curvature rather than
+    spreading them evenly: a 5x5 grid would have cost twice as much and learned the
+    shape less well.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;The water cap turned out to be cheap. Capping irrigation at 60 mm costs
+    {unconstrained.expected_outcome - plan.expected_outcome:.3f} t/ha at a budget of
+    180 — the surface has a broad ridge, so the constraint slides the answer along
+    it rather than down it. Had the ridge run the other way the same cap would have
+    been expensive, and nothing but the fitted shape tells you which case you are
+    in.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;The shadow price falls from {prices[0]:.4f} to {prices[-1]:.4f} t/ha per unit
+    across the budgets considered — a factor of {prices[0] / prices[-1]:.1f}. A single
+    average return per unit of input would have hidden that entirely, and it is the
+    only number in this whole run that answers the question a planner actually
+    asked: should we buy more?&quot;&quot;&quot;)</pre>
+          </div>
+          <div class="out">
+            <div class="out-h">stdout, captured on this build</div>
+            <pre>========================================================================================
+AGRONOMY  ---  Where the yield actually peaks
+========================================================================================
+  A field trial varies nitrogen and irrigation across plots. Yield saturates in both.
+  Where is the optimum, and when water is rationed, how should the remaining input
+  budget be split?
+
+----------------------------------------------------------------------------------------
+STEP 1  State the box the doses can live in
+----------------------------------------------------------------------------------------
+  Bounds are not a plotting range. They are a claim about the world — no plot on this
+  farm will receive 400 kg/ha of nitrogen, so no optimizer should ever propose it and no
+  fitted curve should be trusted out there. Saying it once, in an object, means the
+  design, the allocation and the frontier all obey the same box instead of each carrying
+  its own copy of the farm&#x27;s limits.
+
+  INSTEAD OF: Fitting on whatever doses happened to occur and reading the optimum off
+  the curve. That silently extrapolates: a Hill curve is still increasing at every dose,
+  so the unconstrained answer to &#x27;how much nitrogen&#x27; is always &#x27;more&#x27;.
+
+  treatments : (&#x27;nitrogen&#x27;, &#x27;irrigation&#x27;)
+  nitrogen   : 0 to 200 kg/ha
+  irrigation : 0 to 120 mm
+
+----------------------------------------------------------------------------------------
+STEP 2  Spend the plots where the curvature is
+----------------------------------------------------------------------------------------
+  Curvature is what this whole analysis turns on, and curvature is estimated from runs
+  placed to see it bending. A rotatable central composite design is a factorial cube,
+  plus axial points pushed out along each treatment, plus replicated centre points. The
+  axial points are what make the quadratic terms estimable; the replicated centre is
+  what separates pure noise from lack of fit. &#x27;Rotatable&#x27; means the prediction variance
+  depends only on distance from the centre, so no direction in the dose box is
+  privileged by accident.
+
+  INSTEAD OF: A 5x5 grid over the same box. It costs 25 plots instead of twelve, spends
+  most of them re-measuring the flat regions, and still gives no replicated centre — so
+  it cannot tell a bad model from a noisy one. One factor at a time is worse again: it
+  cannot see an interaction at all.
+
+  design : central_composite, 12 plots
+  detail : {&#x27;alpha&#x27;: 1.4142135623730951, &#x27;n_cube&#x27;: 4.0, &#x27;n_axial&#x27;: 4.0, &#x27;n_center&#x27;: 4.0, &#x27;fraction&#x27;: 0.0}
+  Every plot the trial will plant, in the units an agronomist works in.
+  nitrogen  irrigation
+  --------  ----------
+  29.3      17.6
+  170.7     17.6
+  29.3      102.4
+  170.7     102.4
+  0         60
+  200       60
+  100       0
+  100       120
+  100       60
+  100       60
+  100       60
+  100       60
+
+  [figure: The twelve plots, in dose space]
+
+
+----------------------------------------------------------------------------------------
+STEP 3  Grow a field whose answer is already known
+----------------------------------------------------------------------------------------
+  Every number below is checkable only because the truth was written down first. A
+  recovery test is the difference between a method that works and a method that has
+  never been graded: simulate from a known set of parameters, fit, and ask whether the
+  intervals contain what generated the data.
+
+  INSTEAD OF: A real dataset. It would be more convincing about agronomy and completely
+  uninformative about whether the estimator is right — with real data there is nothing
+  to compare the answer to.
+
+  plots      : 12
+  true peak  : nitrogen k = 90, irrigation k = 45
+  noise sd   : 0.35 t/ha, against a yield range of about 3 to 9
+
+----------------------------------------------------------------------------------------
+STEP 4  Fit once, and check the truth is inside the interval
+----------------------------------------------------------------------------------------
+  The likelihood calls exactly the same forward() the allocation and the frontier will
+  call later. That is a design rule rather than an efficiency note: the moment the
+  optimizer gets its own copy of the transform chain, the two drift, and the drift shows
+  up as a recommendation the model cannot actually justify.
+
+  INSTEAD OF: Reporting the point estimates and moving on. The comparison worth making
+  is not &#x27;is the mean close&#x27; but &#x27;does the interval contain the truth&#x27; — an estimator
+  can be nearly right and still badly overconfident, and only the second question
+  catches that.
+
+  converged : True
+  parameters: alpha, beta_irrigation, beta_nitrogen, k_irrigation, k_nitrogen, s_irrigation, s_nitrogen, sigma
+  parameter        truth  posterior mean  90% HDI        contains truth
+  ---------------  -----  --------------  -------------  --------------
+  beta_nitrogen    4.2    5.1             [3.9, 6.3]     yes
+  k_nitrogen       90.0   108.2           [75.6, 137.4]  yes
+  beta_irrigation  2.6    2.9             [1.6, 4.1]     yes
+  k_irrigation     45.0   76.4            [43.6, 106.2]  yes
+
+  [figure: Parameter recovery, every parameter on one axis]
+
+
+----------------------------------------------------------------------------------------
+STEP 5  Ask where the response flattens out
+----------------------------------------------------------------------------------------
+  The band is not a fitted line with error bars bolted on. It is every posterior draw
+  pushed through forward() and summarised at each dose, so the width at a given dose is
+  what the model genuinely does not know there — widest where the design placed fewest
+  plots, which is exactly where a recommendation should be least confident.
+
+  INSTEAD OF: Reading the optimum off the posterior mean curve alone. The mean crosses
+  its own plateau somewhere; the band shows a whole region of doses the data cannot tell
+  apart, and that region, not the point, is the honest answer to &#x27;how much nitrogen&#x27;.
+
+  Every fourth grid point; the chart below has all thirty.
+  nitrogen (kg/ha)  posterior mean (t/ha)  90% interval  truth
+  ----------------  ---------------------  ------------  -----
+  0                 4.33                   [4.08, 4.58]  4.40
+  28                4.88                   [4.71, 5.09]  4.76
+  55                5.67                   [5.50, 5.88]  5.54
+  83                6.38                   [6.24, 6.57]  6.32
+  110               6.95                   [6.82, 7.12]  6.92
+  138               7.38                   [7.26, 7.54]  7.34
+  166               7.70                   [7.56, 7.87]  7.64
+  193               7.96                   [7.76, 8.15]  7.85
+
+  [figure: Yield against nitrogen, with everything the model does not know]
+
+
+----------------------------------------------------------------------------------------
+STEP 6  Now ration the water and split the budget
+----------------------------------------------------------------------------------------
+  The decision is not &#x27;where is the peak&#x27; — it is &#x27;given a fixed total of input and a
+  water cap, what mix&#x27;. allocate() searches the fitted surface under both constraints,
+  using the posterior rather than a single fitted curve, so the recommendation reflects
+  the uncertainty in the shape and not just its mean.
+
+  INSTEAD OF: Splitting the budget in proportion to each input&#x27;s estimated amplitude.
+  That is the right answer only for a linear response; with saturation it over-buys
+  whichever input is already past its bend, which is precisely the mistake the surface
+  layer exists to prevent.
+
+  budget 180 units of input, water capped at 60 mm:
+    nitrogen 120.0, irrigation 60.0
+    expected yield 7.184 t/ha  (converged)
+  the same budget with no water cap:
+    nitrogen 106.3, irrigation 73.7
+    expected yield 7.229 t/ha
+    the cap costs 0.045 t/ha
+  [figure: The whole fitted surface, and the two allocations]
+
+
+----------------------------------------------------------------------------------------
+STEP 7  Price the next unit of input
+----------------------------------------------------------------------------------------
+  A planner cannot act on &#x27;the optimum&#x27;. They can act on &#x27;the next hundred units of
+  input are worth this much yield, the hundred after that are worth this much less&#x27;. The
+  frontier re-solves the allocation at each budget, and the shadow price is the slope
+  between neighbouring solutions — the number that says when to stop buying.
+
+  INSTEAD OF: Quoting one average return per unit of input. On a saturating surface the
+  average is a blend of a steep early region and a flat late one, so it overstates the
+  value of the next unit whenever you are already past the bend — and understates it
+  when you are below.
+
+  The best achievable yield at each budget, and how it is spent.
+  budget  expected_outcome  shadow_price  nitrogen  irrigation
+  ------  ----------------  ------------  --------  ----------
+  60      4.654             0.022         60        0
+  120     6.002             0.02          120       0
+  180     7.079             0.016         120       60
+  240     7.862             0.008         180       60
+  300     8.041             0.003         200       60
+
+  [figure: What each budget buys]
+
+  [figure: The shadow price of the next unit, by budget]
+
+
+========================================================================================
+WHAT IT ACTUALLY SHOWED
+========================================================================================
+  The design was twelve plots and it recovered a two-treatment saturating surface well
+  enough that the true curve sits inside the 90% band at every nitrogen dose. That is
+  the case for spending plots on curvature rather than spreading them evenly: a 5x5 grid
+  would have cost twice as much and learned the shape less well.
+
+  The water cap turned out to be cheap. Capping irrigation at 60 mm costs 0.045 t/ha at
+  a budget of 180 — the surface has a broad ridge, so the constraint slides the answer
+  along it rather than down it. Had the ridge run the other way the same cap would have
+  been expensive, and nothing but the fitted shape tells you which case you are in.
+
+  The shadow price falls from 0.0225 to 0.0030 t/ha per unit across the budgets
+  considered — a factor of 7.6. A single average return per unit of input would have
+  hidden that entirely, and it is the only number in this whole run that answers the
+  question a planner actually asked: should we buy more?</pre>
+          </div>
+        </div>
+      </div>
+    </details>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="examples.html">All twelve</a><a class="btn btn-2" href="example-02-economics-instrument.html">02 · Labour economics &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

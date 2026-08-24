@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="axiom.report">
+<meta name="axiom-report-hash" content="13a812dc098efe80bfb4db417afebd1721d71654eb1b291edfbb2a27319e2adc">
+<title>Calibrate the method before you trust the method</title>
+<style>
+:root {
+  color-scheme: light;
+  --ink: #111111;
+  --muted: #555555;
+  --accent: #1a1a1a;
+  --bg: #ffffff;
+  --rule: #c9c9c9;
+  --tint: rgba(26,26,26,0.055);
+  --wash: rgba(17,17,17,0.032);
+  --serif: Times-Roman, Georgia, "Times New Roman", Times, serif;
+  --mono: Courier, ui-monospace, SFMono-Regular, Menlo, monospace;
+  --size-title: 19.0pt;
+  --size-h2: 13.5pt;
+  --size-h3: 11.5pt;
+  --size-h4: 10.5pt;
+  --measure: 34em;
+  --wide: 46em;
+  --rail: 12.5em;
+  --gutter: clamp(1.15rem, 4vw, 64.0pt);
+}
+html { font-size: 10.5pt; }
+@page { margin: 64.0pt; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  padding: var(--gutter) var(--gutter) calc(var(--gutter) * 1.6);
+  background: var(--bg); color: var(--ink);
+  font-family: var(--serif); font-size: 1rem; line-height: 1.62;
+  font-kerning: normal; text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- the page: the article centred, a contents rail in the left margin --- */
+.paper { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+main { width: 100%; max-width: var(--wide); margin-inline: auto; min-width: 0; }
+@media (min-width: 68em) {
+  /* Out of the flow, so the rail cannot pull the article off centre: a reader
+     navigating by contents and one reading straight through see the same page. */
+  .toc {
+    position: fixed; top: var(--gutter); width: var(--rail);
+    left: max(var(--gutter), calc(50% - var(--wide) / 2 - var(--rail) - 2.5em));
+    max-height: calc(100vh - 2 * var(--gutter)); overflow: auto;
+  }
+}
+
+.toc { font-size: .8em; line-height: 1.4; }
+.toc-title {
+  margin: 0 0 .7em; padding: 0; border: 0; font-size: 1em; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .11em; color: var(--muted);
+}
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc a {
+  display: flex; gap: .5em; padding: .32em .7em; color: var(--muted);
+  text-decoration: none; border-left: 2px solid var(--rule);
+}
+.toc a:hover, .toc a:focus-visible {
+  color: var(--ink); border-left-color: var(--accent); background: var(--wash);
+}
+.toc .n { flex: 0 0 .9em; text-align: right; font-variant-numeric: tabular-nums; opacity: .75; }
+@media (max-width: 67.99em) {
+  .toc {
+    border: 1px solid var(--rule); padding: 1em 1.2em;
+    width: 100%; max-width: var(--wide); margin-inline: auto;
+  }
+  .toc ol { columns: 2 11em; column-gap: 2em; }
+  .toc a { border-left: 0; padding: .22em 0; }
+  .toc a:hover, .toc a:focus-visible { background: none; }
+}
+
+/* --- title block --- */
+.titleblock {
+  text-align: center; margin: 0 0 2.6em;
+  padding-bottom: 1.4em; border-bottom: 1px solid var(--rule);
+}
+h1 {
+  font-size: var(--size-title); line-height: 1.18; font-weight: 700;
+  letter-spacing: -.008em; margin: 0 0 .4em; text-wrap: balance;
+}
+.subtitle {
+  color: var(--muted); font-size: 1.06em; font-style: italic; line-height: 1.45;
+  margin: 0 auto; max-width: 32em; text-align: center; text-wrap: pretty;
+}
+
+/* --- sections: prose on the measure, figures wider than it --- */
+.section {
+  display: grid;
+  grid-template-columns:
+    [wide-start] minmax(0, 1fr)
+    [text-start] minmax(0, var(--measure))
+    [text-end] minmax(0, 1fr) [wide-end];
+}
+.section > * { grid-column: text; min-width: 0; }
+.section > figure, .section > .metrics { grid-column: wide; }
+.section.abstract { font-size: .96em; }
+.section.abstract > h2 {
+  text-align: center; border: 0; padding: 0; font-size: 1em; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .12em; margin: 0 0 .5em;
+}
+.section.abstract > * { grid-column: text; }
+
+h2, h3, h4 { break-after: avoid; scroll-margin-top: 1.2rem; text-wrap: balance; }
+h2 {
+  font-size: var(--size-h2); font-weight: 700; line-height: 1.25;
+  letter-spacing: -.005em; margin: 2.3em 0 .55em;
+  padding-bottom: .28em; border-bottom: 1px solid var(--rule);
+}
+.section:first-of-type h2 { margin-top: .4em; }
+h3 { font-size: var(--size-h3); font-weight: 700; margin: 1.9em 0 .35em; }
+h4 { font-size: var(--size-h4); font-weight: 700; margin: 1.7em 0 .3em; }
+h2 .anchor, h3 .anchor {
+  float: right; margin-left: .5em; color: var(--rule); text-decoration: none;
+  font-size: .72em; font-weight: 400; opacity: 0; transition: opacity .12s;
+}
+h2:hover .anchor, h3:hover .anchor, .anchor:focus-visible { opacity: 1; color: var(--accent); }
+
+p { margin: 0 0 .8em; text-align: justify; hyphens: auto; }
+p:last-child { margin-bottom: 0; }
+.summary { color: var(--muted); margin: 0 0 1.1em; }
+a { color: var(--accent); text-underline-offset: .16em; text-decoration-thickness: .06em; }
+strong { font-weight: 700; }
+/* `white-space: pre-wrap` is not a detail: a readout is column-aligned output,
+   and HTML collapses the columns away without it. */
+code {
+  font-family: var(--mono); font-size: .86em; background: var(--wash);
+  border-radius: 2px; padding: .1em .35em; white-space: pre-wrap;
+}
+hr { border: 0; border-top: 1px solid var(--rule); margin: 2em 0; }
+
+/* A pulled-out line: the parameters a step ran with, or a remark on a number. */
+p.emphasis {
+  margin: 1em 0 1.1em; padding: .6em .95em; text-align: left;
+  border-left: 2px solid var(--accent); background: var(--tint);
+  font-size: .95em; line-height: 1.5;
+}
+
+/* --- figures and tables --- */
+figure { margin: 1.9em 0; padding: 0; }
+figcaption {
+  color: var(--muted); font-size: .85em; line-height: 1.45;
+  margin-top: .75em; text-align: left;
+}
+figcaption .label { color: var(--ink); font-weight: 700; }
+.table-figure { overflow-x: auto; }
+/* A table is read from its caption down; a figure is read up to it. */
+.table-figure > figcaption:first-child { margin: 0 0 .6em; }
+table {
+  border-collapse: collapse; width: 100%; margin: 0;
+  font-size: .88em; line-height: 1.42; font-variant-numeric: tabular-nums;
+}
+thead th {
+  text-align: left; font-weight: 700; padding: .5em .7em; vertical-align: bottom;
+  border-top: 1.5px solid var(--ink); border-bottom: 1px solid var(--ink);
+}
+tbody td { padding: .42em .7em; vertical-align: top; border: 0; }
+tbody tr:nth-child(even) { background: var(--wash); }
+tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
+td.num, th.num { text-align: right; }
+
+/* --- the numbers, as a panel of hairline-separated cells --- */
+.metrics {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(12em, 1fr));
+  gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+  margin: 1.7em 0;
+}
+.metric {
+  background: var(--bg); padding: .8em .95em;
+  display: flex; flex-direction: column;
+}
+.metric .label { color: var(--muted); font-size: .8em; font-weight: 600; line-height: 1.35; }
+.metric .value {
+  font-size: 1.22em; font-weight: 600; line-height: 1.28; margin-top: .3em;
+  color: var(--accent); font-variant-numeric: tabular-nums; text-wrap: balance;
+}
+/* The interval sits on the floor of its cell, so a row of them reads as a row
+   however differently the values above them wrap. */
+.metric .interval {
+  color: var(--muted); font-size: .8em; line-height: 1.35; margin-top: auto;
+  padding-top: .25em; font-variant-numeric: tabular-nums;
+}
+.metric .interval:empty { display: none; }
+
+/* --- the assumption trail --- */
+.ledger {
+  margin: 1.7em 0; padding: .9em 1.1em;
+  background: var(--wash); border-left: 2px solid var(--accent);
+  font-size: .93em; line-height: 1.5;
+}
+.ledger > figcaption:first-child {
+  margin: 0 0 .7em; color: var(--ink); font-weight: 700;
+  font-size: .88em; text-transform: uppercase; letter-spacing: .07em;
+}
+.ledger .line { margin: 0 0 .75em; }
+.ledger .line:last-child { margin-bottom: 0; }
+.ledger .kind {
+  display: inline-block; font-family: var(--mono); font-size: .78em;
+  color: var(--muted); background: var(--bg); border: 1px solid var(--rule);
+  border-radius: 2px; padding: .05em .4em; margin-right: .4em;
+  vertical-align: baseline;
+}
+.ledger .assumption { color: var(--muted); font-size: .93em; margin-top: .25em; }
+.ledger .assumption code { font-size: .95em; }
+
+footer {
+  margin-top: 3em; padding-top: .9em; border-top: 1px solid var(--rule);
+  color: var(--muted); font-size: .82em; line-height: 1.5;
+}
+
+@media print {
+  html { scroll-behavior: auto; }
+  body { padding: 0; }
+  .toc, .anchor { display: none !important; }
+  .paper { display: block; }
+  main { max-width: none; }
+  .section { display: block; }
+  a { color: inherit; text-decoration: none; }
+  /* An article flows: a section does not start a fresh sheet, it starts where
+     the last one ended, and only the things that break badly are held together. */
+  p { orphans: 3; widows: 3; }
+  figure, .metrics, .ledger { break-inside: avoid; }
+  thead { display: table-header-group; }
+}
+</style>
+</head><body><div class="paper">
+<nav class="toc" aria-label="Contents"><div class="toc-title">Contents</div><ol><li><a href="#section-1"><span>Abstract</span></a></li><li><a href="#section-2"><span class="n">1</span><span>Introduction</span></a></li><li><a href="#section-3"><span class="n">2</span><span>Methods</span></a></li><li><a href="#section-4"><span class="n">3</span><span>Results</span></a></li><li><a href="#section-5"><span class="n">4</span><span>What the run showed</span></a></li><li><a href="#section-6"><span class="n">5</span><span>Model checking</span></a></li><li><a href="#section-7"><span class="n">6</span><span>Discussion</span></a></li><li><a href="#section-8"><span class="n">7</span><span>Conclusions</span></a></li><li><a href="#section-9"><span class="n">8</span><span>Limitations</span></a></li><li><a href="#section-10"><span class="n">9</span><span>Provenance</span></a></li></ol></nav>
+<main>
+<header class="titleblock">
+<h1>Calibrate the method before you trust the method</h1>
+<p class="subtitle">Five defensible ways to estimate a heat-pump retrofit&#x27;s saving, each resting on different assumptions. Which of them actually holds its size on the panel this programme will really have?</p>
+</header>
+<section id="section-1" class="section abstract">
+<h2><a class="anchor" href="#section-1" aria-hidden="true">§</a>Abstract</h2>
+<p>Five defensible ways to estimate a heat-pump retrofit&#x27;s saving, each resting on different assumptions. Which of them actually holds its size on the panel this programme will really have? Describe the panel you will actually have, not a generic one. 5 steps are recorded in full below. All 5 candidates calibrated: on a panel of this shape their nominal 5% tests really do reject about 5% of the time, so their intervals mean what they say. That is a result, and it is worth having explicitly rather than assuming — a method whose size were off here would poison the power calculation and the business case with it. No assumptions were recorded for this run, which is not the same as none being required.</p>
+</section>
+<section id="section-2" class="section">
+<h2><a class="anchor" href="#section-2" aria-hidden="true">§</a>1. Introduction</h2>
+<p>This report addresses one question: Five defensible ways to estimate a heat-pump retrofit&#x27;s saving, each resting on different assumptions. Which of them actually holds its size on the panel this programme will really have?</p>
+</section>
+<section id="section-3" class="section">
+<h2><a class="anchor" href="#section-3" aria-hidden="true">§</a>2. Methods</h2>
+<p>Question: Five defensible ways to estimate a heat-pump retrofit&#x27;s saving, each resting on different assumptions. Which of them actually holds its size on the panel this programme will really have?</p>
+<h4>Describe the panel you will actually have, not a generic one</h4>
+<p>Every claim about a method&#x27;s behaviour is conditional on the data it runs on. 120 buildings, 24 months, a year of pre-period, half treated, buildings that differ a lot at baseline, weather that moves everyone together, and month-to-month autocorrelation of 0.6 — those are the features that decide whether a variance estimator is honest here, and none of them are in a textbook&#x27;s assumptions.</p>
+<p>Considered instead: Choosing a method from what the literature reports. The literature reports behaviour on the panels the authors had. A method that holds its size on 500 units with no autocorrelation may not hold it on 120 with rho = 0.6, and nothing about the method&#x27;s name tells you which case you are in.</p>
+<p><code>buildings         : 120 (60 treated)</code><br><code>months            : 24, of which 12 pre-period</code><br><code>baseline spread   : unit sd 1.2, noise sd 0.9</code><br><code>common shocks     : period sd 0.6 (weather)</code><br><code>autocorrelation   : rho 0.6</code><br><code>simulations each  : 120</code></p>
+<h4>Read what each candidate asks you to believe</h4>
+<p>The registry carries each method&#x27;s requirements and its named assumptions, so the comparison starts from what is being assumed rather than from what is familiar. Two methods that produce similar point estimates can rest on completely different claims, and the difference only shows up when one of those claims is false.</p>
+<p>Considered instead: Comparing methods on their estimates. On real data they will differ and there is no way to tell which is right; on simulated data with a known truth they will mostly agree, which tells you nothing about the case where it matters.</p>
+<figure class="table-figure"><figcaption><span class="label">Table 1</span></figcaption><table><thead><tr><th class="">method</th><th class="">needs</th><th class="">assumes</th></tr></thead><tbody><tr><td class="">difference_in_differences</td><td class="">pre-period, controls</td><td class="">parallel_trends, no_anticipation, no_interference</td></tr><tr><td class="">synthetic_control</td><td class="">pre-period, controls</td><td class="">convex_hull, no_anticipation, no_interference</td></tr><tr><td class="">time_based_regression</td><td class="">pre-period, controls</td><td class="">stable_pre_relationship, no_anticipation, no_interference</td></tr><tr><td class="">cluster_based_regression</td><td class="">pre-period, controls</td><td class="">random_assignment, no_interference</td></tr><tr><td class="">switchback</td><td class="">nothing but the assignment</td><td class="">random_assignment, no_carryover, stationary_noise</td></tr><tr><td class="">ghost</td><td class="">controls</td><td class="">random_assignment, exposure_known, no_interference</td></tr></tbody></table></figure>
+<h4>Drop one candidate by hand, and say why</h4>
+<p>Synthetic control builds a donor combination for a single treated unit. This programme treats half the estate at once, so the method is not wrong — it is answering a different shape of question, and its solver says so by failing rather than by returning a number. Choosing the candidate set is part of the design.</p>
+<p>Considered instead: Looping over everything in the registry and taking whatever survives. That outsources a design decision to an exception handler, and on a different panel it would silently include a method whose question nobody checked.</p>
+<p><code>in the registry : [&#x27;cluster_based_regression&#x27;, &#x27;difference_in_differences&#x27;, &#x27;ghost&#x27;, &#x27;switchback&#x27;, &#x27;synthetic_control&#x27;, &#x27;time_based_regression&#x27;]</code><br><code>carried forward : [&#x27;cluster_based_regression&#x27;, &#x27;difference_in_differences&#x27;, &#x27;ghost&#x27;, &#x27;switchback&#x27;, &#x27;time_based_regression&#x27;]</code></p>
+<h4>Calibrate on panels with no effect at all</h4>
+<p>Run each candidate many times on data generated with a true effect of exactly zero, and count how often it declares one. A nominal 5% test should reject about 5% of the time. If it rejects 15%, every interval it produces is too narrow, and every downstream number — the power calculation, the business case — inherits that.</p>
+<p>Considered instead: Trusting the nominal level. It is nominal: it is what the test would deliver under assumptions this panel may not satisfy. Autocorrelation of 0.6 is exactly the kind of thing that breaks a variance estimator quietly.</p>
+<p><code>difference_in_differences     5/120   =  4.2%   acceptable [0, 15]   stable</code><br><code>time_based_regression         7/120   =  5.8%   acceptable [0, 15]   stable</code><br><code>cluster_based_regression      4/120   =  3.3%   acceptable [0, 15]   stable</code><br><code>switchback                   11/120   =  9.2%   acceptable [0, 15]   stable</code><br><code>ghost                         4/120   =  3.3%   acceptable [0, 15]   stable</code></p>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.7.0.min.js" integrity="sha256-jvTGqxNp8AGWEcvNLVuKr+8j5dGe9Yw51LQkmDH+IYA=" crossorigin="anonymous"></script>                <div id="e2f2d617-e299-42bb-af79-ae48c7b905dd" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("e2f2d617-e299-42bb-af79-ae48c7b905dd")) {                    Plotly.newPlot(                        "e2f2d617-e299-42bb-af79-ae48c7b905dd",                        [{"error_x":{"array":[0.035753463960645625,0.04193459413402238,0.032117607954839054,0.05162900957436266,0.032117607954839054],"arrayminus":[0.03575346396064562,0.04193459413402239,0.032117607954839054,0.05162900957436265,0.032117607954839054],"color":"#555555","symmetric":false,"thickness":1.4,"type":"data","width":6},"hovertemplate":"%{y}\u003cbr\u003e%{x:.4g}\u003cbr\u003e%{text}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":["#2f7fd1","#2f7fd1","#2f7fd1","#2f7fd1","#2f7fd1"],"size":10,"symbol":"square"},"mode":"markers","text":["5 false positives in 120 runs","7 false positives in 120 runs","4 false positives in 120 runs","11 false positives in 120 runs","4 false positives in 120 runs"],"x":[0.041666666666666664,0.058333333333333334,0.03333333333333333,0.09166666666666666,0.03333333333333333],"y":["difference_in_differences","time_based_regression","cluster_based_regression","switchback","ghost"],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"shapes":[{"line":{"color":"#555555","dash":"dash","width":1.2},"type":"line","x0":0.05,"x1":0.05,"xref":"x","y0":0,"y1":1,"yref":"y domain"}],"annotations":[{"font":{"color":"#555555","size":8.924999999999999},"showarrow":false,"text":"nominal 5%","x":0.05,"xanchor":"center","xref":"x","y":1,"yanchor":"bottom","yref":"y domain"}],"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"false-positive rate on panels with no true effect"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"yaxis":{"title":{"text":""},"gridcolor":"#c9c9c9","zeroline":false,"autorange":"reversed","automargin":true},"showlegend":false,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 1.</span> Does a 5% test reject 5% of the time on this panel? Each dot is the observed false-positive rate over the simulations, with a binomial interval. An interval that misses the dashed line is a method whose stated uncertainty is wrong here — and would be drawn in red</figcaption></figure>
+<h4>Only now look at power, and only for the survivors</h4>
+<p>Calibration first, power second. The order is the point: a method that cannot hold its size will look powerful precisely because it rejects too often, so ranking on power first selects for the broken one. With size settled, power is a fair comparison and it separates the candidates hard.</p>
+<p>Considered instead: Ranking every method by power and taking the top one. That is how a method that cannot hold its size ends up in a signed analysis plan, and by then the false-positive rate is somebody else&#x27;s problem.</p>
+<p><code>difference_in_differences   power  1.000   bias  -0.004   coverage  0.96</code><br><code>time_based_regression       power  0.967   bias  +0.001   coverage  0.94</code><br><code>cluster_based_regression    power  1.000   bias  -0.003   coverage  0.97</code><br><code>switchback                  power  1.000   bias  -0.005   coverage  0.91</code><br><code>ghost                       power  0.192   bias  +0.005   coverage  0.97</code></p>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                            <div id="8b27da7f-d422-4364-848d-0c784a8fb274" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("8b27da7f-d422-4364-848d-0c784a8fb274")) {                    Plotly.newPlot(                        "8b27da7f-d422-4364-848d-0c784a8fb274",                        [{"cliponaxis":false,"hovertemplate":"%{y}\u003cbr\u003e%{x:.4g}\u003cbr\u003e%{hovertext}\u003cextra\u003e\u003c\u002fextra\u003e","hovertext":["bias -0.004, coverage 0.96","bias +0.001, coverage 0.94","bias -0.003, coverage 0.97","bias -0.005, coverage 0.91","bias +0.005, coverage 0.97"],"marker":{"color":"#2f7fd1"},"orientation":"h","text":["1.00","0.97","1.00","1.00","0.19"],"textposition":"outside","x":[1.0,0.9666666666666667,1.0,1.0,0.19166666666666668],"y":["difference_in_differences","time_based_regression","cluster_based_regression","switchback","ghost"],"type":"bar"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"power at a true saving of 0.35"},"gridcolor":"#c9c9c9","zeroline":false,"range":[-0.16,1.16],"zerolinecolor":"#111111","zerolinewidth":1,"automargin":true},"yaxis":{"title":{"text":""},"gridcolor":"#c9c9c9","zeroline":false,"autorange":"reversed","automargin":true},"showlegend":false,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 2.</span> With size settled, power separates them. &#x27;ghost&#x27; is not broken. It estimates a different quantity — intent-to-treat among the exposed — from a much smaller effective sample, and pays for it in power. A ranking that had not calibrated first could not have told that apart from a method that simply rejects too often</figcaption></figure>
+<figure><div style="height:300.0px; width:533.3333333333334px;">                            <div id="35d7ced9-00c8-49e1-85bd-50fcab88824b" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("35d7ced9-00c8-49e1-85bd-50fcab88824b")) {                    Plotly.newPlot(                        "35d7ced9-00c8-49e1-85bd-50fcab88824b",                        [{"hoverinfo":"skip","line":{"color":"#c9c9c9","width":3},"mode":"lines","showlegend":false,"x":[0.95,0.9583333333333334],"y":["difference_in_differences","difference_in_differences"],"type":"scatter"},{"hoverinfo":"skip","line":{"color":"#c9c9c9","width":3},"mode":"lines","showlegend":false,"x":[0.95,0.9416666666666667],"y":["time_based_regression","time_based_regression"],"type":"scatter"},{"hoverinfo":"skip","line":{"color":"#c9c9c9","width":3},"mode":"lines","showlegend":false,"x":[0.95,0.9666666666666667],"y":["cluster_based_regression","cluster_based_regression"],"type":"scatter"},{"hoverinfo":"skip","line":{"color":"#c9c9c9","width":3},"mode":"lines","showlegend":false,"x":[0.95,0.9083333333333333],"y":["switchback","switchback"],"type":"scatter"},{"hoverinfo":"skip","line":{"color":"#c9c9c9","width":3},"mode":"lines","showlegend":false,"x":[0.95,0.9666666666666667],"y":["ghost","ghost"],"type":"scatter"},{"hovertemplate":"%{y}\u003cbr\u003enominal %{x:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#555555","size":9},"mode":"markers","name":"nominal","x":[0.95,0.95,0.95,0.95,0.95],"y":["difference_in_differences","time_based_regression","cluster_based_regression","switchback","ghost"],"type":"scatter"},{"hovertemplate":"%{y}\u003cbr\u003eachieved %{x:.4g}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#2f7fd1","size":11},"mode":"markers","name":"achieved","x":[0.9583333333333334,0.9416666666666667,0.9666666666666667,0.9083333333333333,0.9666666666666667],"y":["difference_in_differences","time_based_regression","cluster_based_regression","switchback","ghost"],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"shapes":[{"line":{"color":"#555555","dash":"dash","width":1.2},"type":"line","x0":0.95,"x1":0.95,"xref":"x","y0":0,"y1":1,"yref":"y domain"}],"annotations":[{"font":{"color":"#555555","size":8.924999999999999},"showarrow":false,"text":"nominal","x":0.95,"xanchor":"center","xref":"x","y":1,"yanchor":"bottom","yref":"y domain"}],"font":{"family":"Times-Roman, Georgia, \"Times New Roman\", Times, serif","size":10.5,"color":"#111111"},"title":{"text":""},"xaxis":{"title":{"text":"interval coverage under a true effect"},"gridcolor":"#c9c9c9","zeroline":false,"automargin":true},"yaxis":{"title":{"text":""},"gridcolor":"#c9c9c9","zeroline":false,"autorange":"reversed","automargin":true},"showlegend":true,"plot_bgcolor":"#ffffff","paper_bgcolor":"#ffffff","colorway":["#2f7fd1","#b5453b","#3aa17e","#8a63c4","#c9a227","#5b6472"],"legend":{"orientation":"h","y":-0.25,"x":0},"height":300.0,"margin":{"l":55,"r":25,"t":12,"b":45},"width":533.3333333333334},                        {"responsive": true}                    )                };            </script>        </div><figcaption><span class="label">Figure 3.</span> And coverage catches what the size test alone would miss. Size was checked under the null; this is coverage under a real effect. The bar of each dumbbell is the gap between what the method promises and what it delivers. Anything short of nominal is producing intervals that are too narrow when it matters — the kind of detail worth seeing before the analysis plan is signed rather than after</figcaption></figure>
+</section>
+<section id="section-4" class="section">
+<h2><a class="anchor" href="#section-4" aria-hidden="true">§</a>3. Results</h2>
+<p>No findings were recorded.</p>
+</section>
+<section id="section-5" class="section">
+<h2><a class="anchor" href="#section-5" aria-hidden="true">§</a>4. What the run showed</h2>
+<p class="emphasis">Written by the analyst after seeing the output, and reproduced unchanged. Nothing in this section is generated.</p>
+<p>All 5 candidates calibrated: on a panel of this shape their nominal 5% tests really do reject about 5% of the time, so their intervals mean what they say. That is a result, and it is worth having explicitly rather than assuming — a method whose size were off here would poison the power calculation and the business case with it.</p>
+<p>With calibration settled, power separated them hard, and the separation is interpretable rather than mysterious: the low-power method is estimating a different quantity from a smaller effective sample, not failing at the same one.</p>
+<p>Worth not skipping past: switchback&#x27;s coverage runs a little under nominal even though its size test passed. The HAC variance is working against real autocorrelation here, and the shortfall only shows up once there is an effect to cover. A size check under the null is necessary and it is not sufficient.</p>
+<p>The order matters more than any individual number here. Calibrate first, then choose on power. Choosing on power first systematically favours whichever method is most willing to reject, which is the opposite of what a programme wants from the estimate it will defend to a regulator.</p>
+</section>
+<section id="section-6" class="section">
+<h2><a class="anchor" href="#section-6" aria-hidden="true">§</a>5. Model checking</h2>
+<p>No diagnostics were recorded. An analysis with no model checking is not therefore sound; it is unexamined.</p>
+</section>
+<section id="section-7" class="section">
+<h2><a class="anchor" href="#section-7" aria-hidden="true">§</a>6. Discussion</h2>
+<p>There are no findings to interpret.</p>
+</section>
+<section id="section-8" class="section">
+<h2><a class="anchor" href="#section-8" aria-hidden="true">§</a>7. Conclusions</h2>
+<p>Five defensible ways to estimate a heat-pump retrofit&#x27;s saving, each resting on different assumptions. Which of them actually holds its size on the panel this programme will really have?</p>
+<p>No finding was recorded, so no conclusion follows.</p>
+</section>
+<section id="section-9" class="section">
+<h2><a class="anchor" href="#section-9" aria-hidden="true">§</a>8. Limitations</h2>
+<p>No assumption in the record is left unresolved. That is a statement about the record, not a guarantee about the world.</p>
+</section>
+<section id="section-10" class="section">
+<h2><a class="anchor" href="#section-10" aria-hidden="true">§</a>9. Provenance</h2>
+<p>Every number in this document resolves to a quantity in the evidence record below. Prose was checked against that record: any numeral not traceable to it, and any claim the record does not itself make, is reported rather than published.</p>
+<figure class="table-figure"><figcaption><span class="label">Table 2.</span> Run</figcaption><table><thead><tr><th class="">Field</th><th class="">Value</th></tr></thead><tbody><tr><td class="">field</td><td class="">Energy</td></tr><tr><td class="">source</td><td class="">examples/ walkthrough record</td></tr><tr><td class="">steps</td><td class="">5</td></tr><tr><td class="">evidence hash</td><td class="">97df4b07c1055e034210bb69df2b899c30aa419e2b24bf5fd80e11b95c17ba9d</td></tr></tbody></table></figure>
+</section>
+
+</main>
+</div></body></html>

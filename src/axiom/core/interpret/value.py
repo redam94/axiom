@@ -56,6 +56,10 @@ _APPLY: dict[str, Callable[[Array], Array]] = {
     "logit": logit,
     "softplus": lambda x: np.logaddexp(0.0, x),
     "neg": np.negative,
+    "relu": lambda x: np.maximum(x, 0.0),
+    "step": lambda x: np.where(x > 0.0, 1.0, 0.0),
+    "sin": np.sin,
+    "cos": np.cos,
 }
 _REDUCE: dict[str, Callable[[Array, bool], Array]] = {
     "sum": lambda x, k: np.sum(np.atleast_1d(x), axis=-1, keepdims=k),

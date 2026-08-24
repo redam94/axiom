@@ -30,7 +30,7 @@ __all__ = [
     "get_backend",
 ]
 
-BACKEND_NAMES: tuple[str, ...] = ("laplace", "numpyro")
+BACKEND_NAMES: tuple[str, ...] = ("laplace", "numpyro", "pymc")
 """Names ``get_backend`` understands. ``laplace`` is always available."""
 
 
@@ -137,8 +137,10 @@ def get_backend(name: str) -> Backend | Unsupported:
     """Resolve a backend by name; ``Unsupported`` names the missing extra.
 
     ``"laplace"`` needs only numpy and scipy. ``"numpyro"`` needs the
-    ``axiom[numpyro]`` extra (jax + numpyro). The imports happen here, not at
-    module top, so asking is free.
+    ``axiom[numpyro]`` extra (jax + numpyro). ``"pymc"`` needs the
+    ``axiom[pymc]`` extra and can then dispatch NUTS to its own sampler,
+    nutpie, numpyro or blackjax (``infer.pymc_backend.samplers``). The imports
+    happen here, not at module top, so asking is free.
     """
     key = name.strip().lower()
     if key == "laplace":
@@ -154,6 +156,15 @@ def get_backend(name: str) -> Backend | Unsupported:
                 missing=numpyro_backend.missing(),
             )
         return numpyro_backend.NumpyroBackend()
+    if key == "pymc":
+        from axiom.infer import pymc_backend
+
+        if not pymc_backend.available():
+            return Unsupported(
+                reason="pymc backend needs pymc and pytensor; install axiom[pymc]",
+                missing=pymc_backend.missing(),
+            )
+        return pymc_backend.PymcBackend()
     return Unsupported(
         reason=f"unknown backend {name!r}; known backends are {list(BACKEND_NAMES)}",
         detail={"requested": name},

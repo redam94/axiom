@@ -417,10 +417,83 @@ subpackages.
 Final state: 1687 fast tests (+ slow tiers run once at each phase),
 53 notebooks, ruff/black/mypy --strict clean, docs `-W` clean.
 
+## Post-1.0 — the HYPER-3 case study and `design.sequential`
+
+Written after 1.0 was tagged, on `feature/case-study-hypertension`, in
+answer to "what does using all of this on one real problem look like".
+`nbs/case-studies/hypertension/` is a sequential dose-finding trial in
+hypertension: three doses against the standard of care, three age strata,
+weekly blood-pressure monitoring, and a boundary that stops a dose arm if
+it is harming people. Six notebooks, one shared synthetic world in
+`hyper3.py`, 37 figures, crossing `core` → `data` → `sim` → `identify` →
+`estimands` → `surface` → `design` → `meta` → `viz`.
+
+The case study needed one thing the library did not have, so
+`src/axiom/design/sequential.py` landed with it: group-sequential
+boundaries (Pocock, O'Brien–Fleming, Lan–DeMets spending, and a
+posterior-probability harm rule stated the way a monitoring committee
+states it), exact first-crossing probabilities by numerical integration of
+the canonical joint distribution rather than by simulation, and `monitor`
+for walking a realized path against a rule. 22 public symbols, 45 unit
+tests pinning the published boundary tables and the recursion's
+second-order convergence, gate-4 factories, and `nbs/design/07-sequential`
+for gate 12. Design decisions and the three first-draft claims the numbers
+refused are in note 0004.
+
+Version is left at 1.0.0 on `develop`; the new API is a 1.1.0 item.
+
+Two things the verification runs turned up that are not about this work:
+
+- `tests/contracts/test_import_weight.py::test_import_time_is_bounded` measures
+  wall clock against a fixed 0.6 s allowance and **fails under load**. It went
+  red in both runs that shared the machine with another `-n 4` suite and green
+  in both that had it to themselves. Run the gates on their own before
+  believing that one.
+- `tests/recovery/test_surface_recovery.py::test_nuts_interval_coverage` gave
+  29/60 against an acceptance region of [45, 60]. **Chased down and fixed** —
+  it was never the sampler. Laplace was equally miscalibrated on the same
+  worlds, more sampling did not move it, and the profile likelihood peaked
+  exactly at the truth: the recovery world's dose plan left the intercept,
+  amplitude and Hill shape nearly collinear (`identifiability_ridge` condition
+  number 847). Widening the dose distribution takes it to 119 and the coverage
+  back to nominal. Note [0006](0006-gaussian-process-surfaces.md) has the
+  evidence; `test_the_recovery_world_is_identified` now guards it.
+
 ## Next (1.1)
 
-PyMC backend (D2); Laplace calibration on Hill surfaces (SBC finding,
+**Landed**: PyMC backend (D2) — a third interpreter (`core.interpret.pytensor`) under a
+backend that dispatches NUTS to its own sampler, nutpie, numpyro or blackjax over the one
+compiled log density; note [0008](0008-pymc-backend.md).
+
+**Landed**: `axiom.dynamics` — a declarative language for systems that are simultaneous or
+have time structure, compiled into ordinary `core.expr` trees; `identify.unrolled_graph` and
+`identify.sequential_plan` retire the `CausalGraph.feedback` refusal; note
+[0010](0010-dynamic-systems.md).
+
+**Landed**: `design.identifiability` — which *combinations* of nonlinear parameters a design
+can estimate, profile likelihood from a simulated experiment, and what to measure next; note
+[0011](0011-identifiability-of-combinations.md).
+
+**Landed**: the ID/IDC algorithm (sound and complete identification under latent confounding,
+returning an estimand or a hedge), sigma-separation for graphs with cycles, and SWIGs; note
+[0012](0012-beyond-dags.md).
+
+**Landed**: `axiom.discover` — essential graphs, GES/GIES, and `orientation_gain`, which
+prices an experiment in the edges it would orient; and `identify.cluster` for cluster-DAGs;
+note [0013](0013-discovery-and-granularity.md).
+
+**Landed**: `diagnose.structure` — refuting the graph itself against the conditional
+independencies it implies, naming the edges a failure implicates; `discover.stability` —
+bootstrap support per edge, separating an unstable edge from a stable edge whose direction
+observation cannot settle; and `discover.fci` — discovery that drops causal sufficiency and
+returns a PAG, sound but deliberately short of Zhang's completeness rules R4-R10; note
+[0014](0014-refutation-stability-and-latents.md). Still open: counterfactual identification
+(ID*), segregated graphs for interference, missingness graphs, FCI's completeness rules, a
+nonlinear conditional-independence test, and bootstrap stability over PAGs.
+
+Laplace calibration on Hill surfaces (SBC finding,
 Phase 8); block-bootstrap switchback SE; ridge verdict in
 `canonical_analysis`; `df` on `LinearEstimate`; drop the nominal
 `[privacy]` extra; NUTS path for centered pools; conditional estimands
-beyond one stratifying covariate.
+beyond one stratifying covariate; stage-wise-ordered estimates for a
+sequential trial stopped at a boundary (note 0004).

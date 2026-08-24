@@ -16,6 +16,7 @@ LAYER: dict[str, int] = {
     "data": 1,
     "io": 2,
     "infer": 3,
+    "dynamics": 3,
     "surface": 4,
     "estimands": 4,
     "identify": 4,
@@ -23,10 +24,13 @@ LAYER: dict[str, int] = {
     "meta": 5,
     "calibrate": 5,
     "design": 5,
+    "discover": 5,
     "build": 6,
     "diagnose": 6,
+    "display": 7,
     "viz": 7,
     "adapters": 7,
+    "report": 8,
 }
 
 # Same-layer exceptions that the architecture names explicitly. None yet.

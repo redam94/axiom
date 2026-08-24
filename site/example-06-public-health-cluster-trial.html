@@ -1,0 +1,910 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 · The same children, worth five times as much — Public health · axiom</title>
+<meta name="description" content="Public health: Sizing a cluster-randomized trial, where the intra-cluster correlation eats the sample. A 6-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:title" content="06 · The same children, worth five times as much — Public health · axiom">
+<meta property="og:description" content="Public health: Sizing a cluster-randomized trial, where the intra-cluster correlation eats the sample. A 6-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="example">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Example 06 · Public health</p>
+    <h1 style="max-width:18ch">The same children, worth five times as much</h1>
+    <p class="lede prose mt">A chlorination programme has to be randomized by village, because neighbours share water and would talk. How many villages, how many children in each, and why is that second question the one that decides the trial?</p>
+    <div class="ex-meta"><a class="pkg" href="design.html">Design</a>
+      <span class="pkg">6 steps</span>
+      <span class="pkg">4 figures</span>
+      <span class="pkg">314 lines</span>
+      <span class="pkg">runs in 0.8s</span></div>
+    <div class="hero-cta">
+      <a class="btn btn-1" href="#step-1">Start the walkthrough</a>
+      <a class="btn btn-2" href="https://github.com/redam94/axiom/blob/main/examples/06_public_health_cluster_trial.py">The whole file on GitHub &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div class="prose wt-framing"><p>Public health — sizing a cluster-randomized water and sanitation trial.</p><p class="wt-h">The question</p><p>You cannot randomize a chlorination programme household by household: neighbours share water, share pathogens, and would talk. So you randomize whole villages, and measure children within them.</p><p class="wt-h">The trap</p><p>Outcomes within a village are correlated. Two hundred children in ten villages are worth far fewer than two hundred independent children, and a trial sized as though they were independent will be badly underpowered while looking fine on paper. The correction is the design effect, and it is brutal: even a small intra-cluster correlation costs you most of your sample when clusters are large.</p><p>Pillars: design (cluster randomization)</p></div>
+      <div>
+        <p class="eyebrow">The route</p>
+        <nav class="wt-toc"><a class="wt-toc-i" href="#step-1"><span class="wt-toc-n">1</span>Name the thing being randomized, in the design itself</a><a class="wt-toc-i" href="#step-2"><span class="wt-toc-n">2</span>Get the naive answer first, so the damage is measurable</a><a class="wt-toc-i" href="#step-3"><span class="wt-toc-n">3</span>Then look at what clustering costs, and where the cost comes from</a><a class="wt-toc-i" href="#step-4"><span class="wt-toc-n">4</span>Size the trial for the design you are really running</a><a class="wt-toc-i" href="#step-5"><span class="wt-toc-n">5</span>Now the question the budget is really about: shape, not size</a><a class="wt-toc-i" href="#step-6"><span class="wt-toc-n">6</span>Put field cost on it, because the trade-off runs the other way</a></nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Before the first step</p>
+      <h2>What this example imports, and why that list is short</h2>
+      <p>Everything below runs on the four core dependencies. No sampler, no extras.</p>
+    </div>
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>examples/06_public_health_cluster_trial.py</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>from _walkthrough import Walkthrough
+
+from axiom.core import Unit
+from axiom.design import (
+    ClusterDesign,
+    cluster_mde,
+    cluster_power,
+    clusters_needed,
+    design_effect,
+    effective_sample_size,
+    sample_size,
+)
+
+OUTCOME_SD = 1.0  # standardized: diarrhoea episodes per child-year
+TARGET_EFFECT = 0.25  # the reduction worth detecting
+ICC = 0.03  # small, and typical for village-level health outcomes
+CLUSTER_SIZE = 40  # children measured per village
+VILLAGE = Unit(name=&quot;village&quot;, kind=&quot;cluster&quot;)
+
+w = Walkthrough(
+    field=&quot;Public health&quot;,
+    title=&quot;The same children, worth five times as much&quot;,
+    question=&quot;&quot;&quot;A chlorination programme has to be randomized by village, because
+        neighbours share water and would talk. How many villages, how many children
+        in each, and why is that second question the one that decides the trial?&quot;&quot;&quot;,
+)</pre>
+    </div>
+  </div>
+</section>
+
+<section class="wt-step" id="step-1">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 1 <span>of 6</span></p>
+      <h2>Name the thing being randomized, in the design itself</h2>
+      <div class="wt-why prose"><p>The unit of randomization is a village and the unit of measurement is a child, and almost every mistake in this literature comes from letting those two blur. A ClusterDesign carries the Unit it randomizes rather than just the arithmetic, so a power calculation cannot quietly be performed on the wrong one.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Randomizing households and hoping contamination is small. Neighbours share a water source and a conversation; a household-randomized chlorination trial measures the programme minus whatever leaked across the fence, and nothing in the analysis can recover the difference.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/06_public_health_cluster_trial.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>w.out(f&quot;randomization unit : {VILLAGE.name} ({VILLAGE.kind})&quot;)
+w.out(&quot;measurement unit   : child&quot;)
+w.out(f&quot;outcome            : diarrhoea episodes per child-year, sd {OUTCOME_SD}&quot;)
+w.out(f&quot;effect worth having: {TARGET_EFFECT} sd&quot;)
+w.out(f&quot;intra-cluster corr : {ICC}&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>randomization unit : village (cluster)
+measurement unit   : child
+outcome            : diarrhoea episodes per child-year, sd 1.0
+effect worth having: 0.25 sd
+intra-cluster corr : 0.03</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-2">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 2 <span>of 6</span></p>
+      <h2>Get the naive answer first, so the damage is measurable</h2>
+      <div class="wt-why prose"><p>The independent-children calculation is not a straw man — it is what a sample-size calculator returns if nobody tells it about villages, and it is what ends up in a great many protocols. Computing it explicitly gives the rest of the walkthrough something to be a multiple of.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Skipping straight to the clustered formula. Then the design effect is a number in a spreadsheet rather than a factor of five, and factors of five are what get a budget conversation started.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/06_public_health_cluster_trial.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>naive = sample_size(effect=TARGET_EFFECT, sd=OUTCOME_SD, power=0.8, alpha=0.05)
+w.out(&quot;if children were independent (they are not):&quot;)
+w.out(f&quot;  n = {naive.n} children ({naive.n_treated} treated / {naive.n_control} control)&quot;)
+w.out(f&quot;  power {naive.power:.3f}&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>if children were independent (they are not):
+  n = 503 children (252 treated / 251 control)
+  power 0.801</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-3">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 3 <span>of 6</span></p>
+      <h2>Then look at what clustering costs, and where the cost comes from</h2>
+      <div class="wt-why prose"><p>The design effect is 1 + (m - 1) x ICC. Read that formula: the correlation enters once, the cluster SIZE enters as a multiplier. An ICC of 0.03 sounds negligible and is negligible in clusters of five; in clusters of two hundred it multiplies your variance by seven. Size is the lever, and it is the one most protocols treat as an afterthought.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Reporting the ICC alone and calling it small. &#x27;Our ICC is only 0.03&#x27; is the single most common way a cluster trial talks itself into being underpowered — the number is meaningless without the cluster size beside it.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/06_public_health_cluster_trial.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>de = design_effect(CLUSTER_SIZE, ICC)
+w.out(f&quot;design effect at m = {CLUSTER_SIZE}, ICC = {ICC}: {de:.2f}x variance inflation&quot;)
+
+sizes = [5, 10, 20, 40, 80, 120, 160, 200]
+curves = {icc: [design_effect(m, icc) for m in sizes] for icc in (0.01, 0.03, 0.05, 0.10)}
+w.table(
+    [&quot;children per village&quot;] + [f&quot;ICC {icc}&quot; for icc in curves],
+    [[str(m)] + [f&quot;{curves[icc][i]:.2f}&quot; for icc in curves] for i, m in enumerate(sizes)],
+    caption=&quot;Variance inflation. Every entry is a multiplier on the sample you need.&quot;,
+)
+w.figure(
+    &quot;deff&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;m&quot;: sizes, **{f&quot;icc{int(icc * 100):02d}&quot;: curves[icc] for icc in curves}},
+    opt={
+        &quot;series&quot;: [
+            {&quot;label&quot;: f&quot;ICC {icc}&quot;, &quot;x&quot;: &quot;@m&quot;, &quot;y&quot;: f&quot;@icc{int(icc * 100):02d}&quot;} for icc in curves
+        ],
+        &quot;xLabel&quot;: &quot;children measured per village&quot;,
+        &quot;yLabel&quot;: &quot;design effect&quot;,
+        &quot;height&quot;: 300,
+        &quot;rightPad&quot;: 80,
+    },
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>design effect at m = 40, ICC = 0.03: 2.17x variance inflation</pre></div>
+<div class="tbl-wrap"><table class="t"><caption>Variance inflation. Every entry is a multiplier on the sample you need.</caption><thead><tr><th>children per village</th><th>ICC 0.01</th><th>ICC 0.03</th><th>ICC 0.05</th><th>ICC 0.1</th></tr></thead><tbody><tr><td>5</td><td>1.04</td><td>1.12</td><td>1.20</td><td>1.40</td></tr><tr><td>10</td><td>1.09</td><td>1.27</td><td>1.45</td><td>1.90</td></tr><tr><td>20</td><td>1.19</td><td>1.57</td><td>1.95</td><td>2.90</td></tr><tr><td>40</td><td>1.39</td><td>2.17</td><td>2.95</td><td>4.90</td></tr><tr><td>80</td><td>1.79</td><td>3.37</td><td>4.95</td><td>8.90</td></tr><tr><td>120</td><td>2.19</td><td>4.57</td><td>6.95</td><td>12.90</td></tr><tr><td>160</td><td>2.59</td><td>5.77</td><td>8.95</td><td>16.90</td></tr><tr><td>200</td><td>2.99</td><td>6.97</td><td>10.95</td><td>20.90</td></tr></tbody></table></div>
+<figure class="fig" id="06_public_health_cluster_trial-deff">
+  <div class="fig-head"><p class="fig-t">The penalty is on cluster size, not on the correlation</p><p class="fig-s">Every line is straight, because the design effect is linear in cluster size. Doubling the ICC doubles the slope; doubling the cluster size doubles the penalty outright. The choice a protocol actually controls is the horizontal axis.</p></div>
+  
+  <div class="chart" data-chart="lines" data-file="figures-06_public_health_cluster_trial"
+       data-opt='{&quot;series&quot;: [{&quot;label&quot;: &quot;ICC 0.01&quot;, &quot;x&quot;: &quot;deff.m&quot;, &quot;y&quot;: &quot;deff.icc01&quot;}, {&quot;label&quot;: &quot;ICC 0.03&quot;, &quot;x&quot;: &quot;deff.m&quot;, &quot;y&quot;: &quot;deff.icc03&quot;}, {&quot;label&quot;: &quot;ICC 0.05&quot;, &quot;x&quot;: &quot;deff.m&quot;, &quot;y&quot;: &quot;deff.icc05&quot;}, {&quot;label&quot;: &quot;ICC 0.1&quot;, &quot;x&quot;: &quot;deff.m&quot;, &quot;y&quot;: &quot;deff.icc10&quot;}], &quot;xLabel&quot;: &quot;children measured per village&quot;, &quot;yLabel&quot;: &quot;design effect&quot;, &quot;height&quot;: 300, &quot;rightPad&quot;: 80}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-4">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 4 <span>of 6</span></p>
+      <h2>Size the trial for the design you are really running</h2>
+      <div class="wt-why prose"><p>clusters_needed inverts the whole thing: given the effect, the ICC and the cluster size, how many villages. The effective sample size is the number worth quoting beside it — it says how many independent children all those real children are actually worth, which is the honest denominator for everything downstream.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Inflating the naive n by the design effect and dividing by the cluster size. It gets you close, and it hides that both power and the minimum detectable effect should be read off the same design object rather than recomputed by hand from a rounded intermediate.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/06_public_health_cluster_trial.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>need = clusters_needed(
+    effect=TARGET_EFFECT, sd=OUTCOME_SD, cluster_size=CLUSTER_SIZE, icc=ICC, power=0.8, alpha=0.05
+)
+ess = effective_sample_size(need.n, CLUSTER_SIZE, ICC)
+design = ClusterDesign(unit=VILLAGE, n_clusters=need.n, cluster_size=CLUSTER_SIZE, icc=ICC)
+power = cluster_power(design, effect=TARGET_EFFECT, sd=OUTCOME_SD)
+mde = cluster_mde(design, sd=OUTCOME_SD, power=0.8)
+w.out(f&quot;villages needed : {need.n} ({need.n_treated} treated / {need.n_control} control)&quot;)
+w.out(f&quot;children        : {need.n * CLUSTER_SIZE:,}&quot;)
+w.out(f&quot;worth about     : {ess:.0f} independent children&quot;)
+w.out(f&quot;power at {TARGET_EFFECT}   : {power.power:.3f}&quot;)
+w.out(f&quot;MDE at 80% power: {mde.effect:.3f}&quot;)
+w.figure(
+    &quot;cost&quot;,
+    kind=&quot;bars&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: &quot;if children were independent&quot;,
+                &quot;value&quot;: float(naive.n),
+                &quot;display&quot;: f&quot;{naive.n:,}&quot;,
+                &quot;colour&quot;: &quot;ink-3&quot;,
+                &quot;note&quot;: &quot;what a calculator with no notion of villages returns&quot;,
+            },
+            {
+                &quot;label&quot;: &quot;children actually enrolled&quot;,
+                &quot;value&quot;: float(need.n * CLUSTER_SIZE),
+                &quot;display&quot;: f&quot;{need.n * CLUSTER_SIZE:,}&quot;,
+                &quot;colour&quot;: &quot;accent&quot;,
+                &quot;note&quot;: f&quot;{need.n} villages of {CLUSTER_SIZE}&quot;,
+            },
+            {
+                &quot;label&quot;: &quot;independent children they are worth&quot;,
+                &quot;value&quot;: float(ess),
+                &quot;display&quot;: f&quot;{ess:,.0f}&quot;,
+                &quot;colour&quot;: &quot;boundary&quot;,
+                &quot;note&quot;: &quot;the effective sample size&quot;,
+            },
+        ]
+    },
+    opt={&quot;rows&quot;: &quot;@rows&quot;, &quot;xLabel&quot;: &quot;children&quot;, &quot;labelWidth&quot;: 220, &quot;rowHeight&quot;: 44},
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>villages needed : 28 (14 treated / 14 control)
+children        : 1,120
+worth about     : 516 independent children
+power at 0.25   : 0.811
+MDE at 80% power: 0.247</pre></div>
+<figure class="fig" id="06_public_health_cluster_trial-cost">
+  <div class="fig-head"><p class="fig-t">What the trial enrols, and what it is worth</p><p class="fig-s">Enrol 1,120 children to buy the information in 516. The gap is the design effect, and it is paid in field cost, consent, follow-up and time.</p></div>
+  
+  <div class="chart" data-chart="bars" data-file="figures-06_public_health_cluster_trial"
+       data-opt='{&quot;rows&quot;: &quot;cost.rows&quot;, &quot;xLabel&quot;: &quot;children&quot;, &quot;labelWidth&quot;: 220, &quot;rowHeight&quot;: 44}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-5">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 5 <span>of 6</span></p>
+      <h2>Now the question the budget is really about: shape, not size</h2>
+      <div class="wt-why prose"><p>Fix the number of children at about 1,600 and vary only how they are grouped. This is the comparison that decides a cluster trial, and it is almost never drawn: the same 1,600 children give wildly different power depending on whether they sit in ten villages or a hundred and sixty.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Asking &#x27;how many children can we afford&#x27;. Total enrolment is close to irrelevant here compared with the grouping. A protocol that negotiates hard for 20% more children and accepts larger villages to get them can easily end up with less power than it started with.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/06_public_health_cluster_trial.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>shapes = [(10, 160), (20, 80), (40, 40), (80, 20), (160, 10)]
+powers = []
+for n_clusters, size in shapes:
+    d = ClusterDesign(unit=VILLAGE, n_clusters=n_clusters, cluster_size=size, icc=ICC)
+    powers.append(float(cluster_power(d, effect=TARGET_EFFECT, sd=OUTCOME_SD).power))
+w.table(
+    [&quot;villages&quot;, &quot;children each&quot;, &quot;total children&quot;, &quot;design effect&quot;, &quot;power&quot;],
+    [
+        [
+            str(n),
+            str(m),
+            f&quot;{n * m:,}&quot;,
+            f&quot;{design_effect(m, ICC):.2f}&quot;,
+            f&quot;{p:.3f}&quot;,
+        ]
+        for (n, m), p in zip(shapes, powers, strict=True)
+    ],
+)
+w.figure(
+    &quot;shape&quot;,
+    kind=&quot;bars&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: f&quot;{n} villages of {m}&quot;,
+                &quot;value&quot;: p,
+                &quot;display&quot;: f&quot;{p:.2f}&quot;,
+                &quot;colour&quot;: &quot;boundary&quot; if p &lt; 0.8 else &quot;accent&quot;,
+                &quot;note&quot;: f&quot;{n * m:,} children, design effect {design_effect(m, ICC):.2f}&quot;,
+            }
+            for (n, m), p in zip(shapes, powers, strict=True)
+        ]
+    },
+    opt={&quot;rows&quot;: &quot;@rows&quot;, &quot;xLabel&quot;: &quot;power&quot;, &quot;labelWidth&quot;: 170, &quot;rowHeight&quot;: 42},
+    # title, note and legend: the caption shown with the chart
+)</pre>
+</div>
+      <div class="tbl-wrap"><table class="t"><thead><tr><th>villages</th><th>children each</th><th>total children</th><th>design effect</th><th>power</th></tr></thead><tbody><tr><td>10</td><td>160</td><td>1,600</td><td>5.77</td><td>0.548</td></tr><tr><td>20</td><td>80</td><td>1,600</td><td>3.37</td><td>0.777</td></tr><tr><td>40</td><td>40</td><td>1,600</td><td>2.17</td><td>0.924</td></tr><tr><td>80</td><td>20</td><td>1,600</td><td>1.57</td><td>0.979</td></tr><tr><td>160</td><td>10</td><td>1,600</td><td>1.27</td><td>0.993</td></tr></tbody></table></div>
+<figure class="fig" id="06_public_health_cluster_trial-shape">
+  <div class="fig-head"><p class="fig-t">Same 1,600 children, five different trials</p><p class="fig-s">From 0.55 to 0.99 with no change in enrolment. Red is below the conventional 0.8 bar. Nothing about the intervention, the effect or the budget changed between these rows — only the grouping.</p></div>
+  <div class="legend"><span><i style="--k:var(--accent)"></i>reaches 80% power</span><span><i style="--k:var(--boundary)"></i>does not</span></div>
+  <div class="chart" data-chart="bars" data-file="figures-06_public_health_cluster_trial"
+       data-opt='{&quot;rows&quot;: &quot;shape.rows&quot;, &quot;xLabel&quot;: &quot;power&quot;, &quot;labelWidth&quot;: 170, &quot;rowHeight&quot;: 42}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-6">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 6 <span>of 6</span></p>
+      <h2>Put field cost on it, because the trade-off runs the other way</h2>
+      <div class="wt-why prose"><p>Villages are expensive to reach and children within them are cheap, so the design that maximises power is not the one that minimises cost. With an illustrative 4,000 per village of setup and 25 per child enrolled, a fixed budget buys a curve with an interior maximum — and that maximum is the design worth proposing.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Choosing the highest-power shape from the previous step and taking it to the funder. 160 villages of ten wins on power and spends almost all of its money on reaching villages; the recommendation has to survive the budget, not just the power calculation.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/06_public_health_cluster_trial.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>SETUP_PER_VILLAGE, PER_CHILD, BUDGET = 4_000.0, 25.0, 200_000.0
+options, opt_power, opt_labels = [], [], []
+for n_clusters in range(10, 100, 5):
+    affordable = (BUDGET - SETUP_PER_VILLAGE * n_clusters) / (PER_CHILD * n_clusters)
+    if affordable &lt; 2:
+        continue
+    m = int(affordable)
+    d = ClusterDesign(unit=VILLAGE, n_clusters=n_clusters, cluster_size=m, icc=ICC)
+    options.append(n_clusters)
+    opt_power.append(float(cluster_power(d, effect=TARGET_EFFECT, sd=OUTCOME_SD).power))
+    opt_labels.append(m)
+w.table(
+    [&quot;villages&quot;, &quot;children each, at this budget&quot;, &quot;total children&quot;, &quot;power&quot;],
+    [
+        [str(n), str(m), f&quot;{n * m:,}&quot;, f&quot;{p:.3f}&quot;]
+        for n, m, p in zip(options, opt_labels, opt_power, strict=True)
+        if n % 10 == 0
+    ],
+    caption=f&quot;A fixed budget of {BUDGET:,.0f}, at {SETUP_PER_VILLAGE:,.0f} per village &quot;
+    f&quot;and {PER_CHILD:.0f} per child.&quot;,
+)
+best = max(range(len(options)), key=lambda i: opt_power[i])
+w.figure(
+    &quot;budget&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;villages&quot;: options, &quot;power&quot;: opt_power},
+    opt={
+        &quot;series&quot;: [{&quot;label&quot;: &quot;power&quot;, &quot;x&quot;: &quot;@villages&quot;, &quot;y&quot;: &quot;@power&quot;, &quot;colour&quot;: &quot;accent&quot;}],
+        &quot;xLabel&quot;: &quot;villages, with children per village set by what the budget allows&quot;,
+        &quot;yLabel&quot;: &quot;power&quot;,
+        &quot;hline&quot;: 0.8,
+        &quot;hlineLabel&quot;: &quot;conventional 80%&quot;,
+        &quot;height&quot;: 290,
+        &quot;rightPad&quot;: 70,
+    },
+    # title, note and legend: the caption shown with the chart
+)
+
+
+w.finding(f&quot;&quot;&quot;An ICC of {ICC} — a number most protocols would describe as negligible —
+    turned {naive.n} children into {need.n * CLUSTER_SIZE:,}. The correlation was
+    never the problem. The cluster size was: at forty children per village the design
+    effect is {de:.2f}, and it would be {design_effect(160, ICC):.2f} at a hundred and
+    sixty.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;The same 1,600 children bought power of {min(powers):.2f} or {max(powers):.2f}
+    depending only on how they were grouped. Ten villages of 160 is close to
+    worthless; 160 villages of 10 is a real trial. That is a factor a protocol
+    controls completely and usually decides by convenience.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;Once field cost is on the table the answer moves again, and it stops being
+    &#x27;more villages&#x27;. At {BUDGET:,.0f} the curve peaks at {options[best]} villages of
+    {opt_labels[best]} and falls away on both sides. This is the conversation worth
+    having before the protocol is written rather than after the results come back
+    inconclusive — and it needs three numbers the statistics alone never supplies:
+    the ICC, the cost of reaching a village, and the cost of a child.&quot;&quot;&quot;)</pre>
+</div>
+      <div class="tbl-wrap"><table class="t"><caption>A fixed budget of 200,000, at 4,000 per village and 25 per child.</caption><thead><tr><th>villages</th><th>children each, at this budget</th><th>total children</th><th>power</th></tr></thead><tbody><tr><td>10</td><td>640</td><td>6,400</td><td>0.605</td></tr><tr><td>20</td><td>240</td><td>4,800</td><td>0.858</td></tr><tr><td>30</td><td>106</td><td>3,180</td><td>0.933</td></tr><tr><td>40</td><td>40</td><td>1,600</td><td>0.924</td></tr></tbody></table></div>
+<figure class="fig" id="06_public_health_cluster_trial-budget">
+  <div class="fig-head"><p class="fig-t">What a fixed field budget can actually buy</p><p class="fig-s">The curve turns over. Too few villages and the design effect eats the sample; too many and the per-village setup cost leaves no children to measure. The best buy here is 35 villages of 68, at power 0.94.</p></div>
+  <div class="legend"><span><i style="--k:var(--accent)"></i>power at this budget</span><span><i class="dash" style="--k:var(--ink-3)"></i>the conventional bar</span></div>
+  <div class="chart" data-chart="lines" data-file="figures-06_public_health_cluster_trial"
+       data-opt='{&quot;series&quot;: [{&quot;label&quot;: &quot;power&quot;, &quot;x&quot;: &quot;budget.villages&quot;, &quot;y&quot;: &quot;budget.power&quot;, &quot;colour&quot;: &quot;accent&quot;}], &quot;xLabel&quot;: &quot;villages, with children per village set by what the budget allows&quot;, &quot;yLabel&quot;: &quot;power&quot;, &quot;hline&quot;: 0.8, &quot;hlineLabel&quot;: &quot;conventional 80%&quot;, &quot;height&quot;: 290, &quot;rightPad&quot;: 70}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+
+<section class="wt-close">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The close</p>
+      <h2>What it actually showed</h2>
+      <p>Written after looking at the output, which is why it does not always agree
+        with the setup.</p>
+    </div>
+    <div class="prose wt-findings"><p>An ICC of 0.03 — a number most protocols would describe as negligible — turned 503 children into 1,120. The correlation was never the problem. The cluster size was: at forty children per village the design effect is 2.17, and it would be 5.77 at a hundred and sixty.</p><p>The same 1,600 children bought power of 0.55 or 0.99 depending only on how they were grouped. Ten villages of 160 is close to worthless; 160 villages of 10 is a real trial. That is a factor a protocol controls completely and usually decides by convenience.</p><p>Once field cost is on the table the answer moves again, and it stops being &#x27;more villages&#x27;. At 200,000 the curve peaks at 35 villages of 68 and falls away on both sides. This is the conversation worth having before the protocol is written rather than after the results come back inconclusive — and it needs three numbers the statistics alone never supplies: the ICC, the cost of reaching a village, and the cost of a child.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <details class="ex-more">
+      <summary>The whole file, and everything this run printed</summary>
+      <div class="ex-body">
+        <div class="pair">
+          <div class="code">
+            <div class="code-h"><span>examples/06_public_health_cluster_trial.py</span>
+              <button class="copy" type="button">Copy</button></div>
+            <pre>from _walkthrough import Walkthrough
+
+from axiom.core import Unit
+from axiom.design import (
+    ClusterDesign,
+    cluster_mde,
+    cluster_power,
+    clusters_needed,
+    design_effect,
+    effective_sample_size,
+    sample_size,
+)
+
+OUTCOME_SD = 1.0  # standardized: diarrhoea episodes per child-year
+TARGET_EFFECT = 0.25  # the reduction worth detecting
+ICC = 0.03  # small, and typical for village-level health outcomes
+CLUSTER_SIZE = 40  # children measured per village
+VILLAGE = Unit(name=&quot;village&quot;, kind=&quot;cluster&quot;)
+
+w = Walkthrough(
+    field=&quot;Public health&quot;,
+    title=&quot;The same children, worth five times as much&quot;,
+    question=&quot;&quot;&quot;A chlorination programme has to be randomized by village, because
+        neighbours share water and would talk. How many villages, how many children
+        in each, and why is that second question the one that decides the trial?&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Name the thing being randomized, in the design itself&quot;,
+    why=&quot;&quot;&quot;The unit of randomization is a village and the unit of measurement is a
+        child, and almost every mistake in this literature comes from letting those
+        two blur. A ClusterDesign carries the Unit it randomizes rather than just the
+        arithmetic, so a power calculation cannot quietly be performed on the wrong
+        one.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Randomizing households and hoping contamination is small. Neighbours
+        share a water source and a conversation; a household-randomized chlorination
+        trial measures the programme minus whatever leaked across the fence, and
+        nothing in the analysis can recover the difference.&quot;&quot;&quot;,
+)
+w.out(f&quot;randomization unit : {VILLAGE.name} ({VILLAGE.kind})&quot;)
+w.out(&quot;measurement unit   : child&quot;)
+w.out(f&quot;outcome            : diarrhoea episodes per child-year, sd {OUTCOME_SD}&quot;)
+w.out(f&quot;effect worth having: {TARGET_EFFECT} sd&quot;)
+w.out(f&quot;intra-cluster corr : {ICC}&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Get the naive answer first, so the damage is measurable&quot;,
+    why=&quot;&quot;&quot;The independent-children calculation is not a straw man — it is what a
+        sample-size calculator returns if nobody tells it about villages, and it is
+        what ends up in a great many protocols. Computing it explicitly gives the
+        rest of the walkthrough something to be a multiple of.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Skipping straight to the clustered formula. Then the design effect is
+        a number in a spreadsheet rather than a factor of five, and factors of five
+        are what get a budget conversation started.&quot;&quot;&quot;,
+)
+naive = sample_size(effect=TARGET_EFFECT, sd=OUTCOME_SD, power=0.8, alpha=0.05)
+w.out(&quot;if children were independent (they are not):&quot;)
+w.out(f&quot;  n = {naive.n} children ({naive.n_treated} treated / {naive.n_control} control)&quot;)
+w.out(f&quot;  power {naive.power:.3f}&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Then look at what clustering costs, and where the cost comes from&quot;,
+    why=&quot;&quot;&quot;The design effect is 1 + (m - 1) x ICC. Read that formula: the
+        correlation enters once, the cluster SIZE enters as a multiplier. An ICC of
+        0.03 sounds negligible and is negligible in clusters of five; in clusters of
+        two hundred it multiplies your variance by seven. Size is the lever, and it
+        is the one most protocols treat as an afterthought.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Reporting the ICC alone and calling it small. &#x27;Our ICC is only 0.03&#x27;
+        is the single most common way a cluster trial talks itself into being
+        underpowered — the number is meaningless without the cluster size beside
+        it.&quot;&quot;&quot;,
+)
+de = design_effect(CLUSTER_SIZE, ICC)
+w.out(f&quot;design effect at m = {CLUSTER_SIZE}, ICC = {ICC}: {de:.2f}x variance inflation&quot;)
+
+sizes = [5, 10, 20, 40, 80, 120, 160, 200]
+curves = {icc: [design_effect(m, icc) for m in sizes] for icc in (0.01, 0.03, 0.05, 0.10)}
+w.table(
+    [&quot;children per village&quot;] + [f&quot;ICC {icc}&quot; for icc in curves],
+    [[str(m)] + [f&quot;{curves[icc][i]:.2f}&quot; for icc in curves] for i, m in enumerate(sizes)],
+    caption=&quot;Variance inflation. Every entry is a multiplier on the sample you need.&quot;,
+)
+w.figure(
+    &quot;deff&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;m&quot;: sizes, **{f&quot;icc{int(icc * 100):02d}&quot;: curves[icc] for icc in curves}},
+    opt={
+        &quot;series&quot;: [
+            {&quot;label&quot;: f&quot;ICC {icc}&quot;, &quot;x&quot;: &quot;@m&quot;, &quot;y&quot;: f&quot;@icc{int(icc * 100):02d}&quot;} for icc in curves
+        ],
+        &quot;xLabel&quot;: &quot;children measured per village&quot;,
+        &quot;yLabel&quot;: &quot;design effect&quot;,
+        &quot;height&quot;: 300,
+        &quot;rightPad&quot;: 80,
+    },
+    title=&quot;The penalty is on cluster size, not on the correlation&quot;,
+    note=&quot;&quot;&quot;Every line is straight, because the design effect is linear in cluster
+        size. Doubling the ICC doubles the slope; doubling the cluster size doubles
+        the penalty outright. The choice a protocol actually controls is the
+        horizontal axis.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Size the trial for the design you are really running&quot;,
+    why=&quot;&quot;&quot;clusters_needed inverts the whole thing: given the effect, the ICC and the
+        cluster size, how many villages. The effective sample size is the number
+        worth quoting beside it — it says how many independent children all those
+        real children are actually worth, which is the honest denominator for
+        everything downstream.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Inflating the naive n by the design effect and dividing by the cluster
+        size. It gets you close, and it hides that both power and the minimum
+        detectable effect should be read off the same design object rather than
+        recomputed by hand from a rounded intermediate.&quot;&quot;&quot;,
+)
+need = clusters_needed(
+    effect=TARGET_EFFECT, sd=OUTCOME_SD, cluster_size=CLUSTER_SIZE, icc=ICC, power=0.8, alpha=0.05
+)
+ess = effective_sample_size(need.n, CLUSTER_SIZE, ICC)
+design = ClusterDesign(unit=VILLAGE, n_clusters=need.n, cluster_size=CLUSTER_SIZE, icc=ICC)
+power = cluster_power(design, effect=TARGET_EFFECT, sd=OUTCOME_SD)
+mde = cluster_mde(design, sd=OUTCOME_SD, power=0.8)
+w.out(f&quot;villages needed : {need.n} ({need.n_treated} treated / {need.n_control} control)&quot;)
+w.out(f&quot;children        : {need.n * CLUSTER_SIZE:,}&quot;)
+w.out(f&quot;worth about     : {ess:.0f} independent children&quot;)
+w.out(f&quot;power at {TARGET_EFFECT}   : {power.power:.3f}&quot;)
+w.out(f&quot;MDE at 80% power: {mde.effect:.3f}&quot;)
+w.figure(
+    &quot;cost&quot;,
+    kind=&quot;bars&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: &quot;if children were independent&quot;,
+                &quot;value&quot;: float(naive.n),
+                &quot;display&quot;: f&quot;{naive.n:,}&quot;,
+                &quot;colour&quot;: &quot;ink-3&quot;,
+                &quot;note&quot;: &quot;what a calculator with no notion of villages returns&quot;,
+            },
+            {
+                &quot;label&quot;: &quot;children actually enrolled&quot;,
+                &quot;value&quot;: float(need.n * CLUSTER_SIZE),
+                &quot;display&quot;: f&quot;{need.n * CLUSTER_SIZE:,}&quot;,
+                &quot;colour&quot;: &quot;accent&quot;,
+                &quot;note&quot;: f&quot;{need.n} villages of {CLUSTER_SIZE}&quot;,
+            },
+            {
+                &quot;label&quot;: &quot;independent children they are worth&quot;,
+                &quot;value&quot;: float(ess),
+                &quot;display&quot;: f&quot;{ess:,.0f}&quot;,
+                &quot;colour&quot;: &quot;boundary&quot;,
+                &quot;note&quot;: &quot;the effective sample size&quot;,
+            },
+        ]
+    },
+    opt={&quot;rows&quot;: &quot;@rows&quot;, &quot;xLabel&quot;: &quot;children&quot;, &quot;labelWidth&quot;: 220, &quot;rowHeight&quot;: 44},
+    title=&quot;What the trial enrols, and what it is worth&quot;,
+    note=f&quot;&quot;&quot;Enrol {need.n * CLUSTER_SIZE:,} children to buy the information in
+        {ess:.0f}. The gap is the design effect, and it is paid in field cost,
+        consent, follow-up and time.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Now the question the budget is really about: shape, not size&quot;,
+    why=&quot;&quot;&quot;Fix the number of children at about 1,600 and vary only how they are
+        grouped. This is the comparison that decides a cluster trial, and it is
+        almost never drawn: the same 1,600 children give wildly different power
+        depending on whether they sit in ten villages or a hundred and sixty.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Asking &#x27;how many children can we afford&#x27;. Total enrolment is close to
+        irrelevant here compared with the grouping. A protocol that negotiates hard
+        for 20% more children and accepts larger villages to get them can easily end
+        up with less power than it started with.&quot;&quot;&quot;,
+)
+shapes = [(10, 160), (20, 80), (40, 40), (80, 20), (160, 10)]
+powers = []
+for n_clusters, size in shapes:
+    d = ClusterDesign(unit=VILLAGE, n_clusters=n_clusters, cluster_size=size, icc=ICC)
+    powers.append(float(cluster_power(d, effect=TARGET_EFFECT, sd=OUTCOME_SD).power))
+w.table(
+    [&quot;villages&quot;, &quot;children each&quot;, &quot;total children&quot;, &quot;design effect&quot;, &quot;power&quot;],
+    [
+        [
+            str(n),
+            str(m),
+            f&quot;{n * m:,}&quot;,
+            f&quot;{design_effect(m, ICC):.2f}&quot;,
+            f&quot;{p:.3f}&quot;,
+        ]
+        for (n, m), p in zip(shapes, powers, strict=True)
+    ],
+)
+w.figure(
+    &quot;shape&quot;,
+    kind=&quot;bars&quot;,
+    data={
+        &quot;rows&quot;: [
+            {
+                &quot;label&quot;: f&quot;{n} villages of {m}&quot;,
+                &quot;value&quot;: p,
+                &quot;display&quot;: f&quot;{p:.2f}&quot;,
+                &quot;colour&quot;: &quot;boundary&quot; if p &lt; 0.8 else &quot;accent&quot;,
+                &quot;note&quot;: f&quot;{n * m:,} children, design effect {design_effect(m, ICC):.2f}&quot;,
+            }
+            for (n, m), p in zip(shapes, powers, strict=True)
+        ]
+    },
+    opt={&quot;rows&quot;: &quot;@rows&quot;, &quot;xLabel&quot;: &quot;power&quot;, &quot;labelWidth&quot;: 170, &quot;rowHeight&quot;: 42},
+    title=&quot;Same 1,600 children, five different trials&quot;,
+    note=f&quot;&quot;&quot;From {min(powers):.2f} to {max(powers):.2f} with no change in enrolment.
+        Red is below the conventional 0.8 bar. Nothing about the intervention, the
+        effect or the budget changed between these rows — only the grouping.&quot;&quot;&quot;,
+    legend=((&quot;accent&quot;, &quot;reaches 80% power&quot;), (&quot;boundary&quot;, &quot;does not&quot;)),
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Put field cost on it, because the trade-off runs the other way&quot;,
+    why=&quot;&quot;&quot;Villages are expensive to reach and children within them are cheap, so
+        the design that maximises power is not the one that minimises cost. With an
+        illustrative 4,000 per village of setup and 25 per child enrolled, a fixed
+        budget buys a curve with an interior maximum — and that maximum is the
+        design worth proposing.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Choosing the highest-power shape from the previous step and taking it
+        to the funder. 160 villages of ten wins on power and spends almost all of its
+        money on reaching villages; the recommendation has to survive the budget, not
+        just the power calculation.&quot;&quot;&quot;,
+)
+SETUP_PER_VILLAGE, PER_CHILD, BUDGET = 4_000.0, 25.0, 200_000.0
+options, opt_power, opt_labels = [], [], []
+for n_clusters in range(10, 100, 5):
+    affordable = (BUDGET - SETUP_PER_VILLAGE * n_clusters) / (PER_CHILD * n_clusters)
+    if affordable &lt; 2:
+        continue
+    m = int(affordable)
+    d = ClusterDesign(unit=VILLAGE, n_clusters=n_clusters, cluster_size=m, icc=ICC)
+    options.append(n_clusters)
+    opt_power.append(float(cluster_power(d, effect=TARGET_EFFECT, sd=OUTCOME_SD).power))
+    opt_labels.append(m)
+w.table(
+    [&quot;villages&quot;, &quot;children each, at this budget&quot;, &quot;total children&quot;, &quot;power&quot;],
+    [
+        [str(n), str(m), f&quot;{n * m:,}&quot;, f&quot;{p:.3f}&quot;]
+        for n, m, p in zip(options, opt_labels, opt_power, strict=True)
+        if n % 10 == 0
+    ],
+    caption=f&quot;A fixed budget of {BUDGET:,.0f}, at {SETUP_PER_VILLAGE:,.0f} per village &quot;
+    f&quot;and {PER_CHILD:.0f} per child.&quot;,
+)
+best = max(range(len(options)), key=lambda i: opt_power[i])
+w.figure(
+    &quot;budget&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;villages&quot;: options, &quot;power&quot;: opt_power},
+    opt={
+        &quot;series&quot;: [{&quot;label&quot;: &quot;power&quot;, &quot;x&quot;: &quot;@villages&quot;, &quot;y&quot;: &quot;@power&quot;, &quot;colour&quot;: &quot;accent&quot;}],
+        &quot;xLabel&quot;: &quot;villages, with children per village set by what the budget allows&quot;,
+        &quot;yLabel&quot;: &quot;power&quot;,
+        &quot;hline&quot;: 0.8,
+        &quot;hlineLabel&quot;: &quot;conventional 80%&quot;,
+        &quot;height&quot;: 290,
+        &quot;rightPad&quot;: 70,
+    },
+    title=&quot;What a fixed field budget can actually buy&quot;,
+    note=f&quot;&quot;&quot;The curve turns over. Too few villages and the design effect eats the
+        sample; too many and the per-village setup cost leaves no children to
+        measure. The best buy here is {options[best]} villages of {opt_labels[best]},
+        at power {opt_power[best]:.2f}.&quot;&quot;&quot;,
+    legend=((&quot;accent&quot;, &quot;power at this budget&quot;), (&quot;ink-3:dash&quot;, &quot;the conventional bar&quot;)),
+)
+
+# ----------------------------------------------------------------------------------
+
+w.finding(f&quot;&quot;&quot;An ICC of {ICC} — a number most protocols would describe as negligible —
+    turned {naive.n} children into {need.n * CLUSTER_SIZE:,}. The correlation was
+    never the problem. The cluster size was: at forty children per village the design
+    effect is {de:.2f}, and it would be {design_effect(160, ICC):.2f} at a hundred and
+    sixty.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;The same 1,600 children bought power of {min(powers):.2f} or {max(powers):.2f}
+    depending only on how they were grouped. Ten villages of 160 is close to
+    worthless; 160 villages of 10 is a real trial. That is a factor a protocol
+    controls completely and usually decides by convenience.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;Once field cost is on the table the answer moves again, and it stops being
+    &#x27;more villages&#x27;. At {BUDGET:,.0f} the curve peaks at {options[best]} villages of
+    {opt_labels[best]} and falls away on both sides. This is the conversation worth
+    having before the protocol is written rather than after the results come back
+    inconclusive — and it needs three numbers the statistics alone never supplies:
+    the ICC, the cost of reaching a village, and the cost of a child.&quot;&quot;&quot;)</pre>
+          </div>
+          <div class="out">
+            <div class="out-h">stdout, captured on this build</div>
+            <pre>========================================================================================
+PUBLIC HEALTH  ---  The same children, worth five times as much
+========================================================================================
+  A chlorination programme has to be randomized by village, because neighbours share
+  water and would talk. How many villages, how many children in each, and why is that
+  second question the one that decides the trial?
+
+----------------------------------------------------------------------------------------
+STEP 1  Name the thing being randomized, in the design itself
+----------------------------------------------------------------------------------------
+  The unit of randomization is a village and the unit of measurement is a child, and
+  almost every mistake in this literature comes from letting those two blur. A
+  ClusterDesign carries the Unit it randomizes rather than just the arithmetic, so a
+  power calculation cannot quietly be performed on the wrong one.
+
+  INSTEAD OF: Randomizing households and hoping contamination is small. Neighbours share
+  a water source and a conversation; a household-randomized chlorination trial measures
+  the programme minus whatever leaked across the fence, and nothing in the analysis can
+  recover the difference.
+
+  randomization unit : village (cluster)
+  measurement unit   : child
+  outcome            : diarrhoea episodes per child-year, sd 1.0
+  effect worth having: 0.25 sd
+  intra-cluster corr : 0.03
+
+----------------------------------------------------------------------------------------
+STEP 2  Get the naive answer first, so the damage is measurable
+----------------------------------------------------------------------------------------
+  The independent-children calculation is not a straw man — it is what a sample-size
+  calculator returns if nobody tells it about villages, and it is what ends up in a
+  great many protocols. Computing it explicitly gives the rest of the walkthrough
+  something to be a multiple of.
+
+  INSTEAD OF: Skipping straight to the clustered formula. Then the design effect is a
+  number in a spreadsheet rather than a factor of five, and factors of five are what get
+  a budget conversation started.
+
+  if children were independent (they are not):
+    n = 503 children (252 treated / 251 control)
+    power 0.801
+
+----------------------------------------------------------------------------------------
+STEP 3  Then look at what clustering costs, and where the cost comes from
+----------------------------------------------------------------------------------------
+  The design effect is 1 + (m - 1) x ICC. Read that formula: the correlation enters
+  once, the cluster SIZE enters as a multiplier. An ICC of 0.03 sounds negligible and is
+  negligible in clusters of five; in clusters of two hundred it multiplies your variance
+  by seven. Size is the lever, and it is the one most protocols treat as an
+  afterthought.
+
+  INSTEAD OF: Reporting the ICC alone and calling it small. &#x27;Our ICC is only 0.03&#x27; is
+  the single most common way a cluster trial talks itself into being underpowered — the
+  number is meaningless without the cluster size beside it.
+
+  design effect at m = 40, ICC = 0.03: 2.17x variance inflation
+  Variance inflation. Every entry is a multiplier on the sample you need.
+  children per village  ICC 0.01  ICC 0.03  ICC 0.05  ICC 0.1
+  --------------------  --------  --------  --------  -------
+  5                     1.04      1.12      1.20      1.40
+  10                    1.09      1.27      1.45      1.90
+  20                    1.19      1.57      1.95      2.90
+  40                    1.39      2.17      2.95      4.90
+  80                    1.79      3.37      4.95      8.90
+  120                   2.19      4.57      6.95      12.90
+  160                   2.59      5.77      8.95      16.90
+  200                   2.99      6.97      10.95     20.90
+
+  [figure: The penalty is on cluster size, not on the correlation]
+
+
+----------------------------------------------------------------------------------------
+STEP 4  Size the trial for the design you are really running
+----------------------------------------------------------------------------------------
+  clusters_needed inverts the whole thing: given the effect, the ICC and the cluster
+  size, how many villages. The effective sample size is the number worth quoting beside
+  it — it says how many independent children all those real children are actually worth,
+  which is the honest denominator for everything downstream.
+
+  INSTEAD OF: Inflating the naive n by the design effect and dividing by the cluster
+  size. It gets you close, and it hides that both power and the minimum detectable
+  effect should be read off the same design object rather than recomputed by hand from a
+  rounded intermediate.
+
+  villages needed : 28 (14 treated / 14 control)
+  children        : 1,120
+  worth about     : 516 independent children
+  power at 0.25   : 0.811
+  MDE at 80% power: 0.247
+  [figure: What the trial enrols, and what it is worth]
+
+
+----------------------------------------------------------------------------------------
+STEP 5  Now the question the budget is really about: shape, not size
+----------------------------------------------------------------------------------------
+  Fix the number of children at about 1,600 and vary only how they are grouped. This is
+  the comparison that decides a cluster trial, and it is almost never drawn: the same
+  1,600 children give wildly different power depending on whether they sit in ten
+  villages or a hundred and sixty.
+
+  INSTEAD OF: Asking &#x27;how many children can we afford&#x27;. Total enrolment is close to
+  irrelevant here compared with the grouping. A protocol that negotiates hard for 20%
+  more children and accepts larger villages to get them can easily end up with less
+  power than it started with.
+
+  villages  children each  total children  design effect  power
+  --------  -------------  --------------  -------------  -----
+  10        160            1,600           5.77           0.548
+  20        80             1,600           3.37           0.777
+  40        40             1,600           2.17           0.924
+  80        20             1,600           1.57           0.979
+  160       10             1,600           1.27           0.993
+
+  [figure: Same 1,600 children, five different trials]
+
+
+----------------------------------------------------------------------------------------
+STEP 6  Put field cost on it, because the trade-off runs the other way
+----------------------------------------------------------------------------------------
+  Villages are expensive to reach and children within them are cheap, so the design that
+  maximises power is not the one that minimises cost. With an illustrative 4,000 per
+  village of setup and 25 per child enrolled, a fixed budget buys a curve with an
+  interior maximum — and that maximum is the design worth proposing.
+
+  INSTEAD OF: Choosing the highest-power shape from the previous step and taking it to
+  the funder. 160 villages of ten wins on power and spends almost all of its money on
+  reaching villages; the recommendation has to survive the budget, not just the power
+  calculation.
+
+  A fixed budget of 200,000, at 4,000 per village and 25 per child.
+  villages  children each, at this budget  total children  power
+  --------  -----------------------------  --------------  -----
+  10        640                            6,400           0.605
+  20        240                            4,800           0.858
+  30        106                            3,180           0.933
+  40        40                             1,600           0.924
+
+  [figure: What a fixed field budget can actually buy]
+
+
+========================================================================================
+WHAT IT ACTUALLY SHOWED
+========================================================================================
+  An ICC of 0.03 — a number most protocols would describe as negligible — turned 503
+  children into 1,120. The correlation was never the problem. The cluster size was: at
+  forty children per village the design effect is 2.17, and it would be 5.77 at a
+  hundred and sixty.
+
+  The same 1,600 children bought power of 0.55 or 0.99 depending only on how they were
+  grouped. Ten villages of 160 is close to worthless; 160 villages of 10 is a real
+  trial. That is a factor a protocol controls completely and usually decides by
+  convenience.
+
+  Once field cost is on the table the answer moves again, and it stops being &#x27;more
+  villages&#x27;. At 200,000 the curve peaks at 35 villages of 68 and falls away on both
+  sides. This is the conversation worth having before the protocol is written rather
+  than after the results come back inconclusive — and it needs three numbers the
+  statistics alone never supplies: the ICC, the cost of reaching a village, and the cost
+  of a child.</pre>
+          </div>
+        </div>
+      </div>
+    </details>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="example-05-ecology-transport.html">&larr; 05 · Conservation ecology</a><a class="btn btn-2" href="examples.html">All twelve</a><a class="btn btn-2" href="example-07-clinical-rwe-calibration.html">07 · Clinical research &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

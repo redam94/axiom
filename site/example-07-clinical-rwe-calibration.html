@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>07 · Nearly right, and still too sure of itself — Clinical research · axiom</title>
+<meta name="description" content="Clinical research: Using a small clean trial to correct a large confounded registry. A 6-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:title" content="07 · Nearly right, and still too sure of itself — Clinical research · axiom">
+<meta property="og:description" content="Clinical research: Using a small clean trial to correct a large confounded registry. A 6-step walkthrough with charts, the code for every step, and the reasoning behind each one.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="example">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Example 07 · Clinical research</p>
+    <h1 style="max-width:18ch">Nearly right, and still too sure of itself</h1>
+    <p class="lede prose mt">A registry has the coverage and the confounding; a trial has the identification and no reach. Folding one into the other is the obvious move. The question is which of the two available ways to do it, and what each one leaves you believing.</p>
+    <div class="ex-meta"><a class="pkg" href="calibrate.html">Calibrate</a>
+      <span class="pkg">6 steps</span>
+      <span class="pkg">4 figures</span>
+      <span class="pkg">366 lines</span>
+      <span class="pkg">runs in 18.2s</span></div>
+    <div class="hero-cta">
+      <a class="btn btn-1" href="#step-1">Start the walkthrough</a>
+      <a class="btn btn-2" href="https://github.com/redam94/axiom/blob/main/examples/07_clinical_rwe_calibration.py">The whole file on GitHub &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="grid-2">
+      <div class="prose wt-framing"><p>Clinical research — using a trial to correct a registry.</p><p class="wt-h">The question</p><p>A disease registry has tens of thousands of patient-years and is confounded: sicker patients get the aggressive therapy, so the raw association understates the benefit. A randomized trial has a few hundred patients, is clean, and is far too small and too short to answer the question the formulary actually asks.</p><p>You want both. The registry has the coverage; the trial has the identification.</p><p class="wt-h">The operation</p><p>Calibration folds the trial&#x27;s answer into the registry model. axiom offers two routes -- through the prior, or through the likelihood -- and does not pretend they are the same operation. It reports how each fit then agrees with the trial, so the disagreement is visible rather than averaged away.</p><p>Pillars: calibrate (measurement, both routes, agreement)</p></div>
+      <div>
+        <p class="eyebrow">The route</p>
+        <nav class="wt-toc"><a class="wt-toc-i" href="#step-1"><span class="wt-toc-n">1</span>Build the registry, including the severity nobody recorded</a><a class="wt-toc-i" href="#step-2"><span class="wt-toc-n">2</span>Say precisely what the trial measured, as an object</a><a class="wt-toc-i" href="#step-3"><span class="wt-toc-n">3</span>Fit the registry alone, and notice it is not merely uncertain</a><a class="wt-toc-i" href="#step-4"><span class="wt-toc-n">4</span>Route one: turn the trial into a prior, then refit</a><a class="wt-toc-i" href="#step-5"><span class="wt-toc-n">5</span>Route two: add the trial to the log density instead</a><a class="wt-toc-i" href="#step-6"><span class="wt-toc-n">6</span>Compare all three on the two things that matter</a></nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Before the first step</p>
+      <h2>What this example imports, and why that list is short</h2>
+      <p>Everything below runs on the four core dependencies. No sampler, no extras.</p>
+    </div>
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>examples/07_clinical_rwe_calibration.py</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>import numpy as np
+from _walkthrough import Walkthrough
+
+from axiom.calibrate import Measurement, agreement, derive_prior, fit_calibrated
+from axiom.core import Intervention, Population, TimeWindow
+from axiom.data import Panel
+from axiom.estimands import Estimand, Level, Quantity, realize
+from axiom.sim import DosePlan, surface_world
+from axiom.surface import GeometricCarryover, HillKernel, fit, response_band
+
+TRUTH = {&quot;beta_dose&quot;: 8.0, &quot;alpha&quot;: 4.0, &quot;k_dose&quot;: 50.0, &quot;s_dose&quot;: 2.0, &quot;lam_dose&quot;: 0.4}
+HIGH, NONE, MAX_LAG = 100.0, 0.0, 4
+
+w = Walkthrough(
+    field=&quot;Clinical research&quot;,
+    title=&quot;Nearly right, and still too sure of itself&quot;,
+    question=&quot;&quot;&quot;A registry has the coverage and the confounding; a trial has the
+        identification and no reach. Folding one into the other is the obvious move.
+        The question is which of the two available ways to do it, and what each one
+        leaves you believing.&quot;&quot;&quot;,
+)</pre>
+    </div>
+  </div>
+</section>
+
+<section class="wt-step" id="step-1">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 1 <span>of 6</span></p>
+      <h2>Build the registry, including the severity nobody recorded</h2>
+      <div class="wt-why prose"><p>Confounding by indication is the defining problem of registry evidence: sicker patients are dosed harder, so the raw association understates the benefit. Simulating it explicitly — with a severity term that enters both the dose and the outcome and is never handed to the model — is what makes the rest of this checkable, because the true amplitude is known.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Simulating clean data and calling the result a demonstration of calibration. Calibration on unconfounded data does nothing interesting; the whole operation exists to correct a bias, so the bias has to be there.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/07_clinical_rwe_calibration.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>registry = surface_world(
+    n_units=6,
+    n_periods=24,
+    treatments=(&quot;dose&quot;,),
+    kernels=HillKernel(reference_dose=50.0, amplitude_scale=10.0),
+    carryover={&quot;dose&quot;: GeometricCarryover(max_lag=MAX_LAG)},
+    doses=DosePlan(scale=50.0, spread=0.8, zero_fraction=0.05),
+    intercept=&quot;shared&quot;,
+    truth=TRUTH,
+    noise_sd=2.0,
+    seed=0,
+)
+spec = registry.spec
+rng = np.random.default_rng(11)
+frame = registry.panel.frame
+dose = frame[&quot;dose&quot;].to_numpy(dtype=np.float64)
+z_dose = (dose - dose.mean()) / dose.std()
+severity = 0.45 * z_dose + 0.9 * rng.standard_normal(dose.size)
+observed = Panel(frame.assign(y=frame[&quot;y&quot;] + 1.0 * severity), registry.panel.roles)
+w.out(f&quot;registry : {registry.n_units} clinics x {registry.n_periods} periods&quot;)
+w.out(f&quot;true amplitude : {TRUTH[&#x27;beta_dose&#x27;]:.1f}&quot;)
+w.out(f&quot;correlation(dose, unmeasured severity) = {float(np.corrcoef(dose, severity)[0, 1]):.3f}&quot;)
+w.out(&quot;&quot;)
+w.out(&quot;The severity column exists in this script and is never passed to fit().&quot;)
+w.out(&quot;That is the whole of the confounding: real, moderate, and invisible.&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>registry : 6 clinics x 24 periods
+true amplitude : 8.0
+correlation(dose, unmeasured severity) = 0.481
+
+The severity column exists in this script and is never passed to fit().
+That is the whole of the confounding: real, moderate, and invisible.</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-2">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 2 <span>of 6</span></p>
+      <h2>Say precisely what the trial measured, as an object</h2>
+      <div class="wt-why prose"><p>A trial result is not a number, it is a number attached to a question: which contrast, over which window, in which population, at which level. The Estimand records all of that and hashes it, so a measurement can only be folded into a model that answers the same question. The hash is what stops a first-period per-patient contrast being quietly used to constrain a cumulative population-level one.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Carrying the trial as &#x27;the treatment effect was 12.4&#x27;. That is the form in which evidence is normally transferred between studies, and it is the form in which the window, the population and the estimand silently change on the way.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/07_clinical_rwe_calibration.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>trial_estimand = Estimand(
+    name=&quot;first_period_response&quot;,
+    quantity=Quantity(kind=&quot;contrast&quot;),
+    treatment=spec.treatment(&quot;dose&quot;),
+    intervention=Intervention(doses={&quot;dose&quot;: HIGH}),
+    reference=Intervention(doses={&quot;dose&quot;: NONE}),
+    outcome=spec.outcome,
+    population=Population(name=&quot;trial_patients&quot;),
+    window=TimeWindow(start=0, stop=1, basis=&quot;cumulative&quot;),
+    level=Level(unit=&quot;individual&quot;),
+    dimension=spec.outcome_dimension,
+)
+diff = registry.forward({&quot;dose&quot;: HIGH}) - registry.forward({&quot;dose&quot;: NONE})
+trial_truth = float(np.mean(diff[:, 0]))
+se = 0.04 * trial_truth
+measurement = Measurement(
+    estimand=trial_estimand,
+    estimate=trial_truth + se * float(np.random.default_rng(3).standard_normal()),
+    se=se,
+    method=&quot;randomized_contrast&quot;,
+    n_units=280,
+    n_periods=1,
+    source=&quot;TRIAL-2026-A&quot;,
+)
+w.out(f&quot;trial estimate : {measurement.estimate:.3f} +/- {measurement.se:.3f}&quot;)
+w.out(f&quot;interval       : {measurement.interval}&quot;)
+w.out(f&quot;n              : {measurement.n_units} patients, {measurement.n_periods} period&quot;)
+w.out(f&quot;target hash    : {measurement.target[:16]}...&quot;)
+w.out(
+    f&quot;window         : periods {trial_estimand.window.start} to &quot;
+    f&quot;{trial_estimand.window.stop}, {trial_estimand.window.basis}&quot;
+)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>trial estimate : 5.215 +/- 0.193
+interval       : [4.84, 5.59] (95% WALD)
+n              : 280 patients, 1 period
+target hash    : 2949465ce0427194...
+window         : periods 0 to 1, cumulative</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-3">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 3 <span>of 6</span></p>
+      <h2>Fit the registry alone, and notice it is not merely uncertain</h2>
+      <div class="wt-why prose"><p>The failure mode worth recognising is tight and wrong. If the uncalibrated fit were simply noisy, its interval would cover the truth and the trial would be a precision upgrade. It does not: the truth sits several posterior standard deviations away, which is the signature of confounding rather than sampling error, and no amount of registry data would fix it.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Judging the fit by its convergence diagnostics and its posterior predictive check. Both pass here. A confounded model fits its own data beautifully — that is what makes confounding dangerous rather than obvious.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/07_clinical_rwe_calibration.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>def amplitude(result):
+    draws = result.posterior.flat(&quot;beta_dose&quot;)
+    return float(draws.mean()), float(draws.std(ddof=1))
+
+
+uncalibrated = fit(spec, observed, backend=&quot;laplace&quot;, draws=1000, seed=1)
+mean0, sd0 = amplitude(uncalibrated)
+ag0 = agreement(uncalibrated, measurement, seed=0)
+w.out(f&quot;converged      : {uncalibrated.converged}&quot;)
+w.out(f&quot;amplitude      : {mean0:.3f} +/- {sd0:.3f}&quot;)
+w.out(f&quot;truth          : {TRUTH[&#x27;beta_dose&#x27;]:.1f}&quot;)
+w.out(f&quot;drift vs truth : {(mean0 - TRUTH[&#x27;beta_dose&#x27;]) / sd0:+.1f} posterior sd&quot;)
+w.out(f&quot;agreement with the trial : z = {ag0.z:+.2f}, verdict {ag0.verdict}&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>converged      : True
+amplitude      : 14.891 +/- 2.428
+truth          : 8.0
+drift vs truth : +2.8 posterior sd
+agreement with the trial : z = -2.44, verdict disagrees</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-4">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 4 <span>of 6</span></p>
+      <h2>Route one: turn the trial into a prior, then refit</h2>
+      <div class="wt-why prose"><p>derive_prior converts the trial&#x27;s statement about a PREDICTION into a statement about a PARAMETER, using a design factor that carries the conversion. Every step of that conversion writes a ledger line, so the assumption that made it possible is recoverable later — this is the transfer that most often disappears into a footnote.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Setting an informative prior by hand to match the trial. It produces a similar posterior and records nothing: six months later there is no way to tell which prior came from evidence and which came from an analyst&#x27;s judgement about what the answer ought to be.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/07_clinical_rwe_calibration.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>realized = realize(trial_estimand, uncalibrated, assume_identified=True, keep_draws=True)
+calibrated = derive_prior(
+    [measurement],
+    spec,
+    &quot;dose&quot;,
+    beta_draws=uncalibrated.posterior.flat(&quot;beta_dose&quot;),
+    contribution_draws=np.asarray(realized.draws, dtype=np.float64).reshape(-1),
+)
+prior_route = fit(calibrated.spec, observed, backend=&quot;laplace&quot;, draws=1000, seed=1)
+w.out(f&quot;design factor   : {calibrated.design_factor:.4f}&quot;)
+w.out(f&quot;parameter       : {calibrated.parameter}&quot;)
+w.out(f&quot;new prior       : {calibrated.prior}&quot;)
+w.out(&quot;&quot;)
+w.out(&quot;ledger:&quot;)
+for line in calibrated.ledger_lines:
+    w.out(f&quot;  {line.kind}  [{line.assumption.name}]&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>design factor   : 0.5478
+parameter       : beta_dose
+new prior       : family=&#x27;lognormal&#x27; hyper={&#x27;mu&#x27;: 2.2526030052579893, &#x27;sigma&#x27;: 0.03696835710791612}
+
+ledger:
+  evidence:combine  [independent_unbiased_studies]
+  prior:design_factor  [amplitude_proportionality]
+  prior:moment_match  [prior_family_adequate]</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-5">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 5 <span>of 6</span></p>
+      <h2>Route two: add the trial to the log density instead</h2>
+      <div class="wt-why prose"><p>fit_calibrated puts the measurement into the objective as a constraint, so the trial competes with the registry data rather than preceding it. When the two disagree the posterior lands between them, weighted by their precisions, instead of the registry being fitted inside a prior the trial already fixed.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Assuming this is the same operation as route one with the arithmetic rearranged. It is not, and the two do not agree — constraining a parameter and constraining a prediction are different requests. Which you want depends on what the model is for.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/07_clinical_rwe_calibration.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>likelihood_route = fit_calibrated(
+    spec, observed, [measurement], backend=&quot;laplace&quot;, draws=1000, seed=1
+)
+mean2, sd2 = amplitude(likelihood_route)
+w.out(f&quot;amplitude : {mean2:.3f} +/- {sd2:.3f}&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>amplitude : 11.892 +/- 1.900</pre></div>
+    </div>
+  </div>
+</section>
+<section class="wt-step" id="step-6">
+  <div class="wrap">
+    <div class="wt-head">
+      <p class="wt-n">Step 6 <span>of 6</span></p>
+      <h2>Compare all three on the two things that matter</h2>
+      <div class="wt-why prose"><p>Distance from the truth and agreement with the trial are different questions and a fit can pass one while failing the other. Reporting the drift in posterior standard deviations rather than in raw units is what exposes that: a fit can land closest in absolute terms and still be the worst on this column, because it left itself too little uncertainty to be wrong in.</p></div>
+      <div class="note is-alt"><p class="note-t">The path not taken</p><p>Picking a winner. axiom reports the gap between the two routes rather than choosing, because the choice depends on what the model will be used for — a formulary decision about this dose wants the constrained prediction, a model that will be extrapolated to other doses wants the constrained parameter.</p></div>
+    </div>
+    <div class="wt-body">
+      <div class="code">
+  <div class="code-h"><span>examples/07_clinical_rwe_calibration.py</span><button class="copy" type="button">Copy</button></div>
+  <pre>fits = (
+    (&quot;uncalibrated&quot;, uncalibrated),
+    (&quot;prior route&quot;, prior_route),
+    (&quot;likelihood route&quot;, likelihood_route),
+)
+rows, drift_rows, agree_rows = [], [], []
+for label, result in fits:
+    mean, sd = amplitude(result)
+    ag = agreement(result, measurement, seed=0)
+    drift = (mean - TRUTH[&quot;beta_dose&quot;]) / sd
+    w.out(
+        f&quot;{label:&lt;18}{mean:&gt;9.3f}{sd:&gt;8.3f}  drift {drift:+6.1f} sd   &quot;
+        f&quot;z vs trial {ag.z:+.2f}  {ag.verdict}&quot;
+    )
+    rows.append(
+        {
+            &quot;label&quot;: label,
+            &quot;estimate&quot;: mean,
+            &quot;lower&quot;: mean - 1.96 * sd,
+            &quot;upper&quot;: mean + 1.96 * sd,
+            &quot;note&quot;: f&quot;posterior sd {sd:.3f}, drift {drift:+.1f} sd&quot;,
+            &quot;bad&quot;: abs(drift) &gt; 2,
+        }
+    )
+    drift_rows.append(
+        {
+            &quot;label&quot;: label,
+            &quot;value&quot;: abs(drift),
+            &quot;display&quot;: f&quot;{abs(drift):.1f} sd&quot;,
+            &quot;colour&quot;: &quot;boundary&quot; if abs(drift) &gt; 2 else &quot;accent&quot;,
+            &quot;note&quot;: f&quot;amplitude {mean:.2f} against a truth of {TRUTH[&#x27;beta_dose&#x27;]:.1f}&quot;,
+        }
+    )
+    agree_rows.append(
+        {
+            &quot;label&quot;: label,
+            &quot;value&quot;: abs(float(ag.z)),
+            &quot;display&quot;: f&quot;{ag.z:+.2f}&quot;,
+            &quot;colour&quot;: &quot;boundary&quot; if ag.verdict != &quot;agrees&quot; else &quot;accent&quot;,
+            &quot;note&quot;: f&quot;verdict: {ag.verdict}&quot;,
+        }
+    )
+w.figure(
+    &quot;amplitude&quot;,
+    kind=&quot;intervals&quot;,
+    data={&quot;rows&quot;: rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: TRUTH[&quot;beta_dose&quot;],
+        &quot;truthLabel&quot;: &quot;true amplitude&quot;,
+        &quot;xLabel&quot;: &quot;dose amplitude (beta_dose)&quot;,
+        &quot;labelWidth&quot;: 145,
+        &quot;rowHeight&quot;: 38,
+    },
+    # title, note and legend: the caption shown with the chart
+)
+w.figure(
+    &quot;drift&quot;,
+    kind=&quot;bars&quot;,
+    data={&quot;rows&quot;: drift_rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;xLabel&quot;: &quot;distance from the truth, in posterior standard deviations&quot;,
+        &quot;labelWidth&quot;: 145,
+        &quot;rowHeight&quot;: 40,
+    },
+    # title, note and legend: the caption shown with the chart
+)
+w.figure(
+    &quot;agreement&quot;,
+    kind=&quot;bars&quot;,
+    data={&quot;rows&quot;: agree_rows},
+    opt={&quot;rows&quot;: &quot;@rows&quot;, &quot;xLabel&quot;: &quot;|z| against the trial&quot;, &quot;labelWidth&quot;: 145, &quot;rowHeight&quot;: 40},
+    # title, note and legend: the caption shown with the chart
+)
+
+doses = np.linspace(0.0, 120.0, 25)
+truth_curve = [float(registry.forward({&quot;dose&quot;: float(d)}).mean()) for d in doses]
+curves = {
+    key: list(response_band(result, &quot;dose&quot;, doses=doses.tolist(), mass=0.9, seed=0).mean)
+    for key, (_, result) in zip((&quot;uncal&quot;, &quot;prior&quot;, &quot;likelihood&quot;), fits, strict=True)
+}
+w.figure(
+    &quot;curves&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;doses&quot;: doses.tolist(), &quot;truth&quot;: truth_curve, **curves},
+    opt={
+        &quot;series&quot;: [
+            {&quot;label&quot;: &quot;the truth&quot;, &quot;x&quot;: &quot;@doses&quot;, &quot;y&quot;: &quot;@truth&quot;, &quot;colour&quot;: &quot;ink-2&quot;},
+            {&quot;label&quot;: &quot;uncalibrated&quot;, &quot;x&quot;: &quot;@doses&quot;, &quot;y&quot;: &quot;@uncal&quot;, &quot;colour&quot;: &quot;boundary&quot;},
+            {&quot;label&quot;: &quot;prior route&quot;, &quot;x&quot;: &quot;@doses&quot;, &quot;y&quot;: &quot;@prior&quot;, &quot;colour&quot;: &quot;s3&quot;},
+            {&quot;label&quot;: &quot;likelihood&quot;, &quot;x&quot;: &quot;@doses&quot;, &quot;y&quot;: &quot;@likelihood&quot;, &quot;colour&quot;: &quot;accent&quot;},
+        ],
+        &quot;xLabel&quot;: &quot;dose&quot;,
+        &quot;yLabel&quot;: &quot;expected outcome&quot;,
+        &quot;height&quot;: 320,
+        &quot;rightPad&quot;: 110,
+    },
+    # title, note and legend: the caption shown with the chart
+)
+
+
+mean1, sd1 = amplitude(prior_route)
+w.finding(f&quot;&quot;&quot;The uncalibrated registry was not merely uncertain, it was confidently wrong:
+    amplitude {mean0:.2f} against a truth of {TRUTH[&#x27;beta_dose&#x27;]:.1f}, which is
+    {abs(mean0 - TRUTH[&#x27;beta_dose&#x27;]) / sd0:.1f} posterior standard deviations out,
+    and it openly disagreed with the trial (z = {ag0.z:+.2f}). Tight and wrong is the
+    signature of confounding rather than noise.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;Both routes cut most of that bias and both then reconcile with the trial:
+    {mean1:.2f} and {mean2:.2f} against an uncalibrated {mean0:.2f}. Neither reaches
+    the truth, and neither interval covers it. One trial of 280 patients does not
+    undo confounding in a registry — it bounds it, and that is a smaller claim than
+    the word &#x27;calibrated&#x27; invites.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;They also disagree with each other, by {abs(mean1 - mean2):.2f}. That
+    disagreement is the useful part rather than a defect to be averaged away: it is
+    the size of the difference between the two questions being asked, and it is
+    reported rather than resolved on your behalf.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;The prior route lands CLOSEST in absolute terms and still scores worst on
+    drift, because the derived prior inherited the trial&#x27;s precision and left the
+    posterior very tight: {sd1:.3f} against {sd2:.3f}. A calibrated model can be
+    nearly right and still overconfident. That is exactly the failure a recovery test
+    against a known truth exists to catch, and the reason the design factor and the
+    moment-matching wrote themselves into the ledger rather than disappearing into
+    the fit.&quot;&quot;&quot;)</pre>
+</div>
+      <div class="out"><div class="out-h">what it printed</div><pre>uncalibrated         14.891   2.428  drift   +2.8 sd   z vs trial -2.44  disagrees
+prior route           9.733   0.349  drift   +5.0 sd   z vs trial -0.74  agrees
+likelihood route     11.892   1.900  drift   +2.0 sd   z vs trial -0.55  agrees</pre></div>
+<figure class="fig" id="07_clinical_rwe_calibration-amplitude">
+  <div class="fig-head"><p class="fig-t">What each fit believes about the amplitude</p><p class="fig-s">Worth reading carefully: none of the three intervals contains the true amplitude. Calibration bought distance, not coverage — the uncalibrated centre is furthest out and both routes move a long way towards the truth without arriving. And the two routes do not contain each other&#x27;s centre either, which is the difference between constraining a parameter and constraining a prediction showing up as a number.</p></div>
+  
+  <div class="chart" data-chart="intervals" data-file="figures-07_clinical_rwe_calibration"
+       data-opt='{&quot;rows&quot;: &quot;amplitude.rows&quot;, &quot;truth&quot;: 8.0, &quot;truthLabel&quot;: &quot;true amplitude&quot;, &quot;xLabel&quot;: &quot;dose amplitude (beta_dose)&quot;, &quot;labelWidth&quot;: 145, &quot;rowHeight&quot;: 38}'></div>
+</figure>
+<figure class="fig" id="07_clinical_rwe_calibration-drift">
+  <div class="fig-head"><p class="fig-t">Being close is not the same as being calibrated</p><p class="fig-s">This is the column that catches overconfidence. A fit that lands nearest in raw units can still sit furthest away when measured in its own uncertainty, and that is a failure a recovery test exists to find.</p></div>
+  <div class="legend"><span><i style="--k:var(--accent)"></i>within 2 sd of the truth</span><span><i style="--k:var(--boundary)"></i>further than that</span></div>
+  <div class="chart" data-chart="bars" data-file="figures-07_clinical_rwe_calibration"
+       data-opt='{&quot;rows&quot;: &quot;drift.rows&quot;, &quot;xLabel&quot;: &quot;distance from the truth, in posterior standard deviations&quot;, &quot;labelWidth&quot;: 145, &quot;rowHeight&quot;: 40}'></div>
+</figure>
+<figure class="fig" id="07_clinical_rwe_calibration-agreement">
+  <div class="fig-head"><p class="fig-t">And whether each fit still argues with the trial</p><p class="fig-s">The uncalibrated registry openly disagrees with the trial. Both routes reconcile with it — which is the operation working, and is separate from whether either of them is right about the truth.</p></div>
+  
+  <div class="chart" data-chart="bars" data-file="figures-07_clinical_rwe_calibration"
+       data-opt='{&quot;rows&quot;: &quot;agreement.rows&quot;, &quot;xLabel&quot;: &quot;|z| against the trial&quot;, &quot;labelWidth&quot;: 145, &quot;rowHeight&quot;: 40}'></div>
+</figure>
+<figure class="fig" id="07_clinical_rwe_calibration-curves">
+  <div class="fig-head"><p class="fig-t">The whole dose-response, before and after the trial is folded in</p><p class="fig-s">Calibration is not a correction applied to one number. It moves the entire curve, including at doses the trial never tested — which is exactly why the estimand the trial measured had to be pinned down before any of this began.</p></div>
+  
+  <div class="chart" data-chart="lines" data-file="figures-07_clinical_rwe_calibration"
+       data-opt='{&quot;series&quot;: [{&quot;label&quot;: &quot;the truth&quot;, &quot;x&quot;: &quot;curves.doses&quot;, &quot;y&quot;: &quot;curves.truth&quot;, &quot;colour&quot;: &quot;ink-2&quot;}, {&quot;label&quot;: &quot;uncalibrated&quot;, &quot;x&quot;: &quot;curves.doses&quot;, &quot;y&quot;: &quot;curves.uncal&quot;, &quot;colour&quot;: &quot;boundary&quot;}, {&quot;label&quot;: &quot;prior route&quot;, &quot;x&quot;: &quot;curves.doses&quot;, &quot;y&quot;: &quot;curves.prior&quot;, &quot;colour&quot;: &quot;s3&quot;}, {&quot;label&quot;: &quot;likelihood&quot;, &quot;x&quot;: &quot;curves.doses&quot;, &quot;y&quot;: &quot;curves.likelihood&quot;, &quot;colour&quot;: &quot;accent&quot;}], &quot;xLabel&quot;: &quot;dose&quot;, &quot;yLabel&quot;: &quot;expected outcome&quot;, &quot;height&quot;: 320, &quot;rightPad&quot;: 110}'></div>
+</figure>
+    </div>
+  </div>
+</section>
+
+<section class="wt-close">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The close</p>
+      <h2>What it actually showed</h2>
+      <p>Written after looking at the output, which is why it does not always agree
+        with the setup.</p>
+    </div>
+    <div class="prose wt-findings"><p>The uncalibrated registry was not merely uncertain, it was confidently wrong: amplitude 14.89 against a truth of 8.0, which is 2.8 posterior standard deviations out, and it openly disagreed with the trial (z = -2.44). Tight and wrong is the signature of confounding rather than noise.</p><p>Both routes cut most of that bias and both then reconcile with the trial: 9.73 and 11.89 against an uncalibrated 14.89. Neither reaches the truth, and neither interval covers it. One trial of 280 patients does not undo confounding in a registry — it bounds it, and that is a smaller claim than the word &#x27;calibrated&#x27; invites.</p><p>They also disagree with each other, by 2.16. That disagreement is the useful part rather than a defect to be averaged away: it is the size of the difference between the two questions being asked, and it is reported rather than resolved on your behalf.</p><p>The prior route lands CLOSEST in absolute terms and still scores worst on drift, because the derived prior inherited the trial&#x27;s precision and left the posterior very tight: 0.349 against 1.900. A calibrated model can be nearly right and still overconfident. That is exactly the failure a recovery test against a known truth exists to catch, and the reason the design factor and the moment-matching wrote themselves into the ledger rather than disappearing into the fit.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <details class="ex-more">
+      <summary>The whole file, and everything this run printed</summary>
+      <div class="ex-body">
+        <div class="pair">
+          <div class="code">
+            <div class="code-h"><span>examples/07_clinical_rwe_calibration.py</span>
+              <button class="copy" type="button">Copy</button></div>
+            <pre>import numpy as np
+from _walkthrough import Walkthrough
+
+from axiom.calibrate import Measurement, agreement, derive_prior, fit_calibrated
+from axiom.core import Intervention, Population, TimeWindow
+from axiom.data import Panel
+from axiom.estimands import Estimand, Level, Quantity, realize
+from axiom.sim import DosePlan, surface_world
+from axiom.surface import GeometricCarryover, HillKernel, fit, response_band
+
+TRUTH = {&quot;beta_dose&quot;: 8.0, &quot;alpha&quot;: 4.0, &quot;k_dose&quot;: 50.0, &quot;s_dose&quot;: 2.0, &quot;lam_dose&quot;: 0.4}
+HIGH, NONE, MAX_LAG = 100.0, 0.0, 4
+
+w = Walkthrough(
+    field=&quot;Clinical research&quot;,
+    title=&quot;Nearly right, and still too sure of itself&quot;,
+    question=&quot;&quot;&quot;A registry has the coverage and the confounding; a trial has the
+        identification and no reach. Folding one into the other is the obvious move.
+        The question is which of the two available ways to do it, and what each one
+        leaves you believing.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Build the registry, including the severity nobody recorded&quot;,
+    why=&quot;&quot;&quot;Confounding by indication is the defining problem of registry evidence:
+        sicker patients are dosed harder, so the raw association understates the
+        benefit. Simulating it explicitly — with a severity term that enters both the
+        dose and the outcome and is never handed to the model — is what makes the
+        rest of this checkable, because the true amplitude is known.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Simulating clean data and calling the result a demonstration of
+        calibration. Calibration on unconfounded data does nothing interesting; the
+        whole operation exists to correct a bias, so the bias has to be there.&quot;&quot;&quot;,
+)
+registry = surface_world(
+    n_units=6,
+    n_periods=24,
+    treatments=(&quot;dose&quot;,),
+    kernels=HillKernel(reference_dose=50.0, amplitude_scale=10.0),
+    carryover={&quot;dose&quot;: GeometricCarryover(max_lag=MAX_LAG)},
+    doses=DosePlan(scale=50.0, spread=0.8, zero_fraction=0.05),
+    intercept=&quot;shared&quot;,
+    truth=TRUTH,
+    noise_sd=2.0,
+    seed=0,
+)
+spec = registry.spec
+rng = np.random.default_rng(11)
+frame = registry.panel.frame
+dose = frame[&quot;dose&quot;].to_numpy(dtype=np.float64)
+z_dose = (dose - dose.mean()) / dose.std()
+severity = 0.45 * z_dose + 0.9 * rng.standard_normal(dose.size)
+observed = Panel(frame.assign(y=frame[&quot;y&quot;] + 1.0 * severity), registry.panel.roles)
+w.out(f&quot;registry : {registry.n_units} clinics x {registry.n_periods} periods&quot;)
+w.out(f&quot;true amplitude : {TRUTH[&#x27;beta_dose&#x27;]:.1f}&quot;)
+w.out(f&quot;correlation(dose, unmeasured severity) = {float(np.corrcoef(dose, severity)[0, 1]):.3f}&quot;)
+w.out(&quot;&quot;)
+w.out(&quot;The severity column exists in this script and is never passed to fit().&quot;)
+w.out(&quot;That is the whole of the confounding: real, moderate, and invisible.&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Say precisely what the trial measured, as an object&quot;,
+    why=&quot;&quot;&quot;A trial result is not a number, it is a number attached to a question:
+        which contrast, over which window, in which population, at which level. The
+        Estimand records all of that and hashes it, so a measurement can only be
+        folded into a model that answers the same question. The hash is what stops a
+        first-period per-patient contrast being quietly used to constrain a
+        cumulative population-level one.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Carrying the trial as &#x27;the treatment effect was 12.4&#x27;. That is the
+        form in which evidence is normally transferred between studies, and it is
+        the form in which the window, the population and the estimand silently
+        change on the way.&quot;&quot;&quot;,
+)
+trial_estimand = Estimand(
+    name=&quot;first_period_response&quot;,
+    quantity=Quantity(kind=&quot;contrast&quot;),
+    treatment=spec.treatment(&quot;dose&quot;),
+    intervention=Intervention(doses={&quot;dose&quot;: HIGH}),
+    reference=Intervention(doses={&quot;dose&quot;: NONE}),
+    outcome=spec.outcome,
+    population=Population(name=&quot;trial_patients&quot;),
+    window=TimeWindow(start=0, stop=1, basis=&quot;cumulative&quot;),
+    level=Level(unit=&quot;individual&quot;),
+    dimension=spec.outcome_dimension,
+)
+diff = registry.forward({&quot;dose&quot;: HIGH}) - registry.forward({&quot;dose&quot;: NONE})
+trial_truth = float(np.mean(diff[:, 0]))
+se = 0.04 * trial_truth
+measurement = Measurement(
+    estimand=trial_estimand,
+    estimate=trial_truth + se * float(np.random.default_rng(3).standard_normal()),
+    se=se,
+    method=&quot;randomized_contrast&quot;,
+    n_units=280,
+    n_periods=1,
+    source=&quot;TRIAL-2026-A&quot;,
+)
+w.out(f&quot;trial estimate : {measurement.estimate:.3f} +/- {measurement.se:.3f}&quot;)
+w.out(f&quot;interval       : {measurement.interval}&quot;)
+w.out(f&quot;n              : {measurement.n_units} patients, {measurement.n_periods} period&quot;)
+w.out(f&quot;target hash    : {measurement.target[:16]}...&quot;)
+w.out(
+    f&quot;window         : periods {trial_estimand.window.start} to &quot;
+    f&quot;{trial_estimand.window.stop}, {trial_estimand.window.basis}&quot;
+)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Fit the registry alone, and notice it is not merely uncertain&quot;,
+    why=&quot;&quot;&quot;The failure mode worth recognising is tight and wrong. If the
+        uncalibrated fit were simply noisy, its interval would cover the truth and
+        the trial would be a precision upgrade. It does not: the truth sits several
+        posterior standard deviations away, which is the signature of confounding
+        rather than sampling error, and no amount of registry data would fix it.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Judging the fit by its convergence diagnostics and its posterior
+        predictive check. Both pass here. A confounded model fits its own data
+        beautifully — that is what makes confounding dangerous rather than
+        obvious.&quot;&quot;&quot;,
+)
+
+
+def amplitude(result):
+    draws = result.posterior.flat(&quot;beta_dose&quot;)
+    return float(draws.mean()), float(draws.std(ddof=1))
+
+
+uncalibrated = fit(spec, observed, backend=&quot;laplace&quot;, draws=1000, seed=1)
+mean0, sd0 = amplitude(uncalibrated)
+ag0 = agreement(uncalibrated, measurement, seed=0)
+w.out(f&quot;converged      : {uncalibrated.converged}&quot;)
+w.out(f&quot;amplitude      : {mean0:.3f} +/- {sd0:.3f}&quot;)
+w.out(f&quot;truth          : {TRUTH[&#x27;beta_dose&#x27;]:.1f}&quot;)
+w.out(f&quot;drift vs truth : {(mean0 - TRUTH[&#x27;beta_dose&#x27;]) / sd0:+.1f} posterior sd&quot;)
+w.out(f&quot;agreement with the trial : z = {ag0.z:+.2f}, verdict {ag0.verdict}&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Route one: turn the trial into a prior, then refit&quot;,
+    why=&quot;&quot;&quot;derive_prior converts the trial&#x27;s statement about a PREDICTION into a
+        statement about a PARAMETER, using a design factor that carries the
+        conversion. Every step of that conversion writes a ledger line, so the
+        assumption that made it possible is recoverable later — this is the transfer
+        that most often disappears into a footnote.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Setting an informative prior by hand to match the trial. It produces a
+        similar posterior and records nothing: six months later there is no way to
+        tell which prior came from evidence and which came from an analyst&#x27;s
+        judgement about what the answer ought to be.&quot;&quot;&quot;,
+)
+realized = realize(trial_estimand, uncalibrated, assume_identified=True, keep_draws=True)
+calibrated = derive_prior(
+    [measurement],
+    spec,
+    &quot;dose&quot;,
+    beta_draws=uncalibrated.posterior.flat(&quot;beta_dose&quot;),
+    contribution_draws=np.asarray(realized.draws, dtype=np.float64).reshape(-1),
+)
+prior_route = fit(calibrated.spec, observed, backend=&quot;laplace&quot;, draws=1000, seed=1)
+w.out(f&quot;design factor   : {calibrated.design_factor:.4f}&quot;)
+w.out(f&quot;parameter       : {calibrated.parameter}&quot;)
+w.out(f&quot;new prior       : {calibrated.prior}&quot;)
+w.out(&quot;&quot;)
+w.out(&quot;ledger:&quot;)
+for line in calibrated.ledger_lines:
+    w.out(f&quot;  {line.kind}  [{line.assumption.name}]&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Route two: add the trial to the log density instead&quot;,
+    why=&quot;&quot;&quot;fit_calibrated puts the measurement into the objective as a constraint, so
+        the trial competes with the registry data rather than preceding it. When the
+        two disagree the posterior lands between them, weighted by their precisions,
+        instead of the registry being fitted inside a prior the trial already
+        fixed.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Assuming this is the same operation as route one with the arithmetic
+        rearranged. It is not, and the two do not agree — constraining a parameter
+        and constraining a prediction are different requests. Which you want depends
+        on what the model is for.&quot;&quot;&quot;,
+)
+likelihood_route = fit_calibrated(
+    spec, observed, [measurement], backend=&quot;laplace&quot;, draws=1000, seed=1
+)
+mean2, sd2 = amplitude(likelihood_route)
+w.out(f&quot;amplitude : {mean2:.3f} +/- {sd2:.3f}&quot;)
+
+# ----------------------------------------------------------------------------------
+
+w.step(
+    &quot;Compare all three on the two things that matter&quot;,
+    why=&quot;&quot;&quot;Distance from the truth and agreement with the trial are different
+        questions and a fit can pass one while failing the other. Reporting the drift
+        in posterior standard deviations rather than in raw units is what exposes
+        that: a fit can land closest in absolute terms and still be the worst on this
+        column, because it left itself too little uncertainty to be wrong in.&quot;&quot;&quot;,
+    instead=&quot;&quot;&quot;Picking a winner. axiom reports the gap between the two routes rather
+        than choosing, because the choice depends on what the model will be used
+        for — a formulary decision about this dose wants the constrained prediction,
+        a model that will be extrapolated to other doses wants the constrained
+        parameter.&quot;&quot;&quot;,
+)
+fits = (
+    (&quot;uncalibrated&quot;, uncalibrated),
+    (&quot;prior route&quot;, prior_route),
+    (&quot;likelihood route&quot;, likelihood_route),
+)
+rows, drift_rows, agree_rows = [], [], []
+for label, result in fits:
+    mean, sd = amplitude(result)
+    ag = agreement(result, measurement, seed=0)
+    drift = (mean - TRUTH[&quot;beta_dose&quot;]) / sd
+    w.out(
+        f&quot;{label:&lt;18}{mean:&gt;9.3f}{sd:&gt;8.3f}  drift {drift:+6.1f} sd   &quot;
+        f&quot;z vs trial {ag.z:+.2f}  {ag.verdict}&quot;
+    )
+    rows.append(
+        {
+            &quot;label&quot;: label,
+            &quot;estimate&quot;: mean,
+            &quot;lower&quot;: mean - 1.96 * sd,
+            &quot;upper&quot;: mean + 1.96 * sd,
+            &quot;note&quot;: f&quot;posterior sd {sd:.3f}, drift {drift:+.1f} sd&quot;,
+            &quot;bad&quot;: abs(drift) &gt; 2,
+        }
+    )
+    drift_rows.append(
+        {
+            &quot;label&quot;: label,
+            &quot;value&quot;: abs(drift),
+            &quot;display&quot;: f&quot;{abs(drift):.1f} sd&quot;,
+            &quot;colour&quot;: &quot;boundary&quot; if abs(drift) &gt; 2 else &quot;accent&quot;,
+            &quot;note&quot;: f&quot;amplitude {mean:.2f} against a truth of {TRUTH[&#x27;beta_dose&#x27;]:.1f}&quot;,
+        }
+    )
+    agree_rows.append(
+        {
+            &quot;label&quot;: label,
+            &quot;value&quot;: abs(float(ag.z)),
+            &quot;display&quot;: f&quot;{ag.z:+.2f}&quot;,
+            &quot;colour&quot;: &quot;boundary&quot; if ag.verdict != &quot;agrees&quot; else &quot;accent&quot;,
+            &quot;note&quot;: f&quot;verdict: {ag.verdict}&quot;,
+        }
+    )
+w.figure(
+    &quot;amplitude&quot;,
+    kind=&quot;intervals&quot;,
+    data={&quot;rows&quot;: rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;truth&quot;: TRUTH[&quot;beta_dose&quot;],
+        &quot;truthLabel&quot;: &quot;true amplitude&quot;,
+        &quot;xLabel&quot;: &quot;dose amplitude (beta_dose)&quot;,
+        &quot;labelWidth&quot;: 145,
+        &quot;rowHeight&quot;: 38,
+    },
+    title=&quot;What each fit believes about the amplitude&quot;,
+    note=&quot;&quot;&quot;Worth reading carefully: none of the three intervals contains the true
+        amplitude. Calibration bought distance, not coverage — the uncalibrated centre
+        is furthest out and both routes move a long way towards the truth without
+        arriving. And the two routes do not contain each other&#x27;s centre either, which
+        is the difference between constraining a parameter and constraining a
+        prediction showing up as a number.&quot;&quot;&quot;,
+)
+w.figure(
+    &quot;drift&quot;,
+    kind=&quot;bars&quot;,
+    data={&quot;rows&quot;: drift_rows},
+    opt={
+        &quot;rows&quot;: &quot;@rows&quot;,
+        &quot;xLabel&quot;: &quot;distance from the truth, in posterior standard deviations&quot;,
+        &quot;labelWidth&quot;: 145,
+        &quot;rowHeight&quot;: 40,
+    },
+    title=&quot;Being close is not the same as being calibrated&quot;,
+    note=&quot;&quot;&quot;This is the column that catches overconfidence. A fit that lands nearest
+        in raw units can still sit furthest away when measured in its own
+        uncertainty, and that is a failure a recovery test exists to find.&quot;&quot;&quot;,
+    legend=((&quot;accent&quot;, &quot;within 2 sd of the truth&quot;), (&quot;boundary&quot;, &quot;further than that&quot;)),
+)
+w.figure(
+    &quot;agreement&quot;,
+    kind=&quot;bars&quot;,
+    data={&quot;rows&quot;: agree_rows},
+    opt={&quot;rows&quot;: &quot;@rows&quot;, &quot;xLabel&quot;: &quot;|z| against the trial&quot;, &quot;labelWidth&quot;: 145, &quot;rowHeight&quot;: 40},
+    title=&quot;And whether each fit still argues with the trial&quot;,
+    note=&quot;&quot;&quot;The uncalibrated registry openly disagrees with the trial. Both routes
+        reconcile with it — which is the operation working, and is separate from
+        whether either of them is right about the truth.&quot;&quot;&quot;,
+)
+
+doses = np.linspace(0.0, 120.0, 25)
+truth_curve = [float(registry.forward({&quot;dose&quot;: float(d)}).mean()) for d in doses]
+curves = {
+    key: list(response_band(result, &quot;dose&quot;, doses=doses.tolist(), mass=0.9, seed=0).mean)
+    for key, (_, result) in zip((&quot;uncal&quot;, &quot;prior&quot;, &quot;likelihood&quot;), fits, strict=True)
+}
+w.figure(
+    &quot;curves&quot;,
+    kind=&quot;lines&quot;,
+    data={&quot;doses&quot;: doses.tolist(), &quot;truth&quot;: truth_curve, **curves},
+    opt={
+        &quot;series&quot;: [
+            {&quot;label&quot;: &quot;the truth&quot;, &quot;x&quot;: &quot;@doses&quot;, &quot;y&quot;: &quot;@truth&quot;, &quot;colour&quot;: &quot;ink-2&quot;},
+            {&quot;label&quot;: &quot;uncalibrated&quot;, &quot;x&quot;: &quot;@doses&quot;, &quot;y&quot;: &quot;@uncal&quot;, &quot;colour&quot;: &quot;boundary&quot;},
+            {&quot;label&quot;: &quot;prior route&quot;, &quot;x&quot;: &quot;@doses&quot;, &quot;y&quot;: &quot;@prior&quot;, &quot;colour&quot;: &quot;s3&quot;},
+            {&quot;label&quot;: &quot;likelihood&quot;, &quot;x&quot;: &quot;@doses&quot;, &quot;y&quot;: &quot;@likelihood&quot;, &quot;colour&quot;: &quot;accent&quot;},
+        ],
+        &quot;xLabel&quot;: &quot;dose&quot;,
+        &quot;yLabel&quot;: &quot;expected outcome&quot;,
+        &quot;height&quot;: 320,
+        &quot;rightPad&quot;: 110,
+    },
+    title=&quot;The whole dose-response, before and after the trial is folded in&quot;,
+    note=&quot;&quot;&quot;Calibration is not a correction applied to one number. It moves the entire
+        curve, including at doses the trial never tested — which is exactly why the
+        estimand the trial measured had to be pinned down before any of this
+        began.&quot;&quot;&quot;,
+)
+
+# ----------------------------------------------------------------------------------
+
+mean1, sd1 = amplitude(prior_route)
+w.finding(f&quot;&quot;&quot;The uncalibrated registry was not merely uncertain, it was confidently wrong:
+    amplitude {mean0:.2f} against a truth of {TRUTH[&#x27;beta_dose&#x27;]:.1f}, which is
+    {abs(mean0 - TRUTH[&#x27;beta_dose&#x27;]) / sd0:.1f} posterior standard deviations out,
+    and it openly disagreed with the trial (z = {ag0.z:+.2f}). Tight and wrong is the
+    signature of confounding rather than noise.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;Both routes cut most of that bias and both then reconcile with the trial:
+    {mean1:.2f} and {mean2:.2f} against an uncalibrated {mean0:.2f}. Neither reaches
+    the truth, and neither interval covers it. One trial of 280 patients does not
+    undo confounding in a registry — it bounds it, and that is a smaller claim than
+    the word &#x27;calibrated&#x27; invites.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;They also disagree with each other, by {abs(mean1 - mean2):.2f}. That
+    disagreement is the useful part rather than a defect to be averaged away: it is
+    the size of the difference between the two questions being asked, and it is
+    reported rather than resolved on your behalf.&quot;&quot;&quot;)
+w.finding(f&quot;&quot;&quot;The prior route lands CLOSEST in absolute terms and still scores worst on
+    drift, because the derived prior inherited the trial&#x27;s precision and left the
+    posterior very tight: {sd1:.3f} against {sd2:.3f}. A calibrated model can be
+    nearly right and still overconfident. That is exactly the failure a recovery test
+    against a known truth exists to catch, and the reason the design factor and the
+    moment-matching wrote themselves into the ledger rather than disappearing into
+    the fit.&quot;&quot;&quot;)</pre>
+          </div>
+          <div class="out">
+            <div class="out-h">stdout, captured on this build</div>
+            <pre>========================================================================================
+CLINICAL RESEARCH  ---  Nearly right, and still too sure of itself
+========================================================================================
+  A registry has the coverage and the confounding; a trial has the identification and no
+  reach. Folding one into the other is the obvious move. The question is which of the
+  two available ways to do it, and what each one leaves you believing.
+
+----------------------------------------------------------------------------------------
+STEP 1  Build the registry, including the severity nobody recorded
+----------------------------------------------------------------------------------------
+  Confounding by indication is the defining problem of registry evidence: sicker
+  patients are dosed harder, so the raw association understates the benefit. Simulating
+  it explicitly — with a severity term that enters both the dose and the outcome and is
+  never handed to the model — is what makes the rest of this checkable, because the true
+  amplitude is known.
+
+  INSTEAD OF: Simulating clean data and calling the result a demonstration of
+  calibration. Calibration on unconfounded data does nothing interesting; the whole
+  operation exists to correct a bias, so the bias has to be there.
+
+  registry : 6 clinics x 24 periods
+  true amplitude : 8.0
+  correlation(dose, unmeasured severity) = 0.481
+
+  The severity column exists in this script and is never passed to fit().
+  That is the whole of the confounding: real, moderate, and invisible.
+
+----------------------------------------------------------------------------------------
+STEP 2  Say precisely what the trial measured, as an object
+----------------------------------------------------------------------------------------
+  A trial result is not a number, it is a number attached to a question: which contrast,
+  over which window, in which population, at which level. The Estimand records all of
+  that and hashes it, so a measurement can only be folded into a model that answers the
+  same question. The hash is what stops a first-period per-patient contrast being
+  quietly used to constrain a cumulative population-level one.
+
+  INSTEAD OF: Carrying the trial as &#x27;the treatment effect was 12.4&#x27;. That is the form in
+  which evidence is normally transferred between studies, and it is the form in which
+  the window, the population and the estimand silently change on the way.
+
+  trial estimate : 5.215 +/- 0.193
+  interval       : [4.84, 5.59] (95% WALD)
+  n              : 280 patients, 1 period
+  target hash    : 2949465ce0427194...
+  window         : periods 0 to 1, cumulative
+
+----------------------------------------------------------------------------------------
+STEP 3  Fit the registry alone, and notice it is not merely uncertain
+----------------------------------------------------------------------------------------
+  The failure mode worth recognising is tight and wrong. If the uncalibrated fit were
+  simply noisy, its interval would cover the truth and the trial would be a precision
+  upgrade. It does not: the truth sits several posterior standard deviations away, which
+  is the signature of confounding rather than sampling error, and no amount of registry
+  data would fix it.
+
+  INSTEAD OF: Judging the fit by its convergence diagnostics and its posterior
+  predictive check. Both pass here. A confounded model fits its own data beautifully —
+  that is what makes confounding dangerous rather than obvious.
+
+  converged      : True
+  amplitude      : 14.891 +/- 2.428
+  truth          : 8.0
+  drift vs truth : +2.8 posterior sd
+  agreement with the trial : z = -2.44, verdict disagrees
+
+----------------------------------------------------------------------------------------
+STEP 4  Route one: turn the trial into a prior, then refit
+----------------------------------------------------------------------------------------
+  derive_prior converts the trial&#x27;s statement about a PREDICTION into a statement about
+  a PARAMETER, using a design factor that carries the conversion. Every step of that
+  conversion writes a ledger line, so the assumption that made it possible is
+  recoverable later — this is the transfer that most often disappears into a footnote.
+
+  INSTEAD OF: Setting an informative prior by hand to match the trial. It produces a
+  similar posterior and records nothing: six months later there is no way to tell which
+  prior came from evidence and which came from an analyst&#x27;s judgement about what the
+  answer ought to be.
+
+  design factor   : 0.5478
+  parameter       : beta_dose
+  new prior       : family=&#x27;lognormal&#x27; hyper={&#x27;mu&#x27;: 2.2526030052579893, &#x27;sigma&#x27;: 0.03696835710791612}
+
+  ledger:
+    evidence:combine  [independent_unbiased_studies]
+    prior:design_factor  [amplitude_proportionality]
+    prior:moment_match  [prior_family_adequate]
+
+----------------------------------------------------------------------------------------
+STEP 5  Route two: add the trial to the log density instead
+----------------------------------------------------------------------------------------
+  fit_calibrated puts the measurement into the objective as a constraint, so the trial
+  competes with the registry data rather than preceding it. When the two disagree the
+  posterior lands between them, weighted by their precisions, instead of the registry
+  being fitted inside a prior the trial already fixed.
+
+  INSTEAD OF: Assuming this is the same operation as route one with the arithmetic
+  rearranged. It is not, and the two do not agree — constraining a parameter and
+  constraining a prediction are different requests. Which you want depends on what the
+  model is for.
+
+  amplitude : 11.892 +/- 1.900
+
+----------------------------------------------------------------------------------------
+STEP 6  Compare all three on the two things that matter
+----------------------------------------------------------------------------------------
+  Distance from the truth and agreement with the trial are different questions and a fit
+  can pass one while failing the other. Reporting the drift in posterior standard
+  deviations rather than in raw units is what exposes that: a fit can land closest in
+  absolute terms and still be the worst on this column, because it left itself too
+  little uncertainty to be wrong in.
+
+  INSTEAD OF: Picking a winner. axiom reports the gap between the two routes rather than
+  choosing, because the choice depends on what the model will be used for — a formulary
+  decision about this dose wants the constrained prediction, a model that will be
+  extrapolated to other doses wants the constrained parameter.
+
+  uncalibrated         14.891   2.428  drift   +2.8 sd   z vs trial -2.44  disagrees
+  prior route           9.733   0.349  drift   +5.0 sd   z vs trial -0.74  agrees
+  likelihood route     11.892   1.900  drift   +2.0 sd   z vs trial -0.55  agrees
+  [figure: What each fit believes about the amplitude]
+
+  [figure: Being close is not the same as being calibrated]
+
+  [figure: And whether each fit still argues with the trial]
+
+  [figure: The whole dose-response, before and after the trial is folded in]
+
+
+========================================================================================
+WHAT IT ACTUALLY SHOWED
+========================================================================================
+  The uncalibrated registry was not merely uncertain, it was confidently wrong:
+  amplitude 14.89 against a truth of 8.0, which is 2.8 posterior standard deviations
+  out, and it openly disagreed with the trial (z = -2.44). Tight and wrong is the
+  signature of confounding rather than noise.
+
+  Both routes cut most of that bias and both then reconcile with the trial: 9.73 and
+  11.89 against an uncalibrated 14.89. Neither reaches the truth, and neither interval
+  covers it. One trial of 280 patients does not undo confounding in a registry — it
+  bounds it, and that is a smaller claim than the word &#x27;calibrated&#x27; invites.
+
+  They also disagree with each other, by 2.16. That disagreement is the useful part
+  rather than a defect to be averaged away: it is the size of the difference between the
+  two questions being asked, and it is reported rather than resolved on your behalf.
+
+  The prior route lands CLOSEST in absolute terms and still scores worst on drift,
+  because the derived prior inherited the trial&#x27;s precision and left the posterior very
+  tight: 0.349 against 1.900. A calibrated model can be nearly right and still
+  overconfident. That is exactly the failure a recovery test against a known truth
+  exists to catch, and the reason the design factor and the moment-matching wrote
+  themselves into the ledger rather than disappearing into the fit.</pre>
+          </div>
+        </div>
+      </div>
+    </details>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="example-06-public-health-cluster-trial.html">&larr; 06 · Public health</a><a class="btn btn-2" href="examples.html">All twelve</a><a class="btn btn-2" href="example-08-energy-panel-methods.html">08 · Energy &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -14,6 +14,8 @@ The executed series under `nbs/design/`:
 - [04-simulation.ipynb](../../nbs/design/04-simulation.ipynb)
 - [05-structural.ipynb](../../nbs/design/05-structural.ipynb)
 - [06-economics-and-portfolio.ipynb](../../nbs/design/06-economics-and-portfolio.ipynb)
+- [07-sequential.ipynb](../../nbs/design/07-sequential.ipynb)
+- [08-identifiability.ipynb](../../nbs/design/08-identifiability.ipynb)
 
 ## Package
 
@@ -32,6 +34,9 @@ The executed series under `nbs/design/`:
    :members:
 
 .. automodule:: axiom.design.economics
+   :members:
+
+.. automodule:: axiom.design.identifiability
    :members:
 
 .. automodule:: axiom.design.eig
@@ -80,6 +85,9 @@ The executed series under `nbs/design/`:
    :members:
 
 .. automodule:: axiom.design.sensitivity
+   :members:
+
+.. automodule:: axiom.design.sequential
    :members:
 
 .. automodule:: axiom.design.simulate
