@@ -2203,6 +2203,223 @@ def rutherford() -> Any:
 # tutorial: one problem carried through all eight phases, a step at a time
 # ----------------------------------------------------------------------------------
 
+#: A model of your own. ``SurfaceSpec`` offers a menu of kernels and covers most
+#: dose-response work; when the shape you need is not on the menu you write the
+#: mean yourself, as an expression, and axiom checks it before it fits it. This
+#: is the route ``nbs/case-studies/rutherford/scattering.py`` takes, and these
+#: five steps are that route on a response small enough to read.
+CUSTOM_STEPS: list[dict[str, Any]] = [
+    {
+        "slug": "custom-1-when-kernels-run-out",
+        "title": "When the kernels run out",
+        "asks": "What if the shape you need is not one of the ones on offer?",
+        "lede": (
+            "`SurfaceSpec` takes a kernel per treatment — Hill, spline, "
+            "polynomial, Gaussian process — and covers most dose-response work "
+            "between them. Sometimes it does not. You have a mechanism, it has a "
+            "form, and the form is not on the menu."
+        ),
+        "beat": (
+            "Then you write the mean yourself. A `ModelSpec` is four things and no "
+            "more: the mean as an expression, the outcome column it predicts, the "
+            "likelihood around it, and every parameter with a prior. Nothing about "
+            "it is a lower tier of the library — `SurfaceSpec` builds one of these "
+            "and hands it to the same backends."
+        ),
+        "code": """
+            from axiom.core import ModelSpec
+
+            print(ModelSpec.__doc__.strip().splitlines()[0])
+            print()
+            for name, field in ModelSpec.model_fields.items():
+                required = "required" if field.is_required() else "optional"
+                print(f"  {name:14s} {required}")
+            print()
+            print("the response we need is an exponential approach to a ceiling:")
+            print()
+            print("    footfall = alpha + beta * (1 - exp(-spend / k))")
+            print()
+            print("alpha is the baseline, beta the most the leaflets can ever add,")
+            print("and k the spend at which about 63% of that has arrived.")
+        """,
+    },
+    {
+        "slug": "custom-2-the-expression",
+        "title": "The mean, as an expression",
+        "asks": "How do you write a formula axiom can differentiate and check?",
+        "lede": (
+            "Not as a Python function. A mean is built out of typed nodes — `Data` "
+            "for a column, `Param` for something to be fitted, `Const` for a "
+            "literal, and `Add`, `Mul`, `Div`, `Pow`, `Apply` to combine them."
+        ),
+        "beat": (
+            "It is more verbose than `lambda x, a, b, k: ...` and it buys three "
+            "things a lambda cannot: the gradient every backend needs, without "
+            "you writing it; a content hash, so the model that produced a number "
+            "is identifiable later; and the dimension check in the next step."
+        ),
+        "code": """
+            from axiom.core import (
+                Add, Apply, Const, D, Data, Div, Mul, Param, Prior,
+                dimension, dimensionless,
+            )
+
+            spend = Data(name="spend", dimension=D.currency)
+
+            alpha = Param(name="alpha", dimension=D.outcome,
+                          prior=Prior(family="normal", hyper={"mu": 40.0, "sigma": 10.0}))
+            beta = Param(name="beta", dimension=D.outcome,
+                         prior=Prior(family="normal", hyper={"mu": 0.0, "sigma": 10.0}))
+            k = Param(name="k", dimension=D.currency,
+                      prior=Prior(family="lognormal", hyper={"mu": 5.5, "sigma": 1.0}))
+
+            one = Const(value=1.0, dimension=dimensionless())
+            minus = Const(value=-1.0, dimension=dimensionless())
+
+            # 1 - exp(-spend / k)   -- dimensionless, because spend/k is
+            saturation = Add(terms=(
+                one,
+                Mul(factors=(minus, Apply(fn="exp", arg=Mul(factors=(
+                    minus, Div(numerator=spend, denominator=k),
+                ))))),
+            ))
+            # alpha + beta * saturation
+            mean = Add(terms=(alpha, Mul(factors=(beta, saturation))))
+
+            print(f"the mean's dimension is  {dimension(mean)}")
+            print(f"the saturation term is   {dimension(saturation)} (as it must be)")
+            ratio = Div(numerator=spend, denominator=k)
+            print(f"spend / k is             {dimension(ratio)}")
+        """,
+    },
+    {
+        "slug": "custom-3-dimensions",
+        "title": "Dimensions are checked when you build it",
+        "asks": "What stops you writing a formula that cannot mean anything?",
+        "lede": (
+            "Every node carries a dimension, and the rules are the ones you would "
+            "apply by hand: a sum needs its terms to agree, `exp` needs a "
+            "dimensionless argument, and the mean has to end up in the dimension "
+            "of the outcome it predicts."
+        ),
+        "beat": (
+            "The point is *when* this happens. Adding visits to dollars raises at "
+            "the moment you construct the model — not after a fit, not in a "
+            "downstream unit conversion, not in the number somebody put on a "
+            "slide. A model that builds is a model whose arithmetic means "
+            "something."
+        ),
+        "code": """
+            from axiom.core import DimensionError, Likelihood, ModelSpec
+
+            sigma = Param(name="sigma", dimension=D.outcome,
+                          prior=Prior(family="halfnormal", hyper={"sigma": 5.0}))
+            footfall = Data(name="footfall", dimension=D.outcome)
+
+            # the honest mistake: adding a spend to a footfall
+            try:
+                ModelSpec(
+                    name="wrong", mean=Add(terms=(alpha, spend)), outcome=footfall,
+                    likelihood=Likelihood(family="normal", scale="sigma"),
+                    parameters=(alpha, sigma),
+                )
+            except DimensionError as exc:
+                print(f"refused at construction: {exc}")
+
+            model = ModelSpec(
+                name="exponential_approach",
+                mean=mean,
+                outcome=footfall,
+                likelihood=Likelihood(family="normal", scale="sigma"),
+                parameters=(alpha, beta, k, sigma),
+            )
+            print()
+            print(f"built    : {model.name}")
+            print(f"hash     : {model.content_hash()[:16]}")
+            print(f"params   : {[p.name for p in model.parameters]}")
+        """,
+    },
+    {
+        "slug": "custom-4-fit-it",
+        "title": "Fit it",
+        "asks": "How does a hand-built model reach a backend?",
+        "lede": (
+            "Straight at one. A backend takes the model and a mapping from column "
+            "name to array — there is no `Panel` in this path, because a "
+            "`ModelSpec` names its own columns and that is all the backend needs."
+        ),
+        "beat": (
+            "The parameters come back under the names you declared. Checking them "
+            "against a truth you control is the only honest way to know a "
+            "hand-built model is right, which is why simulating from it first is "
+            "worth the ten minutes it costs."
+        ),
+        "code": """
+            import numpy as np
+            from axiom.infer import LaplaceBackend
+
+            # data from a world we control, so the answer can be checked
+            TRUE = {"alpha": 41.0, "beta": 12.0, "k": 260.0, "sigma": 2.0}
+            rng = np.random.default_rng(3)
+            x = rng.uniform(0.0, 900.0, 600)
+            y = (TRUE["alpha"] + TRUE["beta"] * (1 - np.exp(-x / TRUE["k"]))
+                 + rng.normal(0.0, TRUE["sigma"], x.size))
+
+            posterior = LaplaceBackend().sample(
+                model, {"spend": x, "footfall": y},
+                draws=800, tune=0, chains=4, seed=0,
+            )
+
+            print(f"{'parameter':10s}{'fitted':>10}{'truth':>10}")
+            for name in ("alpha", "beta", "k", "sigma"):
+                got = float(posterior.flat(name).mean())
+                print(f"{name:10s}{got:>10.2f}{TRUE[name]:>10.2f}")
+        """,
+    },
+    {
+        "slug": "custom-5-what-it-costs",
+        "title": "What the custom route costs you",
+        "asks": "You left the kernels behind. What did you leave with them?",
+        "lede": (
+            "Some of the library follows a hand-built model and some of it does "
+            "not. `design.profile_likelihood` takes a `ModelSpec` directly, so the "
+            "identification and design tools that work on a likelihood still "
+            "apply — that is how GEIGER-1911 gets its one-sided bound."
+        ),
+        "beat": (
+            "What you give up is the `SurfaceSpec` conveniences: `surface.fit`, "
+            "and `estimands.realize` reading an estimand off the result, both want "
+            "the richer object. If a kernel can express your response, use one. "
+            "Write the mean when the mechanism genuinely is not on the menu — and "
+            "then you are in the same position as a physics case study, which is "
+            "a respectable place to be."
+        ),
+        "code": """
+            import warnings
+            from axiom.design import profile_likelihood
+
+            data = {"spend": x, "footfall": y}
+            start = {**TRUE}
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+                values, drops = profile_likelihood(
+                    model, data, start, "k", grid=np.linspace(180.0, 380.0, 21)
+                )
+
+            drops = np.asarray(drops)
+            inside = [v for v, d in zip(values, drops) if d <= 1.921]
+            print("profiling k, the spend at which most of the lift has arrived:")
+            print(f"  best fit          {values[int(np.argmin(drops))]:.0f}")
+            print(f"  95% interval      {min(inside):.0f} to {max(inside):.0f}")
+            print(f"  the truth         {TRUE['k']:.0f}")
+            print()
+            print("that ran on the ModelSpec itself. surface.fit and")
+            print("estimands.realize did not -- they want a SurfaceSpec.")
+        """,
+    },
+]
+
+
 #: Porting your own problem. The other two series both start from a world that
 #: already exists — ``surface_world(...)`` in one and ``import scattering`` in the
 #: other — which is convenient for telling a story and useless if what you have
@@ -2752,6 +2969,26 @@ TUTORIALS: list[dict[str, Any]] = [
         ),
         "notebook": "nbs/surface/",
         "steps": PORTING_STEPS,
+    },
+    {
+        "key": "custom",
+        "title": "A model of your own",
+        "kind": "A modelling story",
+        "asks": "The kernels do not fit your mechanism. Now what?",
+        "problem": (
+            "Your response is an exponential approach to a ceiling, and no kernel on "
+            "the menu is that shape. How do you write the mean yourself, get it "
+            "checked, and fit it — and what do you give up by leaving the kernels?"
+        ),
+        "lede": (
+            "A `ModelSpec` is the object underneath everything else: a mean written as "
+            "a typed expression, the outcome it predicts, the likelihood around it, and "
+            "every parameter with a prior. `SurfaceSpec` builds one and hands it to the "
+            "same backends. Writing one yourself is the route the physics case study "
+            "takes, on a response small enough to read in five steps."
+        ),
+        "notebook": "nbs/case-studies/rutherford/",
+        "steps": CUSTOM_STEPS,
     },
     {
         "key": "depot",

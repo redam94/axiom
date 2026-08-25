@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>4. Fit it, and read what came back — axiom tutorial</title>
-<meta name="description" content="Step 4 of 6: Did the model find the response, and what did the spec cost you?">
-<meta property="og:title" content="4. Fit it, and read what came back — axiom tutorial">
-<meta property="og:description" content="Step 4 of 6: Did the model find the response, and what did the spec cost you?">
+<title>3. Dimensions are checked when you build it — axiom tutorial</title>
+<meta name="description" content="Step 3 of 5: What stops you writing a formula that cannot mean anything?">
+<meta property="og:title" content="3. Dimensions are checked when you build it — axiom tutorial">
+<meta property="og:description" content="Step 3 of 5: What stops you writing a formula that cannot mean anything?">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,17 +39,17 @@
 <main id="main">
 <section class="hero">
   <div class="wrap">
-    <p class="eyebrow">Bringing your own problem · step 4 of 6</p>
-    <h1 style="max-width:18ch">Fit it, and read what came back</h1>
-    <p class="lede prose mt">Did the model find the response, and what did the spec cost you?</p>
+    <p class="eyebrow">A model of your own · step 3 of 5</p>
+    <h1 style="max-width:18ch">Dimensions are checked when you build it</h1>
+    <p class="lede prose mt">What stops you writing a formula that cannot mean anything?</p>
   </div>
 </section>
 
 <section>
   <div class="wrap">
     <div class="prose">
-      <p><code>fit</code> takes the spec and the panel and nothing else. The posterior comes back with one named parameter per thing the spec declared, so there is no positional unpacking and no guessing which column of an array is the amplitude.</p>
-      <p><strong>Look at <code>sigma</code> before anything else. The stores really do differ by about 6 visits, and a shared intercept has nowhere to put that, so it lands in the residual. The fit is not wrong — it is answering the question the spec asked. Changing <code>intercept</code> is how you ask a different one.</strong></p>
+      <p>Every node carries a dimension, and the rules are the ones you would apply by hand: a sum needs its terms to agree, <code>exp</code> needs a dimensionless argument, and the mean has to end up in the dimension of the outcome it predicts.</p>
+      <p><strong>The point is <em>when</em> this happens. Adding visits to dollars raises at the moment you construct the model — not after a fit, not in a downstream unit conversion, not in the number somebody put on a slide. A model that builds is a model whose arithmetic means something.</strong></p>
     </div>
   </div>
 </section>
@@ -57,39 +57,43 @@
 <section>
   <div class="wrap">
     <div class="code" style="max-width:var(--measure)">
-      <div class="code-h"><span>step 4</span>
+      <div class="code-h"><span>step 3</span>
         <button class="copy" type="button">Copy</button></div>
-      <pre>from axiom.surface import fit
+      <pre>from axiom.core import DimensionError, Likelihood, ModelSpec
 
-result = fit(spec, panel, backend=&quot;laplace&quot;, draws=800, seed=0)
+sigma = Param(name=&quot;sigma&quot;, dimension=D.outcome,
+              prior=Prior(family=&quot;halfnormal&quot;, hyper={&quot;sigma&quot;: 5.0}))
+footfall = Data(name=&quot;footfall&quot;, dimension=D.outcome)
 
-print(f&quot;{&#x27;parameter&#x27;:16s}{&#x27;posterior mean&#x27;:&gt;16}&quot;)
-for name in result.posterior.names():
-    mean = float(result.posterior.flat(name).mean())
-    print(f&quot;{name:16s}{mean:&gt;16.2f}&quot;)
+# the honest mistake: adding a spend to a footfall
+try:
+    ModelSpec(
+        name=&quot;wrong&quot;, mean=Add(terms=(alpha, spend)), outcome=footfall,
+        likelihood=Likelihood(family=&quot;normal&quot;, scale=&quot;sigma&quot;),
+        parameters=(alpha, sigma),
+    )
+except DimensionError as exc:
+    print(f&quot;refused at construction: {exc}&quot;)
+
+model = ModelSpec(
+    name=&quot;exponential_approach&quot;,
+    mean=mean,
+    outcome=footfall,
+    likelihood=Likelihood(family=&quot;normal&quot;, scale=&quot;sigma&quot;),
+    parameters=(alpha, beta, k, sigma),
+)
 print()
-print(&quot;the world that produced the data used:&quot;)
-print(&quot;  baseline  ~40      amplitude 9.0     half-way 250&quot;)
-print(&quot;  within-store noise 2.0, between-store spread 6.0&quot;)
-print()
-print(&quot;beta and k came back close. sigma did not -- it is carrying the&quot;)
-print(&quot;between-store spread the shared intercept could not.&quot;)</pre>
+print(f&quot;built    : {model.name}&quot;)
+print(f&quot;hash     : {model.content_hash()[:16]}&quot;)
+print(f&quot;params   : {[p.name for p in model.parameters]}&quot;)</pre>
     </div>
     <div class="code" style="max-width:var(--measure);margin-top:16px">
       <div class="code-h"><span>what it printed</span></div>
-      <pre>parameter         posterior mean
-sigma                       7.23
-s_leaflets                  2.74
-beta_leaflets               8.31
-alpha                      38.27
-k_leaflets                244.79
+      <pre>refused at construction: add: terms of a sum must share a dimension; term 0 is Y, term 1 is $
 
-the world that produced the data used:
-  baseline  ~40      amplitude 9.0     half-way 250
-  within-store noise 2.0, between-store spread 6.0
-
-beta and k came back close. sigma did not -- it is carrying the
-between-store spread the shared intercept could not.</pre>
+built    : exponential_approach
+hash     : d896b064b742c84c
+params   : [&#x27;alpha&#x27;, &#x27;beta&#x27;, &#x27;k&#x27;, &#x27;sigma&#x27;]</pre>
     </div>
     <p class="prose mt"><small>Every line above was captured by running this code
       at build time. The steps share one namespace, so the code on this page is
@@ -99,8 +103,8 @@ between-store spread the shared intercept could not.</pre>
 
 <section>
   <div class="wrap">
-    <div class="wt-toc"><a class="wt-toc-i" href="porting-1-your-data.html"><span class="wt-toc-n">1</span>Start from the dataframe you already have</a><a class="wt-toc-i" href="porting-2-entities.html"><span class="wt-toc-n">2</span>Say what the columns mean</a><a class="wt-toc-i" href="porting-3-the-spec.html"><span class="wt-toc-n">3</span>Write the spec</a><a class="wt-toc-i" href="porting-4-fit-it.html"><span class="wt-toc-n">4</span>Fit it, and read what came back</a><a class="wt-toc-i" href="porting-5-the-estimand.html"><span class="wt-toc-n">5</span>Declare what you want to know</a><a class="wt-toc-i" href="porting-6-what-is-missing.html"><span class="wt-toc-n">6</span>What you have not done yet</a></div>
-    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="porting-3-the-spec.html">&larr; 3 · Write the spec</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="porting-5-the-estimand.html">5 · Declare what you want to know &rarr;</a></div>
+    <div class="wt-toc"><a class="wt-toc-i" href="custom-1-when-kernels-run-out.html"><span class="wt-toc-n">1</span>When the kernels run out</a><a class="wt-toc-i" href="custom-2-the-expression.html"><span class="wt-toc-n">2</span>The mean, as an expression</a><a class="wt-toc-i" href="custom-3-dimensions.html"><span class="wt-toc-n">3</span>Dimensions are checked when you build it</a><a class="wt-toc-i" href="custom-4-fit-it.html"><span class="wt-toc-n">4</span>Fit it</a><a class="wt-toc-i" href="custom-5-what-it-costs.html"><span class="wt-toc-n">5</span>What the custom route costs you</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="custom-2-the-expression.html">&larr; 2 · The mean, as an expression</a><a class="btn btn-2" href="tutorial.html">All 5 steps</a><a class="btn btn-2" href="custom-4-fit-it.html">4 · Fit it &rarr;</a></div>
   </div>
 </section>
 </main>

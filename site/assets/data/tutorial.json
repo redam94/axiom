@@ -47,7 +47,7 @@
      "lede": "`fit` takes the spec and the panel and nothing else. The posterior comes back with one named parameter per thing the spec declared, so there is no positional unpacking and no guessing which column of an array is the amplitude.",
      "beat": "Look at `sigma` before anything else. The stores really do differ by about 6 visits, and a shared intercept has nowhere to put that, so it lands in the residual. The fit is not wrong \u2014 it is answering the question the spec asked. Changing `intercept` is how you ask a different one.",
      "code": "from axiom.surface import fit\n\nresult = fit(spec, panel, backend=\"laplace\", draws=800, seed=0)\n\nprint(f\"{'parameter':16s}{'posterior mean':>16}\")\nfor name in result.posterior.names():\n    mean = float(result.posterior.flat(name).mean())\n    print(f\"{name:16s}{mean:>16.2f}\")\nprint()\nprint(\"the world that produced the data used:\")\nprint(\"  baseline  ~40      amplitude 9.0     half-way 250\")\nprint(\"  within-store noise 2.0, between-store spread 6.0\")\nprint()\nprint(\"beta and k came back close. sigma did not -- it is carrying the\")\nprint(\"between-store spread the shared intercept could not.\")",
-     "output": "parameter         posterior mean\nbeta_leaflets               8.31\nalpha                      38.27\nsigma                       7.23\nk_leaflets                244.79\ns_leaflets                  2.74\n\nthe world that produced the data used:\n  baseline  ~40      amplitude 9.0     half-way 250\n  within-store noise 2.0, between-store spread 6.0\n\nbeta and k came back close. sigma did not -- it is carrying the\nbetween-store spread the shared intercept could not."
+     "output": "parameter         posterior mean\nsigma                       7.23\ns_leaflets                  2.74\nbeta_leaflets               8.31\nalpha                      38.27\nk_leaflets                244.79\n\nthe world that produced the data used:\n  baseline  ~40      amplitude 9.0     half-way 250\n  within-store noise 2.0, between-store spread 6.0\n\nbeta and k came back close. sigma did not -- it is carrying the\nbetween-store spread the shared intercept could not."
     },
     {
      "n": 5,
@@ -68,6 +68,67 @@
      "beat": "This is the honest end of a porting exercise, not a failure of one. You now have a model of your own data that produces a decision's number with its provenance attached \u2014 and a precise statement of the one thing standing between it and a causal claim. That is where the first tutorial starts.",
      "code": "from axiom.identify import CausalGraph, identify\n\n# Write down what you actually believe about how the spend was set.\nworld = CausalGraph.from_edges(\n    \"busyness -> leaflets, busyness -> footfall, leaflets -> footfall\",\n    unmeasured=[\"busyness\"],\n    name=\"how_the_spend_was_really_set\",\n)\nverdict = identify(world, \"leaflets\", \"footfall\")\nprint(f\"the graph says : {verdict.status}\")\nprint(f\"it would need  : {sorted(verdict.unmeasured_required)}, \"\n      f\"which nobody recorded\")\nprint()\nprint(\"so the `downgraded` in step 5 was not a formality. What you have\")\nprint(\"is a description of 24 stores, not the effect of leaflets on\")\nprint(\"footfall -- and the difference is the whole subject of axiom.\")\nprint()\nprint(\"two honest ways forward, and no third:\")\nprint(\"  measure it   -- record what drove the spend, and adjust\")\nprint(\"  randomize it -- assign the leaflets, and the arrow disappears\")\nprint()\nprint(\"both are the subject of the other two tutorials.\")",
      "output": "the graph says : downgraded\nit would need  : ['busyness'], which nobody recorded\n\nso the `downgraded` in step 5 was not a formality. What you have\nis a description of 24 stores, not the effect of leaflets on\nfootfall -- and the difference is the whole subject of axiom.\n\ntwo honest ways forward, and no third:\n  measure it   -- record what drove the spend, and adjust\n  randomize it -- assign the leaflets, and the arrow disappears\n\nboth are the subject of the other two tutorials."
+    }
+   ]
+  },
+  {
+   "key": "custom",
+   "title": "A model of your own",
+   "kind": "A modelling story",
+   "asks": "The kernels do not fit your mechanism. Now what?",
+   "problem": "Your response is an exponential approach to a ceiling, and no kernel on the menu is that shape. How do you write the mean yourself, get it checked, and fit it \u2014 and what do you give up by leaving the kernels?",
+   "lede": "A `ModelSpec` is the object underneath everything else: a mean written as a typed expression, the outcome it predicts, the likelihood around it, and every parameter with a prior. `SurfaceSpec` builds one and hands it to the same backends. Writing one yourself is the route the physics case study takes, on a response small enough to read in five steps.",
+   "notebook": "nbs/case-studies/rutherford/",
+   "steps": [
+    {
+     "n": 1,
+     "slug": "custom-1-when-kernels-run-out",
+     "title": "When the kernels run out",
+     "asks": "What if the shape you need is not one of the ones on offer?",
+     "lede": "`SurfaceSpec` takes a kernel per treatment \u2014 Hill, spline, polynomial, Gaussian process \u2014 and covers most dose-response work between them. Sometimes it does not. You have a mechanism, it has a form, and the form is not on the menu.",
+     "beat": "Then you write the mean yourself. A `ModelSpec` is four things and no more: the mean as an expression, the outcome column it predicts, the likelihood around it, and every parameter with a prior. Nothing about it is a lower tier of the library \u2014 `SurfaceSpec` builds one of these and hands it to the same backends.",
+     "code": "from axiom.core import ModelSpec\n\nprint(ModelSpec.__doc__.strip().splitlines()[0])\nprint()\nfor name, field in ModelSpec.model_fields.items():\n    required = \"required\" if field.is_required() else \"optional\"\n    print(f\"  {name:14s} {required}\")\nprint()\nprint(\"the response we need is an exponential approach to a ceiling:\")\nprint()\nprint(\"    footfall = alpha + beta * (1 - exp(-spend / k))\")\nprint()\nprint(\"alpha is the baseline, beta the most the leaflets can ever add,\")\nprint(\"and k the spend at which about 63% of that has arrived.\")",
+     "output": "Mean expression + outcome column + likelihood + every parameter's prior.\n\n  name           required\n  mean           required\n  outcome        required\n  likelihood     required\n  parameters     required\n  constraints    optional\n\nthe response we need is an exponential approach to a ceiling:\n\n    footfall = alpha + beta * (1 - exp(-spend / k))\n\nalpha is the baseline, beta the most the leaflets can ever add,\nand k the spend at which about 63% of that has arrived."
+    },
+    {
+     "n": 2,
+     "slug": "custom-2-the-expression",
+     "title": "The mean, as an expression",
+     "asks": "How do you write a formula axiom can differentiate and check?",
+     "lede": "Not as a Python function. A mean is built out of typed nodes \u2014 `Data` for a column, `Param` for something to be fitted, `Const` for a literal, and `Add`, `Mul`, `Div`, `Pow`, `Apply` to combine them.",
+     "beat": "It is more verbose than `lambda x, a, b, k: ...` and it buys three things a lambda cannot: the gradient every backend needs, without you writing it; a content hash, so the model that produced a number is identifiable later; and the dimension check in the next step.",
+     "code": "from axiom.core import (\n    Add, Apply, Const, D, Data, Div, Mul, Param, Prior,\n    dimension, dimensionless,\n)\n\nspend = Data(name=\"spend\", dimension=D.currency)\n\nalpha = Param(name=\"alpha\", dimension=D.outcome,\n              prior=Prior(family=\"normal\", hyper={\"mu\": 40.0, \"sigma\": 10.0}))\nbeta = Param(name=\"beta\", dimension=D.outcome,\n             prior=Prior(family=\"normal\", hyper={\"mu\": 0.0, \"sigma\": 10.0}))\nk = Param(name=\"k\", dimension=D.currency,\n          prior=Prior(family=\"lognormal\", hyper={\"mu\": 5.5, \"sigma\": 1.0}))\n\none = Const(value=1.0, dimension=dimensionless())\nminus = Const(value=-1.0, dimension=dimensionless())\n\n# 1 - exp(-spend / k)   -- dimensionless, because spend/k is\nsaturation = Add(terms=(\n    one,\n    Mul(factors=(minus, Apply(fn=\"exp\", arg=Mul(factors=(\n        minus, Div(numerator=spend, denominator=k),\n    ))))),\n))\n# alpha + beta * saturation\nmean = Add(terms=(alpha, Mul(factors=(beta, saturation))))\n\nprint(f\"the mean's dimension is  {dimension(mean)}\")\nprint(f\"the saturation term is   {dimension(saturation)} (as it must be)\")\nratio = Div(numerator=spend, denominator=k)\nprint(f\"spend / k is             {dimension(ratio)}\")",
+     "output": "the mean's dimension is  Y\nthe saturation term is   1 (as it must be)\nspend / k is             1"
+    },
+    {
+     "n": 3,
+     "slug": "custom-3-dimensions",
+     "title": "Dimensions are checked when you build it",
+     "asks": "What stops you writing a formula that cannot mean anything?",
+     "lede": "Every node carries a dimension, and the rules are the ones you would apply by hand: a sum needs its terms to agree, `exp` needs a dimensionless argument, and the mean has to end up in the dimension of the outcome it predicts.",
+     "beat": "The point is *when* this happens. Adding visits to dollars raises at the moment you construct the model \u2014 not after a fit, not in a downstream unit conversion, not in the number somebody put on a slide. A model that builds is a model whose arithmetic means something.",
+     "code": "from axiom.core import DimensionError, Likelihood, ModelSpec\n\nsigma = Param(name=\"sigma\", dimension=D.outcome,\n              prior=Prior(family=\"halfnormal\", hyper={\"sigma\": 5.0}))\nfootfall = Data(name=\"footfall\", dimension=D.outcome)\n\n# the honest mistake: adding a spend to a footfall\ntry:\n    ModelSpec(\n        name=\"wrong\", mean=Add(terms=(alpha, spend)), outcome=footfall,\n        likelihood=Likelihood(family=\"normal\", scale=\"sigma\"),\n        parameters=(alpha, sigma),\n    )\nexcept DimensionError as exc:\n    print(f\"refused at construction: {exc}\")\n\nmodel = ModelSpec(\n    name=\"exponential_approach\",\n    mean=mean,\n    outcome=footfall,\n    likelihood=Likelihood(family=\"normal\", scale=\"sigma\"),\n    parameters=(alpha, beta, k, sigma),\n)\nprint()\nprint(f\"built    : {model.name}\")\nprint(f\"hash     : {model.content_hash()[:16]}\")\nprint(f\"params   : {[p.name for p in model.parameters]}\")",
+     "output": "refused at construction: add: terms of a sum must share a dimension; term 0 is Y, term 1 is $\n\nbuilt    : exponential_approach\nhash     : d896b064b742c84c\nparams   : ['alpha', 'beta', 'k', 'sigma']"
+    },
+    {
+     "n": 4,
+     "slug": "custom-4-fit-it",
+     "title": "Fit it",
+     "asks": "How does a hand-built model reach a backend?",
+     "lede": "Straight at one. A backend takes the model and a mapping from column name to array \u2014 there is no `Panel` in this path, because a `ModelSpec` names its own columns and that is all the backend needs.",
+     "beat": "The parameters come back under the names you declared. Checking them against a truth you control is the only honest way to know a hand-built model is right, which is why simulating from it first is worth the ten minutes it costs.",
+     "code": "import numpy as np\nfrom axiom.infer import LaplaceBackend\n\n# data from a world we control, so the answer can be checked\nTRUE = {\"alpha\": 41.0, \"beta\": 12.0, \"k\": 260.0, \"sigma\": 2.0}\nrng = np.random.default_rng(3)\nx = rng.uniform(0.0, 900.0, 600)\ny = (TRUE[\"alpha\"] + TRUE[\"beta\"] * (1 - np.exp(-x / TRUE[\"k\"]))\n     + rng.normal(0.0, TRUE[\"sigma\"], x.size))\n\nposterior = LaplaceBackend().sample(\n    model, {\"spend\": x, \"footfall\": y},\n    draws=800, tune=0, chains=4, seed=0,\n)\n\nprint(f\"{'parameter':10s}{'fitted':>10}{'truth':>10}\")\nfor name in (\"alpha\", \"beta\", \"k\", \"sigma\"):\n    got = float(posterior.flat(name).mean())\n    print(f\"{name:10s}{got:>10.2f}{TRUE[name]:>10.2f}\")",
+     "output": "parameter     fitted     truth\nalpha          40.45     41.00\nbeta           12.42     12.00\nk             238.27    260.00\nsigma           1.99      2.00"
+    },
+    {
+     "n": 5,
+     "slug": "custom-5-what-it-costs",
+     "title": "What the custom route costs you",
+     "asks": "You left the kernels behind. What did you leave with them?",
+     "lede": "Some of the library follows a hand-built model and some of it does not. `design.profile_likelihood` takes a `ModelSpec` directly, so the identification and design tools that work on a likelihood still apply \u2014 that is how GEIGER-1911 gets its one-sided bound.",
+     "beat": "What you give up is the `SurfaceSpec` conveniences: `surface.fit`, and `estimands.realize` reading an estimand off the result, both want the richer object. If a kernel can express your response, use one. Write the mean when the mechanism genuinely is not on the menu \u2014 and then you are in the same position as a physics case study, which is a respectable place to be.",
+     "code": "import warnings\nfrom axiom.design import profile_likelihood\n\ndata = {\"spend\": x, \"footfall\": y}\nstart = {**TRUE}\nwith warnings.catch_warnings():\n    warnings.simplefilter(\"ignore\", RuntimeWarning)\n    values, drops = profile_likelihood(\n        model, data, start, \"k\", grid=np.linspace(180.0, 380.0, 21)\n    )\n\ndrops = np.asarray(drops)\ninside = [v for v, d in zip(values, drops) if d <= 1.921]\nprint(\"profiling k, the spend at which most of the lift has arrived:\")\nprint(f\"  best fit          {values[int(np.argmin(drops))]:.0f}\")\nprint(f\"  95% interval      {min(inside):.0f} to {max(inside):.0f}\")\nprint(f\"  the truth         {TRUE['k']:.0f}\")\nprint()\nprint(\"that ran on the ModelSpec itself. surface.fit and\")\nprint(\"estimands.realize did not -- they want a SurfaceSpec.\")",
+     "output": "profiling k, the spend at which most of the lift has arrived:\n  best fit          240\n  95% interval      210 to 270\n  the truth         260\n\nthat ran on the ModelSpec itself. surface.fit and\nestimands.realize did not -- they want a SurfaceSpec."
     }
    ]
   },
@@ -234,5 +295,5 @@
    ]
   }
  ],
- "n": 3
+ "n": 4
 }

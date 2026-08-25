@@ -41,7 +41,7 @@
 
 <section class="hero">
   <div class="wrap">
-    <p class="eyebrow">Tutorials · 3 problems</p>
+    <p class="eyebrow">Tutorials · 4 problems</p>
     <h1 style="max-width:18ch">Worked all the way through</h1>
     <p class="lede prose mt">Most library tours show you a subpackage at a time. These
       take a single problem and carry it through every phase it actually has to survive —
@@ -59,6 +59,10 @@
         roles, the treatment and outcome with their dimensions, the model spec, the
         estimand — and it ends where an honest porting exercise ends, with a number and
         a precise statement of the one thing standing between it and a causal claim.</p>
+      <p>Next to it, <strong>a model of your own</strong>, for when the kernels do not
+        fit your mechanism. It writes the mean as an expression by hand, gets the
+        dimensions checked before anything is fitted, and is honest about what leaving
+        the kernels behind costs you.</p>
       <p>The other two are the two shapes the work itself comes in. In one,
         <strong>the data already exists</strong> and the question is whether it can
         answer anything — it cannot, so an experiment gets designed, and its answer
@@ -116,6 +120,47 @@
   <p class="card-n">STEP 6</p>
   <h3>What you have not done yet</h3>
   <p>The number came back downgraded. Why, and what fixes it?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a></div><div class="section-head" style="margin-top:48px">
+  <p class="eyebrow">A modelling story · 5 steps</p>
+  <h2>A model of your own</h2>
+  <p>Your response is an exponential approach to a ceiling, and no kernel on the menu is that shape. How do you write the mean yourself, get it checked, and fit it — and what do you give up by leaving the kernels?</p>
+</div>
+<div class="prose" style="margin-bottom:24px"><p>A `ModelSpec` is the object underneath everything else: a mean written as a typed expression, the outcome it predicts, the likelihood around it, and every parameter with a prior. `SurfaceSpec` builds one and hands it to the same backends. Writing one yourself is the route the physics case study takes, on a response small enough to read in five steps.</p></div>
+<div class="cards"><a class="card" href="custom-1-when-kernels-run-out.html">
+  <p class="card-n">STEP 1</p>
+  <h3>When the kernels run out</h3>
+  <p>What if the shape you need is not one of the ones on offer?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="custom-2-the-expression.html">
+  <p class="card-n">STEP 2</p>
+  <h3>The mean, as an expression</h3>
+  <p>How do you write a formula axiom can differentiate and check?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="custom-3-dimensions.html">
+  <p class="card-n">STEP 3</p>
+  <h3>Dimensions are checked when you build it</h3>
+  <p>What stops you writing a formula that cannot mean anything?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="custom-4-fit-it.html">
+  <p class="card-n">STEP 4</p>
+  <h3>Fit it</h3>
+  <p>How does a hand-built model reach a backend?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="custom-5-what-it-costs.html">
+  <p class="card-n">STEP 5</p>
+  <h3>What the custom route costs you</h3>
+  <p>You left the kernels behind. What did you leave with them?</p>
   <div class="card-f">
     <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
   </div>
