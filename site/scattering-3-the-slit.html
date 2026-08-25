@@ -54,6 +54,74 @@
   </div>
 </section>
 
+<figure class="fig">
+  <svg viewBox="0 0 620 300" role="img" class="diagram"
+     aria-label="Looking down the beam: the scattering arrives on a ring at
+     90 degrees. The annular slot is a thin band on that ring; a round
+     hole of the same area is a disc 14 degrees across.">
+  <g transform="translate(0,0)">
+    <circle cx="150.0" cy="150.0" r="96.0" fill="none" stroke="currentColor"
+            stroke-width="1.2" stroke-dasharray="4 4" opacity="0.5"/>
+    <circle cx="150.0" cy="150.0" r="96.0" fill="none" stroke="var(--accent)"
+            stroke-width="3.20" opacity="0.85"/>
+    <circle cx="150.0" cy="150.0" r="2.5" fill="currentColor"/>
+    <line x1="150.0" y1="150.0" x2="246.0" y2="150.0" stroke="currentColor"
+          stroke-width="1" opacity="0.4"/>
+    <text x="198" y="144.0" font-size="10" text-anchor="middle"
+          fill="currentColor" opacity="0.7">&#952; = 90&#176;</text>
+    <text x="150.0" y="272" font-size="11" text-anchor="middle" fill="var(--accent-deep)">
+      annular slot</text>
+    <text x="150.0" y="286" font-size="10" text-anchor="middle" fill="currentColor"
+          opacity="0.7">&#177;0.91&#176; radial, 360&#176; of arc</text>
+  </g>
+  <g transform="translate(320,0)">
+    <circle cx="150.0" cy="150.0" r="96.0" fill="none" stroke="currentColor"
+            stroke-width="1.2" stroke-dasharray="4 4" opacity="0.5"/>
+    <circle cx="246.0" cy="150.0" r="15.4" fill="var(--warn-wash, #f7e3e0)"
+            stroke="#b5453b" stroke-width="1.6" opacity="0.9"/>
+    <circle cx="150.0" cy="150.0" r="2.5" fill="currentColor"/>
+    <text x="150.0" y="272" font-size="11" text-anchor="middle" fill="#b5453b">
+      round hole, same solid angle</text>
+    <text x="150.0" y="286" font-size="10" text-anchor="middle" fill="currentColor"
+          opacity="0.7">radius 14&#176;</text>
+  </g>
+  <g font-size="10" fill="currentColor" opacity="0.75">
+    <text x="150" y="40" text-anchor="middle">reports the angle to
+      0.025%</text>
+    <text x="470" y="40" text-anchor="middle">reports it
+      6.6% high</text>
+  </g>
+</svg>
+  <figcaption>Looking straight down the beam at the 90° station: the scattering arrives on the dashed ring. Both apertures subtend the same solid angle and collect the same counts — the slot is a thin band lying along the ring, the round hole a disc wide enough to average over everything inside it. Radius here is the angle from the beam axis, which is not an area-preserving projection, so do not read equal areas off the drawing; the angular extents beneath each shape are the honest comparison. The radial band is drawn at a legible minimum — the real one is thinner.</figcaption>
+</figure>
+
+<div class="eqs"><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">what an annular slot subtends</p>
+    <div class="eq">Ω(θ, δ, φ) = φ &middot; 2&#8201;sin&#8201;θ&#8201;sin&#8201;δ</div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>half, arc = s.slit_for(theta, omega)
+# omega is fixed by the counter&#x27;s rate cap; only the
+# split between radial half-width and arc is yours</pre>
+  </div>
+</div><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">the aperture enters the model as a column</p>
+    <div class="eq">μ = rate(θ) &middot; Ω &middot; <i>t</i></div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>expected = Mul(factors=(
+    rate,
+    Data(name=&quot;omega&quot;, dimension=dimensionless()),
+    Data(name=&quot;exposure&quot;, dimension=BASES.time),
+))
+# geometry and exposure are data, not parameters</pre>
+  </div>
+</div></div>
+
 <section>
   <div class="wrap">
     <div class="code" style="max-width:var(--measure)">
@@ -71,7 +139,23 @@ for theta in (5.0, 45.0, 90.0, 150.0):
           f&quot;{slot:10.3f}% {hole_bias:10.2f}%&quot;)
 print()
 print(&quot;same solid angle, same counts. the slot reports the angle it is at;&quot;)
-print(&quot;the hole reports an average over everything it can see.&quot;)</pre>
+print(&quot;the hole reports an average over everything it can see.&quot;)
+
+# the 90 degree station, which the diagram on this page draws
+theta = 90.0
+omega90 = float(s.widest_aperture([theta], s.HARD_CENTRE)[0])
+half90, arc90 = s.slit_for(theta, omega90)
+hole90 = float(np.degrees(np.sqrt(omega90 / np.pi)))
+slit_geometry = {
+    &quot;theta&quot;: theta,
+    &quot;omega&quot;: omega90,
+    &quot;half&quot;: half90,
+    &quot;arc&quot;: arc90,
+    &quot;hole_radius&quot;: hole90,
+    &quot;slot_bias_pct&quot;: 100.0 * s.aperture_bias(theta, half90, arc90, s.HARD_CENTRE),
+    &quot;hole_bias_pct&quot;: 100.0
+    * s.aperture_bias(theta, hole90, 2 * hole90, s.HARD_CENTRE),
+}</pre>
     </div>
     <div class="code" style="max-width:var(--measure);margin-top:16px">
       <div class="code-h"><span>what it printed</span></div>

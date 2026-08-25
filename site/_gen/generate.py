@@ -2692,6 +2692,54 @@ SCATTERING_STEPS: list[dict[str, Any]] = [
     {
         "slug": "scattering-1-one-parameter",
         "title": "Two atoms, one number",
+        "diagram": "apparatus",
+        "caption": (
+            "The apparatus. An alpha source and collimator throw a beam at a gold "
+            "foil; the counter swings on an arm to the scattering angle theta. The "
+            "dashed rays are the other stations the plan visits."
+        ),
+        "math": [
+            {
+                "label": "closest approach, head-on",
+                "math": (
+                    "<i>D</i> = <span class='frac'><span>2<i>zZe</i>\u00b2</span>"
+                    "<span>4\u03c0\u03b5<sub>0</sub><i>E</i></span></span>"
+                ),
+                "code": (
+                    "D_CLOSEST = 2 * Z_ALPHA * Z_FOIL * COULOMB_MEV_FM / E_ALPHA * 1e-15\n"
+                    "# a constant of the beam and the foil, not a fitted quantity"
+                ),
+            },
+            {
+                "label": "closest approach at angle \u03b8",
+                "math": (
+                    "<i>r</i><sub>min</sub>(\u03b8) = "
+                    "<span class='frac'><span><i>D</i></span><span>2</span></span>"
+                    "&#8201;(1 + <span class='frac'><span>1</span>"
+                    "<span>sin(\u03b8/2)</span></span>)"
+                ),
+                "code": (
+                    "# the floor no amount of counting can beat\n" "floor = S.D_CLOSEST / 2.0"
+                ),
+            },
+            {
+                "label": "where a charge of radius R kills the tail",
+                "math": (
+                    "sin(\u03b8<sub>cut</sub>/2) = <span class='frac'><span>1</span>"
+                    "<span>2<i>R</i>/<i>D</i> \u2212 1</span></span>"
+                    "&nbsp;&nbsp;&nbsp;\u03bb = log sin(\u03b8<sub>cut</sub>/2)"
+                ),
+                "code": (
+                    "lam = Param(\n"
+                    '    name="lam",\n'
+                    "    dimension=dimensionless(),\n"
+                    '    prior=Prior(family="normal",\n'
+                    '                hyper={"mu": -4.0, "sigma": 6.0}),\n'
+                    ")\n"
+                    "# the one axis the two atoms are two points on"
+                ),
+            },
+        ],
         "asks": "How do you get resolving power against a question nobody has measured?",
         "lede": (
             "In 1910 there were two pictures of the atom and no experiment between "
@@ -2730,6 +2778,15 @@ SCATTERING_STEPS: list[dict[str, Any]] = [
             print("the two hypotheses are two values of one parameter, lam:")
             print(f"  hard centre  lam = {s.LAM_HARD:+.2f}")
             print(f"  diffuse atom lam = {s.LAM_DIFFUSE:+.2f}")
+
+            # the numbers the apparatus diagram on this page is drawn from
+            apparatus = {
+                "energy_mev": s.E_ALPHA,
+                "d_fm": s.D_CLOSEST * 1e15,
+                "foil_um": s.FOIL_THICKNESS * 1e6,
+                "beam_per_s": s.BEAM_RATE,
+                "angles": [st.theta_deg for st in s.PLAN if st.foil],
+            }
         """,
     },
     {
@@ -2772,6 +2829,44 @@ SCATTERING_STEPS: list[dict[str, Any]] = [
     {
         "slug": "scattering-3-the-slit",
         "title": "What shape to cut the aperture",
+        "diagram": "slit",
+        "diagram_from": "slit_geometry",
+        "caption": (
+            "Looking straight down the beam at the 90\u00b0 station: the scattering "
+            "arrives on the dashed ring. Both apertures subtend the same solid angle "
+            "and collect the same counts \u2014 the slot is a thin band lying along "
+            "the ring, the round hole a disc wide enough to average over everything "
+            "inside it. Radius here is the angle from the beam axis, which is not an "
+            "area-preserving projection, so do not read equal areas off the drawing; "
+            "the angular extents beneath each shape are the honest comparison. The "
+            "radial band is drawn at a legible minimum \u2014 the real one is thinner."
+        ),
+        "math": [
+            {
+                "label": "what an annular slot subtends",
+                "math": (
+                    "\u03a9(\u03b8, \u03b4, \u03c6) = \u03c6 &middot; 2&#8201;"
+                    "sin&#8201;\u03b8&#8201;sin&#8201;\u03b4"
+                ),
+                "code": (
+                    "half, arc = s.slit_for(theta, omega)\n"
+                    "# omega is fixed by the counter's rate cap; only the\n"
+                    "# split between radial half-width and arc is yours"
+                ),
+            },
+            {
+                "label": "the aperture enters the model as a column",
+                "math": ("\u03bc = rate(\u03b8) &middot; \u03a9 &middot; <i>t</i>"),
+                "code": (
+                    "expected = Mul(factors=(\n"
+                    "    rate,\n"
+                    '    Data(name="omega", dimension=dimensionless()),\n'
+                    '    Data(name="exposure", dimension=BASES.time),\n'
+                    "))\n"
+                    "# geometry and exposure are data, not parameters"
+                ),
+            },
+        ],
         "asks": "Same solid angle, same counts — does the shape matter?",
         "lede": (
             "A counter needs a hole to look through, and a bigger hole means more "
@@ -2800,6 +2895,22 @@ SCATTERING_STEPS: list[dict[str, Any]] = [
             print()
             print("same solid angle, same counts. the slot reports the angle it is at;")
             print("the hole reports an average over everything it can see.")
+
+            # the 90 degree station, which the diagram on this page draws
+            theta = 90.0
+            omega90 = float(s.widest_aperture([theta], s.HARD_CENTRE)[0])
+            half90, arc90 = s.slit_for(theta, omega90)
+            hole90 = float(np.degrees(np.sqrt(omega90 / np.pi)))
+            slit_geometry = {
+                "theta": theta,
+                "omega": omega90,
+                "half": half90,
+                "arc": arc90,
+                "hole_radius": hole90,
+                "slot_bias_pct": 100.0 * s.aperture_bias(theta, half90, arc90, s.HARD_CENTRE),
+                "hole_bias_pct": 100.0
+                * s.aperture_bias(theta, hole90, 2 * hole90, s.HARD_CENTRE),
+            }
         """,
     },
     {
@@ -2891,6 +3002,76 @@ SCATTERING_STEPS: list[dict[str, Any]] = [
     {
         "slug": "scattering-6-running-it",
         "title": "Running it",
+        "math": [
+            {
+                "label": "the single-scattering tail, cut off by a charge of size \u03bb",
+                "math": (
+                    "<i>f</i><sub>tail</sub>(\u03b8) = "
+                    "<span class='frac'><span><i>e</i><sup>log&#8201;<i>a</i></sup></span>"
+                    "<span>sin<sup>4</sup>(\u03b8/2)</span></span>"
+                    "&nbsp;&middot;&nbsp;<i>e</i><sup>\u2212(<i>u</i>/<i>e</i>"
+                    "<sup>\u03bb</sup>)\u00b2</sup>"
+                    "&nbsp;&nbsp;<span style='opacity:.7'>u = sin(\u03b8/2)</span>"
+                ),
+                "code": (
+                    'u = Apply(fn="sin", arg=Mul(factors=(\n'
+                    "    Const(value=0.5, dimension=dimensionless()), theta)))\n"
+                    "tail = Mul(factors=(\n"
+                    "    _exp(log_a),\n"
+                    "    Pow(base=u, exponent=Fraction(-4)),\n"
+                    "    _exp(Mul(factors=(\n"
+                    "        Const(value=-1.0, dimension=dimensionless()),\n"
+                    "        Pow(base=_ratio(u, lam), exponent=Fraction(2)),\n"
+                    "    ))),\n"
+                    "))"
+                ),
+            },
+            {
+                "label": "the multiple-scattering core",
+                "math": (
+                    "<i>f</i><sub>core</sub>(\u03b8) = <i>e</i><sup>log&#8201;<i>c</i></sup>"
+                    "&nbsp;<i>e</i><sup>\u2212\u00bd(\u03b8/<i>e</i>"
+                    "<sup>log&#8201;<i>w</i></sup>)\u00b2</sup>"
+                ),
+                "code": (
+                    "core = Mul(factors=(\n"
+                    "    _exp(log_c),\n"
+                    "    _exp(Mul(factors=(\n"
+                    "        Const(value=-0.5, dimension=dimensionless()),\n"
+                    "        Pow(base=_ratio(theta, log_w), exponent=Fraction(2)),\n"
+                    "    ))),\n"
+                    "))"
+                ),
+            },
+            {
+                "label": "expected counts, and the variance-stabilising transform",
+                "math": (
+                    "\u03bc = (foil&#8201;\u00b7&#8201;[<i>f</i><sub>tail</sub> + "
+                    "<i>f</i><sub>core</sub>] + <i>e</i><sup>log&#8201;<i>b</i></sup>)"
+                    "&#8201;\u03a9&#8201;<i>t</i>"
+                    "&nbsp;&nbsp;&nbsp;&nbsp;<i>y</i> = 2<span class='rad'>"
+                    "&#8730;<span style='border-top:1px solid currentColor'>"
+                    "&#8201;\u03bc&#8201;</span></span>"
+                ),
+                "code": (
+                    "scattered = Mul(factors=(\n"
+                    '    Data(name="foil", dimension=dimensionless()),\n'
+                    "    Add(terms=(tail, core)),\n"
+                    "))\n"
+                    "expected = Mul(factors=(\n"
+                    "    Mul(factors=(RATE_UNIT, Add(terms=(scattered, _exp(log_b))))),\n"
+                    '    Data(name="omega", dimension=dimensionless()),\n'
+                    '    Data(name="exposure", dimension=BASES.time),\n'
+                    "))\n"
+                    "mean = Mul(factors=(\n"
+                    "    Const(value=2.0, dimension=dimensionless()),\n"
+                    "    Pow(base=expected, exponent=Fraction(1, 2)),\n"
+                    "))\n"
+                    "# 2*sqrt(Poisson) has variance 1, so a normal\n"
+                    "# likelihood on y is the right one"
+                ),
+            },
+        ],
         "asks": "The counts come in. What does the experiment actually say?",
         "lede": (
             "Every station is a Poisson draw around what the apparatus would really "
@@ -3394,6 +3575,7 @@ TUTORIALS: list[dict[str, Any]] = [
             "resolving power, a sensitivity curve, and a rule for when to stop."
         ),
         "notebook": "nbs/case-studies/rutherford/",
+        "capture": ("apparatus", "slit_geometry"),
         "steps": SCATTERING_STEPS,
     },
 ]
@@ -3443,10 +3625,25 @@ def tutorial() -> Any:
                     "beat": step["beat"],
                     "code": code,
                     "output": output,
+                    # Optional presentation the step declared: a diagram to draw
+                    # and the equations to set beside it. Carried through rather
+                    # than defaulted, so a step without them renders neither.
+                    **{
+                        k: step[k]
+                        for k in ("diagram", "diagram_from", "caption", "math")
+                        if k in step
+                    },
                 }
             )
             print(f"      {i}. {step['title']}: {len(output.splitlines())} lines")
-        series.append({k: v for k, v in spec.items() if k != "steps"} | {"steps": steps})
+        # Values the steps computed that a diagram on the page is drawn from.
+        # Lifting them out of the shared namespace rather than recomputing them
+        # here is what keeps a picture and the code above it in step.
+        captured = {name: env[name] for name in spec.get("capture", ()) if name in env}
+        series.append(
+            {k: v for k, v in spec.items() if k not in ("steps", "capture")}
+            | {"steps": steps, "captured": captured}
+        )
     return {"series": series, "n": len(series)}
 
 

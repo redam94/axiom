@@ -54,6 +54,73 @@
   </div>
 </section>
 
+<figure class="fig">
+  <svg viewBox="0 0 620 300" role="img" class="diagram"
+     aria-label="An alpha source and collimator on the left, a gold foil at the centre,
+     and a counter on a rotatable arm at 150 degrees.">
+  <g fill="none" stroke="currentColor" stroke-width="1.6">
+    <rect x="18" y="132" width="54" height="36" rx="4"/>
+    <rect x="112" y="140" width="26" height="20" rx="2"/>
+    <rect x="164" y="140" width="26" height="20" rx="2"/>
+    <line x1="72" y1="150" x2="300" y2="150"/>
+    <line x1="300" y1="150" x2="470" y2="150" stroke-dasharray="5 4" opacity="0.45"/>
+    <line x1="300" y1="96" x2="300" y2="204" stroke="var(--accent)" stroke-width="4"/>
+  </g>
+  <path d="M 360 150 A 60 60 0 0 0 248.0
+        120.0"
+        fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>
+  <text x="352" y="120" font-size="12" fill="currentColor" opacity="0.8">&#952;</text>
+  <line x1="300" y1="150" x2="469.4" y2="135.2" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.35"/><text x="495.3" y="132.9" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">5°</text><line x1="300" y1="150" x2="420.2" y2="29.8" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.35"/><text x="438.6" y="11.4" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">45°</text><line x1="300" y1="150" x2="152.8" y2="65.0" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 3"/><rect x="132.8" y="54.0" width="40" height="22" rx="3" fill="var(--accent-wash)" stroke="var(--accent)" stroke-width="1.5"/><text x="152.8" y="69.0" text-anchor="middle" font-size="10" fill="var(--accent-deep)">counter</text><text x="130.3" y="52.0" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">150°</text>
+  <g font-size="10.5" fill="currentColor" text-anchor="middle">
+    <text x="45" y="188">radium C&#8242;</text>
+    <text x="45" y="201" opacity="0.65">7.68 MeV &#945;</text>
+    <text x="151" y="188">collimator</text>
+    <text x="300" y="222" fill="var(--accent-deep)">gold foil</text>
+    <text x="300" y="235" opacity="0.65">0.4 &#181;m</text>
+    <text x="440" y="168" opacity="0.65">undeflected beam</text>
+    <text x="45" y="214" opacity="0.65">200,000/s</text>
+  </g>
+</svg>
+  <figcaption>The apparatus. An alpha source and collimator throw a beam at a gold foil; the counter swings on an arm to the scattering angle theta. The dashed rays are the other stations the plan visits.</figcaption>
+</figure>
+
+<div class="eqs"><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">closest approach, head-on</p>
+    <div class="eq"><i>D</i> = <span class='frac'><span>2<i>zZe</i>²</span><span>4πε<sub>0</sub><i>E</i></span></span></div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>D_CLOSEST = 2 * Z_ALPHA * Z_FOIL * COULOMB_MEV_FM / E_ALPHA * 1e-15
+# a constant of the beam and the foil, not a fitted quantity</pre>
+  </div>
+</div><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">closest approach at angle θ</p>
+    <div class="eq"><i>r</i><sub>min</sub>(θ) = <span class='frac'><span><i>D</i></span><span>2</span></span>&#8201;(1 + <span class='frac'><span>1</span><span>sin(θ/2)</span></span>)</div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre># the floor no amount of counting can beat
+floor = S.D_CLOSEST / 2.0</pre>
+  </div>
+</div><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">where a charge of radius R kills the tail</p>
+    <div class="eq">sin(θ<sub>cut</sub>/2) = <span class='frac'><span>1</span><span>2<i>R</i>/<i>D</i> − 1</span></span>&nbsp;&nbsp;&nbsp;λ = log sin(θ<sub>cut</sub>/2)</div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>lam = Param(
+    name=&quot;lam&quot;,
+    dimension=dimensionless(),
+    prior=Prior(family=&quot;normal&quot;,
+                hyper={&quot;mu&quot;: -4.0, &quot;sigma&quot;: 6.0}),
+)
+# the one axis the two atoms are two points on</pre>
+  </div>
+</div></div>
+
 <section>
   <div class="wrap">
     <div class="code" style="max-width:var(--measure)">
@@ -74,7 +141,16 @@ for name, radius in ((&quot;hard centre&quot;, s.R_NUCLEUS), (&quot;diffuse atom
 print()
 print(&quot;the two hypotheses are two values of one parameter, lam:&quot;)
 print(f&quot;  hard centre  lam = {s.LAM_HARD:+.2f}&quot;)
-print(f&quot;  diffuse atom lam = {s.LAM_DIFFUSE:+.2f}&quot;)</pre>
+print(f&quot;  diffuse atom lam = {s.LAM_DIFFUSE:+.2f}&quot;)
+
+# the numbers the apparatus diagram on this page is drawn from
+apparatus = {
+    &quot;energy_mev&quot;: s.E_ALPHA,
+    &quot;d_fm&quot;: s.D_CLOSEST * 1e15,
+    &quot;foil_um&quot;: s.FOIL_THICKNESS * 1e6,
+    &quot;beam_per_s&quot;: s.BEAM_RATE,
+    &quot;angles&quot;: [st.theta_deg for st in s.PLAN if st.foil],
+}</pre>
     </div>
     <div class="code" style="max-width:var(--measure);margin-top:16px">
       <div class="code-h"><span>what it printed</span></div>
