@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4. Fit it — axiom tutorial</title>
+<meta name="description" content="Step 4 of 5: How does a hand-built model reach a backend?">
+<meta property="og:title" content="4. Fit it — axiom tutorial">
+<meta property="og:description" content="Step 4 of 5: How does a hand-built model reach a backend?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">A model of your own · step 4 of 5</p>
+    <h1 style="max-width:18ch">Fit it</h1>
+    <p class="lede prose mt">How does a hand-built model reach a backend?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>Straight at one. A backend takes the model and a mapping from column name to array — there is no <code>Panel</code> in this path, because a <code>ModelSpec</code> names its own columns and that is all the backend needs.</p>
+      <p><strong>The parameters come back under the names you declared. Checking them against a truth you control is the only honest way to know a hand-built model is right, which is why simulating from it first is worth the ten minutes it costs.</strong></p>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 4</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>import numpy as np
+from axiom.infer import LaplaceBackend
+
+# data from a world we control, so the answer can be checked
+TRUE = {&quot;alpha&quot;: 41.0, &quot;beta&quot;: 12.0, &quot;k&quot;: 260.0, &quot;sigma&quot;: 2.0}
+rng = np.random.default_rng(3)
+x = rng.uniform(0.0, 900.0, 600)
+y = (TRUE[&quot;alpha&quot;] + TRUE[&quot;beta&quot;] * (1 - np.exp(-x / TRUE[&quot;k&quot;]))
+     + rng.normal(0.0, TRUE[&quot;sigma&quot;], x.size))
+
+posterior = LaplaceBackend().sample(
+    model, {&quot;spend&quot;: x, &quot;footfall&quot;: y},
+    draws=800, tune=0, chains=4, seed=0,
+)
+
+print(f&quot;{&#x27;parameter&#x27;:10s}{&#x27;fitted&#x27;:&gt;10}{&#x27;truth&#x27;:&gt;10}&quot;)
+for name in (&quot;alpha&quot;, &quot;beta&quot;, &quot;k&quot;, &quot;sigma&quot;):
+    got = float(posterior.flat(name).mean())
+    print(f&quot;{name:10s}{got:&gt;10.2f}{TRUE[name]:&gt;10.2f}&quot;)</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>parameter     fitted     truth
+alpha          40.45     41.00
+beta           12.42     12.00
+k             238.27    260.00
+sigma           1.99      2.00</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="custom-1-when-kernels-run-out.html"><span class="wt-toc-n">1</span>When the kernels run out</a><a class="wt-toc-i" href="custom-2-the-expression.html"><span class="wt-toc-n">2</span>The mean, as an expression</a><a class="wt-toc-i" href="custom-3-dimensions.html"><span class="wt-toc-n">3</span>Dimensions are checked when you build it</a><a class="wt-toc-i" href="custom-4-fit-it.html"><span class="wt-toc-n">4</span>Fit it</a><a class="wt-toc-i" href="custom-5-what-it-costs.html"><span class="wt-toc-n">5</span>What the custom route costs you</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="custom-3-dimensions.html">&larr; 3 · Dimensions are checked when you build it</a><a class="btn btn-2" href="tutorial.html">All 5 steps</a><a class="btn btn-2" href="custom-5-what-it-costs.html">5 · What the custom route costs you &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

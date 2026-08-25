@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import html
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -36,6 +37,7 @@ WORKFLOW = [
 # HYPER-3 is an analysis story and GEIGER-1911 is a design one, and the nav should say
 # which is which rather than making a reader open both to find out.
 EXTRA = [
+    ("tutorial", "Tutorial"),
     ("examples", "Examples"),
     ("benchmarks", "Benchmarks"),
     ("case-study", "HYPER-3"),
@@ -158,8 +160,7 @@ def symbol_html(sym: dict[str, Any]) -> str:
     search = html.escape(f"{sym['name']} {sym['summary']}".lower(), quote=True)
 
     head = (
-        f'<summary><span class="sym-n">{name}</span>'
-        f'<span class="sym-t">{tag}</span></summary>'
+        f'<summary><span class="sym-n">{name}</span>' f'<span class="sym-t">{tag}</span></summary>'
     )
     body = [f'<p class="sym-sig">{name}{signature}</p>' if signature else ""]
     if summary:
@@ -230,6 +231,28 @@ PILLAR_LABEL = {
 # ----------------------------------------------------------------------------------
 
 GITHUB = "https://github.com/redam94/axiom/blob/main/examples"
+
+
+_INLINE_CODE = re.compile(r"`(.+?)`")
+_INLINE_EM = re.compile(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)")
+
+
+def inline_html(text: str) -> str:
+    """Escape, then allow ``\u0060code\u0060`` and ``*emphasis*`` — and nothing else.
+
+    Generated prose is plain text everywhere else on the site, which is right for
+    text a run wrote. The tutorial steps are authored, and an author naming
+    ``surviving_evidence`` wants it set as code rather than printed with its
+    backticks showing.
+
+    Emphasis is applied **outside code spans only**. A code span is literal; the
+    same function in ``axiom.report`` had this exact bug, where the italic pass
+    ran across the substituted output and ate the asterisks of an equation.
+    """
+    parts = _INLINE_CODE.split(html.escape(text))
+    for i, part in enumerate(parts):
+        parts[i] = f"<code>{part}</code>" if i % 2 else _INLINE_EM.sub(r"<em>\1</em>", part)
+    return "".join(parts)
 
 
 def para_html(text: str, cls: str = "") -> str:
@@ -518,6 +541,263 @@ def walkthrough_body(entry: dict[str, Any], prev: Any, nxt: Any, data: dict[str,
 </section>"""
 
 
+def apparatus_svg(a: dict[str, Any]) -> str:
+    """The experiment, side on: source, collimator, foil, and the counter on its arm.
+
+    Inline SVG rather than a chart, because this is a picture of an apparatus and
+    not a picture of data — there is nothing to plot. Every stroke is
+    ``currentColor`` so it reads in both themes, which a hardcoded ink would not.
+    """
+    angles = a["angles"]
+    arcs = []
+    for i, theta in enumerate((angles[2], angles[5], angles[7])):
+        rad = math.radians(theta)
+        x, y = 300 + 170 * math.cos(rad), 150 - 170 * math.sin(rad)
+        dim = "" if i == 2 else ' opacity="0.35"'
+        arcs.append(
+            f'<line x1="300" y1="150" x2="{x:.1f}" y2="{y:.1f}" stroke="currentColor" '
+            f'stroke-width="1.2" stroke-dasharray="3 3"{dim}/>'
+        )
+        if i == 2:
+            arcs.append(
+                f'<rect x="{x - 20:.1f}" y="{y - 11:.1f}" width="40" height="22" rx="3" '
+                f'fill="var(--accent-wash)" stroke="var(--accent)" stroke-width="1.5"/>'
+                f'<text x="{x:.1f}" y="{y + 4:.1f}" text-anchor="middle" font-size="10" '
+                f'fill="var(--accent-deep)">counter</text>'
+            )
+        arcs.append(
+            f'<text x="{300 + 196 * math.cos(rad):.1f}" y="{150 - 196 * math.sin(rad):.1f}" '
+            f'text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">'
+            f"{theta:g}\u00b0</text>"
+        )
+    return f"""<svg viewBox="0 0 620 300" role="img" class="diagram"
+     aria-label="An alpha source and collimator on the left, a gold foil at the centre,
+     and a counter on a rotatable arm at {angles[7]:g} degrees.">
+  <g fill="none" stroke="currentColor" stroke-width="1.6">
+    <rect x="18" y="132" width="54" height="36" rx="4"/>
+    <rect x="112" y="140" width="26" height="20" rx="2"/>
+    <rect x="164" y="140" width="26" height="20" rx="2"/>
+    <line x1="72" y1="150" x2="300" y2="150"/>
+    <line x1="300" y1="150" x2="470" y2="150" stroke-dasharray="5 4" opacity="0.45"/>
+    <line x1="300" y1="96" x2="300" y2="204" stroke="var(--accent)" stroke-width="4"/>
+  </g>
+  <path d="M 360 150 A 60 60 0 0 0 {300 + 60 * math.cos(math.radians(angles[7])):.1f}
+        {150 - 60 * math.sin(math.radians(angles[7])):.1f}"
+        fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>
+  <text x="352" y="120" font-size="12" fill="currentColor" opacity="0.8">&#952;</text>
+  {''.join(arcs)}
+  <g font-size="10.5" fill="currentColor" text-anchor="middle">
+    <text x="45" y="188">radium C&#8242;</text>
+    <text x="45" y="201" opacity="0.65">{a['energy_mev']:g} MeV &#945;</text>
+    <text x="151" y="188">collimator</text>
+    <text x="300" y="222" fill="var(--accent-deep)">gold foil</text>
+    <text x="300" y="235" opacity="0.65">{a['foil_um']:g} &#181;m</text>
+    <text x="440" y="168" opacity="0.65">undeflected beam</text>
+    <text x="45" y="214" opacity="0.65">{a['beam_per_s']:,.0f}/s</text>
+  </g>
+</svg>"""
+
+
+def slit_svg(g: dict[str, Any]) -> str:
+    """The aperture at one station, looking straight down the beam.
+
+    At this angle the scattering arrives on a ring, so the two shapes are drawn
+    against it: the annular slot the plan cuts, and the round hole of the same
+    *solid angle* it is compared with.
+
+    Radius on the page is the angle from the beam axis, which is **not** an
+    area-preserving projection — so the two shapes do not have equal area in the
+    picture even though they subtend equal solid angle, and the caption says so
+    rather than letting a reader measure the drawing and catch it. The radial
+    band is also floored at a legible width; the real one is thinner still.
+    """
+    cx, cy, ring = 150.0, 150.0, 96.0
+    # degrees -> pixels, set so the ring sits at the station's angle
+    scale = ring / g["theta"]
+    half = max(g["half"] * scale, 1.6)
+    hole = max(g["hole_radius"] * scale, 3.0)
+    return f"""<svg viewBox="0 0 620 300" role="img" class="diagram"
+     aria-label="Looking down the beam: the scattering arrives on a ring at
+     {g['theta']:g} degrees. The annular slot is a thin band on that ring; a round
+     hole of the same area is a disc {g['hole_radius']:.0f} degrees across.">
+  <g transform="translate(0,0)">
+    <circle cx="{cx}" cy="{cy}" r="{ring}" fill="none" stroke="currentColor"
+            stroke-width="1.2" stroke-dasharray="4 4" opacity="0.5"/>
+    <circle cx="{cx}" cy="{cy}" r="{ring}" fill="none" stroke="var(--accent)"
+            stroke-width="{2 * half:.2f}" opacity="0.85"/>
+    <circle cx="{cx}" cy="{cy}" r="2.5" fill="currentColor"/>
+    <line x1="{cx}" y1="{cy}" x2="{cx + ring:.1f}" y2="{cy}" stroke="currentColor"
+          stroke-width="1" opacity="0.4"/>
+    <text x="{cx + ring / 2:.0f}" y="{cy - 6}" font-size="10" text-anchor="middle"
+          fill="currentColor" opacity="0.7">&#952; = {g['theta']:g}&#176;</text>
+    <text x="{cx}" y="272" font-size="11" text-anchor="middle" fill="var(--accent-deep)">
+      annular slot</text>
+    <text x="{cx}" y="286" font-size="10" text-anchor="middle" fill="currentColor"
+          opacity="0.7">&#177;{g['half']:.2f}&#176; radial, {g['arc']:g}&#176; of arc</text>
+  </g>
+  <g transform="translate(320,0)">
+    <circle cx="{cx}" cy="{cy}" r="{ring}" fill="none" stroke="currentColor"
+            stroke-width="1.2" stroke-dasharray="4 4" opacity="0.5"/>
+    <circle cx="{cx + ring:.1f}" cy="{cy}" r="{hole:.1f}" fill="var(--warn-wash, #f7e3e0)"
+            stroke="#b5453b" stroke-width="1.6" opacity="0.9"/>
+    <circle cx="{cx}" cy="{cy}" r="2.5" fill="currentColor"/>
+    <text x="{cx}" y="272" font-size="11" text-anchor="middle" fill="#b5453b">
+      round hole, same solid angle</text>
+    <text x="{cx}" y="286" font-size="10" text-anchor="middle" fill="currentColor"
+          opacity="0.7">radius {g['hole_radius']:.0f}&#176;</text>
+  </g>
+  <g font-size="10" fill="currentColor" opacity="0.75">
+    <text x="150" y="40" text-anchor="middle">reports the angle to
+      {g['slot_bias_pct']:.3f}%</text>
+    <text x="470" y="40" text-anchor="middle">reports it
+      {g['hole_bias_pct']:.1f}% high</text>
+  </g>
+</svg>"""
+
+
+DIAGRAMS = {"apparatus": apparatus_svg, "slit": slit_svg}
+
+
+def diagram_html(step: dict[str, Any], series: dict[str, Any]) -> str:
+    """The step's diagram, if it declared one and the run captured its numbers."""
+    name = step.get("diagram")
+    payload = series.get("captured", {}).get(step.get("diagram_from", name or ""))
+    if not name or payload is None:
+        return ""
+    return f"""<figure class="fig">
+  {DIAGRAMS[name](payload)}
+  <figcaption>{inline_html(step.get('caption', ''))}</figcaption>
+</figure>"""
+
+
+def math_html(items: list[dict[str, str]]) -> str:
+    """Each equation twice: as mathematics, and as the axiom that expresses it.
+
+    The site carries no LaTeX and pulls in no renderer, so the mathematics is
+    marked up as HTML — which stays selectable, scales with the reader's type
+    size, and costs no request. The pairing is the point: an equation on its own
+    is a claim, and the code beside it is how that claim reaches a fit.
+    """
+    rows = []
+    for eq in items:
+        rows.append(f"""<div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">{inline_html(eq['label'])}</p>
+    <div class="eq">{eq['math']}</div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>{html.escape(eq['code'])}</pre>
+  </div>
+</div>""")
+    return f'<div class="eqs">{"".join(rows)}</div>'
+
+
+def tutorial_html(data: dict[str, Any]) -> str:
+    """The tutorial index: one block per series, one card per step.
+
+    Unlike the examples, the steps inside a series are not independent — step 6
+    of the depot tutorial recalibrates the fit step 3 produced. The cards are
+    numbered rather than tiled so the order reads as the instruction it is.
+    """
+    blocks = []
+    for series in data["tutorial"]["series"]:
+        cards = "".join(f"""<a class="card" href="{step['slug']}.html">
+  <p class="card-n">STEP {step['n']}</p>
+  <h3>{html.escape(step['title'])}</h3>
+  <p>{html.escape(step['asks'])}</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a>""" for step in series["steps"])
+        blocks.append(f"""<div class="section-head" style="margin-top:48px">
+  <p class="eyebrow">{html.escape(series['kind'])} · {len(series['steps'])} steps</p>
+  <h2>{html.escape(series['title'])}</h2>
+  <p>{html.escape(series['problem'])}</p>
+</div>
+<div class="prose" style="margin-bottom:24px"><p>{html.escape(series['lede'])}</p></div>
+<div class="cards">{cards}</div>""")
+    return "".join(blocks)
+
+
+def tutorial_body(step: dict[str, Any], series: dict[str, Any], data: dict[str, Any]) -> str:
+    """One step: what it is for, the code, and exactly what that code printed.
+
+    The output is captured at build time by ``site/_gen/generate.py``, so a step
+    whose numbers have moved shows up as a changed page rather than as prose that
+    quietly stopped being true.
+    """
+    steps = series["steps"]
+    i = step["n"] - 1
+    prev = steps[i - 1] if i else None
+    nxt = steps[i + 1] if i + 1 < len(steps) else None
+    contents = "".join(
+        f'<a class="wt-toc-i" href="{t["slug"]}.html">'
+        f'<span class="wt-toc-n">{t["n"]}</span>{html.escape(t["title"])}</a>'
+        for t in steps
+    )
+    nav = []
+    if prev:
+        nav.append(
+            f'<a class="btn btn-2" href="{prev["slug"]}.html">&larr; '
+            f'{prev["n"]} · {html.escape(prev["title"])}</a>'
+        )
+    nav.append(f'<a class="btn btn-2" href="tutorial.html">All {len(steps)} steps</a>')
+    if nxt:
+        nav.append(
+            f'<a class="btn btn-2" href="{nxt["slug"]}.html">'
+            f'{nxt["n"]} · {html.escape(nxt["title"])} &rarr;</a>'
+        )
+    else:
+        nav.append('<a class="btn" href="tutorial.html">The other tutorial &rarr;</a>')
+
+    return f"""<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">{html.escape(series['title'])} · step {step['n']} of {len(steps)}</p>
+    <h1 style="max-width:18ch">{html.escape(step['title'])}</h1>
+    <p class="lede prose mt">{html.escape(step['asks'])}</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>{inline_html(step['lede'])}</p>
+      {"".join(f"<p><strong>{inline_html(part)}</strong></p>"
+               for part in step["beat"].split("\n\n"))}
+    </div>
+  </div>
+</section>
+
+{diagram_html(step, series)}
+
+{math_html(step["math"]) if step.get("math") else ""}
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step {step['n']}</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>{html.escape(step['code'])}</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>{html.escape(step['output'])}</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc">{contents}</div>
+    <div class="hero-cta" style="margin-top:28px">{''.join(nav)}</div>
+  </div>
+</section>"""
+
+
 def examples_html(data: dict[str, Any]) -> str:
     """The index: one card per example, each linking to its walkthrough."""
     cards = []
@@ -680,6 +960,7 @@ def main() -> int:
         meta, body = parse_meta(frag.read_text(), frag.name)
         body = body.replace("<!--API-->", api_html(data))
         body = body.replace("<!--EXAMPLES-->", examples_html(data))
+        body = body.replace("<!--TUTORIAL-->", tutorial_html(data))
         body = body.replace("<!--BENCHMARKS-->", benchmarks_html(data))
         body = substitute(body, data, frag.name)
         page = frag.stem
@@ -692,6 +973,22 @@ def main() -> int:
         )
         (SITE / f"{page}.html").write_text(out)
         print(f"  {page}.html  ({len(out) / 1024:.0f} kB)")
+
+    # One page per tutorial step, in every series. Generated rather than
+    # authored for the same reason the example walkthroughs are: the output on
+    # the page is what the code printed when the site was built.
+    for series in data["tutorial"]["series"]:
+        steps = series["steps"]
+        for step in steps:
+            out = SHELL.format(
+                title=html.escape(f"{step['n']}. {step['title']} — axiom tutorial"),
+                description=html.escape(f"Step {step['n']} of {len(steps)}: {step['asks']}"),
+                page="tutorial-step",
+                nav=nav_html("tutorial"),
+                body=tutorial_body(step, series, data),
+            )
+            (SITE / f"{step['slug']}.html").write_text(out)
+            print(f"  {step['slug']}.html  ({len(out) / 1024:.0f} kB)")
 
     # One walkthrough page per example. These are generated rather than authored:
     # their content is the record the example's own run wrote, so a page cannot

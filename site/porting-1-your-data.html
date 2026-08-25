@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1. Start from the dataframe you already have — axiom tutorial</title>
+<meta name="description" content="Step 1 of 6: What does axiom need to know about your table?">
+<meta property="og:title" content="1. Start from the dataframe you already have — axiom tutorial">
+<meta property="og:description" content="Step 1 of 6: What does axiom need to know about your table?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Bringing your own problem · step 1 of 6</p>
+    <h1 style="max-width:18ch">Start from the dataframe you already have</h1>
+    <p class="lede prose mt">What does axiom need to know about your table?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>Long format: one row per unit per period, a column for the treatment and a column for the outcome. That is the whole data requirement, and it is deliberately the shape almost everyone already has.</p>
+      <p><strong>What axiom will not do is guess which column is which. A <code>RoleMap</code> names the unit, the time, the outcome and every treatment explicitly. Column-name conventions are how a spend column gets read as an outcome in somebody&#x27;s third refactor, and the map is five lines against that.</strong></p>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 1</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>import numpy as np
+import pandas as pd
+
+# Whatever produced your table. This one is 24 stores over 40 weeks:
+# leaflet spend, and footfall that responds to it with diminishing
+# returns. Substitute your own read_csv here -- nothing below cares.
+rng = np.random.default_rng(7)
+rows = []
+for store in range(24):
+    base = 40.0 + rng.normal(0, 6)          # stores differ
+    for week in range(40):
+        spend = float(max(0.0, rng.normal(300, 160)))
+        rows.append({
+            &quot;store&quot;: f&quot;s{store:02d}&quot;,
+            &quot;week&quot;: week,
+            &quot;leaflets&quot;: spend,
+            &quot;footfall&quot;: base + 9.0 * spend / (spend + 250.0)
+                        + rng.normal(0, 2),
+        })
+frame = pd.DataFrame(rows)
+print(frame.head(3).to_string(index=False))
+print(f&quot;\n{len(frame)} rows, {frame[&#x27;store&#x27;].nunique()} stores, &quot;
+      f&quot;{frame[&#x27;week&#x27;].nunique()} weeks&quot;)</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>store  week   leaflets  footfall
+  s00     0 347.799286 44.695300
+  s00     1 157.505306 42.576639
+  s00     2 141.336551 43.378141
+
+960 rows, 24 stores, 40 weeks</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="porting-1-your-data.html"><span class="wt-toc-n">1</span>Start from the dataframe you already have</a><a class="wt-toc-i" href="porting-2-entities.html"><span class="wt-toc-n">2</span>Say what the columns mean</a><a class="wt-toc-i" href="porting-3-the-spec.html"><span class="wt-toc-n">3</span>Write the spec</a><a class="wt-toc-i" href="porting-4-fit-it.html"><span class="wt-toc-n">4</span>Fit it, and read what came back</a><a class="wt-toc-i" href="porting-5-the-estimand.html"><span class="wt-toc-n">5</span>Declare what you want to know</a><a class="wt-toc-i" href="porting-6-what-is-missing.html"><span class="wt-toc-n">6</span>What you have not done yet</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="porting-2-entities.html">2 · Say what the columns mean &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3. What shape to cut the aperture — axiom tutorial</title>
+<meta name="description" content="Step 3 of 6: Same solid angle, same counts — does the shape matter?">
+<meta property="og:title" content="3. What shape to cut the aperture — axiom tutorial">
+<meta property="og:description" content="Step 3 of 6: Same solid angle, same counts — does the shape matter?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Designing an experiment before there is any data · step 3 of 6</p>
+    <h1 style="max-width:18ch">What shape to cut the aperture</h1>
+    <p class="lede prose mt">Same solid angle, same counts — does the shape matter?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>A counter needs a hole to look through, and a bigger hole means more counts. The obvious hole is round. The scattering does not depend on azimuth, though, which means the two directions of a hole are not equivalent at all.</p>
+      <p><strong>Only the radial half-width smears the angle; azimuth is free resolution. So hold the radial width at the workshop&#x27;s floor and take every extra steradian out in arc. A round hole of the same area at 90 degrees would have to be many degrees wide and would report a rate belonging to no angle in particular — the same counts, at a fraction of the resolution.</strong></p>
+    </div>
+  </div>
+</section>
+
+<figure class="fig">
+  <svg viewBox="0 0 620 300" role="img" class="diagram"
+     aria-label="Looking down the beam: the scattering arrives on a ring at
+     90 degrees. The annular slot is a thin band on that ring; a round
+     hole of the same area is a disc 14 degrees across.">
+  <g transform="translate(0,0)">
+    <circle cx="150.0" cy="150.0" r="96.0" fill="none" stroke="currentColor"
+            stroke-width="1.2" stroke-dasharray="4 4" opacity="0.5"/>
+    <circle cx="150.0" cy="150.0" r="96.0" fill="none" stroke="var(--accent)"
+            stroke-width="3.20" opacity="0.85"/>
+    <circle cx="150.0" cy="150.0" r="2.5" fill="currentColor"/>
+    <line x1="150.0" y1="150.0" x2="246.0" y2="150.0" stroke="currentColor"
+          stroke-width="1" opacity="0.4"/>
+    <text x="198" y="144.0" font-size="10" text-anchor="middle"
+          fill="currentColor" opacity="0.7">&#952; = 90&#176;</text>
+    <text x="150.0" y="272" font-size="11" text-anchor="middle" fill="var(--accent-deep)">
+      annular slot</text>
+    <text x="150.0" y="286" font-size="10" text-anchor="middle" fill="currentColor"
+          opacity="0.7">&#177;0.91&#176; radial, 360&#176; of arc</text>
+  </g>
+  <g transform="translate(320,0)">
+    <circle cx="150.0" cy="150.0" r="96.0" fill="none" stroke="currentColor"
+            stroke-width="1.2" stroke-dasharray="4 4" opacity="0.5"/>
+    <circle cx="246.0" cy="150.0" r="15.4" fill="var(--warn-wash, #f7e3e0)"
+            stroke="#b5453b" stroke-width="1.6" opacity="0.9"/>
+    <circle cx="150.0" cy="150.0" r="2.5" fill="currentColor"/>
+    <text x="150.0" y="272" font-size="11" text-anchor="middle" fill="#b5453b">
+      round hole, same solid angle</text>
+    <text x="150.0" y="286" font-size="10" text-anchor="middle" fill="currentColor"
+          opacity="0.7">radius 14&#176;</text>
+  </g>
+  <g font-size="10" fill="currentColor" opacity="0.75">
+    <text x="150" y="40" text-anchor="middle">reports the angle to
+      0.025%</text>
+    <text x="470" y="40" text-anchor="middle">reports it
+      6.6% high</text>
+  </g>
+</svg>
+  <figcaption>Looking straight down the beam at the 90° station: the scattering arrives on the dashed ring. Both apertures subtend the same solid angle and collect the same counts — the slot is a thin band lying along the ring, the round hole a disc wide enough to average over everything inside it. Radius here is the angle from the beam axis, which is not an area-preserving projection, so do not read equal areas off the drawing; the angular extents beneath each shape are the honest comparison. The radial band is drawn at a legible minimum — the real one is thinner.</figcaption>
+</figure>
+
+<div class="eqs"><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">what an annular slot subtends</p>
+    <div class="eq">Ω(θ, δ, φ) = φ &middot; 2&#8201;sin&#8201;θ&#8201;sin&#8201;δ</div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>half, arc = s.slit_for(theta, omega)
+# omega is fixed by the counter&#x27;s rate cap; only the
+# split between radial half-width and arc is yours</pre>
+  </div>
+</div><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">the aperture enters the model as a column</p>
+    <div class="eq">μ = rate(θ) &middot; Ω &middot; <i>t</i></div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>expected = Mul(factors=(
+    rate,
+    Data(name=&quot;omega&quot;, dimension=dimensionless()),
+    Data(name=&quot;exposure&quot;, dimension=BASES.time),
+))
+# geometry and exposure are data, not parameters</pre>
+  </div>
+</div></div>
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 3</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>print(f&quot;{&#x27;angle&#x27;:&gt;7} {&#x27;radial&#x27;:&gt;9} {&#x27;arc&#x27;:&gt;9} {&#x27;slot bias&#x27;:&gt;11} {&#x27;hole bias&#x27;:&gt;11}&quot;)
+for theta in (5.0, 45.0, 90.0, 150.0):
+    omega_here = float(s.widest_aperture([theta], s.HARD_CENTRE)[0])
+    half, arc = s.slit_for(theta, omega_here)
+    slot = 100.0 * s.aperture_bias(theta, half, arc, s.HARD_CENTRE)
+    # a round hole of the same solid angle: equal in both directions
+    hole = np.degrees(np.sqrt(omega_here / np.pi))
+    hole_bias = 100.0 * s.aperture_bias(theta, hole, 2 * hole, s.HARD_CENTRE)
+    print(f&quot;{theta:6.1f}d {half:8.2f}d {arc:8.1f}d &quot;
+          f&quot;{slot:10.3f}% {hole_bias:10.2f}%&quot;)
+print()
+print(&quot;same solid angle, same counts. the slot reports the angle it is at;&quot;)
+print(&quot;the hole reports an average over everything it can see.&quot;)
+
+# the 90 degree station, which the diagram on this page draws
+theta = 90.0
+omega90 = float(s.widest_aperture([theta], s.HARD_CENTRE)[0])
+half90, arc90 = s.slit_for(theta, omega90)
+hole90 = float(np.degrees(np.sqrt(omega90 / np.pi)))
+slit_geometry = {
+    &quot;theta&quot;: theta,
+    &quot;omega&quot;: omega90,
+    &quot;half&quot;: half90,
+    &quot;arc&quot;: arc90,
+    &quot;hole_radius&quot;: hole90,
+    &quot;slot_bias_pct&quot;: 100.0 * s.aperture_bias(theta, half90, arc90, s.HARD_CENTRE),
+    &quot;hole_bias_pct&quot;: 100.0
+    * s.aperture_bias(theta, hole90, 2 * hole90, s.HARD_CENTRE),
+}</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>  angle    radial       arc   slot bias   hole bias
+   5.0d     0.05d      2.0d      0.020%       0.04%
+  45.0d     0.20d    360.0d      0.004%       3.46%
+  90.0d     0.91d    360.0d      0.025%       6.64%
+ 150.0d     1.82d    360.0d      0.054%       3.48%
+
+same solid angle, same counts. the slot reports the angle it is at;
+the hole reports an average over everything it can see.</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="scattering-1-one-parameter.html"><span class="wt-toc-n">1</span>Two atoms, one number</a><a class="wt-toc-i" href="scattering-2-which-angles.html"><span class="wt-toc-n">2</span>Where to point the counter</a><a class="wt-toc-i" href="scattering-3-the-slit.html"><span class="wt-toc-n">3</span>What shape to cut the aperture</a><a class="wt-toc-i" href="scattering-4-how-long.html"><span class="wt-toc-n">4</span>How long at each, and what the plan buys</a><a class="wt-toc-i" href="scattering-5-when-to-stop.html"><span class="wt-toc-n">5</span>When to stop</a><a class="wt-toc-i" href="scattering-6-running-it.html"><span class="wt-toc-n">6</span>Running it</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="scattering-2-which-angles.html">&larr; 2 · Where to point the counter</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="scattering-4-how-long.html">4 · How long at each, and what the plan buys &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

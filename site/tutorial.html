@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tutorials — two problems, worked step by step · axiom</title>
+<meta name="description" content="Two step-by-step tutorials. One carries a business decision through identification, design, measurement and calibration until the experiment reverses it. The other designs a physics experiment before any data exists — which angles, what aperture, how long, and when to stop.">
+<meta property="og:title" content="Tutorials — two problems, worked step by step · axiom">
+<meta property="og:description" content="Two step-by-step tutorials. One carries a business decision through identification, design, measurement and calibration until the experiment reverses it. The other designs a physics experiment before any data exists — which angles, what aperture, how long, and when to stop.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Tutorials · 4 problems</p>
+    <h1 style="max-width:18ch">Worked all the way through</h1>
+    <p class="lede prose mt">Most library tours show you a subpackage at a time. These
+      take a single problem and carry it through every phase it actually has to survive —
+      because the hard part of causal work is not any one phase, it is that they have to
+      agree with each other at the end.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>Start with <strong>the porting one</strong> if you have a table and want to
+        know what it takes to get it into axiom at all. It imports no simulator: every
+        object you would have to write yourself is written on the page — the column
+        roles, the treatment and outcome with their dimensions, the model spec, the
+        estimand — and it ends where an honest porting exercise ends, with a number and
+        a precise statement of the one thing standing between it and a causal claim.</p>
+      <p>Next to it, <strong>a model of your own</strong>, for when the kernels do not
+        fit your mechanism. It writes the mean as an expression by hand, gets the
+        dimensions checked before anything is fitted, and is honest about what leaving
+        the kernels behind costs you.</p>
+      <p>The other two are the two shapes the work itself comes in. In one,
+        <strong>the data already exists</strong> and the question is whether it can
+        answer anything — it cannot, so an experiment gets designed, and its answer
+        reverses the decision the existing data would have supported.</p>
+      <p>In the other there is <strong>no data at all</strong>. Every step is a decision
+        about what to go and measure: which angles, what shape of aperture, how long at
+        each, and when you are allowed to stop. It is the older discipline and the one
+        that is easier to get wrong, because nothing pushes back until the money is
+        spent.</p>
+      <p>Every number on every page below was produced by running the code shown beside
+        it, when this site was built.</p>
+    </div>
+    <div class="section-head" style="margin-top:48px">
+  <p class="eyebrow">A porting story · 6 steps</p>
+  <h2>Bringing your own problem</h2>
+  <p>Twenty-four stores, forty weeks, leaflet spend and footfall. How do you turn a table you already have into a model axiom can fit, an estimand it can read, and a number you could defend?</p>
+</div>
+<div class="prose" style="margin-bottom:24px"><p>The other two series start from a world that already exists — a simulator in one, a physics module in the other — which is fine for telling a story and no help at all when what you have is a CSV. Nothing in this one imports axiom.sim. Every object you would have to write is written on the page: the roles, the entities and their dimensions, the spec, the estimand.</p></div>
+<div class="cards"><a class="card" href="porting-1-your-data.html">
+  <p class="card-n">STEP 1</p>
+  <h3>Start from the dataframe you already have</h3>
+  <p>What does axiom need to know about your table?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="porting-2-entities.html">
+  <p class="card-n">STEP 2</p>
+  <h3>Say what the columns mean</h3>
+  <p>Why does a column need a dimension and a unit?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="porting-3-the-spec.html">
+  <p class="card-n">STEP 3</p>
+  <h3>Write the spec</h3>
+  <p>What shape do you believe the response has, and how sure are you?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="porting-4-fit-it.html">
+  <p class="card-n">STEP 4</p>
+  <h3>Fit it, and read what came back</h3>
+  <p>Did the model find the response, and what did the spec cost you?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="porting-5-the-estimand.html">
+  <p class="card-n">STEP 5</p>
+  <h3>Declare what you want to know</h3>
+  <p>How do you get a decision&#x27;s number out of a fitted surface?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="porting-6-what-is-missing.html">
+  <p class="card-n">STEP 6</p>
+  <h3>What you have not done yet</h3>
+  <p>The number came back downgraded. Why, and what fixes it?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a></div><div class="section-head" style="margin-top:48px">
+  <p class="eyebrow">A modelling story · 5 steps</p>
+  <h2>A model of your own</h2>
+  <p>Your response is an exponential approach to a ceiling, and no kernel on the menu is that shape. How do you write the mean yourself, get it checked, and fit it — and what do you give up by leaving the kernels?</p>
+</div>
+<div class="prose" style="margin-bottom:24px"><p>A `ModelSpec` is the object underneath everything else: a mean written as a typed expression, the outcome it predicts, the likelihood around it, and every parameter with a prior. `SurfaceSpec` builds one and hands it to the same backends. Writing one yourself is the route the physics case study takes, on a response small enough to read in five steps.</p></div>
+<div class="cards"><a class="card" href="custom-1-when-kernels-run-out.html">
+  <p class="card-n">STEP 1</p>
+  <h3>When the kernels run out</h3>
+  <p>What if the shape you need is not one of the ones on offer?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="custom-2-the-expression.html">
+  <p class="card-n">STEP 2</p>
+  <h3>The mean, as an expression</h3>
+  <p>How do you write a formula axiom can differentiate and check?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="custom-3-dimensions.html">
+  <p class="card-n">STEP 3</p>
+  <h3>Dimensions are checked when you build it</h3>
+  <p>What stops you writing a formula that cannot mean anything?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="custom-4-fit-it.html">
+  <p class="card-n">STEP 4</p>
+  <h3>Fit it</h3>
+  <p>How does a hand-built model reach a backend?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="custom-5-what-it-costs.html">
+  <p class="card-n">STEP 5</p>
+  <h3>What the custom route costs you</h3>
+  <p>You left the kernels behind. What did you leave with them?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a></div><div class="section-head" style="margin-top:48px">
+  <p class="eyebrow">An analysis story · 8 steps</p>
+  <h2>One question, carried all the way</h2>
+  <p>A logistics operator runs 40 distribution depots in one region and 500 nationally. Should the standing weekly maintenance schedule go from nothing to 60 hours per depot?</p>
+</div>
+<div class="prose" style="margin-bottom:24px"><p>Identification refuses the panel on hand, so an experiment is designed, sized against the boundary the decision turns on, and run. Its answer is folded back into the model — and it reverses the decision the observational fit would have made.</p></div>
+<div class="cards"><a class="card" href="tutorial-1-the-question.html">
+  <p class="card-n">STEP 1</p>
+  <h3>The question, written down</h3>
+  <p>What are we actually deciding, and what would &#x27;yes&#x27; have to beat?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="tutorial-2-identification.html">
+  <p class="card-n">STEP 2</p>
+  <h3>Can the data we already have answer it?</h3>
+  <p>Is the effect identified from the panel already on hand?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="tutorial-3-the-prior.html">
+  <p class="card-n">STEP 3</p>
+  <h3>The belief we start from</h3>
+  <p>What does the observational fit say, and how much should we trust it?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="tutorial-4-design.html">
+  <p class="card-n">STEP 4</p>
+  <h3>Designing the experiment</h3>
+  <p>How big does the trial need to be, and is the answer worth its cost?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="tutorial-5-measurement.html">
+  <p class="card-n">STEP 5</p>
+  <h3>The experiment lands</h3>
+  <p>What did it measure, and does the model we already had agree?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="tutorial-6-calibration.html">
+  <p class="card-n">STEP 6</p>
+  <h3>Folding the experiment into the model</h3>
+  <p>What does the model say once it has to honour the measurement?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="tutorial-7-the-follow-up.html">
+  <p class="card-n">STEP 7</p>
+  <h3>Planning the follow-up</h3>
+  <p>Should we repeat this, when does it go stale, and what next?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="tutorial-8-the-report.html">
+  <p class="card-n">STEP 8</p>
+  <h3>The report</h3>
+  <p>How does the whole of this become a document someone can check?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a></div><div class="section-head" style="margin-top:48px">
+  <p class="eyebrow">A design story · 6 steps</p>
+  <h2>Designing an experiment before there is any data</h2>
+  <p>Is the positive charge of an atom concentrated in a small hard centre, or spread through the whole atom? Both models fit everything known in 1910. What experiment would tell them apart — and specifically, which scattering angles, what shape of aperture, and for how long?</p>
+</div>
+<div class="prose" style="margin-bottom:24px"><p>Nothing here is an analysis. Every step decides what to go and measure, and the whole argument turns on noticing that the two rival atoms are one model at two values of one number. That is what gives the experiment a resolving power, a sensitivity curve, and a rule for when to stop.</p></div>
+<div class="cards"><a class="card" href="scattering-1-one-parameter.html">
+  <p class="card-n">STEP 1</p>
+  <h3>Two atoms, one number</h3>
+  <p>How do you get resolving power against a question nobody has measured?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="scattering-2-which-angles.html">
+  <p class="card-n">STEP 2</p>
+  <h3>Where to point the counter</h3>
+  <p>Which angles carry the evidence — and which carry it under attack?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="scattering-3-the-slit.html">
+  <p class="card-n">STEP 3</p>
+  <h3>What shape to cut the aperture</h3>
+  <p>Same solid angle, same counts — does the shape matter?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="scattering-4-how-long.html">
+  <p class="card-n">STEP 4</p>
+  <h3>How long at each, and what the plan buys</h3>
+  <p>Two hundred hours. Where do they go, and what comes back?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="scattering-5-when-to-stop.html">
+  <p class="card-n">STEP 5</p>
+  <h3>When to stop</h3>
+  <p>The witness runs for 110 hours. Do you have to wait?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="scattering-6-running-it.html">
+  <p class="card-n">STEP 6</p>
+  <h3>Running it</h3>
+  <p>The counts come in. What does the experiment actually say?</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Then what</p>
+      <h2>Where to go after them</h2>
+    </div>
+    <div class="prose">
+      <p>The two worked problems exist at full length as notebooks, with every
+        intermediate result the site's path leaves out: <code>nbs/tutorial/</code> and
+        <code>nbs/case-studies/rutherford/</code>. For the porting path, every symbol it
+        uses is demonstrated on its own in <code>nbs/surface/</code> and
+        <code>nbs/estimands/</code>.</p>
+      <p>For the same phases taken further one at a time, the five pillar pages start at
+        <a href="identify.html">Identify</a>. For the same library in twelve other
+        fields, the <a href="examples.html">examples</a>. For the scattering study
+        written up as a finished argument rather than as a tutorial, see
+        <a href="rutherford.html">GEIGER-1911</a>; for a sequential trial that has to
+        stop an arm early, <a href="case-study.html">HYPER-3</a>.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

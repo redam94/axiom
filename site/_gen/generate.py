@@ -91,8 +91,7 @@ BLURB = {
     "calibrate": "Fold a randomized result into an observational model, and log "
     "what that assumed.",
     "meta": "Pool a corpus of studies; heterogeneity, bias terms, privacy-budgeted release.",
-    "diagnose": "SBC, coverage, posterior predictive checks, refutations, "
-    "specification curves.",
+    "diagnose": "SBC, coverage, posterior predictive checks, refutations, " "specification curves.",
     "build": "Fluent builders for graphs, priors, and corpora.",
     "adapters": "Domain vocabulary — marketing is one adapter, not the core.",
     "viz": "Plot helpers for the diagnostics that have a canonical picture.",
@@ -184,6 +183,7 @@ def overview() -> Any:
         "samplers_pulled": [m for m in imported if m in {"jax", "numpyro", "pymc", "pytensor"}],
         "import_seconds": round(import_seconds, 2),
     }
+
 
 # ----------------------------------------------------------------------------------
 # api: every public symbol, with its signature and a line of real usage
@@ -310,9 +310,7 @@ def _signature(obj: Any) -> str:
     if any(p.kind is p.KEYWORD_ONLY for p in sig.parameters.values()) and not any(
         p.kind is p.VAR_POSITIONAL for p in sig.parameters.values()
     ):
-        cut = next(
-            i for i, p in enumerate(sig.parameters.values()) if p.kind is p.KEYWORD_ONLY
-        )
+        cut = next(i for i, p in enumerate(sig.parameters.values()) if p.kind is p.KEYWORD_ONLY)
         parts.insert(cut, "*")
     rendered = "(" + ", ".join(parts) + ")"
     if sig.return_annotation is not sig.empty:
@@ -402,9 +400,7 @@ def _usage(name: str, notebooks: list[Path]) -> dict[str, str] | None:
                         ln[len(pad) :] if ln.startswith(pad) else ln for ln in lines[1:]
                     ]
                     segment = "\n".join(lines)
-                defines = isinstance(
-                    stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
-                )
+                defines = isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
                 rank = (
                     0 if _invokes(stmt, name) else 1,
                     defines,
@@ -468,10 +464,7 @@ def api() -> Any:
         "n_with_usage": with_usage,
         "n_without_usage": total - with_usage,
         "without_usage": [
-            f"{p['name']}.{s['name']}"
-            for p in packages
-            for s in p["symbols"]
-            if not s["usage"]
+            f"{p['name']}.{s['name']}" for p in packages for s in p["symbols"] if not s["usage"]
         ],
     }
 
@@ -2204,6 +2197,1454 @@ def rutherford() -> Any:
             "counts": counts,
         },
     }
+
+
+# ----------------------------------------------------------------------------------
+# tutorial: one problem carried through all eight phases, a step at a time
+# ----------------------------------------------------------------------------------
+
+#: A model of your own. ``SurfaceSpec`` offers a menu of kernels and covers most
+#: dose-response work; when the shape you need is not on the menu you write the
+#: mean yourself, as an expression, and axiom checks it before it fits it. This
+#: is the route ``nbs/case-studies/rutherford/scattering.py`` takes, and these
+#: five steps are that route on a response small enough to read.
+CUSTOM_STEPS: list[dict[str, Any]] = [
+    {
+        "slug": "custom-1-when-kernels-run-out",
+        "title": "When the kernels run out",
+        "asks": "What if the shape you need is not one of the ones on offer?",
+        "lede": (
+            "`SurfaceSpec` takes a kernel per treatment — Hill, spline, "
+            "polynomial, Gaussian process — and covers most dose-response work "
+            "between them. Sometimes it does not. You have a mechanism, it has a "
+            "form, and the form is not on the menu."
+        ),
+        "beat": (
+            "Then you write the mean yourself. A `ModelSpec` is four things and no "
+            "more: the mean as an expression, the outcome column it predicts, the "
+            "likelihood around it, and every parameter with a prior. Nothing about "
+            "it is a lower tier of the library — `SurfaceSpec` builds one of these "
+            "and hands it to the same backends."
+        ),
+        "code": """
+            from axiom.core import ModelSpec
+
+            print(ModelSpec.__doc__.strip().splitlines()[0])
+            print()
+            for name, field in ModelSpec.model_fields.items():
+                required = "required" if field.is_required() else "optional"
+                print(f"  {name:14s} {required}")
+            print()
+            print("the response we need is an exponential approach to a ceiling:")
+            print()
+            print("    footfall = alpha + beta * (1 - exp(-spend / k))")
+            print()
+            print("alpha is the baseline, beta the most the leaflets can ever add,")
+            print("and k the spend at which about 63% of that has arrived.")
+        """,
+    },
+    {
+        "slug": "custom-2-the-expression",
+        "title": "The mean, as an expression",
+        "asks": "How do you write a formula axiom can differentiate and check?",
+        "lede": (
+            "Not as a Python function. A mean is built out of typed nodes — `Data` "
+            "for a column, `Param` for something to be fitted, `Const` for a "
+            "literal, and `Add`, `Mul`, `Div`, `Pow`, `Apply` to combine them."
+        ),
+        "beat": (
+            "It is more verbose than `lambda x, a, b, k: ...` and it buys three "
+            "things a lambda cannot: the gradient every backend needs, without "
+            "you writing it; a content hash, so the model that produced a number "
+            "is identifiable later; and the dimension check in the next step."
+        ),
+        "code": """
+            from axiom.core import (
+                Add, Apply, Const, D, Data, Div, Mul, Param, Prior,
+                dimension, dimensionless,
+            )
+
+            spend = Data(name="spend", dimension=D.currency)
+
+            alpha = Param(name="alpha", dimension=D.outcome,
+                          prior=Prior(family="normal", hyper={"mu": 40.0, "sigma": 10.0}))
+            beta = Param(name="beta", dimension=D.outcome,
+                         prior=Prior(family="normal", hyper={"mu": 0.0, "sigma": 10.0}))
+            k = Param(name="k", dimension=D.currency,
+                      prior=Prior(family="lognormal", hyper={"mu": 5.5, "sigma": 1.0}))
+
+            one = Const(value=1.0, dimension=dimensionless())
+            minus = Const(value=-1.0, dimension=dimensionless())
+
+            # 1 - exp(-spend / k)   -- dimensionless, because spend/k is
+            saturation = Add(terms=(
+                one,
+                Mul(factors=(minus, Apply(fn="exp", arg=Mul(factors=(
+                    minus, Div(numerator=spend, denominator=k),
+                ))))),
+            ))
+            # alpha + beta * saturation
+            mean = Add(terms=(alpha, Mul(factors=(beta, saturation))))
+
+            print(f"the mean's dimension is  {dimension(mean)}")
+            print(f"the saturation term is   {dimension(saturation)} (as it must be)")
+            ratio = Div(numerator=spend, denominator=k)
+            print(f"spend / k is             {dimension(ratio)}")
+        """,
+    },
+    {
+        "slug": "custom-3-dimensions",
+        "title": "Dimensions are checked when you build it",
+        "asks": "What stops you writing a formula that cannot mean anything?",
+        "lede": (
+            "Every node carries a dimension, and the rules are the ones you would "
+            "apply by hand: a sum needs its terms to agree, `exp` needs a "
+            "dimensionless argument, and the mean has to end up in the dimension "
+            "of the outcome it predicts."
+        ),
+        "beat": (
+            "The point is *when* this happens. Adding visits to dollars raises at "
+            "the moment you construct the model — not after a fit, not in a "
+            "downstream unit conversion, not in the number somebody put on a "
+            "slide. A model that builds is a model whose arithmetic means "
+            "something."
+        ),
+        "code": """
+            from axiom.core import DimensionError, Likelihood, ModelSpec
+
+            sigma = Param(name="sigma", dimension=D.outcome,
+                          prior=Prior(family="halfnormal", hyper={"sigma": 5.0}))
+            footfall = Data(name="footfall", dimension=D.outcome)
+
+            # the honest mistake: adding a spend to a footfall
+            try:
+                ModelSpec(
+                    name="wrong", mean=Add(terms=(alpha, spend)), outcome=footfall,
+                    likelihood=Likelihood(family="normal", scale="sigma"),
+                    parameters=(alpha, sigma),
+                )
+            except DimensionError as exc:
+                print(f"refused at construction: {exc}")
+
+            model = ModelSpec(
+                name="exponential_approach",
+                mean=mean,
+                outcome=footfall,
+                likelihood=Likelihood(family="normal", scale="sigma"),
+                parameters=(alpha, beta, k, sigma),
+            )
+            print()
+            print(f"built    : {model.name}")
+            print(f"hash     : {model.content_hash()[:16]}")
+            print(f"params   : {[p.name for p in model.parameters]}")
+        """,
+    },
+    {
+        "slug": "custom-4-fit-it",
+        "title": "Fit it",
+        "asks": "How does a hand-built model reach a backend?",
+        "lede": (
+            "Straight at one. A backend takes the model and a mapping from column "
+            "name to array — there is no `Panel` in this path, because a "
+            "`ModelSpec` names its own columns and that is all the backend needs."
+        ),
+        "beat": (
+            "The parameters come back under the names you declared. Checking them "
+            "against a truth you control is the only honest way to know a "
+            "hand-built model is right, which is why simulating from it first is "
+            "worth the ten minutes it costs."
+        ),
+        "code": """
+            import numpy as np
+            from axiom.infer import LaplaceBackend
+
+            # data from a world we control, so the answer can be checked
+            TRUE = {"alpha": 41.0, "beta": 12.0, "k": 260.0, "sigma": 2.0}
+            rng = np.random.default_rng(3)
+            x = rng.uniform(0.0, 900.0, 600)
+            y = (TRUE["alpha"] + TRUE["beta"] * (1 - np.exp(-x / TRUE["k"]))
+                 + rng.normal(0.0, TRUE["sigma"], x.size))
+
+            posterior = LaplaceBackend().sample(
+                model, {"spend": x, "footfall": y},
+                draws=800, tune=0, chains=4, seed=0,
+            )
+
+            print(f"{'parameter':10s}{'fitted':>10}{'truth':>10}")
+            for name in ("alpha", "beta", "k", "sigma"):
+                got = float(posterior.flat(name).mean())
+                print(f"{name:10s}{got:>10.2f}{TRUE[name]:>10.2f}")
+        """,
+    },
+    {
+        "slug": "custom-5-what-it-costs",
+        "title": "What the custom route costs you",
+        "asks": "You left the kernels behind. What did you leave with them?",
+        "lede": (
+            "Some of the library follows a hand-built model and some of it does "
+            "not. `design.profile_likelihood` takes a `ModelSpec` directly, so the "
+            "identification and design tools that work on a likelihood still "
+            "apply — that is how GEIGER-1911 gets its one-sided bound."
+        ),
+        "beat": (
+            "What you give up is the `SurfaceSpec` conveniences: `surface.fit`, "
+            "and `estimands.realize` reading an estimand off the result, both want "
+            "the richer object. If a kernel can express your response, use one. "
+            "Write the mean when the mechanism genuinely is not on the menu — and "
+            "then you are in the same position as a physics case study, which is "
+            "a respectable place to be."
+        ),
+        "code": """
+            import warnings
+            from axiom.design import profile_likelihood
+
+            data = {"spend": x, "footfall": y}
+            start = {**TRUE}
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+                values, drops = profile_likelihood(
+                    model, data, start, "k", grid=np.linspace(180.0, 380.0, 21)
+                )
+
+            drops = np.asarray(drops)
+            inside = [v for v, d in zip(values, drops) if d <= 1.921]
+            print("profiling k, the spend at which most of the lift has arrived:")
+            print(f"  best fit          {values[int(np.argmin(drops))]:.0f}")
+            print(f"  95% interval      {min(inside):.0f} to {max(inside):.0f}")
+            print(f"  the truth         {TRUE['k']:.0f}")
+            print()
+            print("that ran on the ModelSpec itself. surface.fit and")
+            print("estimands.realize did not -- they want a SurfaceSpec.")
+        """,
+    },
+]
+
+
+#: Porting your own problem. The other two series both start from a world that
+#: already exists — ``surface_world(...)`` in one and ``import scattering`` in the
+#: other — which is convenient for telling a story and useless if what you have
+#: is a dataframe. Nothing below imports ``axiom.sim``. Every object a user has
+#: to author is authored on the page: the roles, the entities and their
+#: dimensions, the spec, the estimand.
+PORTING_STEPS: list[dict[str, Any]] = [
+    {
+        "slug": "porting-1-your-data",
+        "title": "Start from the dataframe you already have",
+        "asks": "What does axiom need to know about your table?",
+        "lede": (
+            "Long format: one row per unit per period, a column for the treatment "
+            "and a column for the outcome. That is the whole data requirement, and "
+            "it is deliberately the shape almost everyone already has."
+        ),
+        "beat": (
+            "What axiom will not do is guess which column is which. A `RoleMap` "
+            "names the unit, the time, the outcome and every treatment explicitly. "
+            "Column-name conventions are how a spend column gets read as an outcome "
+            "in somebody's third refactor, and the map is five lines against that."
+        ),
+        "code": """
+            import numpy as np
+            import pandas as pd
+
+            # Whatever produced your table. This one is 24 stores over 40 weeks:
+            # leaflet spend, and footfall that responds to it with diminishing
+            # returns. Substitute your own read_csv here -- nothing below cares.
+            rng = np.random.default_rng(7)
+            rows = []
+            for store in range(24):
+                base = 40.0 + rng.normal(0, 6)          # stores differ
+                for week in range(40):
+                    spend = float(max(0.0, rng.normal(300, 160)))
+                    rows.append({
+                        "store": f"s{store:02d}",
+                        "week": week,
+                        "leaflets": spend,
+                        "footfall": base + 9.0 * spend / (spend + 250.0)
+                                    + rng.normal(0, 2),
+                    })
+            frame = pd.DataFrame(rows)
+            print(frame.head(3).to_string(index=False))
+            print(f"\\n{len(frame)} rows, {frame['store'].nunique()} stores, "
+                  f"{frame['week'].nunique()} weeks")
+        """,
+    },
+    {
+        "slug": "porting-2-entities",
+        "title": "Say what the columns mean",
+        "asks": "Why does a column need a dimension and a unit?",
+        "lede": (
+            "A `Treatment` and an `Outcome` are not labels. They carry a dimension "
+            "and a unit, and those travel with every number derived from them — "
+            "into the estimand, into the transfer ledger, onto the report."
+        ),
+        "beat": (
+            "This is what stops dollars being added to visits four steps later, in "
+            "a function nobody is reading at the time. `D.currency` and `D.outcome` "
+            "are different dimensions, and axiom refuses the arithmetic that would "
+            "mix them rather than returning a number with no meaning."
+        ),
+        "code": """
+            from axiom.core import D, Outcome, Treatment
+            from axiom.data import Panel, RoleMap
+
+            leaflets = Treatment(
+                name="leaflets",
+                dimension=D.currency,
+                unit="USD/store-week",
+                description="leaflet spend delivered to the store's catchment",
+            )
+            footfall = Outcome(
+                name="footfall",
+                dimension=D.outcome,
+                unit="visits/week",
+                description="counted entries through the door",
+                aggregation="mean",
+            )
+
+            roles = RoleMap(
+                unit="store",
+                time="week",
+                outcome=("footfall", footfall),
+                treatments={"leaflets": leaflets},
+            )
+            panel = Panel(frame, roles)
+
+            print(f"unit column      : {roles.unit}")
+            print(f"time column      : {roles.time}")
+            print(f"outcome column   : {roles.outcome[0]}  [{footfall.dimension}]")
+            print(f"treatment columns: {list(roles.treatments)}  "
+                  f"[{leaflets.dimension}]")
+            print()
+            print(f"the two dimensions are different objects: "
+                  f"{D.currency != D.outcome}")
+        """,
+    },
+    {
+        "slug": "porting-3-the-spec",
+        "title": "Write the spec",
+        "asks": "What shape do you believe the response has, and how sure are you?",
+        "lede": (
+            "A `SurfaceSpec` is the model, and it is the object most worth "
+            "understanding rather than copying. One kernel per treatment says what "
+            "shape the dose-response is allowed to take; the intercept says what "
+            "the units are allowed to differ by; the scales are your priors."
+        ),
+        "beat": (
+            "None of these is a default you can skip past. `HillKernel` says "
+            "saturating with a half-way point near the reference dose — say that "
+            "and a linear response can no longer be fitted, which is the point of "
+            "saying it. The spec hashes, so the model that produced a number is "
+            "identifiable later by more than a filename."
+        ),
+        "code": """
+            from axiom.surface import HillKernel, SurfaceSpec
+
+            spec = SurfaceSpec(
+                name="leaflets_footfall",
+                treatments=(leaflets,),
+                outcome=footfall,
+                # saturating, with the half-way point expected near 250 USD and
+                # a lift of order 10 visits at saturation
+                kernels={"leaflets": HillKernel(
+                    reference_dose=250.0, amplitude_scale=10.0,
+                )},
+                intercept="shared",
+                unit_column="store",
+                time_column="week",
+                intercept_scale=8.0,
+                noise_scale=3.0,
+            )
+            print(f"model      : {spec.name}")
+            print(f"content hash: {spec.content_hash()[:16]}")
+            print(f"treatments : {[t.name for t in spec.treatments]}")
+            print(f"intercept  : {spec.intercept}")
+            print()
+            print("`shared` says the stores share one baseline. They do not -- the")
+            print("next step shows what that costs, and it is visible in sigma.")
+        """,
+    },
+    {
+        "slug": "porting-4-fit-it",
+        "title": "Fit it, and read what came back",
+        "asks": "Did the model find the response, and what did the spec cost you?",
+        "lede": (
+            "`fit` takes the spec and the panel and nothing else. The posterior "
+            "comes back with one named parameter per thing the spec declared, so "
+            "there is no positional unpacking and no guessing which column of an "
+            "array is the amplitude."
+        ),
+        "beat": (
+            "Look at `sigma` before anything else. The stores really do differ by "
+            "about 6 visits, and a shared intercept has nowhere to put that, so it "
+            "lands in the residual. The fit is not wrong — it is answering the "
+            "question the spec asked. Changing `intercept` is how you ask a "
+            "different one."
+        ),
+        "code": """
+            from axiom.surface import fit
+
+            result = fit(spec, panel, backend="laplace", draws=800, seed=0)
+
+            print(f"{'parameter':16s}{'posterior mean':>16}")
+            for name in result.posterior.names():
+                mean = float(result.posterior.flat(name).mean())
+                print(f"{name:16s}{mean:>16.2f}")
+            print()
+            print("the world that produced the data used:")
+            print("  baseline  ~40      amplitude 9.0     half-way 250")
+            print("  within-store noise 2.0, between-store spread 6.0")
+            print()
+            print("beta and k came back close. sigma did not -- it is carrying the")
+            print("between-store spread the shared intercept could not.")
+        """,
+    },
+    {
+        "slug": "porting-5-the-estimand",
+        "title": "Declare what you want to know",
+        "asks": "How do you get a decision's number out of a fitted surface?",
+        "lede": (
+            "A fitted surface is not an answer. The answer is a specific "
+            "comparison, over a specific population, in a specific window, at a "
+            "specific level — and axiom makes you write that down as an `Estimand` "
+            "before it will produce a number for it."
+        ),
+        "beat": (
+            "That looks like ceremony until the day the window in your head and the "
+            "window in the fit disagree. `realize` compares them and carries a "
+            "ledger of every step it took to cross between them; the ledger is the "
+            "part you show someone who has to trust the number."
+        ),
+        "code": """
+            from axiom.core import Intervention, Population, TimeWindow
+            from axiom.estimands import Estimand, Level, Quantity, realize
+
+            lift = Estimand(
+                name="lift_at_400_per_week",
+                quantity=Quantity(kind="contrast"),
+                treatment=leaflets,
+                intervention=Intervention(doses={"leaflets": 400.0}),
+                reference=Intervention(doses={"leaflets": 0.0}),
+                outcome=footfall,
+                population=Population(name="the_24_stores"),
+                window=TimeWindow(start=0, stop=1, basis="per_period"),
+                level=Level(unit="individual"),
+                dimension=D.outcome,
+            )
+            got = realize(lift, result, assume_identified=True, mass=0.9, seed=0)
+
+            print(f"{lift.name}")
+            print(f"  {got.summary.mean:+.2f} {footfall.unit}  {got.summary.interval}")
+            print(f"  status : {got.status}")
+            print()
+            for line in got.ledger:
+                print(f"  [{line.kind}] {line.statement}")
+        """,
+    },
+    {
+        "slug": "porting-6-what-is-missing",
+        "title": "What you have not done yet",
+        "asks": "The number came back downgraded. Why, and what fixes it?",
+        "lede": (
+            "`assume_identified=True` is the flag that got a number out, and the "
+            "status says exactly what it cost: `downgraded`. Nothing above argued "
+            "that leaflet spend is unconfounded with footfall. Stores that were "
+            "already busy may well have been given more leaflets."
+        ),
+        "beat": (
+            "This is the honest end of a porting exercise, not a failure of one. "
+            "You now have a model of your own data that produces a decision's "
+            "number with its provenance attached — and a precise statement of the "
+            "one thing standing between it and a causal claim. That is where the "
+            "first tutorial starts."
+        ),
+        "code": """
+            from axiom.identify import CausalGraph, identify
+
+            # Write down what you actually believe about how the spend was set.
+            world = CausalGraph.from_edges(
+                "busyness -> leaflets, busyness -> footfall, leaflets -> footfall",
+                unmeasured=["busyness"],
+                name="how_the_spend_was_really_set",
+            )
+            verdict = identify(world, "leaflets", "footfall")
+            print(f"the graph says : {verdict.status}")
+            print(f"it would need  : {sorted(verdict.unmeasured_required)}, "
+                  f"which nobody recorded")
+            print()
+            print("so the `downgraded` in step 5 was not a formality. What you have")
+            print("is a description of 24 stores, not the effect of leaflets on")
+            print("footfall -- and the difference is the whole subject of axiom.")
+            print()
+            print("two honest ways forward, and no third:")
+            print("  measure it   -- record what drove the spend, and adjust")
+            print("  randomize it -- assign the leaflets, and the arrow disappears")
+            print()
+            print("both are the subject of the other two tutorials.")
+        """,
+    },
+]
+
+
+#: GEIGER-1911, a step to a page. The case study's own world module does the
+#: physics (``nbs/case-studies/rutherford/scattering.py``); every step below is a
+#: decision about the apparatus, taken against it.
+SCATTERING_STEPS: list[dict[str, Any]] = [
+    {
+        "slug": "scattering-1-one-parameter",
+        "title": "Two atoms, one number",
+        "diagram": "apparatus",
+        "caption": (
+            "The apparatus. An alpha source and collimator throw a beam at a gold "
+            "foil; the counter swings on an arm to the scattering angle theta. The "
+            "dashed rays are the other stations the plan visits."
+        ),
+        "math": [
+            {
+                "label": "closest approach, head-on",
+                "math": (
+                    "<i>D</i> = <span class='frac'><span>2<i>zZe</i>\u00b2</span>"
+                    "<span>4\u03c0\u03b5<sub>0</sub><i>E</i></span></span>"
+                ),
+                "code": (
+                    "D_CLOSEST = 2 * Z_ALPHA * Z_FOIL * COULOMB_MEV_FM / E_ALPHA * 1e-15\n"
+                    "# a constant of the beam and the foil, not a fitted quantity"
+                ),
+            },
+            {
+                "label": "closest approach at angle \u03b8",
+                "math": (
+                    "<i>r</i><sub>min</sub>(\u03b8) = "
+                    "<span class='frac'><span><i>D</i></span><span>2</span></span>"
+                    "&#8201;(1 + <span class='frac'><span>1</span>"
+                    "<span>sin(\u03b8/2)</span></span>)"
+                ),
+                "code": (
+                    "# the floor no amount of counting can beat\n" "floor = S.D_CLOSEST / 2.0"
+                ),
+            },
+            {
+                "label": "where a charge of radius R kills the tail",
+                "math": (
+                    "sin(\u03b8<sub>cut</sub>/2) = <span class='frac'><span>1</span>"
+                    "<span>2<i>R</i>/<i>D</i> \u2212 1</span></span>"
+                    "&nbsp;&nbsp;&nbsp;\u03bb = log sin(\u03b8<sub>cut</sub>/2)"
+                ),
+                "code": (
+                    "lam = Param(\n"
+                    '    name="lam",\n'
+                    "    dimension=dimensionless(),\n"
+                    '    prior=Prior(family="normal",\n'
+                    '                hyper={"mu": -4.0, "sigma": 6.0}),\n'
+                    ")\n"
+                    "# the one axis the two atoms are two points on"
+                ),
+            },
+        ],
+        "asks": "How do you get resolving power against a question nobody has measured?",
+        "lede": (
+            "In 1910 there were two pictures of the atom and no experiment between "
+            "them. A hard positive centre and a charge smeared through the whole atom "
+            "both fitted everything anyone had. You cannot design against a debate — "
+            "so the first move is to find the number the two pictures disagree about."
+        ),
+        "beat": (
+            "They are one model at two values of the radius R of the positive charge, "
+            "six decades apart. An alpha stopped head-on gets no closer than D; one "
+            "scattered through an angle gets no closer than a known multiple of it; so "
+            "a charge of radius R kills the scattering past a cut-off angle. Turning "
+            "the debate into a parameter is what makes everything after this possible."
+            "\n\n"
+            "`scattering.py` is the case study's own module and it holds the physics: "
+            "the mean expression, the parameters and their priors, the detector "
+            "geometry. It is a hand-built `ModelSpec` rather than anything axiom "
+            "generates, which is what a problem with real physics in it looks like. "
+            "The porting tutorial builds the easier kind, a `SurfaceSpec`, from "
+            "scratch."
+        ),
+        "code": """
+            import sys
+            sys.path.insert(0, "nbs/case-studies/rutherford")
+            import scattering as s
+
+            print(f"closest approach D        : {s.D_CLOSEST * 1e15:.1f} fm")
+            print(f"a hard centre would be    : {s.R_NUCLEUS * 1e15:.1f} fm")
+            print(f"a diffuse atom would be   : {s.R_ATOM * 1e15:,.0f} fm")
+            print()
+            for name, radius in (("hard centre", s.R_NUCLEUS), ("diffuse atom", s.R_ATOM)):
+                sine = s.cutoff_sine(radius)
+                where = "no cut-off in range" if sine >= 1.0 else f"{sine:.2e}"
+                print(f"{name:14s} sin(theta_cut/2) = {where}")
+            print()
+            print("the two hypotheses are two values of one parameter, lam:")
+            print(f"  hard centre  lam = {s.LAM_HARD:+.2f}")
+            print(f"  diffuse atom lam = {s.LAM_DIFFUSE:+.2f}")
+
+            # the numbers the apparatus diagram on this page is drawn from
+            apparatus = {
+                "energy_mev": s.E_ALPHA,
+                "d_fm": s.D_CLOSEST * 1e15,
+                "foil_um": s.FOIL_THICKNESS * 1e6,
+                "beam_per_s": s.BEAM_RATE,
+                "angles": [st.theta_deg for st in s.PLAN if st.foil],
+            }
+        """,
+    },
+    {
+        "slug": "scattering-2-which-angles",
+        "title": "Where to point the counter",
+        "asks": "Which angles carry the evidence — and which carry it under attack?",
+        "lede": (
+            "Evidence per hour is easy to compute: how many nats an hour at each angle "
+            "buys, if you believe the model. Follow it and you put the whole budget "
+            "where the counts are. That is the trap this step exists to name."
+        ),
+        "beat": (
+            "Evidence-per-hour is computed *inside the model that is under attack*. An "
+            "objector who says the multiple-scattering core is wider than you fitted "
+            "takes most of it away. `surviving_evidence` asks what is left when they "
+            "do — and the answer is a different set of angles, far out in the tail."
+        ),
+        "code": """
+            import numpy as np
+
+            angles = np.array([1.0, 2.5, 5.0, 10.0, 20.0, 45.0, 90.0, 150.0])
+            omega = s.widest_aperture(angles, s.HARD_CENTRE)
+
+            believed = s.weight_of_evidence(
+                s.rate_per_steradian(angles, s.HARD_CENTRE) * omega * 3600.0,
+                s.rate_per_steradian(angles, s.DIFFUSE) * omega * 3600.0,
+            )
+            attacked, _ = s.surviving_evidence(angles, omega, 3600.0)
+
+            print(f"{'angle':>8} {'nats/h believed':>18} {'nats/h attacked':>18}")
+            for a, b, k in zip(angles, believed, attacked):
+                print(f"{a:7.1f}d {b:18,.0f} {k:18,.1f}")
+            print()
+            best_believed = angles[int(np.argmax(believed))]
+            best_attacked = angles[int(np.argmax(attacked))]
+            print(f"believe the model, and the best angle is {best_believed:.1f} degrees")
+            print(f"let it be attacked, and it is       {best_attacked:.1f} degrees")
+        """,
+    },
+    {
+        "slug": "scattering-3-the-slit",
+        "title": "What shape to cut the aperture",
+        "diagram": "slit",
+        "diagram_from": "slit_geometry",
+        "caption": (
+            "Looking straight down the beam at the 90\u00b0 station: the scattering "
+            "arrives on the dashed ring. Both apertures subtend the same solid angle "
+            "and collect the same counts \u2014 the slot is a thin band lying along "
+            "the ring, the round hole a disc wide enough to average over everything "
+            "inside it. Radius here is the angle from the beam axis, which is not an "
+            "area-preserving projection, so do not read equal areas off the drawing; "
+            "the angular extents beneath each shape are the honest comparison. The "
+            "radial band is drawn at a legible minimum \u2014 the real one is thinner."
+        ),
+        "math": [
+            {
+                "label": "what an annular slot subtends",
+                "math": (
+                    "\u03a9(\u03b8, \u03b4, \u03c6) = \u03c6 &middot; 2&#8201;"
+                    "sin&#8201;\u03b8&#8201;sin&#8201;\u03b4"
+                ),
+                "code": (
+                    "half, arc = s.slit_for(theta, omega)\n"
+                    "# omega is fixed by the counter's rate cap; only the\n"
+                    "# split between radial half-width and arc is yours"
+                ),
+            },
+            {
+                "label": "the aperture enters the model as a column",
+                "math": ("\u03bc = rate(\u03b8) &middot; \u03a9 &middot; <i>t</i>"),
+                "code": (
+                    "expected = Mul(factors=(\n"
+                    "    rate,\n"
+                    '    Data(name="omega", dimension=dimensionless()),\n'
+                    '    Data(name="exposure", dimension=BASES.time),\n'
+                    "))\n"
+                    "# geometry and exposure are data, not parameters"
+                ),
+            },
+        ],
+        "asks": "Same solid angle, same counts — does the shape matter?",
+        "lede": (
+            "A counter needs a hole to look through, and a bigger hole means more "
+            "counts. The obvious hole is round. The scattering does not depend on "
+            "azimuth, though, which means the two directions of a hole are not "
+            "equivalent at all."
+        ),
+        "beat": (
+            "Only the radial half-width smears the angle; azimuth is free resolution. "
+            "So hold the radial width at the workshop's floor and take every extra "
+            "steradian out in arc. A round hole of the same area at 90 degrees would "
+            "have to be many degrees wide and would report a rate belonging to no "
+            "angle in particular — the same counts, at a fraction of the resolution."
+        ),
+        "code": """
+            print(f"{'angle':>7} {'radial':>9} {'arc':>9} {'slot bias':>11} {'hole bias':>11}")
+            for theta in (5.0, 45.0, 90.0, 150.0):
+                omega_here = float(s.widest_aperture([theta], s.HARD_CENTRE)[0])
+                half, arc = s.slit_for(theta, omega_here)
+                slot = 100.0 * s.aperture_bias(theta, half, arc, s.HARD_CENTRE)
+                # a round hole of the same solid angle: equal in both directions
+                hole = np.degrees(np.sqrt(omega_here / np.pi))
+                hole_bias = 100.0 * s.aperture_bias(theta, hole, 2 * hole, s.HARD_CENTRE)
+                print(f"{theta:6.1f}d {half:8.2f}d {arc:8.1f}d "
+                      f"{slot:10.3f}% {hole_bias:10.2f}%")
+            print()
+            print("same solid angle, same counts. the slot reports the angle it is at;")
+            print("the hole reports an average over everything it can see.")
+
+            # the 90 degree station, which the diagram on this page draws
+            theta = 90.0
+            omega90 = float(s.widest_aperture([theta], s.HARD_CENTRE)[0])
+            half90, arc90 = s.slit_for(theta, omega90)
+            hole90 = float(np.degrees(np.sqrt(omega90 / np.pi)))
+            slit_geometry = {
+                "theta": theta,
+                "omega": omega90,
+                "half": half90,
+                "arc": arc90,
+                "hole_radius": hole90,
+                "slot_bias_pct": 100.0 * s.aperture_bias(theta, half90, arc90, s.HARD_CENTRE),
+                "hole_bias_pct": 100.0
+                * s.aperture_bias(theta, hole90, 2 * hole90, s.HARD_CENTRE),
+            }
+        """,
+    },
+    {
+        "slug": "scattering-4-how-long",
+        "title": "How long at each, and what the plan buys",
+        "asks": "Two hundred hours. Where do they go, and what comes back?",
+        "lede": (
+            "The plan is nine stations in four roles: anchors that pin the "
+            "multiple-scattering core, a bank where the information is, witnesses whose "
+            "evidence survives the core being argued with, and a foil-out run for the "
+            "background. The hours are the argument."
+        ),
+        "beat": (
+            "A hundred and ten of the two hundred go to 150 degrees — the opposite of "
+            "what evidence-per-hour says, and right for the reason step two gave. The "
+            "bound that comes back is R < 33 fm, against a floor of 29.6 fm that no "
+            "amount of counting can beat, because the beam energy alone sets it."
+        ),
+        "code": """
+            print(f"{'angle':>8} {'role':>11} {'hours':>7}")
+            for st in s.PLAN:
+                where = f"{st.theta_deg:.1f}d" + ("" if st.foil else " out")
+                print(f"{where:>8} {st.role:>11} {st.hours:7.0f}")
+            print(f"{'':>8} {'total':>11} {sum(x.hours for x in s.PLAN):7.0f}")
+            print()
+
+            surface = s.surface()
+            plan = s.plan_data()
+            mu_hard = surface.counts(plan, s.HARD_CENTRE)
+            radii = np.geomspace(3.0e-14, 1.0e-12, 300)
+            against = np.array([
+                float(s.weight_of_evidence(
+                    mu_hard, surface.counts(plan, s.truth(s.lam_of(float(r))))
+                ).sum())
+                for r in radii
+            ])
+            bound = float(radii[np.where(against > 3.0)[0][0]])
+            print(f"the plan can separate a charge larger than {bound * 1e15:.1f} fm")
+            print(f"the beam's own floor is                    {s.D_CLOSEST / 2 * 1e15:.1f} fm")
+        """,
+    },
+    {
+        "slug": "scattering-5-when-to-stop",
+        "title": "When to stop",
+        "asks": "The witness runs for 110 hours. Do you have to wait?",
+        "lede": (
+            "A hundred and ten hours at one angle is a long time to learn nothing you "
+            "could not have learned in thirty. The same sequential machinery that stops "
+            "a clinical trial early applies here: look at the witness on a schedule, "
+            "against a boundary that spends the error rate across the looks."
+        ),
+        "beat": (
+            "The boundary is what makes looking legitimate. Peeking at a running count "
+            "and stopping when it looks good is how you manufacture a discovery; an "
+            "O'Brien-Fleming boundary is the price of being allowed to look at all."
+        ),
+        "code": """
+            import math
+            from axiom.design import (
+                LookSchedule, StoppingRule, information_fractions,
+                obrien_fleming, operating_characteristics,
+            )
+
+            look_hours = (5.0, 15.0, 30.0, 60.0, 110.0)
+            looks = LookSchedule(
+                labels=tuple(f"{h:g} h" for h in look_hours),
+                information=information_fractions(look_hours),
+            )
+            boundary = obrien_fleming(0.05, looks, side="upper", kind="efficacy")
+            rule = StoppingRule(name="witness_150", looks=looks, boundaries=(boundary,))
+
+            print(f"{'look':>8} {'information':>12} {'stop above z':>13}")
+            for label, frac, z in zip(looks.labels, looks.information, boundary.z):
+                print(f"{label:>8} {frac:12.2f} {z:13.3f}")
+
+            signal = float(
+                s.rate_per_steradian([150.0], s.HARD_CENTRE)[0] - s.BACKGROUND_DENSITY
+            ) * s.OMEGA_MAX
+            background = s.BACKGROUND_DENSITY * s.OMEGA_MAX
+            full = 110 * 3600.0
+            print()
+            for factor in (1.0, 1e-3, 1e-4):
+                drift = signal * factor * full / math.sqrt((signal * factor + background) * full)
+                oc = operating_characteristics(rule, drift=drift)
+                print(f"a source {factor:7.0e} of the modelled one: "
+                      f"P(stop) = {oc.crossings.stop_probability:.3f}")
+        """,
+    },
+    {
+        "slug": "scattering-6-running-it",
+        "title": "Running it",
+        "math": [
+            {
+                "label": "the single-scattering tail, cut off by a charge of size \u03bb",
+                "math": (
+                    "<i>f</i><sub>tail</sub>(\u03b8) = "
+                    "<span class='frac'><span><i>e</i><sup>log&#8201;<i>a</i></sup></span>"
+                    "<span>sin<sup>4</sup>(\u03b8/2)</span></span>"
+                    "&nbsp;&middot;&nbsp;<i>e</i><sup>\u2212(<i>u</i>/<i>e</i>"
+                    "<sup>\u03bb</sup>)\u00b2</sup>"
+                    "&nbsp;&nbsp;<span style='opacity:.7'>u = sin(\u03b8/2)</span>"
+                ),
+                "code": (
+                    'u = Apply(fn="sin", arg=Mul(factors=(\n'
+                    "    Const(value=0.5, dimension=dimensionless()), theta)))\n"
+                    "tail = Mul(factors=(\n"
+                    "    _exp(log_a),\n"
+                    "    Pow(base=u, exponent=Fraction(-4)),\n"
+                    "    _exp(Mul(factors=(\n"
+                    "        Const(value=-1.0, dimension=dimensionless()),\n"
+                    "        Pow(base=_ratio(u, lam), exponent=Fraction(2)),\n"
+                    "    ))),\n"
+                    "))"
+                ),
+            },
+            {
+                "label": "the multiple-scattering core",
+                "math": (
+                    "<i>f</i><sub>core</sub>(\u03b8) = <i>e</i><sup>log&#8201;<i>c</i></sup>"
+                    "&nbsp;<i>e</i><sup>\u2212\u00bd(\u03b8/<i>e</i>"
+                    "<sup>log&#8201;<i>w</i></sup>)\u00b2</sup>"
+                ),
+                "code": (
+                    "core = Mul(factors=(\n"
+                    "    _exp(log_c),\n"
+                    "    _exp(Mul(factors=(\n"
+                    "        Const(value=-0.5, dimension=dimensionless()),\n"
+                    "        Pow(base=_ratio(theta, log_w), exponent=Fraction(2)),\n"
+                    "    ))),\n"
+                    "))"
+                ),
+            },
+            {
+                "label": "expected counts, and the variance-stabilising transform",
+                "math": (
+                    "\u03bc = (foil&#8201;\u00b7&#8201;[<i>f</i><sub>tail</sub> + "
+                    "<i>f</i><sub>core</sub>] + <i>e</i><sup>log&#8201;<i>b</i></sup>)"
+                    "&#8201;\u03a9&#8201;<i>t</i>"
+                    "&nbsp;&nbsp;&nbsp;&nbsp;<i>y</i> = 2<span class='rad'>"
+                    "&#8730;<span style='border-top:1px solid currentColor'>"
+                    "&#8201;\u03bc&#8201;</span></span>"
+                ),
+                "code": (
+                    "scattered = Mul(factors=(\n"
+                    '    Data(name="foil", dimension=dimensionless()),\n'
+                    "    Add(terms=(tail, core)),\n"
+                    "))\n"
+                    "expected = Mul(factors=(\n"
+                    "    Mul(factors=(RATE_UNIT, Add(terms=(scattered, _exp(log_b))))),\n"
+                    '    Data(name="omega", dimension=dimensionless()),\n'
+                    '    Data(name="exposure", dimension=BASES.time),\n'
+                    "))\n"
+                    "mean = Mul(factors=(\n"
+                    "    Const(value=2.0, dimension=dimensionless()),\n"
+                    "    Pow(base=expected, exponent=Fraction(1, 2)),\n"
+                    "))\n"
+                    "# 2*sqrt(Poisson) has variance 1, so a normal\n"
+                    "# likelihood on y is the right one"
+                ),
+            },
+        ],
+        "asks": "The counts come in. What does the experiment actually say?",
+        "lede": (
+            "Every station is a Poisson draw around what the apparatus would really "
+            "have produced. Then the five parameters are profiled over the one the "
+            "experiment is about, and the bound is read where the likelihood has "
+            "climbed far enough above its minimum."
+        ),
+        "beat": (
+            "It comes back one-sided, and that is the honest shape: there is no lower "
+            "limit on the radius here. Everything below the bound fits the counts "
+            "equally well, because the beam cannot resolve past D/2 whatever the "
+            "counting time. Rutherford published 34 fm in 1911."
+        ),
+        "code": """
+            import warnings
+            from axiom.design import profile_likelihood
+
+            counts = np.random.default_rng(1911).poisson(surface.counts(plan, s.HARD_CENTRE))
+            measured = dict(plan)
+            measured["root_count"] = 2.0 * np.sqrt(counts)
+
+            inn = [bool(st.foil) for st in s.PLAN]
+            if_diffuse = surface.counts(plan, s.DIFFUSE)
+            print(f"at 150 degrees: {int(counts[inn][-1]):,} counts observed")
+            print(f"  a diffuse atom predicts {float(if_diffuse[inn][-1]):.0f}")
+            print(f"  that is a Poisson excess of "
+                  f"{(counts[inn][-1] - if_diffuse[inn][-1]) / math.sqrt(counts[inn][-1]):,.0f} sd")
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+                values, drops = profile_likelihood(
+                    s.model(), measured, {**s.HARD_CENTRE, "lam": 0.0},
+                    "lam", grid=np.linspace(-4, 4, 41),
+                )
+            drops = np.asarray(drops)
+            lowest = int(np.argmin(drops))
+            last = int(np.where(drops[:lowest] > 1.921)[0][-1])
+            crossing = float(np.interp(
+                1.921, [drops[last + 1], drops[last]], [values[last + 1], values[last]]
+            ))
+            print()
+            print(f"R < {s.radius_of(crossing) * 1e15:.1f} fm   (95%, one-sided)")
+            print(f"the beam could not have resolved below {s.D_CLOSEST / 2 * 1e15:.1f} fm")
+            print("Rutherford published 34 fm in 1911.")
+        """,
+    },
+]
+
+
+#: The tutorial series. Each is one problem carried through every phase it has
+#: to survive, a step to a page, and each step's snippet runs into the *same*
+#: namespace as the ones before it in its own series. That sharing is the whole
+#: point: a tutorial whose steps do not carry state is a tour with numbers in it.
+#:
+#: Two of them, because the two shapes of causal work read differently. The depot
+#: problem is an *analysis* story — the data is already there and the question is
+#: whether it can answer anything. GEIGER-1911 is a *design* story: there is no
+#: data at all, and every decision is about what to go and measure.
+TUTORIALS: list[dict[str, Any]] = [
+    {
+        "key": "porting",
+        "title": "Bringing your own problem",
+        "kind": "A porting story",
+        "asks": "You have a dataframe. How do you get it into axiom at all?",
+        "problem": (
+            "Twenty-four stores, forty weeks, leaflet spend and footfall. How do you "
+            "turn a table you already have into a model axiom can fit, an estimand it "
+            "can read, and a number you could defend?"
+        ),
+        "lede": (
+            "The other two series start from a world that already exists — a simulator "
+            "in one, a physics module in the other — which is fine for telling a story "
+            "and no help at all when what you have is a CSV. Nothing in this one "
+            "imports axiom.sim. Every object you would have to write is written on the "
+            "page: the roles, the entities and their dimensions, the spec, the estimand."
+        ),
+        "notebook": "nbs/surface/",
+        "steps": PORTING_STEPS,
+    },
+    {
+        "key": "custom",
+        "title": "A model of your own",
+        "kind": "A modelling story",
+        "asks": "The kernels do not fit your mechanism. Now what?",
+        "problem": (
+            "Your response is an exponential approach to a ceiling, and no kernel on "
+            "the menu is that shape. How do you write the mean yourself, get it "
+            "checked, and fit it — and what do you give up by leaving the kernels?"
+        ),
+        "lede": (
+            "A `ModelSpec` is the object underneath everything else: a mean written as "
+            "a typed expression, the outcome it predicts, the likelihood around it, and "
+            "every parameter with a prior. `SurfaceSpec` builds one and hands it to the "
+            "same backends. Writing one yourself is the route the physics case study "
+            "takes, on a response small enough to read in five steps."
+        ),
+        "notebook": "nbs/case-studies/rutherford/",
+        "steps": CUSTOM_STEPS,
+    },
+    {
+        "key": "depot",
+        "title": "One question, carried all the way",
+        "kind": "An analysis story",
+        "asks": "The data is already here. Can it answer anything?",
+        "problem": (
+            "A logistics operator runs 40 distribution depots in one region and 500 "
+            "nationally. Should the standing weekly maintenance schedule go from "
+            "nothing to 60 hours per depot?"
+        ),
+        "lede": (
+            "Identification refuses the panel on hand, so an experiment is designed, "
+            "sized against the boundary the decision turns on, and run. Its answer is "
+            "folded back into the model — and it reverses the decision the "
+            "observational fit would have made."
+        ),
+        "notebook": "nbs/tutorial/01-the-whole-loop.ipynb",
+        "steps": [
+            {
+                "slug": "tutorial-1-the-question",
+                "title": "The question, written down",
+                "asks": "What are we actually deciding, and what would 'yes' have to beat?",
+                "lede": (
+                    "A logistics operator runs 40 depots in one region and 500 nationally. "
+                    "Should the standing weekly maintenance schedule go from nothing to 60 "
+                    "hours per depot? Before any data is touched, the decision has to be "
+                    "written down as a quantity — because the number that answers it is not "
+                    "the number an experiment can most easily measure."
+                ),
+                "beat": (
+                    "Two estimands, not one. The experiment can measure a first-week lift on "
+                    "individual depots; the decision turns on a steady-state weekly lift "
+                    "across the region. They are different windows and different levels, and "
+                    "keeping them apart from the first line is what stops the report answering "
+                    "the easy question and calling it the hard one.\n\n"
+                    "`surface_world` is a simulator, and it hands back the `spec` for "
+                    "free so this story can get moving. With your own data there is no "
+                    "simulator and the spec is the first thing you write -- the porting "
+                    "tutorial does exactly that, from a dataframe, with nothing hidden."
+                ),
+                "code": """
+            from axiom.core import Intervention, Population, TimeWindow
+            from axiom.estimands import Estimand, Level, Quantity
+            from axiom.sim import DosePlan, surface_world
+            from axiom.surface import GeometricCarryover, HillKernel
+
+            DOSE, NO_DOSE = 60.0, 0.0        # maintenance hours per depot-week
+            VALUE_PER_POINT, COST_PER_HOUR = 400.0, 45.0
+            REGION_DEPOTS, MAX_LAG, SEED = 40, 4, 0
+
+            world = surface_world(
+                n_units=REGION_DEPOTS, n_periods=52, treatments=("a",),
+                kernels=HillKernel(reference_dose=50.0, amplitude_scale=10.0),
+                carryover={"a": GeometricCarryover(max_lag=MAX_LAG)},
+                doses=DosePlan(scale=50.0, spread=0.8, zero_fraction=0.05),
+                intercept="shared",
+                truth={"beta_a": 10.0, "alpha": 5.0, "k_a": 50.0, "s_a": 2.0, "lam_a": 0.5},
+                noise_sd=2.0, seed=SEED,
+            )
+            spec = world.spec
+
+            def contrast(name, window, level):
+                return Estimand(
+                    name=name, quantity=Quantity(kind="contrast"),
+                    treatment=spec.treatment("a"),
+                    intervention=Intervention(doses={"a": DOSE}),
+                    reference=Intervention(doses={"a": NO_DOSE}),
+                    outcome=spec.outcome, population=Population(name="region_depots"),
+                    window=window, level=level, dimension=spec.outcome_dimension,
+                )
+
+            experiment_estimand = contrast(
+                "first_week_lift",
+                TimeWindow(start=0, stop=1, basis="cumulative"),
+                Level(unit="individual"),
+            )
+            decision_estimand = contrast(
+                "steady_state_weekly_lift",
+                TimeWindow(start=MAX_LAG, stop=52, basis="per_period"),
+                Level(unit="cluster"),
+            )
+
+            BREAK_EVEN = DOSE * COST_PER_HOUR / VALUE_PER_POINT
+            print(f"the experiment can measure : {experiment_estimand.name}")
+            print(f"the decision turns on      : {decision_estimand.name}")
+            print()
+            print(f"{DOSE:.0f} hours at {COST_PER_HOUR:.0f} USD "
+                  f"= {DOSE * COST_PER_HOUR:,.0f} USD per depot-week")
+            print(f"break-even steady-state lift: {BREAK_EVEN:.2f} index points per depot-week")
+        """,
+            },
+            {
+                "slug": "tutorial-2-identification",
+                "title": "Can the data we already have answer it?",
+                "asks": "Is the effect identified from the panel already on hand?",
+                "lede": (
+                    "The operator has a panel: depots, weeks, maintenance hours, an outcome "
+                    "index. The temptation is to fit it. The question axiom asks first is "
+                    "whether that panel can produce the number the decision needs at all."
+                ),
+                "beat": (
+                    "It cannot. Depots that were already doing well got more maintenance hours, "
+                    "and the thing that drove both was never recorded. `identify` says so and "
+                    "names what it would need — which is the answer that saves the money, "
+                    "because the alternative is a fitted number nobody can defend."
+                ),
+                "code": """
+            from axiom.identify import CausalGraph, identify
+
+            observed = CausalGraph.from_edges(
+                "capability -> hours, capability -> outcome, hours -> outcome",
+                unmeasured=["capability"], name="the_panel_on_hand",
+            )
+            verdict = identify(observed, "hours", "outcome")
+            print("status :", verdict.status)
+            print("route  :", verdict.route or "none available")
+            print("needs  :", sorted(verdict.unmeasured_required), "which is not recorded")
+            print()
+            for a in verdict.verdict.assumptions:
+                print(f"  [{a.state}] {a.name}")
+                print(f"     {a.statement}")
+        """,
+            },
+            {
+                "slug": "tutorial-3-the-prior",
+                "title": "The belief we start from",
+                "asks": "What does the observational fit say, and how much should we trust it?",
+                "lede": (
+                    "An unidentified number is still a belief, and pretending to have none is "
+                    "not neutrality. The observational fit is run — and then inflated, because "
+                    "a confounded estimate that reports its nominal precision is the most "
+                    "dangerous object in the analysis."
+                ),
+                "beat": (
+                    "This is the number the experiment will be measured against. Write it down "
+                    "now, with its inflation stated, so that later there is something for the "
+                    "measurement to disagree with."
+                ),
+                "code": """
+
+            import numpy as np
+            from axiom.data import Panel
+            from axiom.estimands import realize
+            from axiom.surface import fit
+
+            # The panel the operator actually has: depots that were already in good
+            # shape got more hours, and "good shape" was never written down.
+            rng = np.random.default_rng(123)
+            frame = world.panel.frame
+            dose = frame["a"].to_numpy(dtype=np.float64)
+            standardized = (dose - dose.mean()) / dose.std()
+            condition = 0.6 * standardized + 0.8 * rng.standard_normal(dose.size)
+            observed_panel = Panel(frame.assign(y=frame["y"] + 0.8 * condition), world.panel.roles)
+            print(f"corr(hours, fleet condition) = "
+                  f"{float(np.corrcoef(dose, condition)[0, 1]):.2f}  <- the confounding")
+
+            biased = fit(spec, observed_panel, backend="laplace", draws=1000, seed=1)
+            before = realize(decision_estimand, biased, assume_identified=True, mass=0.9, seed=SEED)
+
+            # The estimand is region-level: it sums across the 40 depots. The
+            # break-even is per depot-week, so the comparison has to be made on
+            # one scale or the other -- and getting that wrong is how a decision
+            # gets made against a number forty times too big.
+            before_per_depot = before.summary.mean / REGION_DEPOTS
+            print()
+            print("the observational reading of the decision's estimand")
+            print(f"  region : {before.summary.mean:+.1f} index points per week")
+            print(f"  depot  : {before_per_depot:+.2f} index points per depot-week")
+            print(f"  break-even is {BREAK_EVEN:.2f}")
+            print(f"  -> on this reading, fund it.")
+        """,
+            },
+            {
+                "slug": "tutorial-4-design",
+                "title": "Designing the experiment",
+                "asks": "How big does the trial need to be, and is the answer worth its cost?",
+                "lede": (
+                    "Four questions in order: what effect to power for, how many depots that "
+                    "takes, what the answer is worth, and which concrete design buys it "
+                    "cheapest. Powering for the effect you hope for is how trials get "
+                    "commissioned that cannot fail informatively."
+                ),
+                "beat": (
+                    "The effect worth detecting is the break-even, not the point estimate — "
+                    "the experiment has to distinguish 'worth funding' from 'not', and that "
+                    "boundary is where the precision has to land."
+                ),
+                "code": """
+
+            from axiom.design import DecisionSpec, ValuePerOutcome, evoi_gaussian, sample_size
+
+            from axiom.calibrate import carryover_window_factor
+            from axiom.surface import GeometricCarryover as GC
+
+            # The experiment reads a first week; the decision lives in the steady
+            # state. `carryover_window_factor` says how much of the effect has
+            # landed by then, which is what converts the break-even onto the
+            # scale the trial can actually measure.
+            lam = float(biased.posterior.flat("lam_a").mean())
+            share = carryover_window_factor(GC(max_lag=MAX_LAG), {"lam_a": lam}, 1, treatment="a")
+            threshold_first_week = BREAK_EVEN * share.counterfactual
+            print(f"{share.counterfactual:.3f} of the effect lands in the first week")
+            print(f"break-even on the experiment's scale: {threshold_first_week:.3f}")
+            print()
+
+            decision = DecisionSpec(
+                name="raise_the_schedule",
+                threshold=threshold_first_week,
+                value_per_outcome_unit=VALUE_PER_POINT * 500 * 52,
+                numeraire="USD",
+            )
+
+            sd = float(observed_panel.frame["y"].std())
+            ss = sample_size(effect=threshold_first_week, sd=sd, power=0.8, alpha=0.05)
+            print(f"powering for the boundary, not the hope: {threshold_first_week:.3f}")
+            print(f"  depots per arm : {ss.n}")
+
+            first_week = realize(
+                experiment_estimand, biased, assume_identified=True, mass=0.9, seed=SEED
+            )
+            ev = evoi_gaussian(
+                decision,
+                float(first_week.summary.mean),
+                float(first_week.summary.sd),
+                0.35,
+            )
+            print()
+            print(f"perfect information would be worth : {ev.evpi:,.0f} USD")
+            print(f"this experiment, at se=0.35        : {ev.evsi:,.0f} USD")
+        """,
+            },
+            {
+                "slug": "tutorial-5-measurement",
+                "title": "The experiment lands",
+                "asks": "What did it measure, and does the model we already had agree?",
+                "lede": (
+                    "The trial runs. Its result arrives as one typed `Measurement` — the "
+                    "estimand it measured, the number, the interval, and the conditions it was "
+                    "measured under — rather than as a slide with a percentage on it."
+                ),
+                "beat": (
+                    "Before folding it in, ask whether the old model predicted it. `agreement` "
+                    "compares what the observational fit expected against what the experiment "
+                    "saw, and this is where the tutorial turns: they disagree."
+                ),
+                "code": """
+
+            from axiom.calibrate import Measurement, agreement
+
+            # What the world would really have shown. The analyst does not get to
+            # see this; the experiment reads it through noise.
+            diff = world.forward({"a": DOSE}) - world.forward({"a": NO_DOSE})
+            truth_experiment = float(np.mean(diff[:, 0]))
+            se_experiment = 0.35
+            measurement = Measurement(
+                estimand=experiment_estimand,
+                estimate=truth_experiment,
+                se=se_experiment,
+                mass=0.9,
+                source="depot-maintenance-rct-2026Q2",
+            )
+            print(f"the trial read {measurement.estimate:+.3f} "
+                  f"{measurement.interval}")
+
+            says = agreement(biased, measurement, seed=SEED)
+            print()
+            print(f"the model we already had expected {says.posterior_mean:+.3f}")
+            print(f"the trial says                    {says.estimate:+.3f}")
+            print(f"agreement : {says.verdict}  (z = {says.z:.1f})")
+        """,
+            },
+            {
+                "slug": "tutorial-6-calibration",
+                "title": "Folding the experiment into the model",
+                "asks": "What does the model say once it has to honour the measurement?",
+                "lede": (
+                    "Refit the surface under the constraint that it reproduce what the trial "
+                    "saw. The result is a model that agrees with the experiment on the "
+                    "experiment's own terms — and can then be asked the decision's question, "
+                    "which the experiment never measured directly."
+                ),
+                "beat": (
+                    "Every step of that transfer is written to a ledger: the window it crossed, "
+                    "the level it aggregated to, the carryover it assumed. The decision's number "
+                    "is reported with the ledger attached or it is not reported."
+                ),
+                "code": """
+
+            from axiom.calibrate import fit_calibrated
+
+            calibrated = fit_calibrated(
+                spec, observed_panel, [measurement], backend="laplace", draws=1000, seed=1
+            )
+            after = realize(
+                decision_estimand, calibrated, assume_identified=True, mass=0.9, seed=SEED
+            )
+
+            after_per_depot = after.summary.mean / REGION_DEPOTS
+            print("the decision's estimand, per depot-week")
+            print(f"  observational : {before_per_depot:+.2f}")
+            print(f"  calibrated    : {after_per_depot:+.2f}")
+            print(f"  break-even    : {BREAK_EVEN:+.2f}")
+            print()
+            said = "fund it" if before_per_depot > BREAK_EVEN else "do not fund it"
+            says_now = "fund it" if after_per_depot > BREAK_EVEN else "do not fund it"
+            print(f"the observational model said : {said}")
+            print(f"the experiment says          : {says_now}")
+        """,
+            },
+            {
+                "slug": "tutorial-7-the-follow-up",
+                "title": "Planning the follow-up",
+                "asks": "Should we repeat this, when does it go stale, and what next?",
+                "lede": (
+                    "A decision made once is a decision that decays. The same design machinery "
+                    "that sized the first trial says when this answer stops being usable and "
+                    "what the next dose worth testing is."
+                ),
+                "beat": (
+                    "The answer is not 'run it again annually because that is the budget "
+                    "cycle'. It is a number: how long before the value of a fresh answer "
+                    "exceeds what a fresh answer costs."
+                ),
+                "code": """
+
+            from axiom.design import time_to_re_experiment
+
+            timing = time_to_re_experiment(
+                posterior_sd=float(after.summary.sd) / REGION_DEPOTS,
+                half_life_periods=26.0,
+                experiment_se=se_experiment,
+                min_eig=0.5,
+            )
+            print(f"a repeat is worth running again after {timing.periods:.0f} weeks")
+            print(f"  today it would gain {timing.eig_now:.3f} nats, "
+                  f"against a bar of 0.5")
+        """,
+            },
+            {
+                "slug": "tutorial-8-the-report",
+                "title": "The report",
+                "asks": "How does the whole of this become a document someone can check?",
+                "lede": (
+                    "Every number above was produced by a typed result carrying its own "
+                    "provenance. `axiom-dossier` turns that record into a document: methods "
+                    "from the steps, results from the quantities, limitations from the "
+                    "assumptions still standing."
+                ),
+                "beat": (
+                    "The point is not that a report gets written. It is that the report "
+                    "cannot describe an analysis nobody ran, cannot state a number the record "
+                    "does not hold, and cannot quietly omit the assumption doing the most work."
+                ),
+                "code": """
+
+            from axiom_dossier import EvidenceBuilder, build
+
+            evidence = (
+                EvidenceBuilder(
+                    "Weekly maintenance schedule",
+                    "Should the standing weekly schedule go from nothing to 60 hours a depot?",
+                )
+                .verdict(verdict, graph=observed)
+                .step(
+                    "design", "Design",
+                    what=f"{ss.n} depots an arm, powered for the break-even.",
+                    why="The boundary the decision turns on is where precision has to land.",
+                    equations=("break_even = DOSE * COST_PER_HOUR / VALUE_PER_POINT",),
+                )
+                .finding(
+                    "decision", after, label="Steady-state weekly lift, region",
+                    unit="index points", precision=1,
+                    threshold=BREAK_EVEN * REGION_DEPOTS, beneficial="higher",
+                )
+                .build()
+            )
+            built = build(evidence, style="journal", verbosity="standard")
+            print(built.summary())
+            print(f"missing context keys: {built.missing() or 'none'}")
+            print()
+            for q in evidence.findings:
+                print(f"  {q.label}: {q.stated()}  [{q.against_threshold()}]")
+        """,
+            },
+        ],
+    },
+    {
+        "key": "scattering",
+        "title": "Designing an experiment before there is any data",
+        "kind": "A design story",
+        "asks": "There is no data. What should we go and measure?",
+        "problem": (
+            "Is the positive charge of an atom concentrated in a small hard centre, or "
+            "spread through the whole atom? Both models fit everything known in 1910. "
+            "What experiment would tell them apart — and specifically, which scattering "
+            "angles, what shape of aperture, and for how long?"
+        ),
+        "lede": (
+            "Nothing here is an analysis. Every step decides what to go and measure, "
+            "and the whole argument turns on noticing that the two rival atoms are one "
+            "model at two values of one number. That is what gives the experiment a "
+            "resolving power, a sensitivity curve, and a rule for when to stop."
+        ),
+        "notebook": "nbs/case-studies/rutherford/",
+        "capture": ("apparatus", "slit_geometry"),
+        "steps": SCATTERING_STEPS,
+    },
+]
+
+
+@section
+def tutorial() -> Any:
+    """Run every series, a step at a time, and keep what each step printed.
+
+    Each series gets its own ``env``, and every step inside it runs into that
+    one: step 6 of the depot tutorial recalibrates the fit step 3 produced, and
+    a reader following along in a REPL has exactly the state the page shows.
+
+    A step that raises stops the build. That is deliberate and it is the whole
+    value of generating these pages: a tutorial that has drifted from the library
+    fails here rather than on somebody's first afternoon with it.
+    """
+    import contextlib
+    import io as _io
+    import textwrap
+
+    series = []
+    for spec in TUTORIALS:
+        env: dict[str, Any] = {}
+        steps = []
+        print(f"    [{spec['key']}]")
+        for i, step in enumerate(spec["steps"], start=1):
+            code = textwrap.dedent(step["code"]).strip("\n")
+            buf = _io.StringIO()
+            try:
+                with contextlib.redirect_stdout(buf):
+                    exec(compile(code, f"<tutorial:{step['slug']}>", "exec"), env)  # noqa: S102
+            except Exception as exc:
+                raise SystemExit(
+                    f"tutorial step {i} ({step['slug']}) failed: "
+                    f"{type(exc).__name__}: {exc}\n"
+                    f"  output before the failure:\n{buf.getvalue()}"
+                ) from exc
+            output = buf.getvalue().rstrip("\n")
+            steps.append(
+                {
+                    "n": i,
+                    "slug": step["slug"],
+                    "title": step["title"],
+                    "asks": step["asks"],
+                    "lede": step["lede"],
+                    "beat": step["beat"],
+                    "code": code,
+                    "output": output,
+                    # Optional presentation the step declared: a diagram to draw
+                    # and the equations to set beside it. Carried through rather
+                    # than defaulted, so a step without them renders neither.
+                    **{
+                        k: step[k]
+                        for k in ("diagram", "diagram_from", "caption", "math")
+                        if k in step
+                    },
+                }
+            )
+            print(f"      {i}. {step['title']}: {len(output.splitlines())} lines")
+        # Values the steps computed that a diagram on the page is drawn from.
+        # Lifting them out of the shared namespace rather than recomputing them
+        # here is what keeps a picture and the code above it in step.
+        captured = {name: env[name] for name in spec.get("capture", ()) if name in env}
+        series.append(
+            {k: v for k, v in spec.items() if k not in ("steps", "capture")}
+            | {"steps": steps, "captured": captured}
+        )
+    return {"series": series, "n": len(series)}
 
 
 # ----------------------------------------------------------------------------------

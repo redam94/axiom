@@ -1,0 +1,380 @@
+{
+ "series": [
+  {
+   "key": "porting",
+   "title": "Bringing your own problem",
+   "kind": "A porting story",
+   "asks": "You have a dataframe. How do you get it into axiom at all?",
+   "problem": "Twenty-four stores, forty weeks, leaflet spend and footfall. How do you turn a table you already have into a model axiom can fit, an estimand it can read, and a number you could defend?",
+   "lede": "The other two series start from a world that already exists \u2014 a simulator in one, a physics module in the other \u2014 which is fine for telling a story and no help at all when what you have is a CSV. Nothing in this one imports axiom.sim. Every object you would have to write is written on the page: the roles, the entities and their dimensions, the spec, the estimand.",
+   "notebook": "nbs/surface/",
+   "steps": [
+    {
+     "n": 1,
+     "slug": "porting-1-your-data",
+     "title": "Start from the dataframe you already have",
+     "asks": "What does axiom need to know about your table?",
+     "lede": "Long format: one row per unit per period, a column for the treatment and a column for the outcome. That is the whole data requirement, and it is deliberately the shape almost everyone already has.",
+     "beat": "What axiom will not do is guess which column is which. A `RoleMap` names the unit, the time, the outcome and every treatment explicitly. Column-name conventions are how a spend column gets read as an outcome in somebody's third refactor, and the map is five lines against that.",
+     "code": "import numpy as np\nimport pandas as pd\n\n# Whatever produced your table. This one is 24 stores over 40 weeks:\n# leaflet spend, and footfall that responds to it with diminishing\n# returns. Substitute your own read_csv here -- nothing below cares.\nrng = np.random.default_rng(7)\nrows = []\nfor store in range(24):\n    base = 40.0 + rng.normal(0, 6)          # stores differ\n    for week in range(40):\n        spend = float(max(0.0, rng.normal(300, 160)))\n        rows.append({\n            \"store\": f\"s{store:02d}\",\n            \"week\": week,\n            \"leaflets\": spend,\n            \"footfall\": base + 9.0 * spend / (spend + 250.0)\n                        + rng.normal(0, 2),\n        })\nframe = pd.DataFrame(rows)\nprint(frame.head(3).to_string(index=False))\nprint(f\"\\n{len(frame)} rows, {frame['store'].nunique()} stores, \"\n      f\"{frame['week'].nunique()} weeks\")",
+     "output": "store  week   leaflets  footfall\n  s00     0 347.799286 44.695300\n  s00     1 157.505306 42.576639\n  s00     2 141.336551 43.378141\n\n960 rows, 24 stores, 40 weeks"
+    },
+    {
+     "n": 2,
+     "slug": "porting-2-entities",
+     "title": "Say what the columns mean",
+     "asks": "Why does a column need a dimension and a unit?",
+     "lede": "A `Treatment` and an `Outcome` are not labels. They carry a dimension and a unit, and those travel with every number derived from them \u2014 into the estimand, into the transfer ledger, onto the report.",
+     "beat": "This is what stops dollars being added to visits four steps later, in a function nobody is reading at the time. `D.currency` and `D.outcome` are different dimensions, and axiom refuses the arithmetic that would mix them rather than returning a number with no meaning.",
+     "code": "from axiom.core import D, Outcome, Treatment\nfrom axiom.data import Panel, RoleMap\n\nleaflets = Treatment(\n    name=\"leaflets\",\n    dimension=D.currency,\n    unit=\"USD/store-week\",\n    description=\"leaflet spend delivered to the store's catchment\",\n)\nfootfall = Outcome(\n    name=\"footfall\",\n    dimension=D.outcome,\n    unit=\"visits/week\",\n    description=\"counted entries through the door\",\n    aggregation=\"mean\",\n)\n\nroles = RoleMap(\n    unit=\"store\",\n    time=\"week\",\n    outcome=(\"footfall\", footfall),\n    treatments={\"leaflets\": leaflets},\n)\npanel = Panel(frame, roles)\n\nprint(f\"unit column      : {roles.unit}\")\nprint(f\"time column      : {roles.time}\")\nprint(f\"outcome column   : {roles.outcome[0]}  [{footfall.dimension}]\")\nprint(f\"treatment columns: {list(roles.treatments)}  \"\n      f\"[{leaflets.dimension}]\")\nprint()\nprint(f\"the two dimensions are different objects: \"\n      f\"{D.currency != D.outcome}\")",
+     "output": "unit column      : store\ntime column      : week\noutcome column   : footfall  [Y]\ntreatment columns: ['leaflets']  [$]\n\nthe two dimensions are different objects: True"
+    },
+    {
+     "n": 3,
+     "slug": "porting-3-the-spec",
+     "title": "Write the spec",
+     "asks": "What shape do you believe the response has, and how sure are you?",
+     "lede": "A `SurfaceSpec` is the model, and it is the object most worth understanding rather than copying. One kernel per treatment says what shape the dose-response is allowed to take; the intercept says what the units are allowed to differ by; the scales are your priors.",
+     "beat": "None of these is a default you can skip past. `HillKernel` says saturating with a half-way point near the reference dose \u2014 say that and a linear response can no longer be fitted, which is the point of saying it. The spec hashes, so the model that produced a number is identifiable later by more than a filename.",
+     "code": "from axiom.surface import HillKernel, SurfaceSpec\n\nspec = SurfaceSpec(\n    name=\"leaflets_footfall\",\n    treatments=(leaflets,),\n    outcome=footfall,\n    # saturating, with the half-way point expected near 250 USD and\n    # a lift of order 10 visits at saturation\n    kernels={\"leaflets\": HillKernel(\n        reference_dose=250.0, amplitude_scale=10.0,\n    )},\n    intercept=\"shared\",\n    unit_column=\"store\",\n    time_column=\"week\",\n    intercept_scale=8.0,\n    noise_scale=3.0,\n)\nprint(f\"model      : {spec.name}\")\nprint(f\"content hash: {spec.content_hash()[:16]}\")\nprint(f\"treatments : {[t.name for t in spec.treatments]}\")\nprint(f\"intercept  : {spec.intercept}\")\nprint()\nprint(\"`shared` says the stores share one baseline. They do not -- the\")\nprint(\"next step shows what that costs, and it is visible in sigma.\")",
+     "output": "model      : leaflets_footfall\ncontent hash: 3079cac0db4889ac\ntreatments : ['leaflets']\nintercept  : shared\n\n`shared` says the stores share one baseline. They do not -- the\nnext step shows what that costs, and it is visible in sigma."
+    },
+    {
+     "n": 4,
+     "slug": "porting-4-fit-it",
+     "title": "Fit it, and read what came back",
+     "asks": "Did the model find the response, and what did the spec cost you?",
+     "lede": "`fit` takes the spec and the panel and nothing else. The posterior comes back with one named parameter per thing the spec declared, so there is no positional unpacking and no guessing which column of an array is the amplitude.",
+     "beat": "Look at `sigma` before anything else. The stores really do differ by about 6 visits, and a shared intercept has nowhere to put that, so it lands in the residual. The fit is not wrong \u2014 it is answering the question the spec asked. Changing `intercept` is how you ask a different one.",
+     "code": "from axiom.surface import fit\n\nresult = fit(spec, panel, backend=\"laplace\", draws=800, seed=0)\n\nprint(f\"{'parameter':16s}{'posterior mean':>16}\")\nfor name in result.posterior.names():\n    mean = float(result.posterior.flat(name).mean())\n    print(f\"{name:16s}{mean:>16.2f}\")\nprint()\nprint(\"the world that produced the data used:\")\nprint(\"  baseline  ~40      amplitude 9.0     half-way 250\")\nprint(\"  within-store noise 2.0, between-store spread 6.0\")\nprint()\nprint(\"beta and k came back close. sigma did not -- it is carrying the\")\nprint(\"between-store spread the shared intercept could not.\")",
+     "output": "parameter         posterior mean\nalpha                      38.27\nsigma                       7.23\ns_leaflets                  2.74\nbeta_leaflets               8.31\nk_leaflets                244.79\n\nthe world that produced the data used:\n  baseline  ~40      amplitude 9.0     half-way 250\n  within-store noise 2.0, between-store spread 6.0\n\nbeta and k came back close. sigma did not -- it is carrying the\nbetween-store spread the shared intercept could not."
+    },
+    {
+     "n": 5,
+     "slug": "porting-5-the-estimand",
+     "title": "Declare what you want to know",
+     "asks": "How do you get a decision's number out of a fitted surface?",
+     "lede": "A fitted surface is not an answer. The answer is a specific comparison, over a specific population, in a specific window, at a specific level \u2014 and axiom makes you write that down as an `Estimand` before it will produce a number for it.",
+     "beat": "That looks like ceremony until the day the window in your head and the window in the fit disagree. `realize` compares them and carries a ledger of every step it took to cross between them; the ledger is the part you show someone who has to trust the number.",
+     "code": "from axiom.core import Intervention, Population, TimeWindow\nfrom axiom.estimands import Estimand, Level, Quantity, realize\n\nlift = Estimand(\n    name=\"lift_at_400_per_week\",\n    quantity=Quantity(kind=\"contrast\"),\n    treatment=leaflets,\n    intervention=Intervention(doses={\"leaflets\": 400.0}),\n    reference=Intervention(doses={\"leaflets\": 0.0}),\n    outcome=footfall,\n    population=Population(name=\"the_24_stores\"),\n    window=TimeWindow(start=0, stop=1, basis=\"per_period\"),\n    level=Level(unit=\"individual\"),\n    dimension=D.outcome,\n)\ngot = realize(lift, result, assume_identified=True, mass=0.9, seed=0)\n\nprint(f\"{lift.name}\")\nprint(f\"  {got.summary.mean:+.2f} {footfall.unit}  {got.summary.interval}\")\nprint(f\"  status : {got.status}\")\nprint()\nfor line in got.ledger:\n    print(f\"  [{line.kind}] {line.statement}\")",
+     "output": "lift_at_400_per_week\n  +5.78 visits/week  [2.9, 8.5] (90% HDI)\n  status : downgraded\n\n  [assume_identified] proceeded with 'lift_at_400_per_week' under assume_identified=True; the verdict was not supplied"
+    },
+    {
+     "n": 6,
+     "slug": "porting-6-what-is-missing",
+     "title": "What you have not done yet",
+     "asks": "The number came back downgraded. Why, and what fixes it?",
+     "lede": "`assume_identified=True` is the flag that got a number out, and the status says exactly what it cost: `downgraded`. Nothing above argued that leaflet spend is unconfounded with footfall. Stores that were already busy may well have been given more leaflets.",
+     "beat": "This is the honest end of a porting exercise, not a failure of one. You now have a model of your own data that produces a decision's number with its provenance attached \u2014 and a precise statement of the one thing standing between it and a causal claim. That is where the first tutorial starts.",
+     "code": "from axiom.identify import CausalGraph, identify\n\n# Write down what you actually believe about how the spend was set.\nworld = CausalGraph.from_edges(\n    \"busyness -> leaflets, busyness -> footfall, leaflets -> footfall\",\n    unmeasured=[\"busyness\"],\n    name=\"how_the_spend_was_really_set\",\n)\nverdict = identify(world, \"leaflets\", \"footfall\")\nprint(f\"the graph says : {verdict.status}\")\nprint(f\"it would need  : {sorted(verdict.unmeasured_required)}, \"\n      f\"which nobody recorded\")\nprint()\nprint(\"so the `downgraded` in step 5 was not a formality. What you have\")\nprint(\"is a description of 24 stores, not the effect of leaflets on\")\nprint(\"footfall -- and the difference is the whole subject of axiom.\")\nprint()\nprint(\"two honest ways forward, and no third:\")\nprint(\"  measure it   -- record what drove the spend, and adjust\")\nprint(\"  randomize it -- assign the leaflets, and the arrow disappears\")\nprint()\nprint(\"both are the subject of the other two tutorials.\")",
+     "output": "the graph says : downgraded\nit would need  : ['busyness'], which nobody recorded\n\nso the `downgraded` in step 5 was not a formality. What you have\nis a description of 24 stores, not the effect of leaflets on\nfootfall -- and the difference is the whole subject of axiom.\n\ntwo honest ways forward, and no third:\n  measure it   -- record what drove the spend, and adjust\n  randomize it -- assign the leaflets, and the arrow disappears\n\nboth are the subject of the other two tutorials."
+    }
+   ],
+   "captured": {}
+  },
+  {
+   "key": "custom",
+   "title": "A model of your own",
+   "kind": "A modelling story",
+   "asks": "The kernels do not fit your mechanism. Now what?",
+   "problem": "Your response is an exponential approach to a ceiling, and no kernel on the menu is that shape. How do you write the mean yourself, get it checked, and fit it \u2014 and what do you give up by leaving the kernels?",
+   "lede": "A `ModelSpec` is the object underneath everything else: a mean written as a typed expression, the outcome it predicts, the likelihood around it, and every parameter with a prior. `SurfaceSpec` builds one and hands it to the same backends. Writing one yourself is the route the physics case study takes, on a response small enough to read in five steps.",
+   "notebook": "nbs/case-studies/rutherford/",
+   "steps": [
+    {
+     "n": 1,
+     "slug": "custom-1-when-kernels-run-out",
+     "title": "When the kernels run out",
+     "asks": "What if the shape you need is not one of the ones on offer?",
+     "lede": "`SurfaceSpec` takes a kernel per treatment \u2014 Hill, spline, polynomial, Gaussian process \u2014 and covers most dose-response work between them. Sometimes it does not. You have a mechanism, it has a form, and the form is not on the menu.",
+     "beat": "Then you write the mean yourself. A `ModelSpec` is four things and no more: the mean as an expression, the outcome column it predicts, the likelihood around it, and every parameter with a prior. Nothing about it is a lower tier of the library \u2014 `SurfaceSpec` builds one of these and hands it to the same backends.",
+     "code": "from axiom.core import ModelSpec\n\nprint(ModelSpec.__doc__.strip().splitlines()[0])\nprint()\nfor name, field in ModelSpec.model_fields.items():\n    required = \"required\" if field.is_required() else \"optional\"\n    print(f\"  {name:14s} {required}\")\nprint()\nprint(\"the response we need is an exponential approach to a ceiling:\")\nprint()\nprint(\"    footfall = alpha + beta * (1 - exp(-spend / k))\")\nprint()\nprint(\"alpha is the baseline, beta the most the leaflets can ever add,\")\nprint(\"and k the spend at which about 63% of that has arrived.\")",
+     "output": "Mean expression + outcome column + likelihood + every parameter's prior.\n\n  name           required\n  mean           required\n  outcome        required\n  likelihood     required\n  parameters     required\n  constraints    optional\n\nthe response we need is an exponential approach to a ceiling:\n\n    footfall = alpha + beta * (1 - exp(-spend / k))\n\nalpha is the baseline, beta the most the leaflets can ever add,\nand k the spend at which about 63% of that has arrived."
+    },
+    {
+     "n": 2,
+     "slug": "custom-2-the-expression",
+     "title": "The mean, as an expression",
+     "asks": "How do you write a formula axiom can differentiate and check?",
+     "lede": "Not as a Python function. A mean is built out of typed nodes \u2014 `Data` for a column, `Param` for something to be fitted, `Const` for a literal, and `Add`, `Mul`, `Div`, `Pow`, `Apply` to combine them.",
+     "beat": "It is more verbose than `lambda x, a, b, k: ...` and it buys three things a lambda cannot: the gradient every backend needs, without you writing it; a content hash, so the model that produced a number is identifiable later; and the dimension check in the next step.",
+     "code": "from axiom.core import (\n    Add, Apply, Const, D, Data, Div, Mul, Param, Prior,\n    dimension, dimensionless,\n)\n\nspend = Data(name=\"spend\", dimension=D.currency)\n\nalpha = Param(name=\"alpha\", dimension=D.outcome,\n              prior=Prior(family=\"normal\", hyper={\"mu\": 40.0, \"sigma\": 10.0}))\nbeta = Param(name=\"beta\", dimension=D.outcome,\n             prior=Prior(family=\"normal\", hyper={\"mu\": 0.0, \"sigma\": 10.0}))\nk = Param(name=\"k\", dimension=D.currency,\n          prior=Prior(family=\"lognormal\", hyper={\"mu\": 5.5, \"sigma\": 1.0}))\n\none = Const(value=1.0, dimension=dimensionless())\nminus = Const(value=-1.0, dimension=dimensionless())\n\n# 1 - exp(-spend / k)   -- dimensionless, because spend/k is\nsaturation = Add(terms=(\n    one,\n    Mul(factors=(minus, Apply(fn=\"exp\", arg=Mul(factors=(\n        minus, Div(numerator=spend, denominator=k),\n    ))))),\n))\n# alpha + beta * saturation\nmean = Add(terms=(alpha, Mul(factors=(beta, saturation))))\n\nprint(f\"the mean's dimension is  {dimension(mean)}\")\nprint(f\"the saturation term is   {dimension(saturation)} (as it must be)\")\nratio = Div(numerator=spend, denominator=k)\nprint(f\"spend / k is             {dimension(ratio)}\")",
+     "output": "the mean's dimension is  Y\nthe saturation term is   1 (as it must be)\nspend / k is             1"
+    },
+    {
+     "n": 3,
+     "slug": "custom-3-dimensions",
+     "title": "Dimensions are checked when you build it",
+     "asks": "What stops you writing a formula that cannot mean anything?",
+     "lede": "Every node carries a dimension, and the rules are the ones you would apply by hand: a sum needs its terms to agree, `exp` needs a dimensionless argument, and the mean has to end up in the dimension of the outcome it predicts.",
+     "beat": "The point is *when* this happens. Adding visits to dollars raises at the moment you construct the model \u2014 not after a fit, not in a downstream unit conversion, not in the number somebody put on a slide. A model that builds is a model whose arithmetic means something.",
+     "code": "from axiom.core import DimensionError, Likelihood, ModelSpec\n\nsigma = Param(name=\"sigma\", dimension=D.outcome,\n              prior=Prior(family=\"halfnormal\", hyper={\"sigma\": 5.0}))\nfootfall = Data(name=\"footfall\", dimension=D.outcome)\n\n# the honest mistake: adding a spend to a footfall\ntry:\n    ModelSpec(\n        name=\"wrong\", mean=Add(terms=(alpha, spend)), outcome=footfall,\n        likelihood=Likelihood(family=\"normal\", scale=\"sigma\"),\n        parameters=(alpha, sigma),\n    )\nexcept DimensionError as exc:\n    print(f\"refused at construction: {exc}\")\n\nmodel = ModelSpec(\n    name=\"exponential_approach\",\n    mean=mean,\n    outcome=footfall,\n    likelihood=Likelihood(family=\"normal\", scale=\"sigma\"),\n    parameters=(alpha, beta, k, sigma),\n)\nprint()\nprint(f\"built    : {model.name}\")\nprint(f\"hash     : {model.content_hash()[:16]}\")\nprint(f\"params   : {[p.name for p in model.parameters]}\")",
+     "output": "refused at construction: add: terms of a sum must share a dimension; term 0 is Y, term 1 is $\n\nbuilt    : exponential_approach\nhash     : d896b064b742c84c\nparams   : ['alpha', 'beta', 'k', 'sigma']"
+    },
+    {
+     "n": 4,
+     "slug": "custom-4-fit-it",
+     "title": "Fit it",
+     "asks": "How does a hand-built model reach a backend?",
+     "lede": "Straight at one. A backend takes the model and a mapping from column name to array \u2014 there is no `Panel` in this path, because a `ModelSpec` names its own columns and that is all the backend needs.",
+     "beat": "The parameters come back under the names you declared. Checking them against a truth you control is the only honest way to know a hand-built model is right, which is why simulating from it first is worth the ten minutes it costs.",
+     "code": "import numpy as np\nfrom axiom.infer import LaplaceBackend\n\n# data from a world we control, so the answer can be checked\nTRUE = {\"alpha\": 41.0, \"beta\": 12.0, \"k\": 260.0, \"sigma\": 2.0}\nrng = np.random.default_rng(3)\nx = rng.uniform(0.0, 900.0, 600)\ny = (TRUE[\"alpha\"] + TRUE[\"beta\"] * (1 - np.exp(-x / TRUE[\"k\"]))\n     + rng.normal(0.0, TRUE[\"sigma\"], x.size))\n\nposterior = LaplaceBackend().sample(\n    model, {\"spend\": x, \"footfall\": y},\n    draws=800, tune=0, chains=4, seed=0,\n)\n\nprint(f\"{'parameter':10s}{'fitted':>10}{'truth':>10}\")\nfor name in (\"alpha\", \"beta\", \"k\", \"sigma\"):\n    got = float(posterior.flat(name).mean())\n    print(f\"{name:10s}{got:>10.2f}{TRUE[name]:>10.2f}\")",
+     "output": "parameter     fitted     truth\nalpha          40.45     41.00\nbeta           12.42     12.00\nk             238.27    260.00\nsigma           1.99      2.00"
+    },
+    {
+     "n": 5,
+     "slug": "custom-5-what-it-costs",
+     "title": "What the custom route costs you",
+     "asks": "You left the kernels behind. What did you leave with them?",
+     "lede": "Some of the library follows a hand-built model and some of it does not. `design.profile_likelihood` takes a `ModelSpec` directly, so the identification and design tools that work on a likelihood still apply \u2014 that is how GEIGER-1911 gets its one-sided bound.",
+     "beat": "What you give up is the `SurfaceSpec` conveniences: `surface.fit`, and `estimands.realize` reading an estimand off the result, both want the richer object. If a kernel can express your response, use one. Write the mean when the mechanism genuinely is not on the menu \u2014 and then you are in the same position as a physics case study, which is a respectable place to be.",
+     "code": "import warnings\nfrom axiom.design import profile_likelihood\n\ndata = {\"spend\": x, \"footfall\": y}\nstart = {**TRUE}\nwith warnings.catch_warnings():\n    warnings.simplefilter(\"ignore\", RuntimeWarning)\n    values, drops = profile_likelihood(\n        model, data, start, \"k\", grid=np.linspace(180.0, 380.0, 21)\n    )\n\ndrops = np.asarray(drops)\ninside = [v for v, d in zip(values, drops) if d <= 1.921]\nprint(\"profiling k, the spend at which most of the lift has arrived:\")\nprint(f\"  best fit          {values[int(np.argmin(drops))]:.0f}\")\nprint(f\"  95% interval      {min(inside):.0f} to {max(inside):.0f}\")\nprint(f\"  the truth         {TRUE['k']:.0f}\")\nprint()\nprint(\"that ran on the ModelSpec itself. surface.fit and\")\nprint(\"estimands.realize did not -- they want a SurfaceSpec.\")",
+     "output": "profiling k, the spend at which most of the lift has arrived:\n  best fit          240\n  95% interval      210 to 270\n  the truth         260\n\nthat ran on the ModelSpec itself. surface.fit and\nestimands.realize did not -- they want a SurfaceSpec."
+    }
+   ],
+   "captured": {}
+  },
+  {
+   "key": "depot",
+   "title": "One question, carried all the way",
+   "kind": "An analysis story",
+   "asks": "The data is already here. Can it answer anything?",
+   "problem": "A logistics operator runs 40 distribution depots in one region and 500 nationally. Should the standing weekly maintenance schedule go from nothing to 60 hours per depot?",
+   "lede": "Identification refuses the panel on hand, so an experiment is designed, sized against the boundary the decision turns on, and run. Its answer is folded back into the model \u2014 and it reverses the decision the observational fit would have made.",
+   "notebook": "nbs/tutorial/01-the-whole-loop.ipynb",
+   "steps": [
+    {
+     "n": 1,
+     "slug": "tutorial-1-the-question",
+     "title": "The question, written down",
+     "asks": "What are we actually deciding, and what would 'yes' have to beat?",
+     "lede": "A logistics operator runs 40 depots in one region and 500 nationally. Should the standing weekly maintenance schedule go from nothing to 60 hours per depot? Before any data is touched, the decision has to be written down as a quantity \u2014 because the number that answers it is not the number an experiment can most easily measure.",
+     "beat": "Two estimands, not one. The experiment can measure a first-week lift on individual depots; the decision turns on a steady-state weekly lift across the region. They are different windows and different levels, and keeping them apart from the first line is what stops the report answering the easy question and calling it the hard one.\n\n`surface_world` is a simulator, and it hands back the `spec` for free so this story can get moving. With your own data there is no simulator and the spec is the first thing you write -- the porting tutorial does exactly that, from a dataframe, with nothing hidden.",
+     "code": "from axiom.core import Intervention, Population, TimeWindow\nfrom axiom.estimands import Estimand, Level, Quantity\nfrom axiom.sim import DosePlan, surface_world\nfrom axiom.surface import GeometricCarryover, HillKernel\n\nDOSE, NO_DOSE = 60.0, 0.0        # maintenance hours per depot-week\nVALUE_PER_POINT, COST_PER_HOUR = 400.0, 45.0\nREGION_DEPOTS, MAX_LAG, SEED = 40, 4, 0\n\nworld = surface_world(\n    n_units=REGION_DEPOTS, n_periods=52, treatments=(\"a\",),\n    kernels=HillKernel(reference_dose=50.0, amplitude_scale=10.0),\n    carryover={\"a\": GeometricCarryover(max_lag=MAX_LAG)},\n    doses=DosePlan(scale=50.0, spread=0.8, zero_fraction=0.05),\n    intercept=\"shared\",\n    truth={\"beta_a\": 10.0, \"alpha\": 5.0, \"k_a\": 50.0, \"s_a\": 2.0, \"lam_a\": 0.5},\n    noise_sd=2.0, seed=SEED,\n)\nspec = world.spec\n\ndef contrast(name, window, level):\n    return Estimand(\n        name=name, quantity=Quantity(kind=\"contrast\"),\n        treatment=spec.treatment(\"a\"),\n        intervention=Intervention(doses={\"a\": DOSE}),\n        reference=Intervention(doses={\"a\": NO_DOSE}),\n        outcome=spec.outcome, population=Population(name=\"region_depots\"),\n        window=window, level=level, dimension=spec.outcome_dimension,\n    )\n\nexperiment_estimand = contrast(\n    \"first_week_lift\",\n    TimeWindow(start=0, stop=1, basis=\"cumulative\"),\n    Level(unit=\"individual\"),\n)\ndecision_estimand = contrast(\n    \"steady_state_weekly_lift\",\n    TimeWindow(start=MAX_LAG, stop=52, basis=\"per_period\"),\n    Level(unit=\"cluster\"),\n)\n\nBREAK_EVEN = DOSE * COST_PER_HOUR / VALUE_PER_POINT\nprint(f\"the experiment can measure : {experiment_estimand.name}\")\nprint(f\"the decision turns on      : {decision_estimand.name}\")\nprint()\nprint(f\"{DOSE:.0f} hours at {COST_PER_HOUR:.0f} USD \"\n      f\"= {DOSE * COST_PER_HOUR:,.0f} USD per depot-week\")\nprint(f\"break-even steady-state lift: {BREAK_EVEN:.2f} index points per depot-week\")",
+     "output": "the experiment can measure : first_week_lift\nthe decision turns on      : steady_state_weekly_lift\n\n60 hours at 45 USD = 2,700 USD per depot-week\nbreak-even steady-state lift: 6.75 index points per depot-week"
+    },
+    {
+     "n": 2,
+     "slug": "tutorial-2-identification",
+     "title": "Can the data we already have answer it?",
+     "asks": "Is the effect identified from the panel already on hand?",
+     "lede": "The operator has a panel: depots, weeks, maintenance hours, an outcome index. The temptation is to fit it. The question axiom asks first is whether that panel can produce the number the decision needs at all.",
+     "beat": "It cannot. Depots that were already doing well got more maintenance hours, and the thing that drove both was never recorded. `identify` says so and names what it would need \u2014 which is the answer that saves the money, because the alternative is a fitted number nobody can defend.",
+     "code": "from axiom.identify import CausalGraph, identify\n\nobserved = CausalGraph.from_edges(\n    \"capability -> hours, capability -> outcome, hours -> outcome\",\n    unmeasured=[\"capability\"], name=\"the_panel_on_hand\",\n)\nverdict = identify(observed, \"hours\", \"outcome\")\nprint(\"status :\", verdict.status)\nprint(\"route  :\", verdict.route or \"none available\")\nprint(\"needs  :\", sorted(verdict.unmeasured_required), \"which is not recorded\")\nprint()\nfor a in verdict.verdict.assumptions:\n    print(f\"  [{a.state}] {a.name}\")\n    print(f\"     {a.statement}\")",
+     "output": "status : downgraded\nroute  : backdoor_unmeasured\nneeds  : ['capability'] which is not recorded\n\n  [unverified] unmeasured_adjustment_set\n     the adjustment set ['capability'] is available, but ['capability'] is unmeasured"
+    },
+    {
+     "n": 3,
+     "slug": "tutorial-3-the-prior",
+     "title": "The belief we start from",
+     "asks": "What does the observational fit say, and how much should we trust it?",
+     "lede": "An unidentified number is still a belief, and pretending to have none is not neutrality. The observational fit is run \u2014 and then inflated, because a confounded estimate that reports its nominal precision is the most dangerous object in the analysis.",
+     "beat": "This is the number the experiment will be measured against. Write it down now, with its inflation stated, so that later there is something for the measurement to disagree with.",
+     "code": "import numpy as np\nfrom axiom.data import Panel\nfrom axiom.estimands import realize\nfrom axiom.surface import fit\n\n# The panel the operator actually has: depots that were already in good\n# shape got more hours, and \"good shape\" was never written down.\nrng = np.random.default_rng(123)\nframe = world.panel.frame\ndose = frame[\"a\"].to_numpy(dtype=np.float64)\nstandardized = (dose - dose.mean()) / dose.std()\ncondition = 0.6 * standardized + 0.8 * rng.standard_normal(dose.size)\nobserved_panel = Panel(frame.assign(y=frame[\"y\"] + 0.8 * condition), world.panel.roles)\nprint(f\"corr(hours, fleet condition) = \"\n      f\"{float(np.corrcoef(dose, condition)[0, 1]):.2f}  <- the confounding\")\n\nbiased = fit(spec, observed_panel, backend=\"laplace\", draws=1000, seed=1)\nbefore = realize(decision_estimand, biased, assume_identified=True, mass=0.9, seed=SEED)\n\n# The estimand is region-level: it sums across the 40 depots. The\n# break-even is per depot-week, so the comparison has to be made on\n# one scale or the other -- and getting that wrong is how a decision\n# gets made against a number forty times too big.\nbefore_per_depot = before.summary.mean / REGION_DEPOTS\nprint()\nprint(\"the observational reading of the decision's estimand\")\nprint(f\"  region : {before.summary.mean:+.1f} index points per week\")\nprint(f\"  depot  : {before_per_depot:+.2f} index points per depot-week\")\nprint(f\"  break-even is {BREAK_EVEN:.2f}\")\nprint(f\"  -> on this reading, fund it.\")",
+     "output": "corr(hours, fleet condition) = 0.59  <- the confounding\n\nthe observational reading of the decision's estimand\n  region : +286.6 index points per week\n  depot  : +7.16 index points per depot-week\n  break-even is 6.75\n  -> on this reading, fund it."
+    },
+    {
+     "n": 4,
+     "slug": "tutorial-4-design",
+     "title": "Designing the experiment",
+     "asks": "How big does the trial need to be, and is the answer worth its cost?",
+     "lede": "Four questions in order: what effect to power for, how many depots that takes, what the answer is worth, and which concrete design buys it cheapest. Powering for the effect you hope for is how trials get commissioned that cannot fail informatively.",
+     "beat": "The effect worth detecting is the break-even, not the point estimate \u2014 the experiment has to distinguish 'worth funding' from 'not', and that boundary is where the precision has to land.",
+     "code": "from axiom.design import DecisionSpec, ValuePerOutcome, evoi_gaussian, sample_size\n\nfrom axiom.calibrate import carryover_window_factor\nfrom axiom.surface import GeometricCarryover as GC\n\n# The experiment reads a first week; the decision lives in the steady\n# state. `carryover_window_factor` says how much of the effect has\n# landed by then, which is what converts the break-even onto the\n# scale the trial can actually measure.\nlam = float(biased.posterior.flat(\"lam_a\").mean())\nshare = carryover_window_factor(GC(max_lag=MAX_LAG), {\"lam_a\": lam}, 1, treatment=\"a\")\nthreshold_first_week = BREAK_EVEN * share.counterfactual\nprint(f\"{share.counterfactual:.3f} of the effect lands in the first week\")\nprint(f\"break-even on the experiment's scale: {threshold_first_week:.3f}\")\nprint()\n\ndecision = DecisionSpec(\n    name=\"raise_the_schedule\",\n    threshold=threshold_first_week,\n    value_per_outcome_unit=VALUE_PER_POINT * 500 * 52,\n    numeraire=\"USD\",\n)\n\nsd = float(observed_panel.frame[\"y\"].std())\nss = sample_size(effect=threshold_first_week, sd=sd, power=0.8, alpha=0.05)\nprint(f\"powering for the boundary, not the hope: {threshold_first_week:.3f}\")\nprint(f\"  depots per arm : {ss.n}\")\n\nfirst_week = realize(\n    experiment_estimand, biased, assume_identified=True, mass=0.9, seed=SEED\n)\nev = evoi_gaussian(\n    decision,\n    float(first_week.summary.mean),\n    float(first_week.summary.sd),\n    0.35,\n)\nprint()\nprint(f\"perfect information would be worth : {ev.evpi:,.0f} USD\")\nprint(f\"this experiment, at se=0.35        : {ev.evsi:,.0f} USD\")",
+     "output": "0.572 of the effect lands in the first week\nbreak-even on the experiment's scale: 3.863\n\npowering for the boundary, not the hope: 3.863\n  depots per arm : 23\n\nperfect information would be worth : 567,331 USD\nthis experiment, at se=0.35        : 392,538 USD"
+    },
+    {
+     "n": 5,
+     "slug": "tutorial-5-measurement",
+     "title": "The experiment lands",
+     "asks": "What did it measure, and does the model we already had agree?",
+     "lede": "The trial runs. Its result arrives as one typed `Measurement` \u2014 the estimand it measured, the number, the interval, and the conditions it was measured under \u2014 rather than as a slide with a percentage on it.",
+     "beat": "Before folding it in, ask whether the old model predicted it. `agreement` compares what the observational fit expected against what the experiment saw, and this is where the tutorial turns: they disagree.",
+     "code": "from axiom.calibrate import Measurement, agreement\n\n# What the world would really have shown. The analyst does not get to\n# see this; the experiment reads it through noise.\ndiff = world.forward({\"a\": DOSE}) - world.forward({\"a\": NO_DOSE})\ntruth_experiment = float(np.mean(diff[:, 0]))\nse_experiment = 0.35\nmeasurement = Measurement(\n    estimand=experiment_estimand,\n    estimate=truth_experiment,\n    se=se_experiment,\n    mass=0.9,\n    source=\"depot-maintenance-rct-2026Q2\",\n)\nprint(f\"the trial read {measurement.estimate:+.3f} \"\n      f\"{measurement.interval}\")\n\nsays = agreement(biased, measurement, seed=SEED)\nprint()\nprint(f\"the model we already had expected {says.posterior_mean:+.3f}\")\nprint(f\"the trial says                    {says.estimate:+.3f}\")\nprint(f\"agreement : {says.verdict}  (z = {says.z:.1f})\")",
+     "output": "the trial read +2.906 [2.33, 3.48] (90% WALD)\n\nthe model we already had expected +4.554\nthe trial says                    +2.906\nagreement : disagrees  (z = -2.2)"
+    },
+    {
+     "n": 6,
+     "slug": "tutorial-6-calibration",
+     "title": "Folding the experiment into the model",
+     "asks": "What does the model say once it has to honour the measurement?",
+     "lede": "Refit the surface under the constraint that it reproduce what the trial saw. The result is a model that agrees with the experiment on the experiment's own terms \u2014 and can then be asked the decision's question, which the experiment never measured directly.",
+     "beat": "Every step of that transfer is written to a ledger: the window it crossed, the level it aggregated to, the carryover it assumed. The decision's number is reported with the ledger attached or it is not reported.",
+     "code": "from axiom.calibrate import fit_calibrated\n\ncalibrated = fit_calibrated(\n    spec, observed_panel, [measurement], backend=\"laplace\", draws=1000, seed=1\n)\nafter = realize(\n    decision_estimand, calibrated, assume_identified=True, mass=0.9, seed=SEED\n)\n\nafter_per_depot = after.summary.mean / REGION_DEPOTS\nprint(\"the decision's estimand, per depot-week\")\nprint(f\"  observational : {before_per_depot:+.2f}\")\nprint(f\"  calibrated    : {after_per_depot:+.2f}\")\nprint(f\"  break-even    : {BREAK_EVEN:+.2f}\")\nprint()\nsaid = \"fund it\" if before_per_depot > BREAK_EVEN else \"do not fund it\"\nsays_now = \"fund it\" if after_per_depot > BREAK_EVEN else \"do not fund it\"\nprint(f\"the observational model said : {said}\")\nprint(f\"the experiment says          : {says_now}\")",
+     "output": "the decision's estimand, per depot-week\n  observational : +7.16\n  calibrated    : +6.12\n  break-even    : +6.75\n\nthe observational model said : fund it\nthe experiment says          : do not fund it"
+    },
+    {
+     "n": 7,
+     "slug": "tutorial-7-the-follow-up",
+     "title": "Planning the follow-up",
+     "asks": "Should we repeat this, when does it go stale, and what next?",
+     "lede": "A decision made once is a decision that decays. The same design machinery that sized the first trial says when this answer stops being usable and what the next dose worth testing is.",
+     "beat": "The answer is not 'run it again annually because that is the budget cycle'. It is a number: how long before the value of a fresh answer exceeds what a fresh answer costs.",
+     "code": "from axiom.design import time_to_re_experiment\n\ntiming = time_to_re_experiment(\n    posterior_sd=float(after.summary.sd) / REGION_DEPOTS,\n    half_life_periods=26.0,\n    experiment_se=se_experiment,\n    min_eig=0.5,\n)\nprint(f\"a repeat is worth running again after {timing.periods:.0f} weeks\")\nprint(f\"  today it would gain {timing.eig_now:.3f} nats, \"\n      f\"against a bar of 0.5\")",
+     "output": "a repeat is worth running again after 39 weeks\n  today it would gain 0.239 nats, against a bar of 0.5"
+    },
+    {
+     "n": 8,
+     "slug": "tutorial-8-the-report",
+     "title": "The report",
+     "asks": "How does the whole of this become a document someone can check?",
+     "lede": "Every number above was produced by a typed result carrying its own provenance. `axiom-dossier` turns that record into a document: methods from the steps, results from the quantities, limitations from the assumptions still standing.",
+     "beat": "The point is not that a report gets written. It is that the report cannot describe an analysis nobody ran, cannot state a number the record does not hold, and cannot quietly omit the assumption doing the most work.",
+     "code": "from axiom_dossier import EvidenceBuilder, build\n\nevidence = (\n    EvidenceBuilder(\n        \"Weekly maintenance schedule\",\n        \"Should the standing weekly schedule go from nothing to 60 hours a depot?\",\n    )\n    .verdict(verdict, graph=observed)\n    .step(\n        \"design\", \"Design\",\n        what=f\"{ss.n} depots an arm, powered for the break-even.\",\n        why=\"The boundary the decision turns on is where precision has to land.\",\n        equations=(\"break_even = DOSE * COST_PER_HOUR / VALUE_PER_POINT\",),\n    )\n    .finding(\n        \"decision\", after, label=\"Steady-state weekly lift, region\",\n        unit=\"index points\", precision=1,\n        threshold=BREAK_EVEN * REGION_DEPOTS, beneficial=\"higher\",\n    )\n    .build()\n)\nbuilt = build(evidence, style=\"journal\", verbosity=\"standard\")\nprint(built.summary())\nprint(f\"missing context keys: {built.missing() or 'none'}\")\nprint()\nfor q in evidence.findings:\n    print(f\"  {q.label}: {q.stated()}  [{q.against_threshold()}]\")",
+     "output": "journal/standard; 9 sections\nmissing context keys: none\n\n  Steady-state weekly lift, region: 244.6 index points (90% HDI 227.4 to 262.9 index points)  [below]"
+    }
+   ],
+   "captured": {}
+  },
+  {
+   "key": "scattering",
+   "title": "Designing an experiment before there is any data",
+   "kind": "A design story",
+   "asks": "There is no data. What should we go and measure?",
+   "problem": "Is the positive charge of an atom concentrated in a small hard centre, or spread through the whole atom? Both models fit everything known in 1910. What experiment would tell them apart \u2014 and specifically, which scattering angles, what shape of aperture, and for how long?",
+   "lede": "Nothing here is an analysis. Every step decides what to go and measure, and the whole argument turns on noticing that the two rival atoms are one model at two values of one number. That is what gives the experiment a resolving power, a sensitivity curve, and a rule for when to stop.",
+   "notebook": "nbs/case-studies/rutherford/",
+   "steps": [
+    {
+     "n": 1,
+     "slug": "scattering-1-one-parameter",
+     "title": "Two atoms, one number",
+     "asks": "How do you get resolving power against a question nobody has measured?",
+     "lede": "In 1910 there were two pictures of the atom and no experiment between them. A hard positive centre and a charge smeared through the whole atom both fitted everything anyone had. You cannot design against a debate \u2014 so the first move is to find the number the two pictures disagree about.",
+     "beat": "They are one model at two values of the radius R of the positive charge, six decades apart. An alpha stopped head-on gets no closer than D; one scattered through an angle gets no closer than a known multiple of it; so a charge of radius R kills the scattering past a cut-off angle. Turning the debate into a parameter is what makes everything after this possible.\n\n`scattering.py` is the case study's own module and it holds the physics: the mean expression, the parameters and their priors, the detector geometry. It is a hand-built `ModelSpec` rather than anything axiom generates, which is what a problem with real physics in it looks like. The porting tutorial builds the easier kind, a `SurfaceSpec`, from scratch.",
+     "code": "import sys\nsys.path.insert(0, \"nbs/case-studies/rutherford\")\nimport scattering as s\n\nprint(f\"closest approach D        : {s.D_CLOSEST * 1e15:.1f} fm\")\nprint(f\"a hard centre would be    : {s.R_NUCLEUS * 1e15:.1f} fm\")\nprint(f\"a diffuse atom would be   : {s.R_ATOM * 1e15:,.0f} fm\")\nprint()\nfor name, radius in ((\"hard centre\", s.R_NUCLEUS), (\"diffuse atom\", s.R_ATOM)):\n    sine = s.cutoff_sine(radius)\n    where = \"no cut-off in range\" if sine >= 1.0 else f\"{sine:.2e}\"\n    print(f\"{name:14s} sin(theta_cut/2) = {where}\")\nprint()\nprint(\"the two hypotheses are two values of one parameter, lam:\")\nprint(f\"  hard centre  lam = {s.LAM_HARD:+.2f}\")\nprint(f\"  diffuse atom lam = {s.LAM_DIFFUSE:+.2f}\")\n\n# the numbers the apparatus diagram on this page is drawn from\napparatus = {\n    \"energy_mev\": s.E_ALPHA,\n    \"d_fm\": s.D_CLOSEST * 1e15,\n    \"foil_um\": s.FOIL_THICKNESS * 1e6,\n    \"beam_per_s\": s.BEAM_RATE,\n    \"angles\": [st.theta_deg for st in s.PLAN if st.foil],\n}",
+     "output": "closest approach D        : 59.2 fm\na hard centre would be    : 7.3 fm\na diffuse atom would be   : 135,000 fm\n\nhard centre    sin(theta_cut/2) = no cut-off in range\ndiffuse atom   sin(theta_cut/2) = 2.19e-04\n\nthe two hypotheses are two values of one parameter, lam:\n  hard centre  lam = +6.91\n  diffuse atom lam = -8.42",
+     "diagram": "apparatus",
+     "caption": "The apparatus. An alpha source and collimator throw a beam at a gold foil; the counter swings on an arm to the scattering angle theta. The dashed rays are the other stations the plan visits.",
+     "math": [
+      {
+       "label": "closest approach, head-on",
+       "math": "<i>D</i> = <span class='frac'><span>2<i>zZe</i>\u00b2</span><span>4\u03c0\u03b5<sub>0</sub><i>E</i></span></span>",
+       "code": "D_CLOSEST = 2 * Z_ALPHA * Z_FOIL * COULOMB_MEV_FM / E_ALPHA * 1e-15\n# a constant of the beam and the foil, not a fitted quantity"
+      },
+      {
+       "label": "closest approach at angle \u03b8",
+       "math": "<i>r</i><sub>min</sub>(\u03b8) = <span class='frac'><span><i>D</i></span><span>2</span></span>&#8201;(1 + <span class='frac'><span>1</span><span>sin(\u03b8/2)</span></span>)",
+       "code": "# the floor no amount of counting can beat\nfloor = S.D_CLOSEST / 2.0"
+      },
+      {
+       "label": "where a charge of radius R kills the tail",
+       "math": "sin(\u03b8<sub>cut</sub>/2) = <span class='frac'><span>1</span><span>2<i>R</i>/<i>D</i> \u2212 1</span></span>&nbsp;&nbsp;&nbsp;\u03bb = log sin(\u03b8<sub>cut</sub>/2)",
+       "code": "lam = Param(\n    name=\"lam\",\n    dimension=dimensionless(),\n    prior=Prior(family=\"normal\",\n                hyper={\"mu\": -4.0, \"sigma\": 6.0}),\n)\n# the one axis the two atoms are two points on"
+      }
+     ]
+    },
+    {
+     "n": 2,
+     "slug": "scattering-2-which-angles",
+     "title": "Where to point the counter",
+     "asks": "Which angles carry the evidence \u2014 and which carry it under attack?",
+     "lede": "Evidence per hour is easy to compute: how many nats an hour at each angle buys, if you believe the model. Follow it and you put the whole budget where the counts are. That is the trap this step exists to name.",
+     "beat": "Evidence-per-hour is computed *inside the model that is under attack*. An objector who says the multiple-scattering core is wider than you fitted takes most of it away. `surviving_evidence` asks what is left when they do \u2014 and the answer is a different set of angles, far out in the tail.",
+     "code": "import numpy as np\n\nangles = np.array([1.0, 2.5, 5.0, 10.0, 20.0, 45.0, 90.0, 150.0])\nomega = s.widest_aperture(angles, s.HARD_CENTRE)\n\nbelieved = s.weight_of_evidence(\n    s.rate_per_steradian(angles, s.HARD_CENTRE) * omega * 3600.0,\n    s.rate_per_steradian(angles, s.DIFFUSE) * omega * 3600.0,\n)\nattacked, _ = s.surviving_evidence(angles, omega, 3600.0)\n\nprint(f\"{'angle':>8} {'nats/h believed':>18} {'nats/h attacked':>18}\")\nfor a, b, k in zip(angles, believed, attacked):\n    print(f\"{a:7.1f}d {b:18,.0f} {k:18,.1f}\")\nprint()\nbest_believed = angles[int(np.argmax(believed))]\nbest_attacked = angles[int(np.argmax(attacked))]\nprint(f\"believe the model, and the best angle is {best_believed:.1f} degrees\")\nprint(f\"let it be attacked, and it is       {best_attacked:.1f} degrees\")",
+     "output": "   angle    nats/h believed    nats/h attacked\n    1.0d              2,744            2,696.5\n    2.5d             13,029                1.7\n    5.0d             97,394               17.9\n   10.0d             82,606               32.0\n   20.0d             67,717                0.7\n   45.0d             50,649              531.9\n   90.0d             20,659              535.9\n  150.0d              4,870            4,869.8\n\nbelieve the model, and the best angle is 5.0 degrees\nlet it be attacked, and it is       150.0 degrees"
+    },
+    {
+     "n": 3,
+     "slug": "scattering-3-the-slit",
+     "title": "What shape to cut the aperture",
+     "asks": "Same solid angle, same counts \u2014 does the shape matter?",
+     "lede": "A counter needs a hole to look through, and a bigger hole means more counts. The obvious hole is round. The scattering does not depend on azimuth, though, which means the two directions of a hole are not equivalent at all.",
+     "beat": "Only the radial half-width smears the angle; azimuth is free resolution. So hold the radial width at the workshop's floor and take every extra steradian out in arc. A round hole of the same area at 90 degrees would have to be many degrees wide and would report a rate belonging to no angle in particular \u2014 the same counts, at a fraction of the resolution.",
+     "code": "print(f\"{'angle':>7} {'radial':>9} {'arc':>9} {'slot bias':>11} {'hole bias':>11}\")\nfor theta in (5.0, 45.0, 90.0, 150.0):\n    omega_here = float(s.widest_aperture([theta], s.HARD_CENTRE)[0])\n    half, arc = s.slit_for(theta, omega_here)\n    slot = 100.0 * s.aperture_bias(theta, half, arc, s.HARD_CENTRE)\n    # a round hole of the same solid angle: equal in both directions\n    hole = np.degrees(np.sqrt(omega_here / np.pi))\n    hole_bias = 100.0 * s.aperture_bias(theta, hole, 2 * hole, s.HARD_CENTRE)\n    print(f\"{theta:6.1f}d {half:8.2f}d {arc:8.1f}d \"\n          f\"{slot:10.3f}% {hole_bias:10.2f}%\")\nprint()\nprint(\"same solid angle, same counts. the slot reports the angle it is at;\")\nprint(\"the hole reports an average over everything it can see.\")\n\n# the 90 degree station, which the diagram on this page draws\ntheta = 90.0\nomega90 = float(s.widest_aperture([theta], s.HARD_CENTRE)[0])\nhalf90, arc90 = s.slit_for(theta, omega90)\nhole90 = float(np.degrees(np.sqrt(omega90 / np.pi)))\nslit_geometry = {\n    \"theta\": theta,\n    \"omega\": omega90,\n    \"half\": half90,\n    \"arc\": arc90,\n    \"hole_radius\": hole90,\n    \"slot_bias_pct\": 100.0 * s.aperture_bias(theta, half90, arc90, s.HARD_CENTRE),\n    \"hole_bias_pct\": 100.0\n    * s.aperture_bias(theta, hole90, 2 * hole90, s.HARD_CENTRE),\n}",
+     "output": "  angle    radial       arc   slot bias   hole bias\n   5.0d     0.05d      2.0d      0.020%       0.04%\n  45.0d     0.20d    360.0d      0.004%       3.46%\n  90.0d     0.91d    360.0d      0.025%       6.64%\n 150.0d     1.82d    360.0d      0.054%       3.48%\n\nsame solid angle, same counts. the slot reports the angle it is at;\nthe hole reports an average over everything it can see.",
+     "diagram": "slit",
+     "diagram_from": "slit_geometry",
+     "caption": "Looking straight down the beam at the 90\u00b0 station: the scattering arrives on the dashed ring. Both apertures subtend the same solid angle and collect the same counts \u2014 the slot is a thin band lying along the ring, the round hole a disc wide enough to average over everything inside it. Radius here is the angle from the beam axis, which is not an area-preserving projection, so do not read equal areas off the drawing; the angular extents beneath each shape are the honest comparison. The radial band is drawn at a legible minimum \u2014 the real one is thinner.",
+     "math": [
+      {
+       "label": "what an annular slot subtends",
+       "math": "\u03a9(\u03b8, \u03b4, \u03c6) = \u03c6 &middot; 2&#8201;sin&#8201;\u03b8&#8201;sin&#8201;\u03b4",
+       "code": "half, arc = s.slit_for(theta, omega)\n# omega is fixed by the counter's rate cap; only the\n# split between radial half-width and arc is yours"
+      },
+      {
+       "label": "the aperture enters the model as a column",
+       "math": "\u03bc = rate(\u03b8) &middot; \u03a9 &middot; <i>t</i>",
+       "code": "expected = Mul(factors=(\n    rate,\n    Data(name=\"omega\", dimension=dimensionless()),\n    Data(name=\"exposure\", dimension=BASES.time),\n))\n# geometry and exposure are data, not parameters"
+      }
+     ]
+    },
+    {
+     "n": 4,
+     "slug": "scattering-4-how-long",
+     "title": "How long at each, and what the plan buys",
+     "asks": "Two hundred hours. Where do they go, and what comes back?",
+     "lede": "The plan is nine stations in four roles: anchors that pin the multiple-scattering core, a bank where the information is, witnesses whose evidence survives the core being argued with, and a foil-out run for the background. The hours are the argument.",
+     "beat": "A hundred and ten of the two hundred go to 150 degrees \u2014 the opposite of what evidence-per-hour says, and right for the reason step two gave. The bound that comes back is R < 33 fm, against a floor of 29.6 fm that no amount of counting can beat, because the beam energy alone sets it.",
+     "code": "print(f\"{'angle':>8} {'role':>11} {'hours':>7}\")\nfor st in s.PLAN:\n    where = f\"{st.theta_deg:.1f}d\" + (\"\" if st.foil else \" out\")\n    print(f\"{where:>8} {st.role:>11} {st.hours:7.0f}\")\nprint(f\"{'':>8} {'total':>11} {sum(x.hours for x in s.PLAN):7.0f}\")\nprint()\n\nsurface = s.surface()\nplan = s.plan_data()\nmu_hard = surface.counts(plan, s.HARD_CENTRE)\nradii = np.geomspace(3.0e-14, 1.0e-12, 300)\nagainst = np.array([\n    float(s.weight_of_evidence(\n        mu_hard, surface.counts(plan, s.truth(s.lam_of(float(r))))\n    ).sum())\n    for r in radii\n])\nbound = float(radii[np.where(against > 3.0)[0][0]])\nprint(f\"the plan can separate a charge larger than {bound * 1e15:.1f} fm\")\nprint(f\"the beam's own floor is                    {s.D_CLOSEST / 2 * 1e15:.1f} fm\")",
+     "output": "   angle        role   hours\n    1.0d      anchor       5\n    2.5d      anchor       5\n    5.0d        bank      10\n   10.0d        bank      10\n   20.0d        bank      10\n   45.0d        bank      15\n   90.0d     witness      25\n  150.0d     witness     110\n90.0d out  background      10\n               total     200\n\nthe plan can separate a charge larger than 32.6 fm\nthe beam's own floor is                    29.6 fm"
+    },
+    {
+     "n": 5,
+     "slug": "scattering-5-when-to-stop",
+     "title": "When to stop",
+     "asks": "The witness runs for 110 hours. Do you have to wait?",
+     "lede": "A hundred and ten hours at one angle is a long time to learn nothing you could not have learned in thirty. The same sequential machinery that stops a clinical trial early applies here: look at the witness on a schedule, against a boundary that spends the error rate across the looks.",
+     "beat": "The boundary is what makes looking legitimate. Peeking at a running count and stopping when it looks good is how you manufacture a discovery; an O'Brien-Fleming boundary is the price of being allowed to look at all.",
+     "code": "import math\nfrom axiom.design import (\n    LookSchedule, StoppingRule, information_fractions,\n    obrien_fleming, operating_characteristics,\n)\n\nlook_hours = (5.0, 15.0, 30.0, 60.0, 110.0)\nlooks = LookSchedule(\n    labels=tuple(f\"{h:g} h\" for h in look_hours),\n    information=information_fractions(look_hours),\n)\nboundary = obrien_fleming(0.05, looks, side=\"upper\", kind=\"efficacy\")\nrule = StoppingRule(name=\"witness_150\", looks=looks, boundaries=(boundary,))\n\nprint(f\"{'look':>8} {'information':>12} {'stop above z':>13}\")\nfor label, frac, z in zip(looks.labels, looks.information, boundary.z):\n    print(f\"{label:>8} {frac:12.2f} {z:13.3f}\")\n\nsignal = float(\n    s.rate_per_steradian([150.0], s.HARD_CENTRE)[0] - s.BACKGROUND_DENSITY\n) * s.OMEGA_MAX\nbackground = s.BACKGROUND_DENSITY * s.OMEGA_MAX\nfull = 110 * 3600.0\nprint()\nfor factor in (1.0, 1e-3, 1e-4):\n    drift = signal * factor * full / math.sqrt((signal * factor + background) * full)\n    oc = operating_characteristics(rule, drift=drift)\n    print(f\"a source {factor:7.0e} of the modelled one: \"\n          f\"P(stop) = {oc.crossings.stop_probability:.3f}\")",
+     "output": "    look  information  stop above z\n     5 h         0.05         7.914\n    15 h         0.14         4.569\n    30 h         0.27         3.231\n    60 h         0.55         2.285\n   110 h         1.00         1.687\n\na source   1e+00 of the modelled one: P(stop) = 1.000\na source   1e-03 of the modelled one: P(stop) = 1.000\na source   1e-04 of the modelled one: P(stop) = 0.205"
+    },
+    {
+     "n": 6,
+     "slug": "scattering-6-running-it",
+     "title": "Running it",
+     "asks": "The counts come in. What does the experiment actually say?",
+     "lede": "Every station is a Poisson draw around what the apparatus would really have produced. Then the five parameters are profiled over the one the experiment is about, and the bound is read where the likelihood has climbed far enough above its minimum.",
+     "beat": "It comes back one-sided, and that is the honest shape: there is no lower limit on the radius here. Everything below the bound fits the counts equally well, because the beam cannot resolve past D/2 whatever the counting time. Rutherford published 34 fm in 1911.",
+     "code": "import warnings\nfrom axiom.design import profile_likelihood\n\ncounts = np.random.default_rng(1911).poisson(surface.counts(plan, s.HARD_CENTRE))\nmeasured = dict(plan)\nmeasured[\"root_count\"] = 2.0 * np.sqrt(counts)\n\ninn = [bool(st.foil) for st in s.PLAN]\nif_diffuse = surface.counts(plan, s.DIFFUSE)\nprint(f\"at 150 degrees: {int(counts[inn][-1]):,} counts observed\")\nprint(f\"  a diffuse atom predicts {float(if_diffuse[inn][-1]):.0f}\")\nprint(f\"  that is a Poisson excess of \"\n      f\"{(counts[inn][-1] - if_diffuse[inn][-1]) / math.sqrt(counts[inn][-1]):,.0f} sd\")\n\nwith warnings.catch_warnings():\n    warnings.simplefilter(\"ignore\", RuntimeWarning)\n    values, drops = profile_likelihood(\n        s.model(), measured, {**s.HARD_CENTRE, \"lam\": 0.0},\n        \"lam\", grid=np.linspace(-4, 4, 41),\n    )\ndrops = np.asarray(drops)\nlowest = int(np.argmin(drops))\nlast = int(np.where(drops[:lowest] > 1.921)[0][-1])\ncrossing = float(np.interp(\n    1.921, [drops[last + 1], drops[last]], [values[last + 1], values[last]]\n))\nprint()\nprint(f\"R < {s.radius_of(crossing) * 1e15:.1f} fm   (95%, one-sided)\")\nprint(f\"the beam could not have resolved below {s.D_CLOSEST / 2 * 1e15:.1f} fm\")\nprint(\"Rutherford published 34 fm in 1911.\")",
+     "output": "at 150 degrees: 94,117 counts observed\n  a diffuse atom predicts 119\n  that is a Poisson excess of 306 sd\n\nR < 33.5 fm   (95%, one-sided)\nthe beam could not have resolved below 29.6 fm\nRutherford published 34 fm in 1911.",
+     "math": [
+      {
+       "label": "the single-scattering tail, cut off by a charge of size \u03bb",
+       "math": "<i>f</i><sub>tail</sub>(\u03b8) = <span class='frac'><span><i>e</i><sup>log&#8201;<i>a</i></sup></span><span>sin<sup>4</sup>(\u03b8/2)</span></span>&nbsp;&middot;&nbsp;<i>e</i><sup>\u2212(<i>u</i>/<i>e</i><sup>\u03bb</sup>)\u00b2</sup>&nbsp;&nbsp;<span style='opacity:.7'>u = sin(\u03b8/2)</span>",
+       "code": "u = Apply(fn=\"sin\", arg=Mul(factors=(\n    Const(value=0.5, dimension=dimensionless()), theta)))\ntail = Mul(factors=(\n    _exp(log_a),\n    Pow(base=u, exponent=Fraction(-4)),\n    _exp(Mul(factors=(\n        Const(value=-1.0, dimension=dimensionless()),\n        Pow(base=_ratio(u, lam), exponent=Fraction(2)),\n    ))),\n))"
+      },
+      {
+       "label": "the multiple-scattering core",
+       "math": "<i>f</i><sub>core</sub>(\u03b8) = <i>e</i><sup>log&#8201;<i>c</i></sup>&nbsp;<i>e</i><sup>\u2212\u00bd(\u03b8/<i>e</i><sup>log&#8201;<i>w</i></sup>)\u00b2</sup>",
+       "code": "core = Mul(factors=(\n    _exp(log_c),\n    _exp(Mul(factors=(\n        Const(value=-0.5, dimension=dimensionless()),\n        Pow(base=_ratio(theta, log_w), exponent=Fraction(2)),\n    ))),\n))"
+      },
+      {
+       "label": "expected counts, and the variance-stabilising transform",
+       "math": "\u03bc = (foil&#8201;\u00b7&#8201;[<i>f</i><sub>tail</sub> + <i>f</i><sub>core</sub>] + <i>e</i><sup>log&#8201;<i>b</i></sup>)&#8201;\u03a9&#8201;<i>t</i>&nbsp;&nbsp;&nbsp;&nbsp;<i>y</i> = 2<span class='rad'>&#8730;<span style='border-top:1px solid currentColor'>&#8201;\u03bc&#8201;</span></span>",
+       "code": "scattered = Mul(factors=(\n    Data(name=\"foil\", dimension=dimensionless()),\n    Add(terms=(tail, core)),\n))\nexpected = Mul(factors=(\n    Mul(factors=(RATE_UNIT, Add(terms=(scattered, _exp(log_b))))),\n    Data(name=\"omega\", dimension=dimensionless()),\n    Data(name=\"exposure\", dimension=BASES.time),\n))\nmean = Mul(factors=(\n    Const(value=2.0, dimension=dimensionless()),\n    Pow(base=expected, exponent=Fraction(1, 2)),\n))\n# 2*sqrt(Poisson) has variance 1, so a normal\n# likelihood on y is the right one"
+      }
+     ]
+    }
+   ],
+   "captured": {
+    "apparatus": {
+     "energy_mev": 7.68,
+     "d_fm": 59.248519,
+     "foil_um": 0.4,
+     "beam_per_s": 200000.0,
+     "angles": [
+      1.0,
+      2.5,
+      5.0,
+      10.0,
+      20.0,
+      45.0,
+      90.0,
+      150.0
+     ]
+    },
+    "slit_geometry": {
+     "theta": 90.0,
+     "omega": 0.2,
+     "half": 0.911929,
+     "arc": 360.0,
+     "hole_radius": 14.456484,
+     "slot_bias_pct": 0.025328,
+     "hole_bias_pct": 6.644065
+    }
+   }
+  }
+ ],
+ "n": 4
+}

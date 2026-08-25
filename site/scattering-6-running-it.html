@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6. Running it — axiom tutorial</title>
+<meta name="description" content="Step 6 of 6: The counts come in. What does the experiment actually say?">
+<meta property="og:title" content="6. Running it — axiom tutorial">
+<meta property="og:description" content="Step 6 of 6: The counts come in. What does the experiment actually say?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Designing an experiment before there is any data · step 6 of 6</p>
+    <h1 style="max-width:18ch">Running it</h1>
+    <p class="lede prose mt">The counts come in. What does the experiment actually say?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>Every station is a Poisson draw around what the apparatus would really have produced. Then the five parameters are profiled over the one the experiment is about, and the bound is read where the likelihood has climbed far enough above its minimum.</p>
+      <p><strong>It comes back one-sided, and that is the honest shape: there is no lower limit on the radius here. Everything below the bound fits the counts equally well, because the beam cannot resolve past D/2 whatever the counting time. Rutherford published 34 fm in 1911.</strong></p>
+    </div>
+  </div>
+</section>
+
+
+
+<div class="eqs"><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">the single-scattering tail, cut off by a charge of size λ</p>
+    <div class="eq"><i>f</i><sub>tail</sub>(θ) = <span class='frac'><span><i>e</i><sup>log&#8201;<i>a</i></sup></span><span>sin<sup>4</sup>(θ/2)</span></span>&nbsp;&middot;&nbsp;<i>e</i><sup>−(<i>u</i>/<i>e</i><sup>λ</sup>)²</sup>&nbsp;&nbsp;<span style='opacity:.7'>u = sin(θ/2)</span></div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>u = Apply(fn=&quot;sin&quot;, arg=Mul(factors=(
+    Const(value=0.5, dimension=dimensionless()), theta)))
+tail = Mul(factors=(
+    _exp(log_a),
+    Pow(base=u, exponent=Fraction(-4)),
+    _exp(Mul(factors=(
+        Const(value=-1.0, dimension=dimensionless()),
+        Pow(base=_ratio(u, lam), exponent=Fraction(2)),
+    ))),
+))</pre>
+  </div>
+</div><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">the multiple-scattering core</p>
+    <div class="eq"><i>f</i><sub>core</sub>(θ) = <i>e</i><sup>log&#8201;<i>c</i></sup>&nbsp;<i>e</i><sup>−½(θ/<i>e</i><sup>log&#8201;<i>w</i></sup>)²</sup></div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>core = Mul(factors=(
+    _exp(log_c),
+    _exp(Mul(factors=(
+        Const(value=-0.5, dimension=dimensionless()),
+        Pow(base=_ratio(theta, log_w), exponent=Fraction(2)),
+    ))),
+))</pre>
+  </div>
+</div><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">expected counts, and the variance-stabilising transform</p>
+    <div class="eq">μ = (foil&#8201;·&#8201;[<i>f</i><sub>tail</sub> + <i>f</i><sub>core</sub>] + <i>e</i><sup>log&#8201;<i>b</i></sup>)&#8201;Ω&#8201;<i>t</i>&nbsp;&nbsp;&nbsp;&nbsp;<i>y</i> = 2<span class='rad'>&#8730;<span style='border-top:1px solid currentColor'>&#8201;μ&#8201;</span></span></div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>scattered = Mul(factors=(
+    Data(name=&quot;foil&quot;, dimension=dimensionless()),
+    Add(terms=(tail, core)),
+))
+expected = Mul(factors=(
+    Mul(factors=(RATE_UNIT, Add(terms=(scattered, _exp(log_b))))),
+    Data(name=&quot;omega&quot;, dimension=dimensionless()),
+    Data(name=&quot;exposure&quot;, dimension=BASES.time),
+))
+mean = Mul(factors=(
+    Const(value=2.0, dimension=dimensionless()),
+    Pow(base=expected, exponent=Fraction(1, 2)),
+))
+# 2*sqrt(Poisson) has variance 1, so a normal
+# likelihood on y is the right one</pre>
+  </div>
+</div></div>
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 6</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>import warnings
+from axiom.design import profile_likelihood
+
+counts = np.random.default_rng(1911).poisson(surface.counts(plan, s.HARD_CENTRE))
+measured = dict(plan)
+measured[&quot;root_count&quot;] = 2.0 * np.sqrt(counts)
+
+inn = [bool(st.foil) for st in s.PLAN]
+if_diffuse = surface.counts(plan, s.DIFFUSE)
+print(f&quot;at 150 degrees: {int(counts[inn][-1]):,} counts observed&quot;)
+print(f&quot;  a diffuse atom predicts {float(if_diffuse[inn][-1]):.0f}&quot;)
+print(f&quot;  that is a Poisson excess of &quot;
+      f&quot;{(counts[inn][-1] - if_diffuse[inn][-1]) / math.sqrt(counts[inn][-1]):,.0f} sd&quot;)
+
+with warnings.catch_warnings():
+    warnings.simplefilter(&quot;ignore&quot;, RuntimeWarning)
+    values, drops = profile_likelihood(
+        s.model(), measured, {**s.HARD_CENTRE, &quot;lam&quot;: 0.0},
+        &quot;lam&quot;, grid=np.linspace(-4, 4, 41),
+    )
+drops = np.asarray(drops)
+lowest = int(np.argmin(drops))
+last = int(np.where(drops[:lowest] &gt; 1.921)[0][-1])
+crossing = float(np.interp(
+    1.921, [drops[last + 1], drops[last]], [values[last + 1], values[last]]
+))
+print()
+print(f&quot;R &lt; {s.radius_of(crossing) * 1e15:.1f} fm   (95%, one-sided)&quot;)
+print(f&quot;the beam could not have resolved below {s.D_CLOSEST / 2 * 1e15:.1f} fm&quot;)
+print(&quot;Rutherford published 34 fm in 1911.&quot;)</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>at 150 degrees: 94,117 counts observed
+  a diffuse atom predicts 119
+  that is a Poisson excess of 306 sd
+
+R &lt; 33.5 fm   (95%, one-sided)
+the beam could not have resolved below 29.6 fm
+Rutherford published 34 fm in 1911.</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="scattering-1-one-parameter.html"><span class="wt-toc-n">1</span>Two atoms, one number</a><a class="wt-toc-i" href="scattering-2-which-angles.html"><span class="wt-toc-n">2</span>Where to point the counter</a><a class="wt-toc-i" href="scattering-3-the-slit.html"><span class="wt-toc-n">3</span>What shape to cut the aperture</a><a class="wt-toc-i" href="scattering-4-how-long.html"><span class="wt-toc-n">4</span>How long at each, and what the plan buys</a><a class="wt-toc-i" href="scattering-5-when-to-stop.html"><span class="wt-toc-n">5</span>When to stop</a><a class="wt-toc-i" href="scattering-6-running-it.html"><span class="wt-toc-n">6</span>Running it</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="scattering-5-when-to-stop.html">&larr; 5 · When to stop</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn" href="tutorial.html">The other tutorial &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

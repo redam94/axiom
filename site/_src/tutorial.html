@@ -1,0 +1,66 @@
+<!--meta {
+  "title": "Tutorials — two problems, worked step by step · axiom",
+  "description": "Two step-by-step tutorials. One carries a business decision through identification, design, measurement and calibration until the experiment reverses it. The other designs a physics experiment before any data exists — which angles, what aperture, how long, and when to stop."
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Tutorials · {{tutorial.n}} problems</p>
+    <h1 style="max-width:18ch">Worked all the way through</h1>
+    <p class="lede prose mt">Most library tours show you a subpackage at a time. These
+      take a single problem and carry it through every phase it actually has to survive —
+      because the hard part of causal work is not any one phase, it is that they have to
+      agree with each other at the end.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>Start with <strong>the porting one</strong> if you have a table and want to
+        know what it takes to get it into axiom at all. It imports no simulator: every
+        object you would have to write yourself is written on the page — the column
+        roles, the treatment and outcome with their dimensions, the model spec, the
+        estimand — and it ends where an honest porting exercise ends, with a number and
+        a precise statement of the one thing standing between it and a causal claim.</p>
+      <p>Next to it, <strong>a model of your own</strong>, for when the kernels do not
+        fit your mechanism. It writes the mean as an expression by hand, gets the
+        dimensions checked before anything is fitted, and is honest about what leaving
+        the kernels behind costs you.</p>
+      <p>The other two are the two shapes the work itself comes in. In one,
+        <strong>the data already exists</strong> and the question is whether it can
+        answer anything — it cannot, so an experiment gets designed, and its answer
+        reverses the decision the existing data would have supported.</p>
+      <p>In the other there is <strong>no data at all</strong>. Every step is a decision
+        about what to go and measure: which angles, what shape of aperture, how long at
+        each, and when you are allowed to stop. It is the older discipline and the one
+        that is easier to get wrong, because nothing pushes back until the money is
+        spent.</p>
+      <p>Every number on every page below was produced by running the code shown beside
+        it, when this site was built.</p>
+    </div>
+    <!--TUTORIAL-->
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Then what</p>
+      <h2>Where to go after them</h2>
+    </div>
+    <div class="prose">
+      <p>The two worked problems exist at full length as notebooks, with every
+        intermediate result the site's path leaves out: <code>nbs/tutorial/</code> and
+        <code>nbs/case-studies/rutherford/</code>. For the porting path, every symbol it
+        uses is demonstrated on its own in <code>nbs/surface/</code> and
+        <code>nbs/estimands/</code>.</p>
+      <p>For the same phases taken further one at a time, the five pillar pages start at
+        <a href="identify.html">Identify</a>. For the same library in twelve other
+        fields, the <a href="examples.html">examples</a>. For the scattering study
+        written up as a finished argument rather than as a tutorial, see
+        <a href="rutherford.html">GEIGER-1911</a>; for a sequential trial that has to
+        stop an arm early, <a href="case-study.html">HYPER-3</a>.</p>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2. Where to point the counter — axiom tutorial</title>
+<meta name="description" content="Step 2 of 6: Which angles carry the evidence — and which carry it under attack?">
+<meta property="og:title" content="2. Where to point the counter — axiom tutorial">
+<meta property="og:description" content="Step 2 of 6: Which angles carry the evidence — and which carry it under attack?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Designing an experiment before there is any data · step 2 of 6</p>
+    <h1 style="max-width:18ch">Where to point the counter</h1>
+    <p class="lede prose mt">Which angles carry the evidence — and which carry it under attack?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>Evidence per hour is easy to compute: how many nats an hour at each angle buys, if you believe the model. Follow it and you put the whole budget where the counts are. That is the trap this step exists to name.</p>
+      <p><strong>Evidence-per-hour is computed <em>inside the model that is under attack</em>. An objector who says the multiple-scattering core is wider than you fitted takes most of it away. <code>surviving_evidence</code> asks what is left when they do — and the answer is a different set of angles, far out in the tail.</strong></p>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 2</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>import numpy as np
+
+angles = np.array([1.0, 2.5, 5.0, 10.0, 20.0, 45.0, 90.0, 150.0])
+omega = s.widest_aperture(angles, s.HARD_CENTRE)
+
+believed = s.weight_of_evidence(
+    s.rate_per_steradian(angles, s.HARD_CENTRE) * omega * 3600.0,
+    s.rate_per_steradian(angles, s.DIFFUSE) * omega * 3600.0,
+)
+attacked, _ = s.surviving_evidence(angles, omega, 3600.0)
+
+print(f&quot;{&#x27;angle&#x27;:&gt;8} {&#x27;nats/h believed&#x27;:&gt;18} {&#x27;nats/h attacked&#x27;:&gt;18}&quot;)
+for a, b, k in zip(angles, believed, attacked):
+    print(f&quot;{a:7.1f}d {b:18,.0f} {k:18,.1f}&quot;)
+print()
+best_believed = angles[int(np.argmax(believed))]
+best_attacked = angles[int(np.argmax(attacked))]
+print(f&quot;believe the model, and the best angle is {best_believed:.1f} degrees&quot;)
+print(f&quot;let it be attacked, and it is       {best_attacked:.1f} degrees&quot;)</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>   angle    nats/h believed    nats/h attacked
+    1.0d              2,744            2,696.5
+    2.5d             13,029                1.7
+    5.0d             97,394               17.9
+   10.0d             82,606               32.0
+   20.0d             67,717                0.7
+   45.0d             50,649              531.9
+   90.0d             20,659              535.9
+  150.0d              4,870            4,869.8
+
+believe the model, and the best angle is 5.0 degrees
+let it be attacked, and it is       150.0 degrees</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="scattering-1-one-parameter.html"><span class="wt-toc-n">1</span>Two atoms, one number</a><a class="wt-toc-i" href="scattering-2-which-angles.html"><span class="wt-toc-n">2</span>Where to point the counter</a><a class="wt-toc-i" href="scattering-3-the-slit.html"><span class="wt-toc-n">3</span>What shape to cut the aperture</a><a class="wt-toc-i" href="scattering-4-how-long.html"><span class="wt-toc-n">4</span>How long at each, and what the plan buys</a><a class="wt-toc-i" href="scattering-5-when-to-stop.html"><span class="wt-toc-n">5</span>When to stop</a><a class="wt-toc-i" href="scattering-6-running-it.html"><span class="wt-toc-n">6</span>Running it</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="scattering-1-one-parameter.html">&larr; 1 · Two atoms, one number</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="scattering-3-the-slit.html">3 · What shape to cut the aperture &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

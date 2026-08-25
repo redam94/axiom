@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6. Folding the experiment into the model — axiom tutorial</title>
+<meta name="description" content="Step 6 of 8: What does the model say once it has to honour the measurement?">
+<meta property="og:title" content="6. Folding the experiment into the model — axiom tutorial">
+<meta property="og:description" content="Step 6 of 8: What does the model say once it has to honour the measurement?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">One question, carried all the way · step 6 of 8</p>
+    <h1 style="max-width:18ch">Folding the experiment into the model</h1>
+    <p class="lede prose mt">What does the model say once it has to honour the measurement?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>Refit the surface under the constraint that it reproduce what the trial saw. The result is a model that agrees with the experiment on the experiment&#x27;s own terms — and can then be asked the decision&#x27;s question, which the experiment never measured directly.</p>
+      <p><strong>Every step of that transfer is written to a ledger: the window it crossed, the level it aggregated to, the carryover it assumed. The decision&#x27;s number is reported with the ledger attached or it is not reported.</strong></p>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 6</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>from axiom.calibrate import fit_calibrated
+
+calibrated = fit_calibrated(
+    spec, observed_panel, [measurement], backend=&quot;laplace&quot;, draws=1000, seed=1
+)
+after = realize(
+    decision_estimand, calibrated, assume_identified=True, mass=0.9, seed=SEED
+)
+
+after_per_depot = after.summary.mean / REGION_DEPOTS
+print(&quot;the decision&#x27;s estimand, per depot-week&quot;)
+print(f&quot;  observational : {before_per_depot:+.2f}&quot;)
+print(f&quot;  calibrated    : {after_per_depot:+.2f}&quot;)
+print(f&quot;  break-even    : {BREAK_EVEN:+.2f}&quot;)
+print()
+said = &quot;fund it&quot; if before_per_depot &gt; BREAK_EVEN else &quot;do not fund it&quot;
+says_now = &quot;fund it&quot; if after_per_depot &gt; BREAK_EVEN else &quot;do not fund it&quot;
+print(f&quot;the observational model said : {said}&quot;)
+print(f&quot;the experiment says          : {says_now}&quot;)</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>the decision&#x27;s estimand, per depot-week
+  observational : +7.16
+  calibrated    : +6.12
+  break-even    : +6.75
+
+the observational model said : fund it
+the experiment says          : do not fund it</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="tutorial-1-the-question.html"><span class="wt-toc-n">1</span>The question, written down</a><a class="wt-toc-i" href="tutorial-2-identification.html"><span class="wt-toc-n">2</span>Can the data we already have answer it?</a><a class="wt-toc-i" href="tutorial-3-the-prior.html"><span class="wt-toc-n">3</span>The belief we start from</a><a class="wt-toc-i" href="tutorial-4-design.html"><span class="wt-toc-n">4</span>Designing the experiment</a><a class="wt-toc-i" href="tutorial-5-measurement.html"><span class="wt-toc-n">5</span>The experiment lands</a><a class="wt-toc-i" href="tutorial-6-calibration.html"><span class="wt-toc-n">6</span>Folding the experiment into the model</a><a class="wt-toc-i" href="tutorial-7-the-follow-up.html"><span class="wt-toc-n">7</span>Planning the follow-up</a><a class="wt-toc-i" href="tutorial-8-the-report.html"><span class="wt-toc-n">8</span>The report</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="tutorial-5-measurement.html">&larr; 5 · The experiment lands</a><a class="btn btn-2" href="tutorial.html">All 8 steps</a><a class="btn btn-2" href="tutorial-7-the-follow-up.html">7 · Planning the follow-up &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

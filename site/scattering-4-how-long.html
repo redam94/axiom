@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4. How long at each, and what the plan buys — axiom tutorial</title>
+<meta name="description" content="Step 4 of 6: Two hundred hours. Where do they go, and what comes back?">
+<meta property="og:title" content="4. How long at each, and what the plan buys — axiom tutorial">
+<meta property="og:description" content="Step 4 of 6: Two hundred hours. Where do they go, and what comes back?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Designing an experiment before there is any data · step 4 of 6</p>
+    <h1 style="max-width:18ch">How long at each, and what the plan buys</h1>
+    <p class="lede prose mt">Two hundred hours. Where do they go, and what comes back?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>The plan is nine stations in four roles: anchors that pin the multiple-scattering core, a bank where the information is, witnesses whose evidence survives the core being argued with, and a foil-out run for the background. The hours are the argument.</p>
+      <p><strong>A hundred and ten of the two hundred go to 150 degrees — the opposite of what evidence-per-hour says, and right for the reason step two gave. The bound that comes back is R &lt; 33 fm, against a floor of 29.6 fm that no amount of counting can beat, because the beam energy alone sets it.</strong></p>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 4</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>print(f&quot;{&#x27;angle&#x27;:&gt;8} {&#x27;role&#x27;:&gt;11} {&#x27;hours&#x27;:&gt;7}&quot;)
+for st in s.PLAN:
+    where = f&quot;{st.theta_deg:.1f}d&quot; + (&quot;&quot; if st.foil else &quot; out&quot;)
+    print(f&quot;{where:&gt;8} {st.role:&gt;11} {st.hours:7.0f}&quot;)
+print(f&quot;{&#x27;&#x27;:&gt;8} {&#x27;total&#x27;:&gt;11} {sum(x.hours for x in s.PLAN):7.0f}&quot;)
+print()
+
+surface = s.surface()
+plan = s.plan_data()
+mu_hard = surface.counts(plan, s.HARD_CENTRE)
+radii = np.geomspace(3.0e-14, 1.0e-12, 300)
+against = np.array([
+    float(s.weight_of_evidence(
+        mu_hard, surface.counts(plan, s.truth(s.lam_of(float(r))))
+    ).sum())
+    for r in radii
+])
+bound = float(radii[np.where(against &gt; 3.0)[0][0]])
+print(f&quot;the plan can separate a charge larger than {bound * 1e15:.1f} fm&quot;)
+print(f&quot;the beam&#x27;s own floor is                    {s.D_CLOSEST / 2 * 1e15:.1f} fm&quot;)</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>   angle        role   hours
+    1.0d      anchor       5
+    2.5d      anchor       5
+    5.0d        bank      10
+   10.0d        bank      10
+   20.0d        bank      10
+   45.0d        bank      15
+   90.0d     witness      25
+  150.0d     witness     110
+90.0d out  background      10
+               total     200
+
+the plan can separate a charge larger than 32.6 fm
+the beam&#x27;s own floor is                    29.6 fm</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="scattering-1-one-parameter.html"><span class="wt-toc-n">1</span>Two atoms, one number</a><a class="wt-toc-i" href="scattering-2-which-angles.html"><span class="wt-toc-n">2</span>Where to point the counter</a><a class="wt-toc-i" href="scattering-3-the-slit.html"><span class="wt-toc-n">3</span>What shape to cut the aperture</a><a class="wt-toc-i" href="scattering-4-how-long.html"><span class="wt-toc-n">4</span>How long at each, and what the plan buys</a><a class="wt-toc-i" href="scattering-5-when-to-stop.html"><span class="wt-toc-n">5</span>When to stop</a><a class="wt-toc-i" href="scattering-6-running-it.html"><span class="wt-toc-n">6</span>Running it</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="scattering-3-the-slit.html">&larr; 3 · What shape to cut the aperture</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="scattering-5-when-to-stop.html">5 · When to stop &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

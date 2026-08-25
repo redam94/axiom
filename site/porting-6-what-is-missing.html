@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6. What you have not done yet — axiom tutorial</title>
+<meta name="description" content="Step 6 of 6: The number came back downgraded. Why, and what fixes it?">
+<meta property="og:title" content="6. What you have not done yet — axiom tutorial">
+<meta property="og:description" content="Step 6 of 6: The number came back downgraded. Why, and what fixes it?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Bringing your own problem · step 6 of 6</p>
+    <h1 style="max-width:18ch">What you have not done yet</h1>
+    <p class="lede prose mt">The number came back downgraded. Why, and what fixes it?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p><code>assume_identified=True</code> is the flag that got a number out, and the status says exactly what it cost: <code>downgraded</code>. Nothing above argued that leaflet spend is unconfounded with footfall. Stores that were already busy may well have been given more leaflets.</p>
+      <p><strong>This is the honest end of a porting exercise, not a failure of one. You now have a model of your own data that produces a decision&#x27;s number with its provenance attached — and a precise statement of the one thing standing between it and a causal claim. That is where the first tutorial starts.</strong></p>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 6</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>from axiom.identify import CausalGraph, identify
+
+# Write down what you actually believe about how the spend was set.
+world = CausalGraph.from_edges(
+    &quot;busyness -&gt; leaflets, busyness -&gt; footfall, leaflets -&gt; footfall&quot;,
+    unmeasured=[&quot;busyness&quot;],
+    name=&quot;how_the_spend_was_really_set&quot;,
+)
+verdict = identify(world, &quot;leaflets&quot;, &quot;footfall&quot;)
+print(f&quot;the graph says : {verdict.status}&quot;)
+print(f&quot;it would need  : {sorted(verdict.unmeasured_required)}, &quot;
+      f&quot;which nobody recorded&quot;)
+print()
+print(&quot;so the `downgraded` in step 5 was not a formality. What you have&quot;)
+print(&quot;is a description of 24 stores, not the effect of leaflets on&quot;)
+print(&quot;footfall -- and the difference is the whole subject of axiom.&quot;)
+print()
+print(&quot;two honest ways forward, and no third:&quot;)
+print(&quot;  measure it   -- record what drove the spend, and adjust&quot;)
+print(&quot;  randomize it -- assign the leaflets, and the arrow disappears&quot;)
+print()
+print(&quot;both are the subject of the other two tutorials.&quot;)</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>the graph says : downgraded
+it would need  : [&#x27;busyness&#x27;], which nobody recorded
+
+so the `downgraded` in step 5 was not a formality. What you have
+is a description of 24 stores, not the effect of leaflets on
+footfall -- and the difference is the whole subject of axiom.
+
+two honest ways forward, and no third:
+  measure it   -- record what drove the spend, and adjust
+  randomize it -- assign the leaflets, and the arrow disappears
+
+both are the subject of the other two tutorials.</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="porting-1-your-data.html"><span class="wt-toc-n">1</span>Start from the dataframe you already have</a><a class="wt-toc-i" href="porting-2-entities.html"><span class="wt-toc-n">2</span>Say what the columns mean</a><a class="wt-toc-i" href="porting-3-the-spec.html"><span class="wt-toc-n">3</span>Write the spec</a><a class="wt-toc-i" href="porting-4-fit-it.html"><span class="wt-toc-n">4</span>Fit it, and read what came back</a><a class="wt-toc-i" href="porting-5-the-estimand.html"><span class="wt-toc-n">5</span>Declare what you want to know</a><a class="wt-toc-i" href="porting-6-what-is-missing.html"><span class="wt-toc-n">6</span>What you have not done yet</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="porting-5-the-estimand.html">&larr; 5 · Declare what you want to know</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn" href="tutorial.html">The other tutorial &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1. When the kernels run out — axiom tutorial</title>
+<meta name="description" content="Step 1 of 5: What if the shape you need is not one of the ones on offer?">
+<meta property="og:title" content="1. When the kernels run out — axiom tutorial">
+<meta property="og:description" content="Step 1 of 5: What if the shape you need is not one of the ones on offer?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">A model of your own · step 1 of 5</p>
+    <h1 style="max-width:18ch">When the kernels run out</h1>
+    <p class="lede prose mt">What if the shape you need is not one of the ones on offer?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p><code>SurfaceSpec</code> takes a kernel per treatment — Hill, spline, polynomial, Gaussian process — and covers most dose-response work between them. Sometimes it does not. You have a mechanism, it has a form, and the form is not on the menu.</p>
+      <p><strong>Then you write the mean yourself. A <code>ModelSpec</code> is four things and no more: the mean as an expression, the outcome column it predicts, the likelihood around it, and every parameter with a prior. Nothing about it is a lower tier of the library — <code>SurfaceSpec</code> builds one of these and hands it to the same backends.</strong></p>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 1</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>from axiom.core import ModelSpec
+
+print(ModelSpec.__doc__.strip().splitlines()[0])
+print()
+for name, field in ModelSpec.model_fields.items():
+    required = &quot;required&quot; if field.is_required() else &quot;optional&quot;
+    print(f&quot;  {name:14s} {required}&quot;)
+print()
+print(&quot;the response we need is an exponential approach to a ceiling:&quot;)
+print()
+print(&quot;    footfall = alpha + beta * (1 - exp(-spend / k))&quot;)
+print()
+print(&quot;alpha is the baseline, beta the most the leaflets can ever add,&quot;)
+print(&quot;and k the spend at which about 63% of that has arrived.&quot;)</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>Mean expression + outcome column + likelihood + every parameter&#x27;s prior.
+
+  name           required
+  mean           required
+  outcome        required
+  likelihood     required
+  parameters     required
+  constraints    optional
+
+the response we need is an exponential approach to a ceiling:
+
+    footfall = alpha + beta * (1 - exp(-spend / k))
+
+alpha is the baseline, beta the most the leaflets can ever add,
+and k the spend at which about 63% of that has arrived.</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="custom-1-when-kernels-run-out.html"><span class="wt-toc-n">1</span>When the kernels run out</a><a class="wt-toc-i" href="custom-2-the-expression.html"><span class="wt-toc-n">2</span>The mean, as an expression</a><a class="wt-toc-i" href="custom-3-dimensions.html"><span class="wt-toc-n">3</span>Dimensions are checked when you build it</a><a class="wt-toc-i" href="custom-4-fit-it.html"><span class="wt-toc-n">4</span>Fit it</a><a class="wt-toc-i" href="custom-5-what-it-costs.html"><span class="wt-toc-n">5</span>What the custom route costs you</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="tutorial.html">All 5 steps</a><a class="btn btn-2" href="custom-2-the-expression.html">2 · The mean, as an expression &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1. Two atoms, one number — axiom tutorial</title>
+<meta name="description" content="Step 1 of 6: How do you get resolving power against a question nobody has measured?">
+<meta property="og:title" content="1. Two atoms, one number — axiom tutorial">
+<meta property="og:description" content="Step 1 of 6: How do you get resolving power against a question nobody has measured?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Designing an experiment before there is any data · step 1 of 6</p>
+    <h1 style="max-width:18ch">Two atoms, one number</h1>
+    <p class="lede prose mt">How do you get resolving power against a question nobody has measured?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>In 1910 there were two pictures of the atom and no experiment between them. A hard positive centre and a charge smeared through the whole atom both fitted everything anyone had. You cannot design against a debate — so the first move is to find the number the two pictures disagree about.</p>
+      <p><strong>They are one model at two values of the radius R of the positive charge, six decades apart. An alpha stopped head-on gets no closer than D; one scattered through an angle gets no closer than a known multiple of it; so a charge of radius R kills the scattering past a cut-off angle. Turning the debate into a parameter is what makes everything after this possible.</strong></p><p><strong><code>scattering.py</code> is the case study&#x27;s own module and it holds the physics: the mean expression, the parameters and their priors, the detector geometry. It is a hand-built <code>ModelSpec</code> rather than anything axiom generates, which is what a problem with real physics in it looks like. The porting tutorial builds the easier kind, a <code>SurfaceSpec</code>, from scratch.</strong></p>
+    </div>
+  </div>
+</section>
+
+<figure class="fig">
+  <svg viewBox="0 0 620 300" role="img" class="diagram"
+     aria-label="An alpha source and collimator on the left, a gold foil at the centre,
+     and a counter on a rotatable arm at 150 degrees.">
+  <g fill="none" stroke="currentColor" stroke-width="1.6">
+    <rect x="18" y="132" width="54" height="36" rx="4"/>
+    <rect x="112" y="140" width="26" height="20" rx="2"/>
+    <rect x="164" y="140" width="26" height="20" rx="2"/>
+    <line x1="72" y1="150" x2="300" y2="150"/>
+    <line x1="300" y1="150" x2="470" y2="150" stroke-dasharray="5 4" opacity="0.45"/>
+    <line x1="300" y1="96" x2="300" y2="204" stroke="var(--accent)" stroke-width="4"/>
+  </g>
+  <path d="M 360 150 A 60 60 0 0 0 248.0
+        120.0"
+        fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>
+  <text x="352" y="120" font-size="12" fill="currentColor" opacity="0.8">&#952;</text>
+  <line x1="300" y1="150" x2="469.4" y2="135.2" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.35"/><text x="495.3" y="132.9" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">5°</text><line x1="300" y1="150" x2="420.2" y2="29.8" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.35"/><text x="438.6" y="11.4" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">45°</text><line x1="300" y1="150" x2="152.8" y2="65.0" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 3"/><rect x="132.8" y="54.0" width="40" height="22" rx="3" fill="var(--accent-wash)" stroke="var(--accent)" stroke-width="1.5"/><text x="152.8" y="69.0" text-anchor="middle" font-size="10" fill="var(--accent-deep)">counter</text><text x="130.3" y="52.0" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">150°</text>
+  <g font-size="10.5" fill="currentColor" text-anchor="middle">
+    <text x="45" y="188">radium C&#8242;</text>
+    <text x="45" y="201" opacity="0.65">7.68 MeV &#945;</text>
+    <text x="151" y="188">collimator</text>
+    <text x="300" y="222" fill="var(--accent-deep)">gold foil</text>
+    <text x="300" y="235" opacity="0.65">0.4 &#181;m</text>
+    <text x="440" y="168" opacity="0.65">undeflected beam</text>
+    <text x="45" y="214" opacity="0.65">200,000/s</text>
+  </g>
+</svg>
+  <figcaption>The apparatus. An alpha source and collimator throw a beam at a gold foil; the counter swings on an arm to the scattering angle theta. The dashed rays are the other stations the plan visits.</figcaption>
+</figure>
+
+<div class="eqs"><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">closest approach, head-on</p>
+    <div class="eq"><i>D</i> = <span class='frac'><span>2<i>zZe</i>²</span><span>4πε<sub>0</sub><i>E</i></span></span></div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>D_CLOSEST = 2 * Z_ALPHA * Z_FOIL * COULOMB_MEV_FM / E_ALPHA * 1e-15
+# a constant of the beam and the foil, not a fitted quantity</pre>
+  </div>
+</div><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">closest approach at angle θ</p>
+    <div class="eq"><i>r</i><sub>min</sub>(θ) = <span class='frac'><span><i>D</i></span><span>2</span></span>&#8201;(1 + <span class='frac'><span>1</span><span>sin(θ/2)</span></span>)</div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre># the floor no amount of counting can beat
+floor = S.D_CLOSEST / 2.0</pre>
+  </div>
+</div><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">where a charge of radius R kills the tail</p>
+    <div class="eq">sin(θ<sub>cut</sub>/2) = <span class='frac'><span>1</span><span>2<i>R</i>/<i>D</i> − 1</span></span>&nbsp;&nbsp;&nbsp;λ = log sin(θ<sub>cut</sub>/2)</div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>lam = Param(
+    name=&quot;lam&quot;,
+    dimension=dimensionless(),
+    prior=Prior(family=&quot;normal&quot;,
+                hyper={&quot;mu&quot;: -4.0, &quot;sigma&quot;: 6.0}),
+)
+# the one axis the two atoms are two points on</pre>
+  </div>
+</div></div>
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 1</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>import sys
+sys.path.insert(0, &quot;nbs/case-studies/rutherford&quot;)
+import scattering as s
+
+print(f&quot;closest approach D        : {s.D_CLOSEST * 1e15:.1f} fm&quot;)
+print(f&quot;a hard centre would be    : {s.R_NUCLEUS * 1e15:.1f} fm&quot;)
+print(f&quot;a diffuse atom would be   : {s.R_ATOM * 1e15:,.0f} fm&quot;)
+print()
+for name, radius in ((&quot;hard centre&quot;, s.R_NUCLEUS), (&quot;diffuse atom&quot;, s.R_ATOM)):
+    sine = s.cutoff_sine(radius)
+    where = &quot;no cut-off in range&quot; if sine &gt;= 1.0 else f&quot;{sine:.2e}&quot;
+    print(f&quot;{name:14s} sin(theta_cut/2) = {where}&quot;)
+print()
+print(&quot;the two hypotheses are two values of one parameter, lam:&quot;)
+print(f&quot;  hard centre  lam = {s.LAM_HARD:+.2f}&quot;)
+print(f&quot;  diffuse atom lam = {s.LAM_DIFFUSE:+.2f}&quot;)
+
+# the numbers the apparatus diagram on this page is drawn from
+apparatus = {
+    &quot;energy_mev&quot;: s.E_ALPHA,
+    &quot;d_fm&quot;: s.D_CLOSEST * 1e15,
+    &quot;foil_um&quot;: s.FOIL_THICKNESS * 1e6,
+    &quot;beam_per_s&quot;: s.BEAM_RATE,
+    &quot;angles&quot;: [st.theta_deg for st in s.PLAN if st.foil],
+}</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>closest approach D        : 59.2 fm
+a hard centre would be    : 7.3 fm
+a diffuse atom would be   : 135,000 fm
+
+hard centre    sin(theta_cut/2) = no cut-off in range
+diffuse atom   sin(theta_cut/2) = 2.19e-04
+
+the two hypotheses are two values of one parameter, lam:
+  hard centre  lam = +6.91
+  diffuse atom lam = -8.42</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="scattering-1-one-parameter.html"><span class="wt-toc-n">1</span>Two atoms, one number</a><a class="wt-toc-i" href="scattering-2-which-angles.html"><span class="wt-toc-n">2</span>Where to point the counter</a><a class="wt-toc-i" href="scattering-3-the-slit.html"><span class="wt-toc-n">3</span>What shape to cut the aperture</a><a class="wt-toc-i" href="scattering-4-how-long.html"><span class="wt-toc-n">4</span>How long at each, and what the plan buys</a><a class="wt-toc-i" href="scattering-5-when-to-stop.html"><span class="wt-toc-n">5</span>When to stop</a><a class="wt-toc-i" href="scattering-6-running-it.html"><span class="wt-toc-n">6</span>Running it</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="scattering-2-which-angles.html">2 · Where to point the counter &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>
