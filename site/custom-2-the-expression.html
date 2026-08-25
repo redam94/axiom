@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>4. Fit it, and read what came back — axiom tutorial</title>
-<meta name="description" content="Step 4 of 6: Did the model find the response, and what did the spec cost you?">
-<meta property="og:title" content="4. Fit it, and read what came back — axiom tutorial">
-<meta property="og:description" content="Step 4 of 6: Did the model find the response, and what did the spec cost you?">
+<title>2. The mean, as an expression — axiom tutorial</title>
+<meta name="description" content="Step 2 of 5: How do you write a formula axiom can differentiate and check?">
+<meta property="og:title" content="2. The mean, as an expression — axiom tutorial">
+<meta property="og:description" content="Step 2 of 5: How do you write a formula axiom can differentiate and check?">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,17 +39,17 @@
 <main id="main">
 <section class="hero">
   <div class="wrap">
-    <p class="eyebrow">Bringing your own problem · step 4 of 6</p>
-    <h1 style="max-width:18ch">Fit it, and read what came back</h1>
-    <p class="lede prose mt">Did the model find the response, and what did the spec cost you?</p>
+    <p class="eyebrow">A model of your own · step 2 of 5</p>
+    <h1 style="max-width:18ch">The mean, as an expression</h1>
+    <p class="lede prose mt">How do you write a formula axiom can differentiate and check?</p>
   </div>
 </section>
 
 <section>
   <div class="wrap">
     <div class="prose">
-      <p><code>fit</code> takes the spec and the panel and nothing else. The posterior comes back with one named parameter per thing the spec declared, so there is no positional unpacking and no guessing which column of an array is the amplitude.</p>
-      <p><strong>Look at <code>sigma</code> before anything else. The stores really do differ by about 6 visits, and a shared intercept has nowhere to put that, so it lands in the residual. The fit is not wrong — it is answering the question the spec asked. Changing <code>intercept</code> is how you ask a different one.</strong></p>
+      <p>Not as a Python function. A mean is built out of typed nodes — <code>Data</code> for a column, <code>Param</code> for something to be fitted, <code>Const</code> for a literal, and <code>Add</code>, <code>Mul</code>, <code>Div</code>, <code>Pow</code>, <code>Apply</code> to combine them.</p>
+      <p><strong>It is more verbose than <code>lambda x, a, b, k: ...</code> and it buys three things a lambda cannot: the gradient every backend needs, without you writing it; a content hash, so the model that produced a number is identifiable later; and the dimension check in the next step.</strong></p>
     </div>
   </div>
 </section>
@@ -57,39 +57,45 @@
 <section>
   <div class="wrap">
     <div class="code" style="max-width:var(--measure)">
-      <div class="code-h"><span>step 4</span>
+      <div class="code-h"><span>step 2</span>
         <button class="copy" type="button">Copy</button></div>
-      <pre>from axiom.surface import fit
+      <pre>from axiom.core import (
+    Add, Apply, Const, D, Data, Div, Mul, Param, Prior,
+    dimension, dimensionless,
+)
 
-result = fit(spec, panel, backend=&quot;laplace&quot;, draws=800, seed=0)
+spend = Data(name=&quot;spend&quot;, dimension=D.currency)
 
-print(f&quot;{&#x27;parameter&#x27;:16s}{&#x27;posterior mean&#x27;:&gt;16}&quot;)
-for name in result.posterior.names():
-    mean = float(result.posterior.flat(name).mean())
-    print(f&quot;{name:16s}{mean:&gt;16.2f}&quot;)
-print()
-print(&quot;the world that produced the data used:&quot;)
-print(&quot;  baseline  ~40      amplitude 9.0     half-way 250&quot;)
-print(&quot;  within-store noise 2.0, between-store spread 6.0&quot;)
-print()
-print(&quot;beta and k came back close. sigma did not -- it is carrying the&quot;)
-print(&quot;between-store spread the shared intercept could not.&quot;)</pre>
+alpha = Param(name=&quot;alpha&quot;, dimension=D.outcome,
+              prior=Prior(family=&quot;normal&quot;, hyper={&quot;mu&quot;: 40.0, &quot;sigma&quot;: 10.0}))
+beta = Param(name=&quot;beta&quot;, dimension=D.outcome,
+             prior=Prior(family=&quot;normal&quot;, hyper={&quot;mu&quot;: 0.0, &quot;sigma&quot;: 10.0}))
+k = Param(name=&quot;k&quot;, dimension=D.currency,
+          prior=Prior(family=&quot;lognormal&quot;, hyper={&quot;mu&quot;: 5.5, &quot;sigma&quot;: 1.0}))
+
+one = Const(value=1.0, dimension=dimensionless())
+minus = Const(value=-1.0, dimension=dimensionless())
+
+# 1 - exp(-spend / k)   -- dimensionless, because spend/k is
+saturation = Add(terms=(
+    one,
+    Mul(factors=(minus, Apply(fn=&quot;exp&quot;, arg=Mul(factors=(
+        minus, Div(numerator=spend, denominator=k),
+    ))))),
+))
+# alpha + beta * saturation
+mean = Add(terms=(alpha, Mul(factors=(beta, saturation))))
+
+print(f&quot;the mean&#x27;s dimension is  {dimension(mean)}&quot;)
+print(f&quot;the saturation term is   {dimension(saturation)} (as it must be)&quot;)
+ratio = Div(numerator=spend, denominator=k)
+print(f&quot;spend / k is             {dimension(ratio)}&quot;)</pre>
     </div>
     <div class="code" style="max-width:var(--measure);margin-top:16px">
       <div class="code-h"><span>what it printed</span></div>
-      <pre>parameter         posterior mean
-sigma                       7.23
-s_leaflets                  2.74
-beta_leaflets               8.31
-alpha                      38.27
-k_leaflets                244.79
-
-the world that produced the data used:
-  baseline  ~40      amplitude 9.0     half-way 250
-  within-store noise 2.0, between-store spread 6.0
-
-beta and k came back close. sigma did not -- it is carrying the
-between-store spread the shared intercept could not.</pre>
+      <pre>the mean&#x27;s dimension is  Y
+the saturation term is   1 (as it must be)
+spend / k is             1</pre>
     </div>
     <p class="prose mt"><small>Every line above was captured by running this code
       at build time. The steps share one namespace, so the code on this page is
@@ -99,8 +105,8 @@ between-store spread the shared intercept could not.</pre>
 
 <section>
   <div class="wrap">
-    <div class="wt-toc"><a class="wt-toc-i" href="porting-1-your-data.html"><span class="wt-toc-n">1</span>Start from the dataframe you already have</a><a class="wt-toc-i" href="porting-2-entities.html"><span class="wt-toc-n">2</span>Say what the columns mean</a><a class="wt-toc-i" href="porting-3-the-spec.html"><span class="wt-toc-n">3</span>Write the spec</a><a class="wt-toc-i" href="porting-4-fit-it.html"><span class="wt-toc-n">4</span>Fit it, and read what came back</a><a class="wt-toc-i" href="porting-5-the-estimand.html"><span class="wt-toc-n">5</span>Declare what you want to know</a><a class="wt-toc-i" href="porting-6-what-is-missing.html"><span class="wt-toc-n">6</span>What you have not done yet</a></div>
-    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="porting-3-the-spec.html">&larr; 3 · Write the spec</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="porting-5-the-estimand.html">5 · Declare what you want to know &rarr;</a></div>
+    <div class="wt-toc"><a class="wt-toc-i" href="custom-1-when-kernels-run-out.html"><span class="wt-toc-n">1</span>When the kernels run out</a><a class="wt-toc-i" href="custom-2-the-expression.html"><span class="wt-toc-n">2</span>The mean, as an expression</a><a class="wt-toc-i" href="custom-3-dimensions.html"><span class="wt-toc-n">3</span>Dimensions are checked when you build it</a><a class="wt-toc-i" href="custom-4-fit-it.html"><span class="wt-toc-n">4</span>Fit it</a><a class="wt-toc-i" href="custom-5-what-it-costs.html"><span class="wt-toc-n">5</span>What the custom route costs you</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="custom-1-when-kernels-run-out.html">&larr; 1 · When the kernels run out</a><a class="btn btn-2" href="tutorial.html">All 5 steps</a><a class="btn btn-2" href="custom-3-dimensions.html">3 · Dimensions are checked when you build it &rarr;</a></div>
   </div>
 </section>
 </main>

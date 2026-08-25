@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>4. Fit it, and read what came back — axiom tutorial</title>
-<meta name="description" content="Step 4 of 6: Did the model find the response, and what did the spec cost you?">
-<meta property="og:title" content="4. Fit it, and read what came back — axiom tutorial">
-<meta property="og:description" content="Step 4 of 6: Did the model find the response, and what did the spec cost you?">
+<title>4. Fit it — axiom tutorial</title>
+<meta name="description" content="Step 4 of 5: How does a hand-built model reach a backend?">
+<meta property="og:title" content="4. Fit it — axiom tutorial">
+<meta property="og:description" content="Step 4 of 5: How does a hand-built model reach a backend?">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,17 +39,17 @@
 <main id="main">
 <section class="hero">
   <div class="wrap">
-    <p class="eyebrow">Bringing your own problem · step 4 of 6</p>
-    <h1 style="max-width:18ch">Fit it, and read what came back</h1>
-    <p class="lede prose mt">Did the model find the response, and what did the spec cost you?</p>
+    <p class="eyebrow">A model of your own · step 4 of 5</p>
+    <h1 style="max-width:18ch">Fit it</h1>
+    <p class="lede prose mt">How does a hand-built model reach a backend?</p>
   </div>
 </section>
 
 <section>
   <div class="wrap">
     <div class="prose">
-      <p><code>fit</code> takes the spec and the panel and nothing else. The posterior comes back with one named parameter per thing the spec declared, so there is no positional unpacking and no guessing which column of an array is the amplitude.</p>
-      <p><strong>Look at <code>sigma</code> before anything else. The stores really do differ by about 6 visits, and a shared intercept has nowhere to put that, so it lands in the residual. The fit is not wrong — it is answering the question the spec asked. Changing <code>intercept</code> is how you ask a different one.</strong></p>
+      <p>Straight at one. A backend takes the model and a mapping from column name to array — there is no <code>Panel</code> in this path, because a <code>ModelSpec</code> names its own columns and that is all the backend needs.</p>
+      <p><strong>The parameters come back under the names you declared. Checking them against a truth you control is the only honest way to know a hand-built model is right, which is why simulating from it first is worth the ten minutes it costs.</strong></p>
     </div>
   </div>
 </section>
@@ -59,37 +59,33 @@
     <div class="code" style="max-width:var(--measure)">
       <div class="code-h"><span>step 4</span>
         <button class="copy" type="button">Copy</button></div>
-      <pre>from axiom.surface import fit
+      <pre>import numpy as np
+from axiom.infer import LaplaceBackend
 
-result = fit(spec, panel, backend=&quot;laplace&quot;, draws=800, seed=0)
+# data from a world we control, so the answer can be checked
+TRUE = {&quot;alpha&quot;: 41.0, &quot;beta&quot;: 12.0, &quot;k&quot;: 260.0, &quot;sigma&quot;: 2.0}
+rng = np.random.default_rng(3)
+x = rng.uniform(0.0, 900.0, 600)
+y = (TRUE[&quot;alpha&quot;] + TRUE[&quot;beta&quot;] * (1 - np.exp(-x / TRUE[&quot;k&quot;]))
+     + rng.normal(0.0, TRUE[&quot;sigma&quot;], x.size))
 
-print(f&quot;{&#x27;parameter&#x27;:16s}{&#x27;posterior mean&#x27;:&gt;16}&quot;)
-for name in result.posterior.names():
-    mean = float(result.posterior.flat(name).mean())
-    print(f&quot;{name:16s}{mean:&gt;16.2f}&quot;)
-print()
-print(&quot;the world that produced the data used:&quot;)
-print(&quot;  baseline  ~40      amplitude 9.0     half-way 250&quot;)
-print(&quot;  within-store noise 2.0, between-store spread 6.0&quot;)
-print()
-print(&quot;beta and k came back close. sigma did not -- it is carrying the&quot;)
-print(&quot;between-store spread the shared intercept could not.&quot;)</pre>
+posterior = LaplaceBackend().sample(
+    model, {&quot;spend&quot;: x, &quot;footfall&quot;: y},
+    draws=800, tune=0, chains=4, seed=0,
+)
+
+print(f&quot;{&#x27;parameter&#x27;:10s}{&#x27;fitted&#x27;:&gt;10}{&#x27;truth&#x27;:&gt;10}&quot;)
+for name in (&quot;alpha&quot;, &quot;beta&quot;, &quot;k&quot;, &quot;sigma&quot;):
+    got = float(posterior.flat(name).mean())
+    print(f&quot;{name:10s}{got:&gt;10.2f}{TRUE[name]:&gt;10.2f}&quot;)</pre>
     </div>
     <div class="code" style="max-width:var(--measure);margin-top:16px">
       <div class="code-h"><span>what it printed</span></div>
-      <pre>parameter         posterior mean
-sigma                       7.23
-s_leaflets                  2.74
-beta_leaflets               8.31
-alpha                      38.27
-k_leaflets                244.79
-
-the world that produced the data used:
-  baseline  ~40      amplitude 9.0     half-way 250
-  within-store noise 2.0, between-store spread 6.0
-
-beta and k came back close. sigma did not -- it is carrying the
-between-store spread the shared intercept could not.</pre>
+      <pre>parameter     fitted     truth
+alpha          40.45     41.00
+beta           12.42     12.00
+k             238.27    260.00
+sigma           1.99      2.00</pre>
     </div>
     <p class="prose mt"><small>Every line above was captured by running this code
       at build time. The steps share one namespace, so the code on this page is
@@ -99,8 +95,8 @@ between-store spread the shared intercept could not.</pre>
 
 <section>
   <div class="wrap">
-    <div class="wt-toc"><a class="wt-toc-i" href="porting-1-your-data.html"><span class="wt-toc-n">1</span>Start from the dataframe you already have</a><a class="wt-toc-i" href="porting-2-entities.html"><span class="wt-toc-n">2</span>Say what the columns mean</a><a class="wt-toc-i" href="porting-3-the-spec.html"><span class="wt-toc-n">3</span>Write the spec</a><a class="wt-toc-i" href="porting-4-fit-it.html"><span class="wt-toc-n">4</span>Fit it, and read what came back</a><a class="wt-toc-i" href="porting-5-the-estimand.html"><span class="wt-toc-n">5</span>Declare what you want to know</a><a class="wt-toc-i" href="porting-6-what-is-missing.html"><span class="wt-toc-n">6</span>What you have not done yet</a></div>
-    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="porting-3-the-spec.html">&larr; 3 · Write the spec</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="porting-5-the-estimand.html">5 · Declare what you want to know &rarr;</a></div>
+    <div class="wt-toc"><a class="wt-toc-i" href="custom-1-when-kernels-run-out.html"><span class="wt-toc-n">1</span>When the kernels run out</a><a class="wt-toc-i" href="custom-2-the-expression.html"><span class="wt-toc-n">2</span>The mean, as an expression</a><a class="wt-toc-i" href="custom-3-dimensions.html"><span class="wt-toc-n">3</span>Dimensions are checked when you build it</a><a class="wt-toc-i" href="custom-4-fit-it.html"><span class="wt-toc-n">4</span>Fit it</a><a class="wt-toc-i" href="custom-5-what-it-costs.html"><span class="wt-toc-n">5</span>What the custom route costs you</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="custom-3-dimensions.html">&larr; 3 · Dimensions are checked when you build it</a><a class="btn btn-2" href="tutorial.html">All 5 steps</a><a class="btn btn-2" href="custom-5-what-it-costs.html">5 · What the custom route costs you &rarr;</a></div>
   </div>
 </section>
 </main>

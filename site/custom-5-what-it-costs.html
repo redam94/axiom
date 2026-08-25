@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>4. Fit it, and read what came back — axiom tutorial</title>
-<meta name="description" content="Step 4 of 6: Did the model find the response, and what did the spec cost you?">
-<meta property="og:title" content="4. Fit it, and read what came back — axiom tutorial">
-<meta property="og:description" content="Step 4 of 6: Did the model find the response, and what did the spec cost you?">
+<title>5. What the custom route costs you — axiom tutorial</title>
+<meta name="description" content="Step 5 of 5: You left the kernels behind. What did you leave with them?">
+<meta property="og:title" content="5. What the custom route costs you — axiom tutorial">
+<meta property="og:description" content="Step 5 of 5: You left the kernels behind. What did you leave with them?">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,17 +39,17 @@
 <main id="main">
 <section class="hero">
   <div class="wrap">
-    <p class="eyebrow">Bringing your own problem · step 4 of 6</p>
-    <h1 style="max-width:18ch">Fit it, and read what came back</h1>
-    <p class="lede prose mt">Did the model find the response, and what did the spec cost you?</p>
+    <p class="eyebrow">A model of your own · step 5 of 5</p>
+    <h1 style="max-width:18ch">What the custom route costs you</h1>
+    <p class="lede prose mt">You left the kernels behind. What did you leave with them?</p>
   </div>
 </section>
 
 <section>
   <div class="wrap">
     <div class="prose">
-      <p><code>fit</code> takes the spec and the panel and nothing else. The posterior comes back with one named parameter per thing the spec declared, so there is no positional unpacking and no guessing which column of an array is the amplitude.</p>
-      <p><strong>Look at <code>sigma</code> before anything else. The stores really do differ by about 6 visits, and a shared intercept has nowhere to put that, so it lands in the residual. The fit is not wrong — it is answering the question the spec asked. Changing <code>intercept</code> is how you ask a different one.</strong></p>
+      <p>Some of the library follows a hand-built model and some of it does not. <code>design.profile_likelihood</code> takes a <code>ModelSpec</code> directly, so the identification and design tools that work on a likelihood still apply — that is how GEIGER-1911 gets its one-sided bound.</p>
+      <p><strong>What you give up is the <code>SurfaceSpec</code> conveniences: <code>surface.fit</code>, and <code>estimands.realize</code> reading an estimand off the result, both want the richer object. If a kernel can express your response, use one. Write the mean when the mechanism genuinely is not on the menu — and then you are in the same position as a physics case study, which is a respectable place to be.</strong></p>
     </div>
   </div>
 </section>
@@ -57,39 +57,38 @@
 <section>
   <div class="wrap">
     <div class="code" style="max-width:var(--measure)">
-      <div class="code-h"><span>step 4</span>
+      <div class="code-h"><span>step 5</span>
         <button class="copy" type="button">Copy</button></div>
-      <pre>from axiom.surface import fit
+      <pre>import warnings
+from axiom.design import profile_likelihood
 
-result = fit(spec, panel, backend=&quot;laplace&quot;, draws=800, seed=0)
+data = {&quot;spend&quot;: x, &quot;footfall&quot;: y}
+start = {**TRUE}
+with warnings.catch_warnings():
+    warnings.simplefilter(&quot;ignore&quot;, RuntimeWarning)
+    values, drops = profile_likelihood(
+        model, data, start, &quot;k&quot;, grid=np.linspace(180.0, 380.0, 21)
+    )
 
-print(f&quot;{&#x27;parameter&#x27;:16s}{&#x27;posterior mean&#x27;:&gt;16}&quot;)
-for name in result.posterior.names():
-    mean = float(result.posterior.flat(name).mean())
-    print(f&quot;{name:16s}{mean:&gt;16.2f}&quot;)
+drops = np.asarray(drops)
+inside = [v for v, d in zip(values, drops) if d &lt;= 1.921]
+print(&quot;profiling k, the spend at which most of the lift has arrived:&quot;)
+print(f&quot;  best fit          {values[int(np.argmin(drops))]:.0f}&quot;)
+print(f&quot;  95% interval      {min(inside):.0f} to {max(inside):.0f}&quot;)
+print(f&quot;  the truth         {TRUE[&#x27;k&#x27;]:.0f}&quot;)
 print()
-print(&quot;the world that produced the data used:&quot;)
-print(&quot;  baseline  ~40      amplitude 9.0     half-way 250&quot;)
-print(&quot;  within-store noise 2.0, between-store spread 6.0&quot;)
-print()
-print(&quot;beta and k came back close. sigma did not -- it is carrying the&quot;)
-print(&quot;between-store spread the shared intercept could not.&quot;)</pre>
+print(&quot;that ran on the ModelSpec itself. surface.fit and&quot;)
+print(&quot;estimands.realize did not -- they want a SurfaceSpec.&quot;)</pre>
     </div>
     <div class="code" style="max-width:var(--measure);margin-top:16px">
       <div class="code-h"><span>what it printed</span></div>
-      <pre>parameter         posterior mean
-sigma                       7.23
-s_leaflets                  2.74
-beta_leaflets               8.31
-alpha                      38.27
-k_leaflets                244.79
+      <pre>profiling k, the spend at which most of the lift has arrived:
+  best fit          240
+  95% interval      210 to 270
+  the truth         260
 
-the world that produced the data used:
-  baseline  ~40      amplitude 9.0     half-way 250
-  within-store noise 2.0, between-store spread 6.0
-
-beta and k came back close. sigma did not -- it is carrying the
-between-store spread the shared intercept could not.</pre>
+that ran on the ModelSpec itself. surface.fit and
+estimands.realize did not -- they want a SurfaceSpec.</pre>
     </div>
     <p class="prose mt"><small>Every line above was captured by running this code
       at build time. The steps share one namespace, so the code on this page is
@@ -99,8 +98,8 @@ between-store spread the shared intercept could not.</pre>
 
 <section>
   <div class="wrap">
-    <div class="wt-toc"><a class="wt-toc-i" href="porting-1-your-data.html"><span class="wt-toc-n">1</span>Start from the dataframe you already have</a><a class="wt-toc-i" href="porting-2-entities.html"><span class="wt-toc-n">2</span>Say what the columns mean</a><a class="wt-toc-i" href="porting-3-the-spec.html"><span class="wt-toc-n">3</span>Write the spec</a><a class="wt-toc-i" href="porting-4-fit-it.html"><span class="wt-toc-n">4</span>Fit it, and read what came back</a><a class="wt-toc-i" href="porting-5-the-estimand.html"><span class="wt-toc-n">5</span>Declare what you want to know</a><a class="wt-toc-i" href="porting-6-what-is-missing.html"><span class="wt-toc-n">6</span>What you have not done yet</a></div>
-    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="porting-3-the-spec.html">&larr; 3 · Write the spec</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="porting-5-the-estimand.html">5 · Declare what you want to know &rarr;</a></div>
+    <div class="wt-toc"><a class="wt-toc-i" href="custom-1-when-kernels-run-out.html"><span class="wt-toc-n">1</span>When the kernels run out</a><a class="wt-toc-i" href="custom-2-the-expression.html"><span class="wt-toc-n">2</span>The mean, as an expression</a><a class="wt-toc-i" href="custom-3-dimensions.html"><span class="wt-toc-n">3</span>Dimensions are checked when you build it</a><a class="wt-toc-i" href="custom-4-fit-it.html"><span class="wt-toc-n">4</span>Fit it</a><a class="wt-toc-i" href="custom-5-what-it-costs.html"><span class="wt-toc-n">5</span>What the custom route costs you</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="custom-4-fit-it.html">&larr; 4 · Fit it</a><a class="btn btn-2" href="tutorial.html">All 5 steps</a><a class="btn" href="tutorial.html">The other tutorial &rarr;</a></div>
   </div>
 </section>
 </main>
