@@ -54,6 +54,66 @@
   </div>
 </section>
 
+
+
+<div class="eqs"><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">the single-scattering tail, cut off by a charge of size λ</p>
+    <div class="eq"><i>f</i><sub>tail</sub>(θ) = <span class='frac'><span><i>e</i><sup>log&#8201;<i>a</i></sup></span><span>sin<sup>4</sup>(θ/2)</span></span>&nbsp;&middot;&nbsp;<i>e</i><sup>−(<i>u</i>/<i>e</i><sup>λ</sup>)²</sup>&nbsp;&nbsp;<span style='opacity:.7'>u = sin(θ/2)</span></div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>u = Apply(fn=&quot;sin&quot;, arg=Mul(factors=(
+    Const(value=0.5, dimension=dimensionless()), theta)))
+tail = Mul(factors=(
+    _exp(log_a),
+    Pow(base=u, exponent=Fraction(-4)),
+    _exp(Mul(factors=(
+        Const(value=-1.0, dimension=dimensionless()),
+        Pow(base=_ratio(u, lam), exponent=Fraction(2)),
+    ))),
+))</pre>
+  </div>
+</div><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">the multiple-scattering core</p>
+    <div class="eq"><i>f</i><sub>core</sub>(θ) = <i>e</i><sup>log&#8201;<i>c</i></sup>&nbsp;<i>e</i><sup>−½(θ/<i>e</i><sup>log&#8201;<i>w</i></sup>)²</sup></div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>core = Mul(factors=(
+    _exp(log_c),
+    _exp(Mul(factors=(
+        Const(value=-0.5, dimension=dimensionless()),
+        Pow(base=_ratio(theta, log_w), exponent=Fraction(2)),
+    ))),
+))</pre>
+  </div>
+</div><div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">expected counts, and the variance-stabilising transform</p>
+    <div class="eq">μ = (foil&#8201;·&#8201;[<i>f</i><sub>tail</sub> + <i>f</i><sub>core</sub>] + <i>e</i><sup>log&#8201;<i>b</i></sup>)&#8201;Ω&#8201;<i>t</i>&nbsp;&nbsp;&nbsp;&nbsp;<i>y</i> = 2<span class='rad'>&#8730;<span style='border-top:1px solid currentColor'>&#8201;μ&#8201;</span></span></div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>scattered = Mul(factors=(
+    Data(name=&quot;foil&quot;, dimension=dimensionless()),
+    Add(terms=(tail, core)),
+))
+expected = Mul(factors=(
+    Mul(factors=(RATE_UNIT, Add(terms=(scattered, _exp(log_b))))),
+    Data(name=&quot;omega&quot;, dimension=dimensionless()),
+    Data(name=&quot;exposure&quot;, dimension=BASES.time),
+))
+mean = Mul(factors=(
+    Const(value=2.0, dimension=dimensionless()),
+    Pow(base=expected, exponent=Fraction(1, 2)),
+))
+# 2*sqrt(Poisson) has variance 1, so a normal
+# likelihood on y is the right one</pre>
+  </div>
+</div></div>
+
 <section>
   <div class="wrap">
     <div class="code" style="max-width:var(--measure)">

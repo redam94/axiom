@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import html
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -540,6 +541,158 @@ def walkthrough_body(entry: dict[str, Any], prev: Any, nxt: Any, data: dict[str,
 </section>"""
 
 
+def apparatus_svg(a: dict[str, Any]) -> str:
+    """The experiment, side on: source, collimator, foil, and the counter on its arm.
+
+    Inline SVG rather than a chart, because this is a picture of an apparatus and
+    not a picture of data — there is nothing to plot. Every stroke is
+    ``currentColor`` so it reads in both themes, which a hardcoded ink would not.
+    """
+    angles = a["angles"]
+    arcs = []
+    for i, theta in enumerate((angles[2], angles[5], angles[7])):
+        rad = math.radians(theta)
+        x, y = 300 + 170 * math.cos(rad), 150 - 170 * math.sin(rad)
+        dim = "" if i == 2 else ' opacity="0.35"'
+        arcs.append(
+            f'<line x1="300" y1="150" x2="{x:.1f}" y2="{y:.1f}" stroke="currentColor" '
+            f'stroke-width="1.2" stroke-dasharray="3 3"{dim}/>'
+        )
+        if i == 2:
+            arcs.append(
+                f'<rect x="{x - 20:.1f}" y="{y - 11:.1f}" width="40" height="22" rx="3" '
+                f'fill="var(--accent-wash)" stroke="var(--accent)" stroke-width="1.5"/>'
+                f'<text x="{x:.1f}" y="{y + 4:.1f}" text-anchor="middle" font-size="10" '
+                f'fill="var(--accent-deep)">counter</text>'
+            )
+        arcs.append(
+            f'<text x="{300 + 196 * math.cos(rad):.1f}" y="{150 - 196 * math.sin(rad):.1f}" '
+            f'text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">'
+            f"{theta:g}\u00b0</text>"
+        )
+    return f"""<svg viewBox="0 0 620 300" role="img" class="diagram"
+     aria-label="An alpha source and collimator on the left, a gold foil at the centre,
+     and a counter on a rotatable arm at {angles[7]:g} degrees.">
+  <g fill="none" stroke="currentColor" stroke-width="1.6">
+    <rect x="18" y="132" width="54" height="36" rx="4"/>
+    <rect x="112" y="140" width="26" height="20" rx="2"/>
+    <rect x="164" y="140" width="26" height="20" rx="2"/>
+    <line x1="72" y1="150" x2="300" y2="150"/>
+    <line x1="300" y1="150" x2="470" y2="150" stroke-dasharray="5 4" opacity="0.45"/>
+    <line x1="300" y1="96" x2="300" y2="204" stroke="var(--accent)" stroke-width="4"/>
+  </g>
+  <path d="M 360 150 A 60 60 0 0 0 {300 + 60 * math.cos(math.radians(angles[7])):.1f}
+        {150 - 60 * math.sin(math.radians(angles[7])):.1f}"
+        fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>
+  <text x="352" y="120" font-size="12" fill="currentColor" opacity="0.8">&#952;</text>
+  {''.join(arcs)}
+  <g font-size="10.5" fill="currentColor" text-anchor="middle">
+    <text x="45" y="188">radium C&#8242;</text>
+    <text x="45" y="201" opacity="0.65">{a['energy_mev']:g} MeV &#945;</text>
+    <text x="151" y="188">collimator</text>
+    <text x="300" y="222" fill="var(--accent-deep)">gold foil</text>
+    <text x="300" y="235" opacity="0.65">{a['foil_um']:g} &#181;m</text>
+    <text x="440" y="168" opacity="0.65">undeflected beam</text>
+    <text x="45" y="214" opacity="0.65">{a['beam_per_s']:,.0f}/s</text>
+  </g>
+</svg>"""
+
+
+def slit_svg(g: dict[str, Any]) -> str:
+    """The aperture at one station, looking straight down the beam.
+
+    At this angle the scattering arrives on a ring, so the two shapes are drawn
+    against it: the annular slot the plan cuts, and the round hole of the same
+    *solid angle* it is compared with.
+
+    Radius on the page is the angle from the beam axis, which is **not** an
+    area-preserving projection — so the two shapes do not have equal area in the
+    picture even though they subtend equal solid angle, and the caption says so
+    rather than letting a reader measure the drawing and catch it. The radial
+    band is also floored at a legible width; the real one is thinner still.
+    """
+    cx, cy, ring = 150.0, 150.0, 96.0
+    # degrees -> pixels, set so the ring sits at the station's angle
+    scale = ring / g["theta"]
+    half = max(g["half"] * scale, 1.6)
+    hole = max(g["hole_radius"] * scale, 3.0)
+    return f"""<svg viewBox="0 0 620 300" role="img" class="diagram"
+     aria-label="Looking down the beam: the scattering arrives on a ring at
+     {g['theta']:g} degrees. The annular slot is a thin band on that ring; a round
+     hole of the same area is a disc {g['hole_radius']:.0f} degrees across.">
+  <g transform="translate(0,0)">
+    <circle cx="{cx}" cy="{cy}" r="{ring}" fill="none" stroke="currentColor"
+            stroke-width="1.2" stroke-dasharray="4 4" opacity="0.5"/>
+    <circle cx="{cx}" cy="{cy}" r="{ring}" fill="none" stroke="var(--accent)"
+            stroke-width="{2 * half:.2f}" opacity="0.85"/>
+    <circle cx="{cx}" cy="{cy}" r="2.5" fill="currentColor"/>
+    <line x1="{cx}" y1="{cy}" x2="{cx + ring:.1f}" y2="{cy}" stroke="currentColor"
+          stroke-width="1" opacity="0.4"/>
+    <text x="{cx + ring / 2:.0f}" y="{cy - 6}" font-size="10" text-anchor="middle"
+          fill="currentColor" opacity="0.7">&#952; = {g['theta']:g}&#176;</text>
+    <text x="{cx}" y="272" font-size="11" text-anchor="middle" fill="var(--accent-deep)">
+      annular slot</text>
+    <text x="{cx}" y="286" font-size="10" text-anchor="middle" fill="currentColor"
+          opacity="0.7">&#177;{g['half']:.2f}&#176; radial, {g['arc']:g}&#176; of arc</text>
+  </g>
+  <g transform="translate(320,0)">
+    <circle cx="{cx}" cy="{cy}" r="{ring}" fill="none" stroke="currentColor"
+            stroke-width="1.2" stroke-dasharray="4 4" opacity="0.5"/>
+    <circle cx="{cx + ring:.1f}" cy="{cy}" r="{hole:.1f}" fill="var(--warn-wash, #f7e3e0)"
+            stroke="#b5453b" stroke-width="1.6" opacity="0.9"/>
+    <circle cx="{cx}" cy="{cy}" r="2.5" fill="currentColor"/>
+    <text x="{cx}" y="272" font-size="11" text-anchor="middle" fill="#b5453b">
+      round hole, same solid angle</text>
+    <text x="{cx}" y="286" font-size="10" text-anchor="middle" fill="currentColor"
+          opacity="0.7">radius {g['hole_radius']:.0f}&#176;</text>
+  </g>
+  <g font-size="10" fill="currentColor" opacity="0.75">
+    <text x="150" y="40" text-anchor="middle">reports the angle to
+      {g['slot_bias_pct']:.3f}%</text>
+    <text x="470" y="40" text-anchor="middle">reports it
+      {g['hole_bias_pct']:.1f}% high</text>
+  </g>
+</svg>"""
+
+
+DIAGRAMS = {"apparatus": apparatus_svg, "slit": slit_svg}
+
+
+def diagram_html(step: dict[str, Any], series: dict[str, Any]) -> str:
+    """The step's diagram, if it declared one and the run captured its numbers."""
+    name = step.get("diagram")
+    payload = series.get("captured", {}).get(step.get("diagram_from", name or ""))
+    if not name or payload is None:
+        return ""
+    return f"""<figure class="fig">
+  {DIAGRAMS[name](payload)}
+  <figcaption>{inline_html(step.get('caption', ''))}</figcaption>
+</figure>"""
+
+
+def math_html(items: list[dict[str, str]]) -> str:
+    """Each equation twice: as mathematics, and as the axiom that expresses it.
+
+    The site carries no LaTeX and pulls in no renderer, so the mathematics is
+    marked up as HTML — which stays selectable, scales with the reader's type
+    size, and costs no request. The pairing is the point: an equation on its own
+    is a claim, and the code beside it is how that claim reaches a fit.
+    """
+    rows = []
+    for eq in items:
+        rows.append(f"""<div class="eqrow">
+  <div class="eqmath">
+    <p class="eqlabel">{inline_html(eq['label'])}</p>
+    <div class="eq">{eq['math']}</div>
+  </div>
+  <div class="code eqcode">
+    <div class="code-h"><span>in axiom</span></div>
+    <pre>{html.escape(eq['code'])}</pre>
+  </div>
+</div>""")
+    return f'<div class="eqs">{"".join(rows)}</div>'
+
+
 def tutorial_html(data: dict[str, Any]) -> str:
     """The tutorial index: one block per series, one card per step.
 
@@ -615,6 +768,10 @@ def tutorial_body(step: dict[str, Any], series: dict[str, Any], data: dict[str, 
     </div>
   </div>
 </section>
+
+{diagram_html(step, series)}
+
+{math_html(step["math"]) if step.get("math") else ""}
 
 <section>
   <div class="wrap">

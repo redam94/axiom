@@ -782,3 +782,40 @@ a.pkg:hover { border-color: var(--accent); color: var(--ink); }
   .card { padding: 18px; }
   .fig { padding: 16px 14px 12px; }
 }
+
+/* ---- tutorial diagrams and equations ------------------------------------
+   The diagrams are inline SVG drawn at build time from numbers the page's own
+   code produced. They stroke in `currentColor` so they read on either theme;
+   a hardcoded ink would vanish against the dark paper. */
+.fig { margin: 32px auto; max-width: 760px; }
+.fig .diagram { width: 100%; height: auto; color: var(--ink); display: block; }
+.fig figcaption {
+  margin-top: 10px; font-size: 0.86rem; color: var(--ink-2);
+  text-align: center; line-height: 1.5;
+}
+
+/* Mathematics is marked up rather than rendered by a library: it stays
+   selectable, scales with the reader's type size, and costs no request. */
+.eqs { max-width: 900px; margin: 28px auto; }
+.eqrow {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 20px; align-items: start; margin-bottom: 22px;
+}
+@media (max-width: 760px) { .eqrow { grid-template-columns: 1fr; } }
+.eqlabel {
+  font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--ink-3); margin: 0 0 8px;
+}
+.eq {
+  font-family: Georgia, "Times New Roman", serif; font-size: 1.12rem;
+  line-height: 2.1; color: var(--ink); padding: 14px 16px;
+  background: var(--paper); border: 1px solid var(--rule-2); border-radius: 8px;
+}
+.eq i { font-style: italic; }
+.eq .frac { display: inline-block; vertical-align: -0.62em; text-align: center; margin: 0 0.22em; }
+.eq .frac > span { display: block; padding: 0 0.35em; }
+.eq .frac > span:first-child { border-bottom: 1px solid currentColor; padding-bottom: 2px; }
+.eq .frac > span:last-child { padding-top: 2px; }
+.eq .rad { border-top: 1px solid currentColor; padding: 0 0.2em; }
+.eqcode { margin: 0; }
+.eqcode pre { font-size: 0.78rem; line-height: 1.55; }

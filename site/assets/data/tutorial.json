@@ -47,7 +47,7 @@
      "lede": "`fit` takes the spec and the panel and nothing else. The posterior comes back with one named parameter per thing the spec declared, so there is no positional unpacking and no guessing which column of an array is the amplitude.",
      "beat": "Look at `sigma` before anything else. The stores really do differ by about 6 visits, and a shared intercept has nowhere to put that, so it lands in the residual. The fit is not wrong \u2014 it is answering the question the spec asked. Changing `intercept` is how you ask a different one.",
      "code": "from axiom.surface import fit\n\nresult = fit(spec, panel, backend=\"laplace\", draws=800, seed=0)\n\nprint(f\"{'parameter':16s}{'posterior mean':>16}\")\nfor name in result.posterior.names():\n    mean = float(result.posterior.flat(name).mean())\n    print(f\"{name:16s}{mean:>16.2f}\")\nprint()\nprint(\"the world that produced the data used:\")\nprint(\"  baseline  ~40      amplitude 9.0     half-way 250\")\nprint(\"  within-store noise 2.0, between-store spread 6.0\")\nprint()\nprint(\"beta and k came back close. sigma did not -- it is carrying the\")\nprint(\"between-store spread the shared intercept could not.\")",
-     "output": "parameter         posterior mean\nsigma                       7.23\ns_leaflets                  2.74\nbeta_leaflets               8.31\nalpha                      38.27\nk_leaflets                244.79\n\nthe world that produced the data used:\n  baseline  ~40      amplitude 9.0     half-way 250\n  within-store noise 2.0, between-store spread 6.0\n\nbeta and k came back close. sigma did not -- it is carrying the\nbetween-store spread the shared intercept could not."
+     "output": "parameter         posterior mean\nalpha                      38.27\nsigma                       7.23\ns_leaflets                  2.74\nbeta_leaflets               8.31\nk_leaflets                244.79\n\nthe world that produced the data used:\n  baseline  ~40      amplitude 9.0     half-way 250\n  within-store noise 2.0, between-store spread 6.0\n\nbeta and k came back close. sigma did not -- it is carrying the\nbetween-store spread the shared intercept could not."
     },
     {
      "n": 5,
@@ -69,7 +69,8 @@
      "code": "from axiom.identify import CausalGraph, identify\n\n# Write down what you actually believe about how the spend was set.\nworld = CausalGraph.from_edges(\n    \"busyness -> leaflets, busyness -> footfall, leaflets -> footfall\",\n    unmeasured=[\"busyness\"],\n    name=\"how_the_spend_was_really_set\",\n)\nverdict = identify(world, \"leaflets\", \"footfall\")\nprint(f\"the graph says : {verdict.status}\")\nprint(f\"it would need  : {sorted(verdict.unmeasured_required)}, \"\n      f\"which nobody recorded\")\nprint()\nprint(\"so the `downgraded` in step 5 was not a formality. What you have\")\nprint(\"is a description of 24 stores, not the effect of leaflets on\")\nprint(\"footfall -- and the difference is the whole subject of axiom.\")\nprint()\nprint(\"two honest ways forward, and no third:\")\nprint(\"  measure it   -- record what drove the spend, and adjust\")\nprint(\"  randomize it -- assign the leaflets, and the arrow disappears\")\nprint()\nprint(\"both are the subject of the other two tutorials.\")",
      "output": "the graph says : downgraded\nit would need  : ['busyness'], which nobody recorded\n\nso the `downgraded` in step 5 was not a formality. What you have\nis a description of 24 stores, not the effect of leaflets on\nfootfall -- and the difference is the whole subject of axiom.\n\ntwo honest ways forward, and no third:\n  measure it   -- record what drove the spend, and adjust\n  randomize it -- assign the leaflets, and the arrow disappears\n\nboth are the subject of the other two tutorials."
     }
-   ]
+   ],
+   "captured": {}
   },
   {
    "key": "custom",
@@ -130,7 +131,8 @@
      "code": "import warnings\nfrom axiom.design import profile_likelihood\n\ndata = {\"spend\": x, \"footfall\": y}\nstart = {**TRUE}\nwith warnings.catch_warnings():\n    warnings.simplefilter(\"ignore\", RuntimeWarning)\n    values, drops = profile_likelihood(\n        model, data, start, \"k\", grid=np.linspace(180.0, 380.0, 21)\n    )\n\ndrops = np.asarray(drops)\ninside = [v for v, d in zip(values, drops) if d <= 1.921]\nprint(\"profiling k, the spend at which most of the lift has arrived:\")\nprint(f\"  best fit          {values[int(np.argmin(drops))]:.0f}\")\nprint(f\"  95% interval      {min(inside):.0f} to {max(inside):.0f}\")\nprint(f\"  the truth         {TRUE['k']:.0f}\")\nprint()\nprint(\"that ran on the ModelSpec itself. surface.fit and\")\nprint(\"estimands.realize did not -- they want a SurfaceSpec.\")",
      "output": "profiling k, the spend at which most of the lift has arrived:\n  best fit          240\n  95% interval      210 to 270\n  the truth         260\n\nthat ran on the ModelSpec itself. surface.fit and\nestimands.realize did not -- they want a SurfaceSpec."
     }
-   ]
+   ],
+   "captured": {}
   },
   {
    "key": "depot",
@@ -221,7 +223,8 @@
      "code": "from axiom_dossier import EvidenceBuilder, build\n\nevidence = (\n    EvidenceBuilder(\n        \"Weekly maintenance schedule\",\n        \"Should the standing weekly schedule go from nothing to 60 hours a depot?\",\n    )\n    .verdict(verdict, graph=observed)\n    .step(\n        \"design\", \"Design\",\n        what=f\"{ss.n} depots an arm, powered for the break-even.\",\n        why=\"The boundary the decision turns on is where precision has to land.\",\n        equations=(\"break_even = DOSE * COST_PER_HOUR / VALUE_PER_POINT\",),\n    )\n    .finding(\n        \"decision\", after, label=\"Steady-state weekly lift, region\",\n        unit=\"index points\", precision=1,\n        threshold=BREAK_EVEN * REGION_DEPOTS, beneficial=\"higher\",\n    )\n    .build()\n)\nbuilt = build(evidence, style=\"journal\", verbosity=\"standard\")\nprint(built.summary())\nprint(f\"missing context keys: {built.missing() or 'none'}\")\nprint()\nfor q in evidence.findings:\n    print(f\"  {q.label}: {q.stated()}  [{q.against_threshold()}]\")",
      "output": "journal/standard; 9 sections\nmissing context keys: none\n\n  Steady-state weekly lift, region: 244.6 index points (90% HDI 227.4 to 262.9 index points)  [below]"
     }
-   ]
+   ],
+   "captured": {}
   },
   {
    "key": "scattering",
@@ -239,8 +242,27 @@
      "asks": "How do you get resolving power against a question nobody has measured?",
      "lede": "In 1910 there were two pictures of the atom and no experiment between them. A hard positive centre and a charge smeared through the whole atom both fitted everything anyone had. You cannot design against a debate \u2014 so the first move is to find the number the two pictures disagree about.",
      "beat": "They are one model at two values of the radius R of the positive charge, six decades apart. An alpha stopped head-on gets no closer than D; one scattered through an angle gets no closer than a known multiple of it; so a charge of radius R kills the scattering past a cut-off angle. Turning the debate into a parameter is what makes everything after this possible.\n\n`scattering.py` is the case study's own module and it holds the physics: the mean expression, the parameters and their priors, the detector geometry. It is a hand-built `ModelSpec` rather than anything axiom generates, which is what a problem with real physics in it looks like. The porting tutorial builds the easier kind, a `SurfaceSpec`, from scratch.",
-     "code": "import sys\nsys.path.insert(0, \"nbs/case-studies/rutherford\")\nimport scattering as s\n\nprint(f\"closest approach D        : {s.D_CLOSEST * 1e15:.1f} fm\")\nprint(f\"a hard centre would be    : {s.R_NUCLEUS * 1e15:.1f} fm\")\nprint(f\"a diffuse atom would be   : {s.R_ATOM * 1e15:,.0f} fm\")\nprint()\nfor name, radius in ((\"hard centre\", s.R_NUCLEUS), (\"diffuse atom\", s.R_ATOM)):\n    sine = s.cutoff_sine(radius)\n    where = \"no cut-off in range\" if sine >= 1.0 else f\"{sine:.2e}\"\n    print(f\"{name:14s} sin(theta_cut/2) = {where}\")\nprint()\nprint(\"the two hypotheses are two values of one parameter, lam:\")\nprint(f\"  hard centre  lam = {s.LAM_HARD:+.2f}\")\nprint(f\"  diffuse atom lam = {s.LAM_DIFFUSE:+.2f}\")",
-     "output": "closest approach D        : 59.2 fm\na hard centre would be    : 7.3 fm\na diffuse atom would be   : 135,000 fm\n\nhard centre    sin(theta_cut/2) = no cut-off in range\ndiffuse atom   sin(theta_cut/2) = 2.19e-04\n\nthe two hypotheses are two values of one parameter, lam:\n  hard centre  lam = +6.91\n  diffuse atom lam = -8.42"
+     "code": "import sys\nsys.path.insert(0, \"nbs/case-studies/rutherford\")\nimport scattering as s\n\nprint(f\"closest approach D        : {s.D_CLOSEST * 1e15:.1f} fm\")\nprint(f\"a hard centre would be    : {s.R_NUCLEUS * 1e15:.1f} fm\")\nprint(f\"a diffuse atom would be   : {s.R_ATOM * 1e15:,.0f} fm\")\nprint()\nfor name, radius in ((\"hard centre\", s.R_NUCLEUS), (\"diffuse atom\", s.R_ATOM)):\n    sine = s.cutoff_sine(radius)\n    where = \"no cut-off in range\" if sine >= 1.0 else f\"{sine:.2e}\"\n    print(f\"{name:14s} sin(theta_cut/2) = {where}\")\nprint()\nprint(\"the two hypotheses are two values of one parameter, lam:\")\nprint(f\"  hard centre  lam = {s.LAM_HARD:+.2f}\")\nprint(f\"  diffuse atom lam = {s.LAM_DIFFUSE:+.2f}\")\n\n# the numbers the apparatus diagram on this page is drawn from\napparatus = {\n    \"energy_mev\": s.E_ALPHA,\n    \"d_fm\": s.D_CLOSEST * 1e15,\n    \"foil_um\": s.FOIL_THICKNESS * 1e6,\n    \"beam_per_s\": s.BEAM_RATE,\n    \"angles\": [st.theta_deg for st in s.PLAN if st.foil],\n}",
+     "output": "closest approach D        : 59.2 fm\na hard centre would be    : 7.3 fm\na diffuse atom would be   : 135,000 fm\n\nhard centre    sin(theta_cut/2) = no cut-off in range\ndiffuse atom   sin(theta_cut/2) = 2.19e-04\n\nthe two hypotheses are two values of one parameter, lam:\n  hard centre  lam = +6.91\n  diffuse atom lam = -8.42",
+     "diagram": "apparatus",
+     "caption": "The apparatus. An alpha source and collimator throw a beam at a gold foil; the counter swings on an arm to the scattering angle theta. The dashed rays are the other stations the plan visits.",
+     "math": [
+      {
+       "label": "closest approach, head-on",
+       "math": "<i>D</i> = <span class='frac'><span>2<i>zZe</i>\u00b2</span><span>4\u03c0\u03b5<sub>0</sub><i>E</i></span></span>",
+       "code": "D_CLOSEST = 2 * Z_ALPHA * Z_FOIL * COULOMB_MEV_FM / E_ALPHA * 1e-15\n# a constant of the beam and the foil, not a fitted quantity"
+      },
+      {
+       "label": "closest approach at angle \u03b8",
+       "math": "<i>r</i><sub>min</sub>(\u03b8) = <span class='frac'><span><i>D</i></span><span>2</span></span>&#8201;(1 + <span class='frac'><span>1</span><span>sin(\u03b8/2)</span></span>)",
+       "code": "# the floor no amount of counting can beat\nfloor = S.D_CLOSEST / 2.0"
+      },
+      {
+       "label": "where a charge of radius R kills the tail",
+       "math": "sin(\u03b8<sub>cut</sub>/2) = <span class='frac'><span>1</span><span>2<i>R</i>/<i>D</i> \u2212 1</span></span>&nbsp;&nbsp;&nbsp;\u03bb = log sin(\u03b8<sub>cut</sub>/2)",
+       "code": "lam = Param(\n    name=\"lam\",\n    dimension=dimensionless(),\n    prior=Prior(family=\"normal\",\n                hyper={\"mu\": -4.0, \"sigma\": 6.0}),\n)\n# the one axis the two atoms are two points on"
+      }
+     ]
     },
     {
      "n": 2,
@@ -259,8 +281,23 @@
      "asks": "Same solid angle, same counts \u2014 does the shape matter?",
      "lede": "A counter needs a hole to look through, and a bigger hole means more counts. The obvious hole is round. The scattering does not depend on azimuth, though, which means the two directions of a hole are not equivalent at all.",
      "beat": "Only the radial half-width smears the angle; azimuth is free resolution. So hold the radial width at the workshop's floor and take every extra steradian out in arc. A round hole of the same area at 90 degrees would have to be many degrees wide and would report a rate belonging to no angle in particular \u2014 the same counts, at a fraction of the resolution.",
-     "code": "print(f\"{'angle':>7} {'radial':>9} {'arc':>9} {'slot bias':>11} {'hole bias':>11}\")\nfor theta in (5.0, 45.0, 90.0, 150.0):\n    omega_here = float(s.widest_aperture([theta], s.HARD_CENTRE)[0])\n    half, arc = s.slit_for(theta, omega_here)\n    slot = 100.0 * s.aperture_bias(theta, half, arc, s.HARD_CENTRE)\n    # a round hole of the same solid angle: equal in both directions\n    hole = np.degrees(np.sqrt(omega_here / np.pi))\n    hole_bias = 100.0 * s.aperture_bias(theta, hole, 2 * hole, s.HARD_CENTRE)\n    print(f\"{theta:6.1f}d {half:8.2f}d {arc:8.1f}d \"\n          f\"{slot:10.3f}% {hole_bias:10.2f}%\")\nprint()\nprint(\"same solid angle, same counts. the slot reports the angle it is at;\")\nprint(\"the hole reports an average over everything it can see.\")",
-     "output": "  angle    radial       arc   slot bias   hole bias\n   5.0d     0.05d      2.0d      0.020%       0.04%\n  45.0d     0.20d    360.0d      0.004%       3.46%\n  90.0d     0.91d    360.0d      0.025%       6.64%\n 150.0d     1.82d    360.0d      0.054%       3.48%\n\nsame solid angle, same counts. the slot reports the angle it is at;\nthe hole reports an average over everything it can see."
+     "code": "print(f\"{'angle':>7} {'radial':>9} {'arc':>9} {'slot bias':>11} {'hole bias':>11}\")\nfor theta in (5.0, 45.0, 90.0, 150.0):\n    omega_here = float(s.widest_aperture([theta], s.HARD_CENTRE)[0])\n    half, arc = s.slit_for(theta, omega_here)\n    slot = 100.0 * s.aperture_bias(theta, half, arc, s.HARD_CENTRE)\n    # a round hole of the same solid angle: equal in both directions\n    hole = np.degrees(np.sqrt(omega_here / np.pi))\n    hole_bias = 100.0 * s.aperture_bias(theta, hole, 2 * hole, s.HARD_CENTRE)\n    print(f\"{theta:6.1f}d {half:8.2f}d {arc:8.1f}d \"\n          f\"{slot:10.3f}% {hole_bias:10.2f}%\")\nprint()\nprint(\"same solid angle, same counts. the slot reports the angle it is at;\")\nprint(\"the hole reports an average over everything it can see.\")\n\n# the 90 degree station, which the diagram on this page draws\ntheta = 90.0\nomega90 = float(s.widest_aperture([theta], s.HARD_CENTRE)[0])\nhalf90, arc90 = s.slit_for(theta, omega90)\nhole90 = float(np.degrees(np.sqrt(omega90 / np.pi)))\nslit_geometry = {\n    \"theta\": theta,\n    \"omega\": omega90,\n    \"half\": half90,\n    \"arc\": arc90,\n    \"hole_radius\": hole90,\n    \"slot_bias_pct\": 100.0 * s.aperture_bias(theta, half90, arc90, s.HARD_CENTRE),\n    \"hole_bias_pct\": 100.0\n    * s.aperture_bias(theta, hole90, 2 * hole90, s.HARD_CENTRE),\n}",
+     "output": "  angle    radial       arc   slot bias   hole bias\n   5.0d     0.05d      2.0d      0.020%       0.04%\n  45.0d     0.20d    360.0d      0.004%       3.46%\n  90.0d     0.91d    360.0d      0.025%       6.64%\n 150.0d     1.82d    360.0d      0.054%       3.48%\n\nsame solid angle, same counts. the slot reports the angle it is at;\nthe hole reports an average over everything it can see.",
+     "diagram": "slit",
+     "diagram_from": "slit_geometry",
+     "caption": "Looking straight down the beam at the 90\u00b0 station: the scattering arrives on the dashed ring. Both apertures subtend the same solid angle and collect the same counts \u2014 the slot is a thin band lying along the ring, the round hole a disc wide enough to average over everything inside it. Radius here is the angle from the beam axis, which is not an area-preserving projection, so do not read equal areas off the drawing; the angular extents beneath each shape are the honest comparison. The radial band is drawn at a legible minimum \u2014 the real one is thinner.",
+     "math": [
+      {
+       "label": "what an annular slot subtends",
+       "math": "\u03a9(\u03b8, \u03b4, \u03c6) = \u03c6 &middot; 2&#8201;sin&#8201;\u03b8&#8201;sin&#8201;\u03b4",
+       "code": "half, arc = s.slit_for(theta, omega)\n# omega is fixed by the counter's rate cap; only the\n# split between radial half-width and arc is yours"
+      },
+      {
+       "label": "the aperture enters the model as a column",
+       "math": "\u03bc = rate(\u03b8) &middot; \u03a9 &middot; <i>t</i>",
+       "code": "expected = Mul(factors=(\n    rate,\n    Data(name=\"omega\", dimension=dimensionless()),\n    Data(name=\"exposure\", dimension=BASES.time),\n))\n# geometry and exposure are data, not parameters"
+      }
+     ]
     },
     {
      "n": 4,
@@ -290,9 +327,53 @@
      "lede": "Every station is a Poisson draw around what the apparatus would really have produced. Then the five parameters are profiled over the one the experiment is about, and the bound is read where the likelihood has climbed far enough above its minimum.",
      "beat": "It comes back one-sided, and that is the honest shape: there is no lower limit on the radius here. Everything below the bound fits the counts equally well, because the beam cannot resolve past D/2 whatever the counting time. Rutherford published 34 fm in 1911.",
      "code": "import warnings\nfrom axiom.design import profile_likelihood\n\ncounts = np.random.default_rng(1911).poisson(surface.counts(plan, s.HARD_CENTRE))\nmeasured = dict(plan)\nmeasured[\"root_count\"] = 2.0 * np.sqrt(counts)\n\ninn = [bool(st.foil) for st in s.PLAN]\nif_diffuse = surface.counts(plan, s.DIFFUSE)\nprint(f\"at 150 degrees: {int(counts[inn][-1]):,} counts observed\")\nprint(f\"  a diffuse atom predicts {float(if_diffuse[inn][-1]):.0f}\")\nprint(f\"  that is a Poisson excess of \"\n      f\"{(counts[inn][-1] - if_diffuse[inn][-1]) / math.sqrt(counts[inn][-1]):,.0f} sd\")\n\nwith warnings.catch_warnings():\n    warnings.simplefilter(\"ignore\", RuntimeWarning)\n    values, drops = profile_likelihood(\n        s.model(), measured, {**s.HARD_CENTRE, \"lam\": 0.0},\n        \"lam\", grid=np.linspace(-4, 4, 41),\n    )\ndrops = np.asarray(drops)\nlowest = int(np.argmin(drops))\nlast = int(np.where(drops[:lowest] > 1.921)[0][-1])\ncrossing = float(np.interp(\n    1.921, [drops[last + 1], drops[last]], [values[last + 1], values[last]]\n))\nprint()\nprint(f\"R < {s.radius_of(crossing) * 1e15:.1f} fm   (95%, one-sided)\")\nprint(f\"the beam could not have resolved below {s.D_CLOSEST / 2 * 1e15:.1f} fm\")\nprint(\"Rutherford published 34 fm in 1911.\")",
-     "output": "at 150 degrees: 94,117 counts observed\n  a diffuse atom predicts 119\n  that is a Poisson excess of 306 sd\n\nR < 33.5 fm   (95%, one-sided)\nthe beam could not have resolved below 29.6 fm\nRutherford published 34 fm in 1911."
+     "output": "at 150 degrees: 94,117 counts observed\n  a diffuse atom predicts 119\n  that is a Poisson excess of 306 sd\n\nR < 33.5 fm   (95%, one-sided)\nthe beam could not have resolved below 29.6 fm\nRutherford published 34 fm in 1911.",
+     "math": [
+      {
+       "label": "the single-scattering tail, cut off by a charge of size \u03bb",
+       "math": "<i>f</i><sub>tail</sub>(\u03b8) = <span class='frac'><span><i>e</i><sup>log&#8201;<i>a</i></sup></span><span>sin<sup>4</sup>(\u03b8/2)</span></span>&nbsp;&middot;&nbsp;<i>e</i><sup>\u2212(<i>u</i>/<i>e</i><sup>\u03bb</sup>)\u00b2</sup>&nbsp;&nbsp;<span style='opacity:.7'>u = sin(\u03b8/2)</span>",
+       "code": "u = Apply(fn=\"sin\", arg=Mul(factors=(\n    Const(value=0.5, dimension=dimensionless()), theta)))\ntail = Mul(factors=(\n    _exp(log_a),\n    Pow(base=u, exponent=Fraction(-4)),\n    _exp(Mul(factors=(\n        Const(value=-1.0, dimension=dimensionless()),\n        Pow(base=_ratio(u, lam), exponent=Fraction(2)),\n    ))),\n))"
+      },
+      {
+       "label": "the multiple-scattering core",
+       "math": "<i>f</i><sub>core</sub>(\u03b8) = <i>e</i><sup>log&#8201;<i>c</i></sup>&nbsp;<i>e</i><sup>\u2212\u00bd(\u03b8/<i>e</i><sup>log&#8201;<i>w</i></sup>)\u00b2</sup>",
+       "code": "core = Mul(factors=(\n    _exp(log_c),\n    _exp(Mul(factors=(\n        Const(value=-0.5, dimension=dimensionless()),\n        Pow(base=_ratio(theta, log_w), exponent=Fraction(2)),\n    ))),\n))"
+      },
+      {
+       "label": "expected counts, and the variance-stabilising transform",
+       "math": "\u03bc = (foil&#8201;\u00b7&#8201;[<i>f</i><sub>tail</sub> + <i>f</i><sub>core</sub>] + <i>e</i><sup>log&#8201;<i>b</i></sup>)&#8201;\u03a9&#8201;<i>t</i>&nbsp;&nbsp;&nbsp;&nbsp;<i>y</i> = 2<span class='rad'>&#8730;<span style='border-top:1px solid currentColor'>&#8201;\u03bc&#8201;</span></span>",
+       "code": "scattered = Mul(factors=(\n    Data(name=\"foil\", dimension=dimensionless()),\n    Add(terms=(tail, core)),\n))\nexpected = Mul(factors=(\n    Mul(factors=(RATE_UNIT, Add(terms=(scattered, _exp(log_b))))),\n    Data(name=\"omega\", dimension=dimensionless()),\n    Data(name=\"exposure\", dimension=BASES.time),\n))\nmean = Mul(factors=(\n    Const(value=2.0, dimension=dimensionless()),\n    Pow(base=expected, exponent=Fraction(1, 2)),\n))\n# 2*sqrt(Poisson) has variance 1, so a normal\n# likelihood on y is the right one"
+      }
+     ]
     }
-   ]
+   ],
+   "captured": {
+    "apparatus": {
+     "energy_mev": 7.68,
+     "d_fm": 59.248519,
+     "foil_um": 0.4,
+     "beam_per_s": 200000.0,
+     "angles": [
+      1.0,
+      2.5,
+      5.0,
+      10.0,
+      20.0,
+      45.0,
+      90.0,
+      150.0
+     ]
+    },
+    "slit_geometry": {
+     "theta": 90.0,
+     "omega": 0.2,
+     "half": 0.911929,
+     "arc": 360.0,
+     "hole_radius": 14.456484,
+     "slot_bias_pct": 0.025328,
+     "hole_bias_pct": 6.644065
+    }
+   }
   }
  ],
  "n": 4
