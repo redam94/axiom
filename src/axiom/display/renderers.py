@@ -441,8 +441,82 @@ def register_containers() -> None:
         return card
 
 
+def register_expressions() -> None:
+    """Renderers for the model tree. What a reader wants from an expression is the
+    algebra, its dimension, and what it reads — not a field dump of the node."""
+    from axiom.core.dimensions import DimensionError
+    from axiom.core.expr import (
+        Add,
+        Apply,
+        Const,
+        Convolve,
+        Data,
+        Div,
+        Equation,
+        Gather,
+        Link,
+        Mul,
+        ODESystem,
+        Opaque,
+        Param,
+        Pow,
+        Reduce,
+        System,
+        data_names,
+        params,
+    )
+    from axiom.core.interpret.dimension import dimension
+    from axiom.core.interpret.latex import latex_or_unsupported
+    from axiom.core.model import ModelSpec
+    from axiom.core.result import Unsupported
+
+    nodes = (Const, Data, Param, Add, Mul, Div, Pow, Apply, Convolve, Reduce, Gather, Link, Opaque)
+
+    def _form(card: Card, model: Any, label: str) -> None:
+        """The algebra, or the reason it cannot be written down."""
+        tex = latex_or_unsupported(model)
+        if isinstance(tex, Unsupported):
+            card.note = tex.reason
+        else:
+            card.add(label, tex)
+
+    def _dimension_row(card: Card, model: Any) -> None:
+        """The dimension, or — when the tree does not type-check — why not.
+
+        A tree that fails its own checker is the single most useful thing this
+        card can say, so it is said on the card rather than raised out of a
+        formatter that a notebook would then show as a traceback.
+        """
+        try:
+            card.add("dimension", str(dimension(model)))
+        except DimensionError as exc:
+            card.status = "bad"
+            card.note = str(exc)
+
+    @renders(*nodes, Equation, System, ODESystem)
+    def _expression(obj: Any) -> Card:
+        card = Card(title=f"Expression — {obj.node}")
+        _form(card, obj, "form")
+        _dimension_row(card, obj)
+        card.add("parameters", ", ".join(p.name for p in params(obj)))
+        card.add("data", ", ".join(data_names(obj)))
+        return card
+
+    @renders(ModelSpec)
+    def _model_spec(obj: Any) -> Card:
+        card = Card(title=f"Model — {obj.name}" if obj.name else "Model")
+        _form(card, obj.mean, "mean")
+        card.add("outcome", f"{obj.outcome.name}  [{obj.outcome.dimension}]", emphasis=True)
+        card.add("likelihood", obj.likelihood.family)
+        card.add("parameters", ", ".join(p.name for p in obj.parameters))
+        card.add("data", ", ".join(data_names(obj.mean)))
+        card.add("constraints", len(obj.constraints) or "")
+        return card
+
+
 def register_all() -> None:
     """Register every renderer. Safe to call more than once."""
     register_core()
     register_results()
     register_containers()
+    register_expressions()
