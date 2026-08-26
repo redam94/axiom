@@ -84,10 +84,18 @@ discriminator.
 punctuation that means "causal convolution", and inventing one (`@`, `>>`)
 would make the tree harder to read than the constructor does.
 
-## What is not done
+## D24.5 — the renderer had to learn what the tree cannot say
 
-`latex` renders `dose - k` as `\mathrm{dose} + -1 \cdot k`, which is the tree
-faithfully and the mathematics badly. Teaching the renderer to recognize a
-`Mul` whose leading factor is `Const(-1)` is a change to `interpret/latex.py`
-and to whatever golden strings depend on it; it is a rendering concern, not an
-algebra one, and is left open.
+`-a` is `(-1) · a` in the tree, so `latex` rendered `dose - k` as
+`\mathrm{dose} + -1 \cdot k`: the tree faithfully, the mathematics badly. The
+tree is right and the renderer was wrong, so the renderer changed.
+`interpret/latex.py` now splits a term's sign off before rendering it — a
+negative `Const`, or a `Mul` with a negative constant factor anywhere in the
+product — and a sum joins its terms with `-` or `+` accordingly. Signs multiply,
+so `(-1) · (-1) · x` does not come out negative, and anything that reads as
+negative is parenthesized where it needs to be: `\beta \cdot \left(-\mathrm{dose}
+\right)` inside a product, `{\left(-\mathrm{dose}\right)}^{2}` under an exponent.
+
+This also fixed a rendering that predates the operators: the spline hinge built
+by `surface/kernels.py` as `Add(terms=(u, Const(-0.5)))` used to print as
+`u + -0.5`.

@@ -29,6 +29,7 @@ from axiom.core import (
     Spec,
     dimension,
     dimensionless,
+    latex,
     node_path,
     params,
     value,
@@ -186,3 +187,28 @@ def test_gather_reaches_the_panel() -> None:
     got = value(alpha[unit], params=theta, data=env)
     np.testing.assert_allclose(got, np.array([10.0, 30.0, 20.0]))
     assert dimension(alpha[unit]) == D.outcome
+
+
+def test_latex_pulls_the_sign_out_of_a_negated_term() -> None:
+    """``a - b`` is the tree ``a + (-1) · b``; rendered literally that reads as neither."""
+    assert latex(dose - k) == "\\mathrm{dose} - k"
+    assert latex(-dose) == "-\\mathrm{dose}"
+    assert latex(1 - dose / k) == "1 - \\frac{\\mathrm{dose}}{k}"
+    assert latex(beta * (dose - k)) == "\\beta \\cdot \\left(\\mathrm{dose} - k\\right)"
+    # A negative coefficient keeps its magnitude; a bare -1 is only the sign.
+    assert latex(-2.0 * dose) == "-2 \\cdot \\mathrm{dose}"
+    assert latex(beta * -dose) == "-\\beta \\cdot \\mathrm{dose}"
+    # A negative literal written directly is the same case.
+    assert latex(Add(terms=(dose, Const(value=-0.5, dimension=D.currency)))) == (
+        "\\mathrm{dose} - 0.5"
+    )
+    # Two signs cancel, so the result is not negative; the renderer simplifies nothing else.
+    twice_negated = -dose
+    assert latex(-twice_negated) == (
+        "\\left(-1\\right) \\cdot \\left(-1\\right) \\cdot \\mathrm{dose}"
+    )
+    assert latex(beta * dose) == "\\beta \\cdot \\mathrm{dose}"
+    assert latex(beta + dose) == "\\beta + \\mathrm{dose}"
+    # A negated sum, and a negated base, keep their parentheses.
+    assert latex(-(beta + beta)) == "-\\left(\\beta + \\beta\\right)"
+    assert latex((-dose) ** 2) == "{\\left(-\\mathrm{dose}\\right)}^{2}"
