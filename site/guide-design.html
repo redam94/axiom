@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deciding what to measure · axiom guides</title>
+<meta name="description" content="Power is not the question. What the decision turns on is the question. Sizing against the boundary that matters, valuing an experiment before running it, and why the conventional MDE often prices a study nobody needed.">
+<meta property="og:title" content="Deciding what to measure · axiom guides">
+<meta property="og:description" content="Power is not the question. What the decision turns on is the question. Sizing against the boundary that matters, valuing an experiment before running it, and why the conventional MDE often prices a study nobody needed.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="guide-design">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="guides.html">Guides</a><a class="navx" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · doing the work</p>
+    <h1 style="max-width:18ch">Deciding what to measure</h1>
+    <p class="lede prose mt">The standard question is “what sample size do I need for 80%
+      power?” It has a precise answer, and it is the wrong question — because it never asks
+      what the study is <em>for</em>. An experiment is a purchase. The thing you are buying
+      is a change in what you would decide.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Start here</p>
+      <h2>Power against what, and why does that number matter?</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>Conventional sizing asks you to nominate a minimum detectable effect and then
+          sizes to detect it. Where does the MDE come from? Usually from a convention, a
+          previous study, or the number that made the sample size affordable.</p>
+        <p>None of those is the number the decision turns on. That number is a
+          <strong>boundary</strong>: the effect above which you would act and below which
+          you would not. It comes from the economics of the decision — what the intervention
+          costs, what an outcome unit is worth — and it is knowable before any data
+          exists.</p>
+        <p>Sizing against the boundary rather than a convention changes the answer, and it
+          changes it in both directions. Sometimes you need far more units than convention
+          suggested. Often, as below, you need far fewer, or you discover the experiment was
+          never worth running.</p>
+      </div>
+      <div>
+        <div class="note">
+          <p class="note-t">The reframe</p>
+          <p class="small" style="margin:0"><strong>Not:</strong> “can I detect an effect of
+            size <em>d</em>?”<br><strong>But:</strong> “after this study, how much more
+            often will I take the right action than I would have without it — and is that
+            worth what it costs?”</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">Which makes the prior load-bearing</p>
+          <p class="small" style="margin:0">You cannot answer the second question without
+            saying what you currently believe. That is not a weakness of the approach; it is
+            the approach noticing that conventional sizing also depends on a prior and
+            simply does not tell you which one. See
+            <a href="guide-priors.html">priors that mean something</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">A real example from this build</p>
+      <h2>When the conventional study is buying something you already have</h2>
+      <p>The design page sizes an experiment properly and finds, first, that the
+        conventional target is not in doubt.</p>
+    </div>
+
+    <div class="grid-3">
+      <div>
+        <p class="readout-l">The prior, before the study</p>
+        <div class="readout">
+          <div class="readout-v">5.59</div>
+          <div class="readout-e"><span>3.73</span>
+            <span>7.43</span></div>
+          <p class="readout-d">what the team already believes about the effect</p>
+        </div>
+      </div>
+      <div>
+        <p class="readout-l">Mass already above the conventional MDE</p>
+        <div class="readout">
+          <div class="readout-v">99.9%</div>
+          <p class="readout-d">The conventional design would spend real money to establish
+            that the effect exceeds 2 — a proposition
+            already held with 99.9% confidence.
+            Whatever that experiment is for, it is not that.</p>
+        </div>
+      </div>
+      <div>
+        <p class="readout-l">Sized against what the decision turns on</p>
+        <div class="readout">
+          <div class="readout-v">38</div>
+          <p class="readout-d">units for 81% power against an effect
+            of 4.19 — against a proposal of
+            80. Same decision, less than half the study.</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="prose mt">This is the most common finding in honest design work and it is
+      almost never reported, because nobody runs the analysis that would reveal it. The
+      conventional path produces a defensible-looking number, the study runs, and the
+      question of whether it was worth running is never posed in a form that could have been
+      answered “no”.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Putting a price on it</p>
+      <h2>What is this experiment worth, in the currency of the decision?</h2>
+      <p>If a study changes what you would do, its value is the value of the better
+        decisions. That is computable before it runs, from the prior, the boundary and the
+        stakes.</p>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="ledger">
+          <div class="ledger-row">
+            <span class="ledger-f">EVPI</span>
+            <span class="ledger-s">Expected value of <em>perfect</em> information — what you
+              would pay to know the effect exactly. The ceiling on what any study can be
+              worth.</span>
+            <span class="ledger-v">56,502 USD</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">EVSI</span>
+            <span class="ledger-s">Expected value of <em>this sample</em> — what this
+              specific design, at this size, is worth. Always below EVPI, and the gap is what
+              a bigger study could still buy.</span>
+            <span class="ledger-v">24,530 USD</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">the exchange rate</span>
+            <span class="ledger-s">Neither number exists without somebody stating what an
+              outcome unit is worth. That statement is recorded, not assumed.</span>
+            <span class="ledger-v">400
+              USD</span>
+          </div>
+        </div>
+        <p class="stamp">from the ledger: one unit is worth 400 USD (stated by the decision owner, 2026)</p>
+      </div>
+      <div class="prose">
+        <p>Two things follow immediately, and both are uncomfortable in the right way.</p>
+        <p>First, a study whose EVSI is below its cost should not be run, however good its
+          power. Power measures the study's statistical properties; EVSI measures whether
+          anybody's behaviour will change. They come apart more often than not.</p>
+        <p>Second, the value depends on the decision's economics, so it forces a conversation
+          that is otherwise deferred forever: what <em>is</em> an outcome unit worth here?
+          Answering it badly is better than not answering it, because a stated exchange rate
+          can be argued with and revised. An implicit one cannot.</p>
+        <p>Note also that these are <em>expected</em> values under your current beliefs. If
+          the prior is wrong, so is the valuation — which is one more reason to state the
+          prior in units somebody can dispute.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Before you run it</p>
+      <h2>Decide the stopping rule now, not later</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>“We'll look at the data as it comes in and stop when it's clear” is a procedure
+          with no error rate. Peeking repeatedly at accumulating data and stopping when the
+          result crosses a threshold will produce a crossing eventually, whether or not the
+          effect is real.</p>
+        <p>The fix is old and well understood: decide the review schedule in advance, and
+          spend your error budget across those looks — an O'Brien–Fleming boundary is
+          conservative early and relaxes as evidence accumulates. What matters is that the
+          rule exists before the first look and is recorded with the design.</p>
+        <p>The <a href="case-study.html">HYPER-3 case study</a> runs exactly this: a
+          monitoring plan whose stopping boundary is set before the trial, and which fires at
+          the first scheduled review in one stratum.</p>
+      </div>
+      <div>
+        <div class="note">
+          <p class="note-t">Design is where transportability is cheapest to fix</p>
+          <p class="small" style="margin:0">Every mismatch in
+            <a href="guide-transport.html">the transportability guide</a> — wrong population,
+            wrong window, wrong level — is an expensive correction after the fact and a free
+            choice beforehand. If the decision is per person over a year, measure per person
+            over a year. Designing the study against the <em>target</em> estimand rather
+            than the convenient one removes the whole problem.</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">And write it down before it runs</p>
+          <p class="small" style="margin:0">The estimand, the graph, the prior, the boundary
+            and the stopping rule, hashed and stored. That is a pre-registration, it takes an
+            afternoon, and it is the difference between a result and a story. See
+            <a href="guide-provenance.html">provenance</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Guide 10 of 12</p>
+    <div class="hero-cta" style="margin-top:12px"><a class="btn btn-2" href="guide-priors.html">&larr; Priors that mean something</a><a class="btn btn-2" href="guides.html">All the guides</a><a class="btn btn-1" href="guide-calibration.html">Folding an experiment in &rarr;</a></div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

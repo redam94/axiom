@@ -47,7 +47,7 @@
      "lede": "`fit` takes the spec and the panel and nothing else. The posterior comes back with one named parameter per thing the spec declared, so there is no positional unpacking and no guessing which column of an array is the amplitude.",
      "beat": "Look at `sigma` before anything else. The stores really do differ by about 6 visits, and a shared intercept has nowhere to put that, so it lands in the residual. The fit is not wrong \u2014 it is answering the question the spec asked. Changing `intercept` is how you ask a different one.",
      "code": "from axiom.surface import fit\n\nresult = fit(spec, panel, backend=\"laplace\", draws=800, seed=0)\n\nprint(f\"{'parameter':16s}{'posterior mean':>16}\")\nfor name in result.posterior.names():\n    mean = float(result.posterior.flat(name).mean())\n    print(f\"{name:16s}{mean:>16.2f}\")\nprint()\nprint(\"the world that produced the data used:\")\nprint(\"  baseline  ~40      amplitude 9.0     half-way 250\")\nprint(\"  within-store noise 2.0, between-store spread 6.0\")\nprint()\nprint(\"beta and k came back close. sigma did not -- it is carrying the\")\nprint(\"between-store spread the shared intercept could not.\")",
-     "output": "parameter         posterior mean\nalpha                      38.27\nsigma                       7.23\ns_leaflets                  2.74\nbeta_leaflets               8.31\nk_leaflets                244.79\n\nthe world that produced the data used:\n  baseline  ~40      amplitude 9.0     half-way 250\n  within-store noise 2.0, between-store spread 6.0\n\nbeta and k came back close. sigma did not -- it is carrying the\nbetween-store spread the shared intercept could not."
+     "output": "parameter         posterior mean\nalpha                      38.27\nk_leaflets                244.79\ns_leaflets                  2.74\nsigma                       7.23\nbeta_leaflets               8.31\n\nthe world that produced the data used:\n  baseline  ~40      amplitude 9.0     half-way 250\n  within-store noise 2.0, between-store spread 6.0\n\nbeta and k came back close. sigma did not -- it is carrying the\nbetween-store spread the shared intercept could not."
     },
     {
      "n": 5,
@@ -227,6 +227,78 @@
    "captured": {}
   },
   {
+   "key": "transfer",
+   "title": "Making a model travel",
+   "kind": "A transfer story",
+   "asks": "The study was sound. Does its number apply where the decision is?",
+   "problem": "A household water-filter programme was evaluated in one district over twelve weeks, per household. The decision is in a different district, per person, over a year. What has to be true for the first number to be an answer to the second question \u2014 and what does it cost to assume it?",
+   "lede": "This is the failure mode that survives every other check. The identification was fine, the fit was fine, the interval was honest, and the number was still wrong where it landed, because nobody wrote down that the question had changed on the way. Eight facets, a selection diagram, four things a graph can say, and a ledger you could hand to somebody who has to sign for it.",
+   "notebook": "nbs/calibrate/",
+   "steps": [
+    {
+     "n": 1,
+     "slug": "transport-1-two-questions",
+     "title": "The number you have is not the number you need",
+     "asks": "You have a defensible result. Why can you not just use it?",
+     "lede": "A filter-distribution programme ran in district A: uptake recorded per household, illness days counted over twelve weeks, and identification settled \u2014 a defensible effect. The decision is in district B, where the ministry budgets per person and over a year. Nothing about the study was wrong. It simply measured a different quantity from the one the decision needs.",
+     "beat": "`differing_facets` is the whole problem stated in one line. Three of the eight facets differ, and until they are named, 'we have a good estimate' is a claim about district A that somebody is about to spend district B's money on.",
+     "code": "from axiom.core import D, Intervention, Outcome, Population, TimeWindow, Treatment\nfrom axiom.estimands import Estimand, Level, Quantity\n\nfilters = Treatment(\n    name=\"filters\", dimension=D.entity, unit=\"households reached\",\n    description=\"a ceramic filter delivered and demonstrated\",\n)\nillness = Outcome(\n    name=\"illness_days\", dimension=D.outcome, unit=\"days/period\",\n    description=\"reported days of diarrheal illness\", aggregation=\"mean\",\n)\nshared = dict(\n    quantity=Quantity(kind=\"contrast\"),\n    treatment=filters,\n    intervention=Intervention(doses={\"filters\": 1.0}),\n    reference=Intervention(doses={\"filters\": 0.0}),\n    outcome=illness,\n    dimension=D.outcome,\n)\n\n# What the trial measured.\nmeasured = Estimand(\n    name=\"filter_effect_A_household_12wk\",\n    population=Population(\n        name=\"district_A\",\n        strata={\"age\": {\"under_5\": 0.34, \"5_to_17\": 0.29, \"adult\": 0.37}},\n    ),\n    window=TimeWindow(start=0, stop=12, basis=\"cumulative\"),\n    level=Level(unit=\"cluster\"),\n    **shared,\n)\n\n# What the decision needs.\nneeded = Estimand(\n    name=\"filter_effect_B_person_52wk\",\n    population=Population(\n        name=\"district_B\",\n        strata={\"age\": {\"under_5\": 0.21, \"5_to_17\": 0.24, \"adult\": 0.55}},\n    ),\n    window=TimeWindow(start=0, stop=52, basis=\"cumulative\"),\n    level=Level(unit=\"individual\"),\n    **shared,\n)\n\nprint(\"measured :\", measured.name)\nprint(\"needed   :\", needed.name)\nprint()\nprint(\"facets that differ:\", measured.differing_facets(needed))\nprint()\nprint(\"these are different objects, and they say so:\")\nprint(\"  measured\", measured.content_hash()[:16])\nprint(\"  needed  \", needed.content_hash()[:16])",
+     "output": "measured : filter_effect_A_household_12wk\nneeded   : filter_effect_B_person_52wk\n\nfacets that differ: ('population', 'window', 'level')\n\nthese are different objects, and they say so:\n  measured adaf9c9abfa4b2fd\n  needed   6a864f41935b7358"
+    },
+    {
+     "n": 2,
+     "slug": "transport-2-ask-the-graph",
+     "title": "Ask the graph about the population",
+     "asks": "Is a difference between two populations a difference that matters?",
+     "lede": "Populations always differ somehow. The question is whether they differ in a way that changes the effect. That is a claim about mechanisms, so it is answered on a graph \u2014 a **selection diagram**, in which every node whose mechanism differs between the two populations gets an extra parent `S[node]` standing for 'this one is not the same here'.",
+     "beat": "The verdict is not 'yes'. It is a formula, a named assumption, the set that licenses it, and the thing that would refute it. The source's age-specific effects reweighted by district B's age mix \u2014 which is why the strata weights on `Population` were not decoration.",
+     "code": "from axiom.identify import CausalGraph, selection_diagram, transport_verdict\n\n# What we believe about how illness comes about, and what differs\n# between the districts: the age composition, and nothing else.\nworld = CausalGraph.from_edges(\n    \"filters -> illness, age -> illness, age -> filters,\"\n    \" sanitation -> illness, sanitation -> filters\",\n    selection=[\"age\"],\n    name=\"two_districts\",\n)\n\nprint(\"the selection diagram makes the difference a node:\")\nfor edge in sorted(selection_diagram(world).edges):\n    print(\"   \", \" -> \".join(edge))\nprint()\n\nverdict = transport_verdict(world, \"filters\", \"illness\")\nprint(\"status  :\", verdict.status)\nprint(\"route   :\", verdict.verdict.route)\nprint(\"set     :\", verdict.s_admissible_set)\nprint(\"formula :\", verdict.formula)\nprint()\nfor a in verdict.verdict.assumptions:\n    print(f\"assumption   {a.name}  [{a.state}]\")\n    print(f\"  says       {a.statement}\")\n    print(f\"  refuted by {a.challenged_by}\")",
+     "output": "the selection diagram makes the difference a node:\n    S[age] -> age\n    age -> filters\n    age -> illness\n    filters -> illness\n    sanitation -> filters\n    sanitation -> illness\n\nstatus  : identified\nroute   : s_admissible_adjustment\nset     : ('age',)\nformula : P*(illness|do(filters)) = \u03a3_{age} P(illness|do(filters),age) P*(age)\n\nassumption   s_admissibility  [satisfied]\n  says       Z=['age'] is S-admissible for the effect of filters on illness: (illness \u22a5 S | filters, Z) in G_bar(filters) of the selection diagram, so P*(illness|do(filters)) = \u03a3_{age} P(illness|do(filters),age) P*(age)\n  refuted by a mechanism difference between the populations the diagram omits"
+    },
+    {
+     "n": 3,
+     "slug": "transport-3-four-answers",
+     "title": "Four things the graph can say",
+     "asks": "What happens when the populations differ somewhere worse?",
+     "lede": "The same question against four different beliefs about *what* differs. Only one of them is the happy case, and one of the other three is better news than it looks: if the target population can identify the effect from its own data, the source study is not needed at all.",
+     "beat": "Note the last one. axiom does not say 'not transportable' \u2014 it says `unsupported`, and names the gap: the complete sID recursion is not implemented, so a transfer may exist that these three sufficient conditions cannot see. A tool that answered 'no' there would be lying about the strength of its own evidence.",
+     "code": "edges = (\"filters -> illness, age -> illness, age -> filters,\"\n         \" sanitation -> illness, sanitation -> filters\")\nbeliefs = {\n    \"only the age mix differs\":\n        dict(selection=[\"age\"]),\n    \"illness itself behaves differently there\":\n        dict(selection=[\"illness\"]),\n    \"sanitation differs, and nobody measured it\":\n        dict(unmeasured=[\"sanitation\"], selection=[\"sanitation\"]),\n    \"illness differs and age was never measured\":\n        dict(unmeasured=[\"age\"], selection=[\"illness\"]),\n}\nfor belief, kw in beliefs.items():\n    g = CausalGraph.from_edges(edges, name=\"belief\", **kw)\n    v = transport_verdict(g, \"filters\", \"illness\")\n    print(f\"{belief:44s} {v.status:12s} {v.verdict.route or '-'}\")\nprint()\nprint(\"the second one is not a failure -- 'trivial' means the target\")\nprint(\"identifies the effect from its own data and does not need the trial.\")\nprint(\"the fourth names its own gap rather than claiming a negative:\")\ng = CausalGraph.from_edges(\n    edges, unmeasured=[\"age\"], selection=[\"illness\"], name=\"worst\")\nprint(\"  \", transport_verdict(g, \"filters\", \"illness\").missing)",
+     "output": "only the age mix differs                     identified   s_admissible_adjustment\nillness itself behaves differently there     identified   trivial\nsanitation differs, and nobody measured it   downgraded   s_admissible_adjustment_unmeasured\nillness differs and age was never measured   unsupported  -\n\nthe second one is not a failure -- 'trivial' means the target\nidentifies the effect from its own data and does not need the trial.\nthe fourth names its own gap rather than claiming a negative:\n   ('sid_recursion',)"
+    },
+    {
+     "n": 4,
+     "slug": "transport-4-what-a-graph-cannot-settle",
+     "title": "The facets a graph cannot settle",
+     "asks": "The population is licensed. What about the window and the level?",
+     "lede": "A selection diagram settles one facet out of eight. Twelve weeks is not fifty-two weeks, and a household is not a person, and no causal graph has an opinion about either. `transfer_to` walks all eight facets and, for each one that differs, either names the assumption that licenses it or refuses.",
+     "beat": "Three differing facets, three named assumptions, every one `unverified` until something checks it. Nothing passed silently \u2014 and note the last block: a transfer that cannot be licensed at all is refused rather than assumed away.",
+     "code": "plan = measured.transfer_to(needed)\nprint(\"plan status:\", plan.status)\nprint()\nfor entry in plan.entries:\n    print(f\"{entry.facet}\")\n    print(f\"  {entry.statement}\")\n    for a in entry.assumptions:\n        print(f\"  needs  {a.name}  [{a.state}]\")\n        print(f\"         challenged by {a.challenged_by}\")\nprint()\n\n# A facet that is not bridgeable by any assumption is refused, not\n# licensed. A different functional is a different quantity.\nelasticity = needed.model_copy(\n    update={\"name\": \"elasticity\", \"quantity\": Quantity(kind=\"elasticity\")})\nblocked = measured.transfer_to(elasticity)\nprint(\"asking for an elasticity instead:\", blocked.status)\nprint(\" \", blocked.reason)",
+     "output": "plan status: downgraded\n\npopulation\n  population differs: district_A vs district_B\n  needs  s_admissibility  [unverified]\n         challenged by overlap; moderator interaction in meta\nwindow\n  time window or basis differs\n  needs  stationary_dynamics  [unverified]\n         challenged by half-life against window length\n  needs  carryover_contained  [unverified]\n         challenged by half-life against window length\nlevel\n  level differs\n  needs  linear_aggregation  [unverified]\n         challenged by the Jensen gap under a nonlinear response\n\nasking for an elasticity instead: blocked\n  quantity: a different functional is a different quantity; re-express first"
+    },
+    {
+     "n": 5,
+     "slug": "transport-5-correct-it",
+     "title": "Correct it, and watch the interval widen",
+     "asks": "What do the assumptions actually do to the number?",
+     "lede": "An assumption that licenses a transfer is not free. Each one comes with an operator that says what the correction *is*: a factor on the estimate, an offset, or a factor on the standard error. `resolve` composes them into one correction with one ledger.",
+     "beat": "The point estimate moved by a quarter, and the standard error nearly doubled. The widening is the honest part: reading a household-level measurement at the person level does not make the effect less certain by accident, it makes it less certain because five people in a household are not five independent observations.",
+     "code": "from axiom.calibrate import (\n    aggregation_level, carryover_window_factor, resolve)\nfrom axiom.surface import GeometricCarryover\n\n# window: the trial's 12 weeks caught only part of the carryover.\ncarryover = GeometricCarryover(max_lag=26)\nto_steady_state = carryover_window_factor(\n    carryover, {\"lam_filters\": 0.88}, 12, treatment=\"filters\")\n\n# level: households of ~5, correlated within.\nto_person = aggregation_level(\n    measured.level, needed.level, cluster_size=5, icc=0.15)\n\nresolved = resolve(\n    plan, transport=verdict.verdict,\n    corrections=[to_steady_state, to_person])\n\nprint(\"status   :\", resolved.status)\nprint(f\"factor   : {resolved.factor:.4f}\")\nprint(f\"offset   : {resolved.offset:.4f}\")\nprint(f\"se_scale : {resolved.se_scale:.4f}\")\nprint()\n\ntrial_estimate, trial_se = -1.84, 0.41\nmoved, widened = resolved.apply(trial_estimate, trial_se)\nprint(f\"district A, per household, 12 weeks : \"\n      f\"{trial_estimate:+.2f} +/- {trial_se:.2f}\")\nprint(f\"district B, per person, 52 weeks    : \"\n      f\"{moved:+.2f} +/- {widened:.2f}\")",
+     "output": "status   : downgraded\nfactor   : 1.2291\noffset   : 0.0000\nse_scale : 1.7678\n\ndistrict A, per household, 12 weeks : -1.84 +/- 0.41\ndistrict B, per person, 52 weeks    : -2.26 +/- 0.89"
+    },
+    {
+     "n": 6,
+     "slug": "transport-6-the-ledger",
+     "title": "The ledger is the deliverable",
+     "asks": "What do you hand the person who has to sign off on this?",
+     "lede": "Not the number. The number plus the list of every place it crossed a boundary and what was assumed to get it across. That list is a `Ledger`, it is built by construction rather than by discipline, and `check_complete` refuses a ledger with a facet missing from it.",
+     "beat": "`downgraded`, not `identified` \u2014 and correctly so. Two of the three assumptions are still `unverified`: nothing here has checked the half-life against the window, or the Jensen gap against a nonlinear response. The status is a description of the evidence, not a grade. Verifying those two is what the calibrate and surface pillars are for.",
+     "code": "for line in resolved.ledger.lines:\n    print(f\"[{line.kind}]\")\n    print(f\"  {line.statement}\")\n    if line.assumption is not None:\n        print(f\"  rests on {line.assumption.name} [{line.assumption.state}]\")\n\nprint()\ncomplete = resolved.ledger.check_complete(plan)\nprint(\"completeness :\", complete.status)\nprint(\" \", complete.reason)\nprint()\nprint(\"and the whole transfer is addressable:\")\nprint(\"  source estimand\", measured.content_hash()[:16])\nprint(\"  target estimand\", needed.content_hash()[:16])\nprint(\"  ledger         \", resolved.ledger.content_hash()[:16])\nprint()\nprint(\"re-deriving any of those from the same inputs gives the same\")\nprint(\"hash on any machine, so a number in a slide can be traced back\")\nprint(\"to the exact question it answered.\")",
+     "output": "[facet:population]\n  population differs: district_A vs district_B\n  rests on s_admissibility [satisfied]\n[facet:window]\n  0.813636 of the carryover mass lands within 12 period(s); scaled to the steady-state total by 1.22905\n  rests on carryover_contained [unverified]\n[facet:level]\n  cluster read at individual level: point factor 1 (additive effect), SE factor 1.76777\n  rests on linear_aggregation [unverified]\n[transport]\n  transport verdict identified via s_admissible_adjustment\n  rests on s_admissibility [satisfied]\n\ncompleteness : identified\n  every differing facet accounted for exactly once (population, window, level)\n\nand the whole transfer is addressable:\n  source estimand adaf9c9abfa4b2fd\n  target estimand 6a864f41935b7358\n  ledger          14c74efa68608cac\n\nre-deriving any of those from the same inputs gives the same\nhash on any machine, so a number in a slide can be traced back\nto the exact question it answered."
+    }
+   ],
+   "captured": {}
+  },
+  {
    "key": "scattering",
    "title": "Designing an experiment before there is any data",
    "kind": "A design story",
@@ -376,5 +448,5 @@
    }
   }
  ],
- "n": 4
+ "n": 5
 }

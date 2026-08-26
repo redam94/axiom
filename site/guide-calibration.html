@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Folding an experiment in · axiom guides</title>
+<meta name="description" content="An experiment measures one thing precisely. Calibration is how that one thing constrains a model of everything else — as a prior, as a likelihood, or as a hard constraint — and why the choice of route changes the answer.">
+<meta property="og:title" content="Folding an experiment in · axiom guides">
+<meta property="og:description" content="An experiment measures one thing precisely. Calibration is how that one thing constrains a model of everything else — as a prior, as a likelihood, or as a hard constraint — and why the choice of route changes the answer.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="guide-calibration">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="guides.html">Guides</a><a class="navx" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · doing the work</p>
+    <h1 style="max-width:18ch">Folding an experiment in</h1>
+    <p class="lede prose mt">You have an observational model of the whole system and one
+      clean experimental measurement of a small corner of it. The experiment is far more
+      trustworthy and far less complete. Neither on its own answers the decision. Calibration
+      is how the trustworthy thing disciplines the complete one.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Why not just use the experiment</p>
+      <h2>The experiment answers a smaller question than the decision asks</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>On the <a href="calibrate.html">calibrate page</a>, an experiment measures a
+          first-period lift of <strong>5.322</strong>
+          with a standard error of 0.053. That is a
+          precise, randomized, defensible number.</p>
+        <p>The decision needs something else: the steady-state effect of a dose the
+          experiment never tested, which is
+          <strong>32</strong>. The experiment measured one
+          point on a curve; the decision asks about a different point on the same curve,
+          after the dynamics have settled.</p>
+        <p>So the experiment cannot answer the question by itself, and the observational
+          model — fitted on data where treatment and confounder correlate at
+          0.96 — cannot be trusted on its own
+          either. Calibration is the operation that uses each for what it is good at.</p>
+      </div>
+      <div>
+        <div class="note">
+          <p class="note-t">This is a transfer, and it needs a licence</p>
+          <p class="small" style="margin:0">Moving from “first-period lift at the tested
+            dose” to “steady-state effect at the decision dose” crosses the
+            <code>window</code> and <code>intervention</code> facets. Every word of
+            <a href="guide-transport.html">the transportability guide</a> applies, and the
+            corrections are recorded in a ledger rather than absorbed into a fitted
+            parameter.</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">The measurement knows what it measured</p>
+          <p class="small" style="margin:0">A <code>Measurement</code> in axiom carries the
+            estimand it is a measurement <em>of</em> — here
+            <code>first_period_lift@rct-2026Q1</code>, with target hash
+            <code>4760098b3929</code>. That is what lets the
+            transfer be checked rather than assumed.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The three routes</p>
+      <h2>Where the experiment enters the model changes what it does</h2>
+      <p>There is no single “incorporate the experiment” operation. There are three, they
+        make different claims, and they give different answers on the same data.</p>
+    </div>
+
+    <div class="grid-3">
+      <div>
+        <h3>As a prior</h3>
+        <p class="small muted">Turn the measurement into a prior on the relevant parameter
+          and fit as usual. Simple and familiar — but it says the experiment constrains
+          <em>that parameter</em>, when what it actually constrains is a derived quantity
+          the parameter only partly controls.</p>
+        <p class="small"><strong>Says:</strong> “my belief about this parameter is now
+          centred here.”</p>
+      </div>
+      <div>
+        <h3>As a likelihood term</h3>
+        <p class="small muted">Add the measurement to the likelihood as an observation of
+          the derived quantity, computed through the same <code>forward()</code> the model
+          uses. The experiment then constrains whatever combination of parameters actually
+          produces it.</p>
+        <p class="small"><strong>Says:</strong> “whatever the parameters are, they must
+          reproduce this measurement.”</p>
+      </div>
+      <div>
+        <h3>As a hard constraint</h3>
+        <p class="small muted">Require the model to match the measurement exactly. Rarely
+          right — it treats a measurement with a standard error as though it had none, and
+          it makes the experiment unfalsifiable by the rest of the data.</p>
+        <p class="small"><strong>Says:</strong> “this is true, full stop.”</p>
+      </div>
+    </div>
+
+    <div class="ledger mt">
+      <div class="ledger-row">
+        <span class="ledger-f">uncalibrated</span>
+        <span class="ledger-s">The observational fit alone. The parameter lands
+          2.66 standard deviations from the truth,
+          and the realized decision quantity is
+          9.78 against a truth of
+          32.</span>
+        <span class="ledger-v"><span class="tag is-bad">disagrees</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">prior route</span>
+        <span class="ledger-s">The measurement folded in as a prior on the amplitude. The
+          parameter is now close to the truth — and the decision quantity still disagrees
+          with the experiment, because pinning the parameter is not the same as reproducing
+          the measurement.</span>
+        <span class="ledger-v"><span class="tag is-bad">disagrees</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">likelihood route</span>
+        <span class="ledger-s">The measurement as a likelihood term on the derived quantity.
+          The parameter is less precisely pinned, and that is the point: the model is free to
+          find any parameters that <em>reproduce the experiment</em>, and the realized
+          quantity lands at 5.47.</span>
+        <span class="ledger-v"><span class="tag is-good">agrees</span></span>
+      </div>
+    </div>
+
+    <p class="prose mt">The middle row is the instructive one. By the obvious diagnostic —
+      is the parameter near its true value — the prior route looks best of the three. By the
+      only diagnostic that matters — does the model agree with the experiment on the
+      quantity the experiment measured — it fails. A parameter is not a quantity, and
+      calibrating the first does not calibrate the second.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The check</p>
+      <h2>Agreement, stated as a number</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>After calibrating, ask the model to predict the thing the experiment measured, and
+          compare. That comparison is a <em>z</em> statistic against the measurement's own
+          standard error, and it is the check that distinguishes the three routes above:
+          -4.29, -2.82 and
+          -0.64 respectively.</p>
+        <p>A model that cannot reproduce the experiment it was calibrated against has not
+          been calibrated. It has been nudged, and the nudge went somewhere else in the
+          parameter space.</p>
+        <p>When the model and the experiment genuinely disagree after an honest fold-in,
+          that is information — usually about the transfer, not the experiment. The window
+          was wrong, the population differed, or the dose the experiment tested is on a part
+          of the curve the model has the wrong shape for.</p>
+      </div>
+      <div class="stack">
+        <div class="note">
+          <p class="note-t">Calibration is a loop, not a step</p>
+          <p class="small" style="margin:0">Fit, find what the decision is most sensitive to,
+            measure that, fold it in, re-decide, and look again at what is now most
+            uncertain. Each turn tells you what the next experiment should be. The
+            <a href="tutorial.html">depot tutorial</a> runs one full turn, and the
+            experiment reverses the decision the observational fit would have made.</p>
+        </div>
+        <div class="note">
+          <p class="note-t">Keep the ledger across the loop</p>
+          <p class="small" style="margin:0">Every fold-in writes lines — the pooling of
+            measurements, the design factor, the transfer corrections. After three turns
+            that ledger is the only account of why the current model believes what it
+            believes. See <a href="guide-provenance.html">provenance</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Guide 11 of 12</p>
+    <div class="hero-cta" style="margin-top:12px"><a class="btn btn-2" href="guide-design.html">&larr; Deciding what to measure</a><a class="btn btn-2" href="guides.html">All the guides</a><a class="btn btn-1" href="guide-critique.html">What would have to be true to overturn this? &rarr;</a></div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

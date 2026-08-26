@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What would have to be true to overturn this? · axiom guides</title>
+<meta name="description" content="The most useful output of an analysis is usually the size of the confounder that would erase it. Sensitivity analysis, refutation tests, and reporting a result as the strength of the objection it survives.">
+<meta property="og:title" content="What would have to be true to overturn this? · axiom guides">
+<meta property="og:description" content="The most useful output of an analysis is usually the size of the confounder that would erase it. Sensitivity analysis, refutation tests, and reporting a result as the strength of the objection it survives.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="guide-critique">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="guides.html">Guides</a><a class="navx" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · doing the work</p>
+    <h1 style="max-width:22ch">What would have to be true to overturn this?</h1>
+    <p class="lede prose mt">Every causal estimate rests on assumptions that cannot be
+      checked from the data — that is what makes them assumptions. The productive response is
+      not to defend them. It is to work out how wrong they would have to be to matter, and
+      report <em>that</em>.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The reframe</p>
+      <h2>Stop arguing about whether there is an unmeasured confounder</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>“Have you accounted for everything?” is unanswerable, and every meeting that asks
+          it ends in a draw. Nobody can prove a negative about variables nobody measured.</p>
+        <p>The answerable version is quantitative: <em>how strong would an unmeasured
+          confounder have to be — in its association with both the treatment and the outcome
+          — to move this estimate past the boundary the decision turns on?</em></p>
+        <p>Now the conversation has content. The answer is a number, and the room can judge
+          it against what they know: is a confounder that strong plausible here, given
+          everything already adjusted for? Sometimes obviously yes, and you have learned the
+          result is fragile. Sometimes obviously no, and the objection is settled on the
+          merits rather than by seniority.</p>
+      </div>
+      <div>
+        <p class="readout-l">From this build: the robustness value</p>
+        <div class="readout">
+          <div class="readout-v">86.2%</div>
+          <p class="readout-d">A confounder would have to explain
+            86.2% of the residual variation in
+            <em>both</em> the treatment and the outcome to reduce this estimate to zero.
+            The estimate is 2.726; the truth in this
+            simulation is 2, so the actual bias is
+            +0.726.</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">Read that number against something</p>
+          <p class="small" style="margin:0">A robustness value is not high or low in the
+            abstract. Benchmark it: how much of the residual variation does the strongest
+            covariate you <em>did</em> measure explain? If an unmeasured confounder would
+            have to be three times as strong as the strongest thing you know about, the
+            result is robust. If half as strong would do it, it is not.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Three families of check</p>
+      <h2>What to run, and what each one can tell you</h2>
+    </div>
+
+    <div class="rules">
+      <div class="rule-i">
+        <div class="rule-n">01</div>
+        <div>
+          <h4>Sensitivity — how much unmeasured confounding would it take?</h4>
+          <p>Parameterize the confounder you did not measure by its strength, and trace what
+            happens to the estimate as that strength grows. The output is a tipping point:
+            the confounder strength at which your conclusion flips. Report it alongside the
+            estimate, always.</p>
+          <p class="rule-proof">this build: bias vanishes at a confounder explaining
+            86.2% of residual variation in both</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">02</div>
+        <div>
+          <h4>Refutation — does the method find effects that cannot exist?</h4>
+          <p>Replace the treatment with random noise; the estimated effect should be zero.
+            Add an unrelated common cause; the estimate should not move. Use an outcome that
+            precedes the treatment; there should be nothing there. These do not validate the
+            result — they catch pipelines that would have produced a confident answer from
+            anything at all, which is more common than it should be.</p>
+          <p class="rule-proof"><code>axiom.dynamics</code> ships these as refutation tests
+            against a fitted graph</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">03</div>
+        <div>
+          <h4>Specification — does the conclusion survive the choices you could have made?</h4>
+          <p>Refit under the other defensible graph, the other adjustment set, the other
+            functional form, the prior your colleague would have picked. If the decision is
+            stable across all of them, say so — that is a stronger claim than any single
+            fit. If it is not, you have found what the answer actually depends on.</p>
+          <p class="rule-proof">two valid adjustment sets are a check, not a choice —
+            see <a href="guide-identification.html">identification</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">How to report it</p>
+      <h2>A result is the strength of the objection it survives</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>The weak form: <em>“The effect is
+          2.73 (95% CI
+          2.69–2.76).”</em>
+          Precise, and it tells a reader nothing about whether to believe it.</p>
+        <p>The strong form: <em>“The effect is
+          2.73 (95% CI
+          2.69–2.76),
+          identified via the back door adjusting on Z, under the assumption of no unmeasured
+          common cause. That assumption fails only if a confounder explains
+          86% of the residual variation in both treatment and
+          outcome; benchmarked against the strongest covariate we did measure, that is
+          [stronger / weaker]. The conclusion is unchanged under the alternative graph in
+          which W confounds rather than mediates.”</em></p>
+        <p class="small muted">The bracketed clause is the one people skip, and it is the
+          one that makes the percentage mean anything. Fill it in.</p>
+        <p>The second version is longer, harder to write, and much harder to overturn in a
+          meeting — because every objection somebody could raise has already been raised and
+          quantified by the person who did the work.</p>
+      </div>
+      <div class="stack">
+        <div class="note">
+          <p class="note-t">Report the fragile ones too</p>
+          <p class="small" style="margin:0">“This result flips if a confounder half as
+            strong as the strongest one we measured exists” is a finding, not a failure. It
+            names the risk in terms somebody can weigh, and it
+            tells the organisation not to bet on this number, and it names the study that
+            would settle it. That is worth more than a confident estimate nobody
+            stress-tested.</p>
+        </div>
+        <div class="note">
+          <p class="note-t">And check the transfer, last</p>
+          <p class="small" style="margin:0">A result can survive every sensitivity check
+            listed here and still be wrong where it is used, because none of them asks
+            whether the answer is <em>for the right population</em>. That check is
+            <a href="guide-transport.html">transportability</a>, and it is the one the
+            others cannot substitute for.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The end of the shelf</p>
+      <h2>What all twelve guides were driving at</h2>
+    </div>
+    <p class="prose">Causal work is not a technique applied to data; it is a chain of
+      commitments — about mechanism, about the question, about who the answer is for — with a
+      number at the end of it. The technique is the easy part. What makes an answer usable
+      six months later, in a room you are not in, is that every one of those commitments was
+      written down where somebody can find it, check it, and disagree with it.</p>
+    <p class="prose mt">That is what the rest of this site is: the same commitments, made
+      explicit and executable. The <a href="tutorial.html">tutorials</a> carry five problems
+      all the way through, the <a href="examples.html">examples</a> do it in twelve fields,
+      and the <a href="identify.html">pillar pages</a> show what each part of the library
+      actually does.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Guide 12 of 12</p>
+    <div class="hero-cta" style="margin-top:12px"><a class="btn btn-2" href="guide-calibration.html">&larr; Folding an experiment in</a><a class="btn btn-2" href="guides.html">All the guides</a></div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

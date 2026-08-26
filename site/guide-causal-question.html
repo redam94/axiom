@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prediction is not intervention · axiom guides</title>
+<meta name="description" content="A model that forecasts an outcome perfectly can be silent about every decision you might take. What makes a question causal, why accuracy does not answer one, and the three rungs of question a dataset can be asked.">
+<meta property="og:title" content="Prediction is not intervention · axiom guides">
+<meta property="og:description" content="A model that forecasts an outcome perfectly can be silent about every decision you might take. What makes a question causal, why accuracy does not answer one, and the three rungs of question a dataset can be asked.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="guide-causal-question">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="guides.html">Guides</a><a class="navx" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · foundations</p>
+    <h1 style="max-width:18ch">Prediction is not intervention</h1>
+    <p class="lede prose mt">The most common way to get a confidently wrong answer from data
+      is to build a model that is extremely good at the wrong question. This is not a
+      modelling mistake — the model is fine. It is a mistake about what kind of question was
+      asked.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The example everybody has met</p>
+      <h2>Umbrellas and rain</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>Count umbrellas on the street and you can predict rainfall very well. The
+          correlation is real, it is stable, it will hold up in cross-validation, and it will
+          hold up next year. As a <em>forecast</em>, umbrellas are excellent.</p>
+        <p>Now take a decision with it. Confiscate every umbrella in the city and the
+          forecast says the rain stops. Obviously it does not. The model was never wrong — it
+          answered “given that I see umbrellas, what should I expect?” correctly, every
+          time. It simply has nothing to say about “what happens if I
+          <em>change</em> the umbrellas”, because nothing in the data ever changed them for
+          a reason unrelated to the weather.</p>
+        <p>The example is silly on purpose. In real work the same structure arrives dressed
+          as something reasonable: hospitals with more staff have worse outcomes, students in
+          smaller classes score lower, customers who receive more support emails churn more.
+          Every one of those is a true, stable, predictive relationship. Not one of them is
+          an instruction.</p>
+      </div>
+      <div>
+        <div class="note">
+          <p class="note-t">The test, in one sentence</p>
+          <p class="small" style="margin:0">If the answer would change depending on
+            <em>why</em> the variable took the value it did, the question is causal and
+            a predictive model cannot answer it — however accurate that model is.</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">Accuracy is not evidence either way</p>
+          <p class="small" style="margin:0">A model that predicts held-out data perfectly
+            has demonstrated that the world it was trained on keeps behaving like itself.
+            A decision proposes to make the world stop behaving like itself. That is
+            precisely the case the test set cannot contain.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The distinction, sharpened</p>
+      <h2>Three rungs, and only the first is free</h2>
+      <p>Pearl's ladder is the standard way to keep these apart. The rungs are not degrees
+        of difficulty — they are different <em>questions</em>, and no amount of data from a
+        lower rung answers a higher one on its own.</p>
+    </div>
+
+    <div class="rules">
+      <div class="rule-i">
+        <div class="rule-n">01</div>
+        <div>
+          <h4>Seeing — <code>P(Y | X)</code></h4>
+          <p>“Among the households that had a filter, what was the illness rate?” This is a
+            fact about the data. It requires no assumptions beyond the sample being what it
+            claims to be, and machine learning is extremely good at it.</p>
+          <p class="rule-proof">answerable from the data alone</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">02</div>
+        <div>
+          <h4>Doing — <code>P(Y | do(X))</code></h4>
+          <p>“If we <em>gave</em> a household a filter, what would the illness rate be?”
+            The <code>do</code> is not notation for emphasis: it means the value was set
+            from outside, breaking whatever normally determines it. In the data, filters
+            were taken up by households that chose to; under <code>do</code>, they are
+            handed out regardless. Those are different populations of filter-users.</p>
+          <p class="rule-proof">needs the data <em>and</em> a claim about mechanism — this
+            is what <a href="guide-identification.html">identification</a> supplies</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">03</div>
+        <div>
+          <h4>Imagining — <code>P(Y<sub>x</sub> | X = x′, Y = y′)</code></h4>
+          <p>“This household got a filter and stayed ill. Would they have been ill without
+            it?” A question about a specific unit in a world that did not happen. Strictly
+            harder again, and mostly out of scope here — but worth knowing it is a separate
+            rung, because a great deal of everyday reasoning quietly lives on it.</p>
+          <p class="rule-proof">needs a full model of the mechanism, not just its graph</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="prose mt">Nearly every question a decision-maker asks is on rung two.
+      Nearly every tool that gets pointed at it is built for rung one. That mismatch is the
+      subject of this whole shelf.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What it looks like when it goes wrong</p>
+      <h2>The same data, two answers, both computed correctly</h2>
+      <p>This is not hypothetical. On the <a href="identify.html">identify</a> page,
+        the same 5,000 rows are fitted twice — once ignoring a common cause and once
+        adjusting for it — and the two estimates are on opposite sides of the truth.</p>
+    </div>
+    <div class="grid-2">
+      <div>
+        <p class="readout-l">Ignoring the common cause</p>
+        <div class="readout">
+          <div class="readout-v">2.726</div>
+          <div class="readout-bar" style="--pos:50.0%"><i></i><i></i></div>
+          <div class="readout-e"><span>2.693</span>
+            <span>2.758</span></div>
+          <p class="readout-d">95% Wald. The truth is 2.0, and the interval does not contain
+            it. Nothing about the arithmetic is wrong.</p>
+        </div>
+      </div>
+      <div>
+        <p class="readout-l">Adjusting for it</p>
+        <div class="readout">
+          <div class="readout-v">2.013</div>
+          <div class="readout-bar" style="--pos:50.0%"><i></i><i></i></div>
+          <div class="readout-e"><span>1.985</span>
+            <span>2.040</span></div>
+          <p class="readout-d">Same rows, same estimator. The only difference is that
+            something was conditioned on — and <em>which</em> something is not a question
+            the data can answer.</p>
+        </div>
+      </div>
+    </div>
+    <div class="note mt" style="max-width:var(--measure)">
+      <p class="note-t">The uncomfortable part</p>
+      <p class="small" style="margin:0">Both fits report a tight interval. Neither reports
+        doubt. If you had only ever seen the first one, nothing in the output would tell you
+        it was wrong — which is why the decision about what to adjust for has to be made
+        before fitting, from a claim about the world, and written down where somebody can
+        disagree with it.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">In practice</p>
+      <h2>Four questions worth asking out loud</h2>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">Which rung?</span>
+        <span class="ledger-s">Is anyone going to <em>act</em> on this, or only anticipate
+          with it? Forecasting demand to size a warehouse is rung one and needs no causal
+          machinery at all. Deciding whether a discount caused the demand is rung two.</span>
+        <span class="ledger-v">1 / 2</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">Set by whom?</span>
+        <span class="ledger-s">For every variable you might intervene on: in the data you
+          have, what decided its value? If the answer is “something that also affects the
+          outcome”, you have a <a href="guide-confounding.html">confounder</a>.</span>
+        <span class="ledger-v">→</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">Compared to what?</span>
+        <span class="ledger-s">“The effect of filters” is not a quantity. The effect of
+          <em>one filter per household</em> versus <em>none</em>, on <em>illness days</em>,
+          over <em>twelve weeks</em>, in <em>this district</em> — that is a quantity. See
+          <a href="guide-estimand.html">the estimand</a>.</span>
+        <span class="ledger-v">→</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">For whom?</span>
+        <span class="ledger-s">The population the answer is <em>about</em> is rarely the
+          population the decision is <em>for</em>. That gap is
+          <a href="guide-transport.html">transportability</a>, and it is the one that
+          survives every other check.</span>
+        <span class="ledger-v">→</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Guide 1 of 12</p>
+    <div class="hero-cta" style="margin-top:12px"><a class="btn btn-2" href="guides.html">All the guides</a><a class="btn btn-1" href="guide-confounding.html">Confounders, colliders and mediators &rarr;</a></div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

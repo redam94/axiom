@@ -1,0 +1,216 @@
+<!--meta {
+  "title": "Confounders, colliders and mediators · axiom guides",
+  "description": "The same variable in three positions. A confounder must be adjusted for, a collider must not be, and a mediator depends on the question. Adjusting for the wrong one does not fail loudly — it returns a number.",
+  "active": "guides"
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · foundations</p>
+    <h1 style="max-width:20ch">Confounders, colliders and mediators</h1>
+    <p class="lede prose mt">“Control for everything you have” is the single most expensive
+      piece of folk statistics in circulation. A variable's <em>position</em> decides whether
+      adjusting for it removes bias, creates bias, or answers a different question — and the
+      three positions are indistinguishable from the correlations alone.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The three shapes</p>
+      <h2>Same three variables, three different worlds</h2>
+      <p>In all three, <code>X</code> is what you might change, <code>Y</code> is what you
+        care about, and <code>Z</code> is the variable you are deciding whether to put in the
+        model. The arrows are different, and that is the whole difference.</p>
+    </div>
+
+    <div class="grid-3">
+      <div>
+        <figure class="fig">
+          <div class="fig-head">
+            <p class="fig-t">Confounder — <em>adjust</em></p>
+            <p class="fig-s"><code>Z</code> causes both. It creates a correlation between
+              <code>X</code> and <code>Y</code> that is not an effect of <code>X</code>.</p>
+          </div>
+          <svg viewBox="0 0 260 170" role="img" width="100%"
+               aria-label="Z points to X and Z points to Y; X points to Y.">
+            <defs>
+              <marker id="ca" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6"
+                      markerHeight="6" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--ink-3)"/>
+              </marker>
+            </defs>
+            <circle cx="130" cy="34" r="22" fill="var(--panel)" stroke="var(--rule-2)"/>
+            <text x="130" y="39" text-anchor="middle" font-family="var(--f-mono)"
+                  font-size="13" fill="var(--ink)">Z</text>
+            <circle cx="46" cy="130" r="22" fill="var(--panel)" stroke="var(--rule-2)"/>
+            <text x="46" y="135" text-anchor="middle" font-family="var(--f-mono)"
+                  font-size="13" fill="var(--ink)">X</text>
+            <circle cx="214" cy="130" r="22" fill="var(--panel)" stroke="var(--rule-2)"/>
+            <text x="214" y="135" text-anchor="middle" font-family="var(--f-mono)"
+                  font-size="13" fill="var(--ink)">Y</text>
+            <line x1="113" y1="49" x2="63" y2="112" stroke="var(--ink-3)"
+                  marker-end="url(#ca)"/>
+            <line x1="147" y1="49" x2="197" y2="112" stroke="var(--ink-3)"
+                  marker-end="url(#ca)"/>
+            <line x1="69" y1="130" x2="190" y2="130" stroke="var(--ink-3)"
+                  marker-end="url(#ca)"/>
+          </svg>
+        </figure>
+        <p class="small muted">Staff numbers and patient outcomes: sicker wards get more
+          staff. Leave severity out and staffing looks harmful.</p>
+      </div>
+
+      <div>
+        <figure class="fig">
+          <div class="fig-head">
+            <p class="fig-t">Collider — <em>do not</em></p>
+            <p class="fig-s">Both cause <code>Z</code>. <code>X</code> and <code>Y</code>
+              start out unrelated; conditioning on <code>Z</code> makes them related.</p>
+          </div>
+          <svg viewBox="0 0 260 170" role="img" width="100%"
+               aria-label="X points to Z and Y points to Z. X and Y are not connected.">
+            <circle cx="130" cy="130" r="22" fill="none" stroke="var(--boundary)"
+                    stroke-width="1.6"/>
+            <text x="130" y="135" text-anchor="middle" font-family="var(--f-mono)"
+                  font-size="13" fill="var(--boundary)">Z</text>
+            <circle cx="46" cy="34" r="22" fill="var(--panel)" stroke="var(--rule-2)"/>
+            <text x="46" y="39" text-anchor="middle" font-family="var(--f-mono)"
+                  font-size="13" fill="var(--ink)">X</text>
+            <circle cx="214" cy="34" r="22" fill="var(--panel)" stroke="var(--rule-2)"/>
+            <text x="214" y="39" text-anchor="middle" font-family="var(--f-mono)"
+                  font-size="13" fill="var(--ink)">Y</text>
+            <line x1="63" y1="52" x2="113" y2="112" stroke="var(--ink-3)"
+                  marker-end="url(#ca)"/>
+            <line x1="197" y1="52" x2="147" y2="112" stroke="var(--ink-3)"
+                  marker-end="url(#ca)"/>
+          </svg>
+        </figure>
+        <p class="small muted">Admission to a study requires being either very ill or very
+          rich. Among those admitted, wealth predicts health — in the world, it did not.</p>
+      </div>
+
+      <div>
+        <figure class="fig">
+          <div class="fig-head">
+            <p class="fig-t">Mediator — <em>it depends</em></p>
+            <p class="fig-s"><code>X</code> acts <em>through</em> <code>Z</code>. Adjusting
+              for it removes the part of the effect you probably wanted.</p>
+          </div>
+          <svg viewBox="0 0 260 170" role="img" width="100%"
+               aria-label="X points to Z, Z points to Y.">
+            <circle cx="130" cy="82" r="22" fill="var(--panel)" stroke="var(--rule-2)"/>
+            <text x="130" y="87" text-anchor="middle" font-family="var(--f-mono)"
+                  font-size="13" fill="var(--ink)">Z</text>
+            <circle cx="30" cy="82" r="22" fill="var(--panel)" stroke="var(--rule-2)"/>
+            <text x="30" y="87" text-anchor="middle" font-family="var(--f-mono)"
+                  font-size="13" fill="var(--ink)">X</text>
+            <circle cx="230" cy="82" r="22" fill="var(--panel)" stroke="var(--rule-2)"/>
+            <text x="230" y="87" text-anchor="middle" font-family="var(--f-mono)"
+                  font-size="13" fill="var(--ink)">Y</text>
+            <line x1="53" y1="82" x2="105" y2="82" stroke="var(--ink-3)"
+                  marker-end="url(#ca)"/>
+            <line x1="153" y1="82" x2="205" y2="82" stroke="var(--ink-3)"
+                  marker-end="url(#ca)"/>
+          </svg>
+        </figure>
+        <p class="small muted">Filters reduce illness by improving water quality. Adjust for
+          water quality and the filter's effect vanishes — correctly, and uselessly.</p>
+      </div>
+    </div>
+
+    <div class="note mt" style="max-width:var(--measure)">
+      <p class="note-t">Why you cannot tell them apart from the data</p>
+      <p class="small" style="margin:0">All three shapes above produce correlations among
+        <code>X</code>, <code>Y</code> and <code>Z</code>. The confounder and the mediator
+        can produce <em>identical</em> joint distributions. Which one you are in is a claim
+        about what causes what — knowledge from outside the dataset — which is exactly what
+        a <a href="guide-graphs.html">causal graph</a> is for writing down.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The collider deserves its own section</p>
+      <h2>Adjusting can <em>create</em> the bias it was meant to remove</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>The confounder story is well known. The collider one is not, and it is worse,
+          because the fix people reach for is the thing that causes it.</p>
+        <p>Suppose two entirely unrelated things — say, a candidate's technical skill and
+          their interviewing skill — both help you get hired. Among people who <em>were</em>
+          hired, the two become negatively correlated: someone who got in with weak
+          interviewing must have been technically strong, and vice versa. Look only at
+          employees and you will discover that technical skill hurts interview performance.
+          It does not. You conditioned on the thing they both cause.</p>
+        <p>This is why “I put in every variable I had” is not a conservative choice.
+          Every variable you had includes the ones caused by the treatment and the ones that
+          decided who is in the sample at all. Each of those turns a clean comparison into a
+          contaminated one, silently.</p>
+      </div>
+      <div class="stack">
+        <div class="note">
+          <p class="note-t">Selection is a collider you did not choose</p>
+          <p class="small" style="margin:0">If being in the dataset at all depends on both
+            the treatment and the outcome — survey responders, surviving customers, patients
+            who came back — you have conditioned on a collider before writing a line of
+            code. The <a href="example-03-education-selection-bias.html">education
+            example</a> works one of these end to end.</p>
+        </div>
+        <div class="note">
+          <p class="note-t">The rule that actually works</p>
+          <p class="small" style="margin:0">Never adjust for anything caused by the
+            treatment. Beyond that, do not pick the adjustment set by hand at all — write
+            the graph, and let <a href="guide-identification.html">identification</a> derive
+            a licensed set from it. On the <a href="identify.html">identify page</a> axiom
+            names that set as <code>{{identify.backdoor.adjustment_set}}</code> before
+            anything is fitted.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Summary</p>
+      <h2>The table to keep</h2>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">Confounder</span>
+        <span class="ledger-s"><code>X ← Z → Y</code> · a common cause. Leaving it out biases
+          the estimate; adjusting removes the bias.</span>
+        <span class="ledger-v"><span class="tag is-good">adjust</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">Collider</span>
+        <span class="ledger-s"><code>X → Z ← Y</code> · a common effect. Adjusting
+          <em>creates</em> a correlation that was not there.</span>
+        <span class="ledger-v"><span class="tag is-bad">never</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">Mediator</span>
+        <span class="ledger-s"><code>X → Z → Y</code> · on the path. Adjusting gives the
+          direct effect only — a different, valid quantity that is usually not the one the
+          decision needs.</span>
+        <span class="ledger-v"><span class="tag is-warn">depends</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">Instrument</span>
+        <span class="ledger-s"><code>Z → X → Y</code>, with no other route to <code>Y</code>
+          · a lever on the treatment. Not adjusted for — used, as a
+          <a href="guide-identification.html">separate route</a> when the back door is
+          shut.</span>
+        <span class="ledger-v"><span class="tag">use</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--GUIDE-NAV-->

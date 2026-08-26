@@ -3121,15 +3121,313 @@ SCATTERING_STEPS: list[dict[str, Any]] = [
 ]
 
 
+#: "Making a model travel": a study that measured the right thing in the wrong
+#: place. Every step is a boundary crossing — population, window, level — and the
+#: series exists because that is where the numbers on this site are most often
+#: wrong in practice and least often checked.
+TRANSPORT_STEPS: list[dict[str, Any]] = [
+    {
+        "slug": "transport-1-two-questions",
+        "title": "The number you have is not the number you need",
+        "asks": "You have a defensible result. Why can you not just use it?",
+        "lede": (
+            "A filter-distribution programme ran in district A: uptake recorded per "
+            "household, illness days counted over twelve weeks, and identification "
+            "settled — a defensible effect. The decision is in district B, where the "
+            "ministry budgets per person and over a year. Nothing about the study was "
+            "wrong. It simply measured a different quantity from the one the decision "
+            "needs."
+        ),
+        "beat": (
+            "`differing_facets` is the whole problem stated in one line. Three of the "
+            "eight facets differ, and until they are named, 'we have a good estimate' "
+            "is a claim about district A that somebody is about to spend district B's "
+            "money on."
+        ),
+        "code": """
+            from axiom.core import D, Intervention, Outcome, Population, TimeWindow, Treatment
+            from axiom.estimands import Estimand, Level, Quantity
+
+            filters = Treatment(
+                name="filters", dimension=D.entity, unit="households reached",
+                description="a ceramic filter delivered and demonstrated",
+            )
+            illness = Outcome(
+                name="illness_days", dimension=D.outcome, unit="days/period",
+                description="reported days of diarrheal illness", aggregation="mean",
+            )
+            shared = dict(
+                quantity=Quantity(kind="contrast"),
+                treatment=filters,
+                intervention=Intervention(doses={"filters": 1.0}),
+                reference=Intervention(doses={"filters": 0.0}),
+                outcome=illness,
+                dimension=D.outcome,
+            )
+
+            # What the trial measured.
+            measured = Estimand(
+                name="filter_effect_A_household_12wk",
+                population=Population(
+                    name="district_A",
+                    strata={"age": {"under_5": 0.34, "5_to_17": 0.29, "adult": 0.37}},
+                ),
+                window=TimeWindow(start=0, stop=12, basis="cumulative"),
+                level=Level(unit="cluster"),
+                **shared,
+            )
+
+            # What the decision needs.
+            needed = Estimand(
+                name="filter_effect_B_person_52wk",
+                population=Population(
+                    name="district_B",
+                    strata={"age": {"under_5": 0.21, "5_to_17": 0.24, "adult": 0.55}},
+                ),
+                window=TimeWindow(start=0, stop=52, basis="cumulative"),
+                level=Level(unit="individual"),
+                **shared,
+            )
+
+            print("measured :", measured.name)
+            print("needed   :", needed.name)
+            print()
+            print("facets that differ:", measured.differing_facets(needed))
+            print()
+            print("these are different objects, and they say so:")
+            print("  measured", measured.content_hash()[:16])
+            print("  needed  ", needed.content_hash()[:16])
+        """,
+    },
+    {
+        "slug": "transport-2-ask-the-graph",
+        "title": "Ask the graph about the population",
+        "asks": "Is a difference between two populations a difference that matters?",
+        "lede": (
+            "Populations always differ somehow. The question is whether they differ "
+            "in a way that changes the effect. That is a claim about mechanisms, so "
+            "it is answered on a graph — a **selection diagram**, in which every node "
+            "whose mechanism differs between the two populations gets an extra parent "
+            "`S[node]` standing for 'this one is not the same here'."
+        ),
+        "beat": (
+            "The verdict is not 'yes'. It is a formula, a named assumption, the set "
+            "that licenses it, and the thing that would refute it. The source's "
+            "age-specific effects reweighted by district B's age mix — which is why "
+            "the strata weights on `Population` were not decoration."
+        ),
+        "code": """
+            from axiom.identify import CausalGraph, selection_diagram, transport_verdict
+
+            # What we believe about how illness comes about, and what differs
+            # between the districts: the age composition, and nothing else.
+            world = CausalGraph.from_edges(
+                "filters -> illness, age -> illness, age -> filters,"
+                " sanitation -> illness, sanitation -> filters",
+                selection=["age"],
+                name="two_districts",
+            )
+
+            print("the selection diagram makes the difference a node:")
+            for edge in sorted(selection_diagram(world).edges):
+                print("   ", " -> ".join(edge))
+            print()
+
+            verdict = transport_verdict(world, "filters", "illness")
+            print("status  :", verdict.status)
+            print("route   :", verdict.verdict.route)
+            print("set     :", verdict.s_admissible_set)
+            print("formula :", verdict.formula)
+            print()
+            for a in verdict.verdict.assumptions:
+                print(f"assumption   {a.name}  [{a.state}]")
+                print(f"  says       {a.statement}")
+                print(f"  refuted by {a.challenged_by}")
+        """,
+    },
+    {
+        "slug": "transport-3-four-answers",
+        "title": "Four things the graph can say",
+        "asks": "What happens when the populations differ somewhere worse?",
+        "lede": (
+            "The same question against four different beliefs about *what* differs. "
+            "Only one of them is the happy case, and one of the other three is "
+            "better news than it looks: if the target population can identify the "
+            "effect from its own data, the source study is not needed at all."
+        ),
+        "beat": (
+            "Note the last one. axiom does not say 'not transportable' — it says "
+            "`unsupported`, and names the gap: the complete sID recursion is not "
+            "implemented, so a transfer may exist that these three sufficient "
+            "conditions cannot see. A tool that answered 'no' there would be lying "
+            "about the strength of its own evidence."
+        ),
+        "code": """
+            edges = ("filters -> illness, age -> illness, age -> filters,"
+                     " sanitation -> illness, sanitation -> filters")
+            beliefs = {
+                "only the age mix differs":
+                    dict(selection=["age"]),
+                "illness itself behaves differently there":
+                    dict(selection=["illness"]),
+                "sanitation differs, and nobody measured it":
+                    dict(unmeasured=["sanitation"], selection=["sanitation"]),
+                "illness differs and age was never measured":
+                    dict(unmeasured=["age"], selection=["illness"]),
+            }
+            for belief, kw in beliefs.items():
+                g = CausalGraph.from_edges(edges, name="belief", **kw)
+                v = transport_verdict(g, "filters", "illness")
+                print(f"{belief:44s} {v.status:12s} {v.verdict.route or '-'}")
+            print()
+            print("the second one is not a failure -- 'trivial' means the target")
+            print("identifies the effect from its own data and does not need the trial.")
+            print("the fourth names its own gap rather than claiming a negative:")
+            g = CausalGraph.from_edges(
+                edges, unmeasured=["age"], selection=["illness"], name="worst")
+            print("  ", transport_verdict(g, "filters", "illness").missing)
+        """,
+    },
+    {
+        "slug": "transport-4-what-a-graph-cannot-settle",
+        "title": "The facets a graph cannot settle",
+        "asks": "The population is licensed. What about the window and the level?",
+        "lede": (
+            "A selection diagram settles one facet out of eight. Twelve weeks is not "
+            "fifty-two weeks, and a household is not a person, and no causal graph "
+            "has an opinion about either. `transfer_to` walks all eight facets and, "
+            "for each one that differs, either names the assumption that licenses it "
+            "or refuses."
+        ),
+        "beat": (
+            "Three differing facets, three named assumptions, every one `unverified` "
+            "until something checks it. Nothing passed silently — and note the last "
+            "block: a transfer that cannot be licensed at all is refused rather than "
+            "assumed away."
+        ),
+        "code": """
+            plan = measured.transfer_to(needed)
+            print("plan status:", plan.status)
+            print()
+            for entry in plan.entries:
+                print(f"{entry.facet}")
+                print(f"  {entry.statement}")
+                for a in entry.assumptions:
+                    print(f"  needs  {a.name}  [{a.state}]")
+                    print(f"         challenged by {a.challenged_by}")
+            print()
+
+            # A facet that is not bridgeable by any assumption is refused, not
+            # licensed. A different functional is a different quantity.
+            elasticity = needed.model_copy(
+                update={"name": "elasticity", "quantity": Quantity(kind="elasticity")})
+            blocked = measured.transfer_to(elasticity)
+            print("asking for an elasticity instead:", blocked.status)
+            print(" ", blocked.reason)
+        """,
+    },
+    {
+        "slug": "transport-5-correct-it",
+        "title": "Correct it, and watch the interval widen",
+        "asks": "What do the assumptions actually do to the number?",
+        "lede": (
+            "An assumption that licenses a transfer is not free. Each one comes with "
+            "an operator that says what the correction *is*: a factor on the estimate, "
+            "an offset, or a factor on the standard error. `resolve` composes them "
+            "into one correction with one ledger."
+        ),
+        "beat": (
+            "The point estimate moved by a quarter, and the standard error nearly "
+            "doubled. The widening is the honest part: reading a household-level "
+            "measurement at the person level does not make the effect less certain by "
+            "accident, it makes it less certain because five people in a household are "
+            "not five independent observations."
+        ),
+        "code": """
+            from axiom.calibrate import (
+                aggregation_level, carryover_window_factor, resolve)
+            from axiom.surface import GeometricCarryover
+
+            # window: the trial's 12 weeks caught only part of the carryover.
+            carryover = GeometricCarryover(max_lag=26)
+            to_steady_state = carryover_window_factor(
+                carryover, {"lam_filters": 0.88}, 12, treatment="filters")
+
+            # level: households of ~5, correlated within.
+            to_person = aggregation_level(
+                measured.level, needed.level, cluster_size=5, icc=0.15)
+
+            resolved = resolve(
+                plan, transport=verdict.verdict,
+                corrections=[to_steady_state, to_person])
+
+            print("status   :", resolved.status)
+            print(f"factor   : {resolved.factor:.4f}")
+            print(f"offset   : {resolved.offset:.4f}")
+            print(f"se_scale : {resolved.se_scale:.4f}")
+            print()
+
+            trial_estimate, trial_se = -1.84, 0.41
+            moved, widened = resolved.apply(trial_estimate, trial_se)
+            print(f"district A, per household, 12 weeks : "
+                  f"{trial_estimate:+.2f} +/- {trial_se:.2f}")
+            print(f"district B, per person, 52 weeks    : "
+                  f"{moved:+.2f} +/- {widened:.2f}")
+        """,
+    },
+    {
+        "slug": "transport-6-the-ledger",
+        "title": "The ledger is the deliverable",
+        "asks": "What do you hand the person who has to sign off on this?",
+        "lede": (
+            "Not the number. The number plus the list of every place it crossed a "
+            "boundary and what was assumed to get it across. That list is a "
+            "`Ledger`, it is built by construction rather than by discipline, and "
+            "`check_complete` refuses a ledger with a facet missing from it."
+        ),
+        "beat": (
+            "`downgraded`, not `identified` — and correctly so. Two of the three "
+            "assumptions are still `unverified`: nothing here has checked the "
+            "half-life against the window, or the Jensen gap against a nonlinear "
+            "response. The status is a description of the evidence, not a grade. "
+            "Verifying those two is what the calibrate and surface pillars are for."
+        ),
+        "code": """
+            for line in resolved.ledger.lines:
+                print(f"[{line.kind}]")
+                print(f"  {line.statement}")
+                if line.assumption is not None:
+                    print(f"  rests on {line.assumption.name} [{line.assumption.state}]")
+
+            print()
+            complete = resolved.ledger.check_complete(plan)
+            print("completeness :", complete.status)
+            print(" ", complete.reason)
+            print()
+            print("and the whole transfer is addressable:")
+            print("  source estimand", measured.content_hash()[:16])
+            print("  target estimand", needed.content_hash()[:16])
+            print("  ledger         ", resolved.ledger.content_hash()[:16])
+            print()
+            print("re-deriving any of those from the same inputs gives the same")
+            print("hash on any machine, so a number in a slide can be traced back")
+            print("to the exact question it answered.")
+        """,
+    },
+]
+
+
 #: The tutorial series. Each is one problem carried through every phase it has
 #: to survive, a step to a page, and each step's snippet runs into the *same*
 #: namespace as the ones before it in its own series. That sharing is the whole
 #: point: a tutorial whose steps do not carry state is a tour with numbers in it.
 #:
-#: Two of them, because the two shapes of causal work read differently. The depot
+#: Five of them, because causal work comes in more than one shape. The depot
 #: problem is an *analysis* story — the data is already there and the question is
 #: whether it can answer anything. GEIGER-1911 is a *design* story: there is no
-#: data at all, and every decision is about what to go and measure.
+#: data at all, and every decision is about what to go and measure. The transfer
+#: series is a third shape again: the measurement exists and is sound, and the
+#: whole question is whether it may be read as an answer somewhere else.
 TUTORIALS: list[dict[str, Any]] = [
     {
         "key": "porting",
@@ -3556,6 +3854,28 @@ TUTORIALS: list[dict[str, Any]] = [
         """,
             },
         ],
+    },
+    {
+        "key": "transfer",
+        "title": "Making a model travel",
+        "kind": "A transfer story",
+        "asks": "The study was sound. Does its number apply where the decision is?",
+        "problem": (
+            "A household water-filter programme was evaluated in one district over "
+            "twelve weeks, per household. The decision is in a different district, "
+            "per person, over a year. What has to be true for the first number to be "
+            "an answer to the second question — and what does it cost to assume it?"
+        ),
+        "lede": (
+            "This is the failure mode that survives every other check. The "
+            "identification was fine, the fit was fine, the interval was honest, and "
+            "the number was still wrong where it landed, because nobody wrote down "
+            "that the question had changed on the way. Eight facets, a selection "
+            "diagram, four things a graph can say, and a ledger you could hand to "
+            "somebody who has to sign for it."
+        ),
+        "notebook": "nbs/calibrate/",
+        "steps": TRANSPORT_STEPS,
     },
     {
         "key": "scattering",
@@ -4308,6 +4628,356 @@ def benchmarks() -> Any:
         "n": len(entries),
         "n_checks": sum(len(e["rows"]) for e in entries),
         "worst_rel": max(e["worst_rel"] for e in entries),
+    }
+
+
+# ----------------------------------------------------------------------------------
+# guides: the numbers, verdicts and refusals the concept guides quote
+# ----------------------------------------------------------------------------------
+
+
+@section
+def guides() -> Any:
+    """Numbers and verdicts the concept guides quote, each from a real call.
+
+    Three things here are *derived* rather than transcribed, and that is the
+    point of generating them:
+
+    * the eight-facet table is built by perturbing one facet at a time and
+      asking ``transfer_to`` what happens, so the guide cannot claim a facet is
+      bridgeable after the rule changes;
+    * the four transport verdicts come from four selection diagrams;
+    * the hash lines are two constructions of the same spec in one process,
+      which is the weakest claim the page could make and the one it does make.
+    """
+    from axiom.calibrate import (
+        aggregation_level,
+        carryover_window_factor,
+        resolve,
+    )
+    from axiom.core import (
+        UNITS,
+        D,
+        Intervention,
+        Outcome,
+        Population,
+        TimeWindow,
+        Treatment,
+    )
+    from axiom.core.dimensions import BASES, DimensionError
+    from axiom.estimands import Estimand, Level, Quantity
+    from axiom.identify import CausalGraph, selection_diagram, transport_verdict
+    from axiom.surface import GeometricCarryover
+
+    filters = Treatment(
+        name="filters",
+        dimension=D.entity,
+        unit="households reached",
+        description="a ceramic filter delivered and demonstrated",
+    )
+    illness = Outcome(
+        name="illness_days",
+        dimension=D.outcome,
+        unit="days/period",
+        description="reported days of diarrheal illness",
+        aggregation="mean",
+    )
+    source = Estimand(
+        name="filter_effect_A_household_12wk",
+        quantity=Quantity(kind="contrast"),
+        treatment=filters,
+        intervention=Intervention(doses={"filters": 1.0}),
+        reference=Intervention(doses={"filters": 0.0}),
+        outcome=illness,
+        population=Population(
+            name="district_A",
+            strata={"age": {"under_5": 0.34, "5_to_17": 0.29, "adult": 0.37}},
+        ),
+        window=TimeWindow(start=0, stop=12, basis="cumulative"),
+        level=Level(unit="cluster"),
+        dimension=D.outcome,
+    )
+
+    # -- the eight facets, one perturbation each ---------------------------------
+    # Every row is what `transfer_to` actually said when exactly one facet was
+    # moved. A rule change in axiom.estimands rewrites this table on the next
+    # build rather than leaving the page asserting the old one.
+    other_outcome = Outcome(
+        name="clinic_visits",
+        dimension=D.outcome,
+        unit="visits/period",
+        description="a different outcome in the same dimension",
+        aggregation="mean",
+    )
+    spend_outcome = Outcome(
+        name="treatment_cost",
+        dimension=D.currency,
+        unit="USD/period",
+        description="an outcome in a different dimension entirely",
+        aggregation="sum",
+    )
+    perturbations: list[tuple[str, str, dict[str, Any]]] = [
+        (
+            "quantity",
+            "which functional: a contrast, a marginal, a ratio, an elasticity, an area",
+            {"quantity": Quantity(kind="elasticity")},
+        ),
+        (
+            "intervention",
+            "what is set, to what value, and how",
+            {"intervention": Intervention(doses={"filters": 2.0})},
+        ),
+        (
+            "outcome",
+            "which outcome, at what aggregation, in what dimension",
+            {"outcome": other_outcome},
+        ),
+        (
+            "population",
+            "the target population and the strata that define it",
+            {
+                "population": Population(
+                    name="district_B",
+                    strata={"age": {"under_5": 0.21, "5_to_17": 0.24, "adult": 0.55}},
+                )
+            },
+        ),
+        (
+            "window",
+            "the time window and whether it is per-period or cumulative",
+            {"window": TimeWindow(start=0, stop=52, basis="cumulative")},
+        ),
+        (
+            "level",
+            "the unit of analysis and the interference model",
+            {"level": Level(unit="individual")},
+        ),
+        (
+            "conditioning",
+            "the strata the answer is conditional on; empty for a marginal one",
+            {"conditioning": ("age",)},
+        ),
+        (
+            "dimension",
+            "derived from the others and asserted against the declaration",
+            {"outcome": spend_outcome, "dimension": D.currency},
+        ),
+    ]
+    facets = []
+    for facet, fixes, update in perturbations:
+        target = source.model_copy(update={"name": f"{source.name}__{facet}", **update})
+        plan = source.transfer_to(target)
+        entry = next((e for e in plan.entries if e.facet == facet), None)
+        facets.append(
+            {
+                "facet": facet,
+                "fixes": fixes,
+                "changed": ", ".join(sorted(update)),
+                "differing": list(plan.differing),
+                "status": plan.status,
+                "statement": entry.statement if entry else "",
+                "assumptions": [
+                    {
+                        "name": a.name,
+                        "statement": a.statement,
+                        "challenged_by": a.challenged_by,
+                        "state": a.state,
+                    }
+                    for a in (entry.assumptions if entry else ())
+                ],
+                "blocked": (
+                    entry.blocked.reason if entry and entry.blocked is not None else ""
+                ),
+            }
+        )
+
+    # -- what a selection diagram can say ----------------------------------------
+    edges = (
+        "filters -> illness, age -> illness, age -> filters,"
+        " sanitation -> illness, sanitation -> filters"
+    )
+    beliefs = [
+        ("only the age mix differs", {"selection": ["age"]}),
+        ("illness itself behaves differently there", {"selection": ["illness"]}),
+        (
+            "sanitation differs, and nobody measured it",
+            {"unmeasured": ["sanitation"], "selection": ["sanitation"]},
+        ),
+        (
+            "illness differs and age was never measured",
+            {"unmeasured": ["age"], "selection": ["illness"]},
+        ),
+    ]
+    verdicts = []
+    for belief, kw in beliefs:
+        g = CausalGraph.from_edges(edges, name="belief", **kw)  # type: ignore[arg-type]
+        v = transport_verdict(g, "filters", "illness")
+        verdicts.append(
+            {
+                "belief": belief,
+                "status": v.status,
+                "route": v.verdict.route or "",
+                "set": list(v.s_admissible_set),
+                "formula": v.formula,
+                "reason": v.verdict.reason,
+                "missing": list(v.missing),
+            }
+        )
+
+    licensed = CausalGraph.from_edges(edges, selection=["age"], name="two_districts")
+    licensed_verdict = transport_verdict(licensed, "filters", "illness")
+    diagram_edges = [" -> ".join(e) for e in sorted(selection_diagram(licensed).edges)]
+
+    # -- the whole transfer, corrected, with its ledger --------------------------
+    target = source.model_copy(
+        update={
+            "name": "filter_effect_B_person_52wk",
+            "population": Population(
+                name="district_B",
+                strata={"age": {"under_5": 0.21, "5_to_17": 0.24, "adult": 0.55}},
+            ),
+            "window": TimeWindow(start=0, stop=52, basis="cumulative"),
+            "level": Level(unit="individual"),
+        }
+    )
+    plan = source.transfer_to(target)
+    resolved = resolve(
+        plan,
+        transport=licensed_verdict.verdict,
+        corrections=[
+            carryover_window_factor(
+                GeometricCarryover(max_lag=26),
+                {"lam_filters": 0.88},
+                12,
+                treatment="filters",
+            ),
+            aggregation_level(
+                source.level, target.level, cluster_size=5, icc=0.15
+            ),  # type: ignore[list-item]
+        ],
+    )
+    estimate, se = -1.84, 0.41
+    moved, widened = resolved.apply(estimate, se)
+    complete = resolved.ledger.check_complete(plan)
+
+    # -- provenance: the same spec twice, and one field moved --------------------
+    again = Estimand(**source.model_dump())
+    moved_spec = source.model_copy(
+        update={"window": TimeWindow(start=0, stop=13, basis="cumulative")}
+    )
+    diff = source.diff(moved_spec)
+
+    # -- dimensions: a real refusal, and a conversion that is a fact -------------
+    # The estimand's own dimension is derived from its other facets and checked
+    # against the one declared, so a quantity cannot claim to be in a dimension
+    # its own definition does not produce.
+    try:
+        Estimand(
+            **{
+                **source.model_dump(),
+                "name": "mismatched",
+                "dimension": D.currency,
+            }
+        )
+    except DimensionError as exc:
+        declared_refusal = str(exc)
+    else:  # pragma: no cover - the whole point is that this raises
+        declared_refusal = "no refusal — the dimension check changed"
+
+    # axiom ships no unit conversions. A domain declares the ones it needs, and
+    # every conversion is a *fact* (no assumption on its ledger line) precisely
+    # because somebody had to register it.
+    units = type(UNITS)()
+    for unit, base in (("day", "time"), ("week", "time"), ("USD", "currency")):
+        units.declare(unit, base)
+    units.register("week", "day", 7)
+    converted, conversion_line = units.convert(2.0, "week", "day")
+
+    unit_refusals = []
+    for src_u, dst_u in (("USD", "day"), ("day", "month")):
+        try:
+            units.convert(1.0, src_u, dst_u)
+        except Exception as exc:  # noqa: BLE001 - recorded, not swallowed
+            unit_refusals.append(
+                {"src": src_u, "dst": dst_u, "error": type(exc).__name__, "says": str(exc)}
+            )
+        else:  # pragma: no cover
+            unit_refusals.append(
+                {"src": src_u, "dst": dst_u, "error": "", "says": "no refusal"}
+            )
+
+    return {
+        "facets": facets,
+        "n_facets": len(facets),
+        "n_bridgeable": sum(1 for f in facets if not f["blocked"]),
+        "n_blocked": sum(1 for f in facets if f["blocked"]),
+        "transport": {
+            "verdicts": verdicts,
+            "diagram_edges": diagram_edges,
+            "formula": licensed_verdict.formula,
+            "set": list(licensed_verdict.s_admissible_set),
+            "assumption": {
+                "name": licensed_verdict.verdict.assumptions[0].name,
+                "statement": licensed_verdict.verdict.assumptions[0].statement,
+                "challenged_by": licensed_verdict.verdict.assumptions[0].challenged_by,
+            },
+            "graph_hash": licensed_verdict.graph_hash,
+        },
+        "transfer": {
+            "differing": list(plan.differing),
+            "plan_status": plan.status,
+            "status": resolved.status,
+            "factor": round(resolved.factor, 6),
+            "offset": round(resolved.offset, 6),
+            "se_scale": round(resolved.se_scale, 6),
+            "estimate": estimate,
+            "se": se,
+            "moved": round(moved, 4),
+            "widened": round(widened, 4),
+            "se_growth": round(widened / se, 3),
+            "complete": complete.status,
+            "complete_reason": complete.reason,
+            "lines": [
+                {
+                    "kind": ln.kind,
+                    "statement": ln.statement,
+                    "assumption": ln.assumption.name if ln.assumption else "",
+                    "state": ln.assumption.state if ln.assumption else "",
+                    "challenged_by": ln.assumption.challenged_by if ln.assumption else "",
+                }
+                for ln in resolved.ledger.lines
+            ],
+            "n_lines": len(resolved.ledger.lines),
+            "n_unverified": sum(
+                1
+                for ln in resolved.ledger.lines
+                if ln.assumption is not None and ln.assumption.state == "unverified"
+            ),
+        },
+        "provenance": {
+            "source_hash": source.content_hash(),
+            "target_hash": target.content_hash(),
+            "ledger_hash": resolved.ledger.content_hash(),
+            "rebuilt_hash": again.content_hash(),
+            "stable": again.content_hash() == source.content_hash(),
+            "moved_hash": moved_spec.content_hash(),
+            "one_field_changes_it": moved_spec.content_hash() != source.content_hash(),
+            "diff_fields": sorted(diff.changed) if hasattr(diff, "changed") else [],
+            "diff_repr": str(diff),
+            "schema_version": type(source).SCHEMA_VERSION,
+            "envelope_keys": sorted(source.envelope().keys()),
+        },
+        "dimensions": {
+            "declared_refusal": declared_refusal,
+            "outcome": str(D.outcome),
+            "currency": str(D.currency),
+            "bases": sorted(BASES.names),
+            "converted": converted,
+            "conversion_kind": conversion_line.kind,
+            "conversion_statement": conversion_line.statement,
+            "conversion_is_a_fact": conversion_line.assumption is None,
+            "unit_refusals": unit_refusals,
+        },
     }
 
 
