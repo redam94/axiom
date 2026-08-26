@@ -37,3 +37,4 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0021 | [The HTML report is laid out as a paper, not as a page of defaults](0021-the-html-report-as-a-paper.md) | decision |
 | 0022 | [A readout carries the run's own tables and charts, not a summary of them](0022-the-walkthrough-readouts.md) | decision + deviation |
 | 0023 | [Each section is shown only the facts it may state](0023-what-each-section-may-say.md) | decision |
+| 0024 | [A model reads like the mathematics, and builds the same tree](0024-expression-operators.md) | decision |

@@ -10,7 +10,14 @@ disagree with the model.
 Nodes are flat ``Spec`` classes tagged by a ``node`` literal so the recursive
 ``Expr`` union is a pydantic discriminated union and serializes. There is no
 node base class; shared behaviour is in functions (``children``, ``params``,
-``data_names``) and in the interpreters' dispatch tables.
+``data_names``, the operators below) and in the interpreters' dispatch tables.
+
+Nodes carry the arithmetic operators, so ``beta * dose / k`` builds exactly the
+tree ``Div(numerator=Mul(factors=(beta, dose)), denominator=k)`` builds. The
+constructors remain the canonical form and every existing call site is
+unchanged; the operators are there so a model reads like the mathematics. A
+bare number lifts to a *dimensionless* ``Const`` — nothing local could give it
+another dimension — so a literal that carries units is still written out.
 
 Decisions applied from the plan review: ``Pow`` with a rational constant is
 allowed on a dimensioned base and gives ``dim ** q`` (A3); ``ODESystem`` is
@@ -22,11 +29,12 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from fractions import Fraction
-from typing import Annotated, Literal
+from numbers import Real
+from typing import Annotated, Any, Literal, get_args
 
 from pydantic import Field, field_validator, model_validator
 
-from axiom.core.dimensions import Dimension
+from axiom.core.dimensions import Dimension, dimensionless
 from axiom.core.result import NonEmptyStr
 from axiom.core.spec import Spec
 
@@ -78,6 +86,9 @@ ApplyFn = Literal[
 ]
 LinkFn = Literal["identity", "log", "logit"]
 
+_MAX_EXPONENT_DENOMINATOR = 10_000
+"""A rational exponent is snapped to a denominator no larger than this."""
+
 
 PriorFamily = Literal["normal", "halfnormal", "lognormal", "beta", "gamma", "uniform", "fixed"]
 PRIOR_HYPER: dict[str, tuple[str, ...]] = {
@@ -127,6 +138,133 @@ class Prior(Spec):
         return tuple(v for v in self.hyper.values() if isinstance(v, str))
 
 
+# -- operators -------------------------------------------------------------------------
+
+# ``beta * dose / k`` builds the same tree as ``Div(numerator=Mul(factors=(beta, dose)),
+# denominator=k)``; the constructors stay the documented form and nothing in the codebase
+# has to change. Every node class aliases these functions in its body — that is a method
+# to Python and to mypy, and it keeps the promise in this module's docstring that there is
+# no node base class and shared behaviour lives in functions.
+#
+# Deliberately absent: ``__eq__`` and the comparisons. Structural equality is load-bearing
+# (``node_path``, the ``params`` dedup, ``content_hash``, every golden fixture) and there
+# is no comparison node to build.
+
+
+def _lift(v: Expr | float | int) -> Expr:
+    """A bare number becomes a *dimensionless* ``Const``.
+
+    Nothing local could give it another dimension, and a literal that silently
+    borrowed its neighbour's would be exactly the wrong-number bug rule 4 exists
+    to prevent: write ``Const(value=..., dimension=...)`` when it carries units.
+    Any real number is accepted, numpy scalars included; ``bool`` is not, because
+    a ``True`` that quietly became ``1.0`` is never what was meant.
+    """
+    if isinstance(v, bool):
+        raise TypeError("bool is not an expression operand")
+    if isinstance(v, Real):
+        return Const(value=float(v), dimension=dimensionless())
+    if isinstance(v, _EXPR_CLASSES):
+        return v
+    raise TypeError(
+        f"{type(v).__name__} is not an expression operand; expected an Expr node or a number"
+    )
+
+
+def _is_zero(v: object) -> bool:
+    """A bare literal zero, which is the additive identity in *any* dimension.
+
+    Dropping it is what makes ``sum(terms)`` build the tree a reader expects:
+    ``sum`` starts from ``0``, and a dimensionless zero left in the sum would
+    fail the dimension check for every model whose terms carry units. An
+    explicit ``Const(value=0.0, ...)`` node is a term the author wrote and is
+    never dropped.
+    """
+    return isinstance(v, Real) and not isinstance(v, bool) and v == 0
+
+
+def _add(self: Any, other: Expr | float | int) -> Expr:
+    """``a + b``, flattened: ``Add`` is n-ary, so ``(a + b) + c`` and ``a + (b + c)`` are
+    the one three-term node and hash alike. A bare ``0`` on either side is dropped."""
+    if _is_zero(other):
+        return _lift(self)
+    if _is_zero(self):
+        return _lift(other)
+    left, right = _lift(self), _lift(other)
+    terms = (left.terms if isinstance(left, Add) else (left,)) + (
+        right.terms if isinstance(right, Add) else (right,)
+    )
+    return Add(terms=terms)
+
+
+def _radd(self: Any, other: Expr | float | int) -> Expr:
+    return _add(other, self)
+
+
+def _mul(self: Any, other: Expr | float | int) -> Expr:
+    """``a * b``, flattened the same way ``Add`` is."""
+    left, right = _lift(self), _lift(other)
+    factors = (left.factors if isinstance(left, Mul) else (left,)) + (
+        right.factors if isinstance(right, Mul) else (right,)
+    )
+    return Mul(factors=factors)
+
+
+def _rmul(self: Any, other: Expr | float | int) -> Expr:
+    return _mul(other, self)
+
+
+def _neg(self: Any) -> Expr:
+    """``-a`` is ``(-1) · a``, not ``Apply(fn="neg")``: ``neg`` takes a dimensionless
+    argument, and a negated expression keeps whatever dimension it had."""
+    return _mul(-1.0, self)
+
+
+def _sub(self: Any, other: Expr | float | int) -> Expr:
+    if _is_zero(other):
+        return _lift(self)
+    return _add(self, _neg(_lift(other)))
+
+
+def _rsub(self: Any, other: Expr | float | int) -> Expr:
+    return _add(other, _neg(self))
+
+
+def _truediv(self: Any, other: Expr | float | int) -> Expr:
+    return Div(numerator=_lift(self), denominator=_lift(other))
+
+
+def _rtruediv(self: Any, other: Expr | float | int) -> Expr:
+    return Div(numerator=_lift(other), denominator=_lift(self))
+
+
+def _pow(self: Any, other: Expr | Fraction | float | int) -> Expr:
+    """``a ** q``. A number becomes the rational exponent ``Pow`` snaps it to; an
+    expression exponent stays one, and then both sides must be dimensionless."""
+    if isinstance(other, bool):
+        raise TypeError("bool is not an exponent")
+    exponent: Expr | Fraction = (
+        Fraction(other).limit_denominator(_MAX_EXPONENT_DENOMINATOR)
+        if isinstance(other, int | float | Real)
+        else other
+    )
+    return Pow(base=_lift(self), exponent=exponent)
+
+
+def _rpow(self: Any, other: Expr | float | int) -> Expr:
+    return Pow(base=_lift(other), exponent=_lift(self))
+
+
+def _getitem(self: Any, index: Data) -> Expr:
+    """``alpha[unit_index]`` — the unit-level parameter meeting the panel."""
+    if not isinstance(index, Data):
+        raise TypeError(
+            f"an expression is indexed by a Data column of integers, "
+            f"not by {type(index).__name__}"
+        )
+    return Gather(source=_lift(self), index=index)
+
+
 # -- leaves --------------------------------------------------------------------
 
 
@@ -159,6 +297,10 @@ class Const(Spec):
     def is_vector(self) -> bool:
         return isinstance(self.value, tuple)
 
+    __add__, __radd__, __sub__, __rsub__ = _add, _radd, _sub, _rsub
+    __mul__, __rmul__, __truediv__, __rtruediv__ = _mul, _rmul, _truediv, _rtruediv
+    __pow__, __rpow__, __neg__, __getitem__ = _pow, _rpow, _neg, _getitem
+
 
 class Data(Spec):
     """A column of the panel. Its dimension is the one its role declares."""
@@ -166,6 +308,10 @@ class Data(Spec):
     node: Literal["data"] = "data"
     name: NonEmptyStr
     dimension: Dimension
+
+    __add__, __radd__, __sub__, __rsub__ = _add, _radd, _sub, _rsub
+    __mul__, __rmul__, __truediv__, __rtruediv__ = _mul, _rmul, _truediv, _rtruediv
+    __pow__, __rpow__, __neg__, __getitem__ = _pow, _rpow, _neg, _getitem
 
 
 class Param(Spec):
@@ -199,6 +345,10 @@ class Param(Spec):
             out *= n
         return out
 
+    __add__, __radd__, __sub__, __rsub__ = _add, _radd, _sub, _rsub
+    __mul__, __rmul__, __truediv__, __rtruediv__ = _mul, _rmul, _truediv, _rtruediv
+    __pow__, __rpow__, __neg__, __getitem__ = _pow, _rpow, _neg, _getitem
+
 
 # -- combinators ------------------------------------------------------------------
 
@@ -209,12 +359,20 @@ class Add(Spec):
     node: Literal["add"] = "add"
     terms: tuple[Expr, ...] = Field(min_length=1)
 
+    __add__, __radd__, __sub__, __rsub__ = _add, _radd, _sub, _rsub
+    __mul__, __rmul__, __truediv__, __rtruediv__ = _mul, _rmul, _truediv, _rtruediv
+    __pow__, __rpow__, __neg__, __getitem__ = _pow, _rpow, _neg, _getitem
+
 
 class Mul(Spec):
     """Product; exponents add."""
 
     node: Literal["mul"] = "mul"
     factors: tuple[Expr, ...] = Field(min_length=1)
+
+    __add__, __radd__, __sub__, __rsub__ = _add, _radd, _sub, _rsub
+    __mul__, __rmul__, __truediv__, __rtruediv__ = _mul, _rmul, _truediv, _rtruediv
+    __pow__, __rpow__, __neg__, __getitem__ = _pow, _rpow, _neg, _getitem
 
 
 class Div(Spec):
@@ -223,6 +381,10 @@ class Div(Spec):
     node: Literal["div"] = "div"
     numerator: Expr
     denominator: Expr
+
+    __add__, __radd__, __sub__, __rsub__ = _add, _radd, _sub, _rsub
+    __mul__, __rmul__, __truediv__, __rtruediv__ = _mul, _rmul, _truediv, _rtruediv
+    __pow__, __rpow__, __neg__, __getitem__ = _pow, _rpow, _neg, _getitem
 
 
 class Pow(Spec):
@@ -243,8 +405,12 @@ class Pow(Spec):
         if isinstance(v, bool):
             raise ValueError("exponent cannot be bool")
         if isinstance(v, int | float | str):
-            return Fraction(v).limit_denominator(10_000)
+            return Fraction(v).limit_denominator(_MAX_EXPONENT_DENOMINATOR)
         return v
+
+    __add__, __radd__, __sub__, __rsub__ = _add, _radd, _sub, _rsub
+    __mul__, __rmul__, __truediv__, __rtruediv__ = _mul, _rmul, _truediv, _rtruediv
+    __pow__, __rpow__, __neg__, __getitem__ = _pow, _rpow, _neg, _getitem
 
 
 class Apply(Spec):
@@ -268,6 +434,10 @@ class Apply(Spec):
     fn: ApplyFn
     arg: Expr
 
+    __add__, __radd__, __sub__, __rsub__ = _add, _radd, _sub, _rsub
+    __mul__, __rmul__, __truediv__, __rtruediv__ = _mul, _rmul, _truediv, _rtruediv
+    __pow__, __rpow__, __neg__, __getitem__ = _pow, _rpow, _neg, _getitem
+
 
 class Convolve(Spec):
     """Causal convolution of ``signal`` with ``kernel`` along the time axis.
@@ -282,6 +452,10 @@ class Convolve(Spec):
     node: Literal["convolve"] = "convolve"
     signal: Expr
     kernel: Expr
+
+    __add__, __radd__, __sub__, __rsub__ = _add, _radd, _sub, _rsub
+    __mul__, __rmul__, __truediv__, __rtruediv__ = _mul, _rmul, _truediv, _rtruediv
+    __pow__, __rpow__, __neg__, __getitem__ = _pow, _rpow, _neg, _getitem
 
 
 class Reduce(Spec):
@@ -298,6 +472,10 @@ class Reduce(Spec):
     """Keep the reduced axis (length 1) so the result broadcasts against ``arg`` —
     use this to normalize a vector by its sum when parameters carry draw axes."""
 
+    __add__, __radd__, __sub__, __rsub__ = _add, _radd, _sub, _rsub
+    __mul__, __rmul__, __truediv__, __rtruediv__ = _mul, _rmul, _truediv, _rtruediv
+    __pow__, __rpow__, __neg__, __getitem__ = _pow, _rpow, _neg, _getitem
+
 
 class Gather(Spec):
     """``source[..., index]``: pick entries of a vector-valued expression by an integer column.
@@ -311,6 +489,10 @@ class Gather(Spec):
     source: Expr
     index: Data
 
+    __add__, __radd__, __sub__, __rsub__ = _add, _radd, _sub, _rsub
+    __mul__, __rmul__, __truediv__, __rtruediv__ = _mul, _rmul, _truediv, _rtruediv
+    __pow__, __rpow__, __neg__, __getitem__ = _pow, _rpow, _neg, _getitem
+
 
 class Link(Spec):
     """A GLM link applied to a dimensionless argument (after a reference divide)."""
@@ -318,6 +500,10 @@ class Link(Spec):
     node: Literal["link"] = "link"
     fn: LinkFn
     arg: Expr
+
+    __add__, __radd__, __sub__, __rsub__ = _add, _radd, _sub, _rsub
+    __mul__, __rmul__, __truediv__, __rtruediv__ = _mul, _rmul, _truediv, _rtruediv
+    __pow__, __rpow__, __neg__, __getitem__ = _pow, _rpow, _neg, _getitem
 
 
 class Opaque(Spec):
@@ -332,6 +518,10 @@ class Opaque(Spec):
     name: NonEmptyStr
     inputs: tuple[Expr, ...] = ()
     dimension: Dimension
+
+    __add__, __radd__, __sub__, __rsub__ = _add, _radd, _sub, _rsub
+    __mul__, __rmul__, __truediv__, __rtruediv__ = _mul, _rmul, _truediv, _rtruediv
+    __pow__, __rpow__, __neg__, __getitem__ = _pow, _rpow, _neg, _getitem
 
 
 Expr = Annotated[
@@ -350,6 +540,10 @@ Expr = Annotated[
     | Opaque,
     Field(discriminator="node"),
 ]
+
+_EXPR_CLASSES: tuple[type[Spec], ...] = get_args(get_args(Expr)[0])
+"""The union's members, for the operators' operand check. Derived so it cannot drift."""
+
 
 # -- structure -----------------------------------------------------------------------
 
