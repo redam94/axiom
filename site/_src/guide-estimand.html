@@ -1,0 +1,215 @@
+<!--meta {
+  "title": "The estimand, in eight facets · axiom guides",
+  "description": "Two quantities are the same quantity only if all eight facets match: quantity, intervention, outcome, population, window, level, conditioning, dimension. Six of the eight can be bridged by a named assumption; two cannot be bridged at all.",
+  "active": "guides"
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · writing the question down</p>
+    <h1 style="max-width:16ch">The estimand, in eight facets</h1>
+    <p class="lede prose mt">“The effect of filters on illness” is not a quantity. It is a
+      topic. Somewhere between that phrase and a number, eight separate decisions get made —
+      and if they are made silently, they get made differently by each person in the
+      room.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Why bother</p>
+      <h2>The argument nobody can win</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>Two analysts study the same programme and report different effects. The meeting
+          that follows is about methods: whose model, whose covariates, whose software. It
+          goes badly, because that is not what differs.</p>
+        <p>One computed the effect of going from no filter to one filter, per household, over
+          the twelve weeks observed, in the district studied. The other computed the effect
+          per person, at steady state, in the district being decided for. Both are correct.
+          They are answers to different questions, and no comparison of methods will ever
+          reveal that.</p>
+        <p>An <code>Estimand</code> is that question written down completely enough that the
+          two are visibly different objects — with different content hashes — before anybody
+          argues about the number.</p>
+      </div>
+      <div>
+        <div class="note">
+          <p class="note-t">The rule</p>
+          <p class="small" style="margin:0">Two quantities are the <strong>same
+            quantity</strong> if and only if all eight facets match. Not “are roughly
+            comparable”. Match. Anything else is a transfer, and a transfer needs a
+            licence.</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">It is a key, not paperwork</p>
+          <p class="small" style="margin:0">The eight facets exist because they are exactly
+            the dimensions along which an answer can fail to carry to a new setting. That is
+            why <code>Estimand</code> is the object that
+            <a href="guide-transport.html">transportability</a> is defined on, and why the
+            list has eight entries rather than however many felt tidy.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The eight</p>
+      <h2>What each one fixes, and what it takes to change it</h2>
+      <p>The table below is not transcribed from documentation. Each row was produced by
+        taking one estimand, changing <em>only</em> that facet, and asking axiom what
+        happens — so it cannot describe a rule the library no longer has.</p>
+    </div>
+
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">quantity</span>
+        <span class="ledger-s">{{guides.facets[0].fixes}}<br>
+          <em class="muted small">{{guides.facets[0].blocked}}</em></span>
+        <span class="ledger-v"><span class="tag is-bad">{{guides.facets[0].status}}</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">intervention</span>
+        <span class="ledger-s">{{guides.facets[1].fixes}}<br>
+          <em class="muted small">licensed by
+          <code>{{guides.facets[1].assumptions[0].name}}</code> — challenged by
+          {{guides.facets[1].assumptions[0].challenged_by}}</em></span>
+        <span class="ledger-v"><span class="tag is-warn">{{guides.facets[1].status}}</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">outcome</span>
+        <span class="ledger-s">{{guides.facets[2].fixes}}<br>
+          <em class="muted small">licensed by
+          <code>{{guides.facets[2].assumptions[0].name}}</code> — challenged by
+          {{guides.facets[2].assumptions[0].challenged_by}}</em></span>
+        <span class="ledger-v"><span class="tag is-warn">{{guides.facets[2].status}}</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">population</span>
+        <span class="ledger-s">{{guides.facets[3].fixes}}<br>
+          <em class="muted small">licensed by
+          <code>{{guides.facets[3].assumptions[0].name}}</code> — challenged by
+          {{guides.facets[3].assumptions[0].challenged_by}}</em></span>
+        <span class="ledger-v"><span class="tag is-warn">{{guides.facets[3].status}}</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">window</span>
+        <span class="ledger-s">{{guides.facets[4].fixes}}<br>
+          <em class="muted small">licensed by
+          <code>{{guides.facets[4].assumptions[0].name}}</code> and
+          <code>{{guides.facets[4].assumptions[1].name}}</code> — challenged by
+          {{guides.facets[4].assumptions[0].challenged_by}}</em></span>
+        <span class="ledger-v"><span class="tag is-warn">{{guides.facets[4].status}}</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">level</span>
+        <span class="ledger-s">{{guides.facets[5].fixes}}<br>
+          <em class="muted small">licensed by
+          <code>{{guides.facets[5].assumptions[0].name}}</code> — challenged by
+          {{guides.facets[5].assumptions[0].challenged_by}}</em></span>
+        <span class="ledger-v"><span class="tag is-warn">{{guides.facets[5].status}}</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">conditioning</span>
+        <span class="ledger-s">{{guides.facets[6].fixes}}<br>
+          <em class="muted small">licensed by
+          <code>{{guides.facets[6].assumptions[0].name}}</code> — challenged by
+          {{guides.facets[6].assumptions[0].challenged_by}}</em></span>
+        <span class="ledger-v"><span class="tag is-warn">{{guides.facets[6].status}}</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">dimension</span>
+        <span class="ledger-s">{{guides.facets[7].fixes}}<br>
+          <em class="muted small">{{guides.facets[7].blocked}}</em></span>
+        <span class="ledger-v"><span class="tag is-bad">{{guides.facets[7].status}}</span></span>
+      </div>
+    </div>
+
+    <p class="prose mt">{{guides.n_bridgeable}} of the {{guides.n_facets}} can be bridged by
+      naming an assumption. {{guides.n_blocked}} cannot be bridged at all, and that is the
+      more interesting number.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The two that cannot be bridged</p>
+      <h2>Refusal is a feature, and it is rare enough to matter</h2>
+    </div>
+    <div class="grid-2">
+      <div>
+        <h3>A different functional is a different question</h3>
+        <p class="small muted">A contrast — how much does illness change between no filter
+          and one filter — and an elasticity — what percentage change follows a one percent
+          change in coverage — are not two versions of one quantity. There is no assumption
+          that turns one into the other, so axiom does not offer one:
+          <em>{{guides.facets[0].blocked}}</em></p>
+        <p class="small">The fix is not an argument. It is to compute the elasticity from
+          the fitted surface, which is a thing you can do — but by re-deriving it, not by
+          relabelling the contrast you already have.</p>
+      </div>
+      <div>
+        <h3>A different dimension is a different thing</h3>
+        <p class="small muted">Illness days and treatment cost are not commensurable at any
+          exchange rate the library is entitled to invent:
+          <em>{{guides.facets[7].blocked}}</em></p>
+        <p class="small">Converting between them is a decision about value, and it belongs
+          to whoever owns the decision — recorded explicitly, not smuggled in by a model
+          that quietly added a currency to an outcome. See
+          <a href="guide-dimensions.html">dimensions, units and scope</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The habit</p>
+      <h2>Write the target estimand before you look at any data</h2>
+    </div>
+    <div class="rules">
+      <div class="rule-i">
+        <div class="rule-n">01</div>
+        <div>
+          <h4>It stops the wrong argument</h4>
+          <p>When two answers disagree, the first question becomes “are these the same
+            estimand?” rather than “whose model is better”. Often they are not, and the
+            disagreement dissolves in a minute instead of a fortnight.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">02</div>
+        <div>
+          <h4>It is a commitment device</h4>
+          <p>Written first, hashed, and stored, the estimand is evidence that the question
+            was not adjusted after the answer arrived. That is most of what
+            pre-registration buys, at almost no cost. See
+            <a href="guide-provenance.html">provenance</a>.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">03</div>
+        <div>
+          <h4>It makes reuse safe instead of tempting</h4>
+          <p>Six months later, somebody will find your number and use it. With an estimand
+            attached, <code>transfer_to</code> tells them in one call what would have to be
+            true — and refuses when nothing would be. Without one, they will just use
+            it.</p>
+        </div>
+      </div>
+    </div>
+    <p class="prose mt">The <a href="tutorial.html">Making a model travel</a> tutorial builds
+      exactly this comparison in its first step, and
+      <a href="guide-transport.html">the transportability guide</a> carries it all the way to
+      a corrected number and its ledger.</p>
+  </div>
+</section>
+
+<!--GUIDE-NAV-->

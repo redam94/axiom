@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guides — causal modelling from the ground up · axiom</title>
+<meta name="description" content="Short, plain-language guides to causal inference and to the part most workflows skip: writing a model down precisely enough that its answer can be carried somewhere else. Confounding, identification, estimands, transportability, provenance.">
+<meta property="og:title" content="Guides — causal modelling from the ground up · axiom">
+<meta property="og:description" content="Short, plain-language guides to causal inference and to the part most workflows skip: writing a model down precisely enough that its answer can be carried somewhere else. Confounding, identification, estimands, transportability, provenance.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="guides">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="guides.html">Guides</a><a class="navx" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Concepts · no installation required</p>
+    <h1 style="max-width:20ch">The ideas the rest of&nbsp;this site assumes</h1>
+    <p class="lede prose mt">The tutorials show axiom doing things. These pages explain what
+      the things are, for a reader who has not met them — what makes a question causal,
+      why a confounder is not just another variable, and why a study that was right where it
+      ran can be wrong where it is used.</p>
+    <p class="prose mt">You do not need Python to read any of them. Where a page shows code,
+      the output beside it is what that code printed when this page was built.</p>
+    <div class="hero-cta">
+      <a class="btn btn-1" href="guide-causal-question.html">Start at the beginning →</a>
+      <a class="btn btn-2" href="guide-transport.html">Jump to transportability</a>
+      <a class="btn btn-2" href="glossary.html">Glossary</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">If you are short of time</p>
+      <h2>Three ways through</h2>
+    </div>
+    <div class="grid-3">
+      <div>
+        <h3>“I need to make a decision from data I already have.”</h3>
+        <p class="small muted">Read <a href="guide-causal-question.html">prediction is not
+          intervention</a>, then <a href="guide-confounding.html">confounders, colliders and
+          mediators</a>, then <a href="guide-identification.html">identification comes before
+          estimation</a>. That is enough to know whether your data can answer your question
+          at all — which is usually the finding.</p>
+      </div>
+      <div>
+        <h3>“Somebody handed me a number and I have to use it.”</h3>
+        <p class="small muted">Go straight to <a href="guide-estimand.html">the estimand in
+          eight facets</a> and then <a href="guide-transport.html">why a model does not
+          travel</a>. Most numbers that turn out to be wrong were not wrongly computed. They
+          were correctly computed for a slightly different question.</p>
+      </div>
+      <div>
+        <h3>“I have to defend this in six months.”</h3>
+        <p class="small muted"><a href="guide-provenance.html">Provenance</a> first, then
+          <a href="guide-critique.html">what would have to be true to overturn this</a>. The
+          useful artefact is not the estimate. It is the list of things you assumed and what
+          each one would take to break.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The shelf</p>
+      <h2>Twelve guides, in order</h2>
+      <p>Each stands on its own, and each assumes the ones above it. Fifteen minutes a
+        page, give or take.</p>
+    </div>
+<div class="section-head" style="margin-top:48px">
+  <p class="eyebrow">Shelf 1 · 4 guides</p>
+  <h2>Foundations</h2>
+  <p>What a causal question is, and why the usual tools do not answer one.</p>
+</div>
+<div class="cards"><a class="card" href="guide-causal-question.html">
+  <p class="card-n">01</p>
+  <h3>Prediction is not intervention</h3>
+  <p>A model that forecasts an outcome perfectly can be silent about every decision you might take. Why, and what the difference is.</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="guide-confounding.html">
+  <p class="card-n">02</p>
+  <h3>Confounders, colliders and mediators</h3>
+  <p>The same variable, in three positions. Adjusting for the wrong one does not fail loudly — it returns a number.</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="guide-graphs.html">
+  <p class="card-n">03</p>
+  <h3>Writing your beliefs down</h3>
+  <p>A causal graph is not a diagram of the data. It is a set of claims about mechanism, and it is testable.</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="guide-identification.html">
+  <p class="card-n">04</p>
+  <h3>Identification comes before estimation</h3>
+  <p>Whether an effect is recoverable at all is a question about the graph, not the sample. It is answerable before you fit anything.</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a></div><div class="section-head" style="margin-top:48px">
+  <p class="eyebrow">Shelf 2 · 4 guides</p>
+  <h2>Writing the question down so it travels</h2>
+  <p>The part most workflows skip, and the reason a sound number ends up answering the wrong question somewhere else.</p>
+</div>
+<div class="cards"><a class="card" href="guide-estimand.html">
+  <p class="card-n">05</p>
+  <h3>The estimand, in eight facets</h3>
+  <p>Two quantities are the same quantity only if all eight match. Six of the eight can be bridged; two cannot.</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="guide-dimensions.html">
+  <p class="card-n">06</p>
+  <h3>Dimensions, units and scope</h3>
+  <p>Three different kinds of mismatch that all look like a unit problem. Only one of them is.</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="guide-transport.html">
+  <p class="card-n">07</p>
+  <h3>Why a model does not travel</h3>
+  <p>A selection diagram, four things it can say, and the formula that carries an effect from where it was measured to where it is used.</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="guide-provenance.html">
+  <p class="card-n">08</p>
+  <h3>Provenance: hashes, ledgers, and the paper trail</h3>
+  <p>Every number carries how it got here — or it is not evidence, it is a number in a slide.</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a></div><div class="section-head" style="margin-top:48px">
+  <p class="eyebrow">Shelf 3 · 4 guides</p>
+  <h2>Doing the work</h2>
+  <p>Where the ideas above turn into decisions about what to measure and what to believe.</p>
+</div>
+<div class="cards"><a class="card" href="guide-priors.html">
+  <p class="card-n">09</p>
+  <h3>Priors that mean something</h3>
+  <p>A prior is a claim about magnitudes in units you can argue about, not a regularization knob.</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="guide-design.html">
+  <p class="card-n">10</p>
+  <h3>Deciding what to measure</h3>
+  <p>Power is not the question. What the decision turns on is the question, and it changes what you should go and measure.</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="guide-calibration.html">
+  <p class="card-n">11</p>
+  <h3>Folding an experiment in</h3>
+  <p>An experiment measures one thing precisely. Calibration is how that one thing constrains a model of everything else.</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a><a class="card" href="guide-critique.html">
+  <p class="card-n">12</p>
+  <h3>What would have to be true to overturn this?</h3>
+  <p>The most useful output of an analysis is usually the size of the confounder that would erase it.</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Then what</p>
+      <h2>Where these go next</h2>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f"><a href="tutorial.html">Tutorials</a></span>
+        <span class="ledger-s">Five problems carried all the way through, a step to a page,
+          every step's output captured from a real run. Start with <em>Making a model
+          travel</em> if you came here for transportability.</span>
+        <span class="ledger-v">5</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f"><a href="examples.html">Examples</a></span>
+        <span class="ledger-s">The same ideas in twelve fields — agriculture, epidemiology,
+          ecology, education, manufacturing — each a short worked walkthrough.</span>
+        <span class="ledger-v">12</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f"><a href="identify.html">The five pillars</a></span>
+        <span class="ledger-s">What the library actually does, pillar by pillar, with the
+          numbers each one produced on this build.</span>
+        <span class="ledger-v">5</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f"><a href="glossary.html">Glossary</a></span>
+        <span class="ledger-s">Every term these guides use, defined once, with a link to
+          the page that explains it properly.</span>
+        <span class="ledger-v">&rarr;</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

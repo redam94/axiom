@@ -37,6 +37,7 @@ WORKFLOW = [
 # HYPER-3 is an analysis story and GEIGER-1911 is a design one, and the nav should say
 # which is which rather than making a reader open both to find out.
 EXTRA = [
+    ("guides", "Guides"),
     ("tutorial", "Tutorial"),
     ("examples", "Examples"),
     ("benchmarks", "Benchmarks"),
@@ -44,6 +45,113 @@ EXTRA = [
     ("rutherford", "GEIGER-1911"),
     ("api", "API"),
 ]
+
+# The concept shelf. The rest of the site shows axiom doing things; these pages
+# explain the ideas the doing rests on, for a reader who has not met them.
+#
+# Declared once, here, because three things have to agree and drift if they are
+# written three times: the index, the reading order, and the previous/next feet
+# on the pages themselves. A guide with no row does not appear anywhere, which
+# is the failure you want — a broken link is worse than a missing card.
+GUIDE_SHELVES: list[tuple[str, str, list[tuple[str, str, str]]]] = [
+    (
+        "Foundations",
+        "What a causal question is, and why the usual tools do not answer one.",
+        [
+            (
+                "guide-causal-question",
+                "Prediction is not intervention",
+                "A model that forecasts an outcome perfectly can be silent about "
+                "every decision you might take. Why, and what the difference is.",
+            ),
+            (
+                "guide-confounding",
+                "Confounders, colliders and mediators",
+                "The same variable, in three positions. Adjusting for the wrong one "
+                "does not fail loudly — it returns a number.",
+            ),
+            (
+                "guide-graphs",
+                "Writing your beliefs down",
+                "A causal graph is not a diagram of the data. It is a set of claims "
+                "about mechanism, and it is testable.",
+            ),
+            (
+                "guide-identification",
+                "Identification comes before estimation",
+                "Whether an effect is recoverable at all is a question about the "
+                "graph, not the sample. It is answerable before you fit anything.",
+            ),
+        ],
+    ),
+    (
+        "Writing the question down so it travels",
+        "The part most workflows skip, and the reason a sound number ends up "
+        "answering the wrong question somewhere else.",
+        [
+            (
+                "guide-estimand",
+                "The estimand, in eight facets",
+                "Two quantities are the same quantity only if all eight match. "
+                "Six of the eight can be bridged; two cannot.",
+            ),
+            (
+                "guide-dimensions",
+                "Dimensions, units and scope",
+                "Three different kinds of mismatch that all look like a unit "
+                "problem. Only one of them is.",
+            ),
+            (
+                "guide-transport",
+                "Why a model does not travel",
+                "A selection diagram, four things it can say, and the formula that "
+                "carries an effect from where it was measured to where it is used.",
+            ),
+            (
+                "guide-provenance",
+                "Provenance: hashes, ledgers, and the paper trail",
+                "Every number carries how it got here — or it is not evidence, it "
+                "is a number in a slide.",
+            ),
+        ],
+    ),
+    (
+        "Doing the work",
+        "Where the ideas above turn into decisions about what to measure and what "
+        "to believe.",
+        [
+            (
+                "guide-priors",
+                "Priors that mean something",
+                "A prior is a claim about magnitudes in units you can argue about, "
+                "not a regularization knob.",
+            ),
+            (
+                "guide-design",
+                "Deciding what to measure",
+                "Power is not the question. What the decision turns on is the "
+                "question, and it changes what you should go and measure.",
+            ),
+            (
+                "guide-calibration",
+                "Folding an experiment in",
+                "An experiment measures one thing precisely. Calibration is how "
+                "that one thing constrains a model of everything else.",
+            ),
+            (
+                "guide-critique",
+                "What would have to be true to overturn this?",
+                "The most useful output of an analysis is usually the size of the "
+                "confounder that would erase it.",
+            ),
+        ],
+    ),
+]
+
+GUIDE_ORDER: list[tuple[str, str, str]] = [
+    guide for _, _, guides in GUIDE_SHELVES for guide in guides
+]
+GUIDE_TITLES: dict[str, str] = {slug: title for slug, title, _ in GUIDE_ORDER}
 
 TOKEN = re.compile(r"\{\{\s*([a-zA-Z0-9_.\[\]-]+?)\s*(?::([^}]+))?\s*\}\}")
 
@@ -693,6 +801,61 @@ def math_html(items: list[dict[str, str]]) -> str:
     return f'<div class="eqs">{"".join(rows)}</div>'
 
 
+def guides_html() -> str:
+    """The guides index: one block per shelf, one card per guide, in reading order."""
+    blocks = []
+    for shelf, (name, blurb, guides) in enumerate(GUIDE_SHELVES):
+        cards = "".join(f"""<a class="card" href="{slug}.html">
+  <p class="card-n">{i:02d}</p>
+  <h3>{html.escape(title)}</h3>
+  <p>{html.escape(blurb_)}</p>
+  <div class="card-f">
+    <p class="card-go">Read it <span aria-hidden="true">&rarr;</span></p>
+  </div>
+</a>""" for i, (slug, title, blurb_) in enumerate(guides, start=1 + sum(
+            len(g) for _, _, g in GUIDE_SHELVES[:shelf])))
+        blocks.append(f"""<div class="section-head" style="margin-top:48px">
+  <p class="eyebrow">Shelf {shelf + 1} · {len(guides)} guides</p>
+  <h2>{html.escape(name)}</h2>
+  <p>{html.escape(blurb)}</p>
+</div>
+<div class="cards">{cards}</div>""")
+    return "".join(blocks)
+
+
+def guide_nav_html(slug: str) -> str:
+    """The foot of one guide: where it sits in the shelf, and what is either side.
+
+    Built from ``GUIDE_ORDER`` rather than written into the fragments, so
+    re-ordering the shelf cannot leave a page pointing at the guide that used to
+    follow it. A slug with no row is a hard error for the same reason.
+    """
+    slugs = [s for s, _, _ in GUIDE_ORDER]
+    if slug not in slugs:
+        raise SystemExit(f"{slug}: no row in build.GUIDE_SHELVES; add one or rename it")
+    i = slugs.index(slug)
+    links = []
+    if i:
+        prev = slugs[i - 1]
+        links.append(
+            f'<a class="btn btn-2" href="{prev}.html">&larr; '
+            f"{html.escape(GUIDE_TITLES[prev])}</a>"
+        )
+    links.append('<a class="btn btn-2" href="guides.html">All the guides</a>')
+    if i + 1 < len(slugs):
+        nxt = slugs[i + 1]
+        links.append(
+            f'<a class="btn btn-1" href="{nxt}.html">'
+            f'{html.escape(GUIDE_TITLES[nxt])} &rarr;</a>'
+        )
+    return f"""<section>
+  <div class="wrap">
+    <p class="eyebrow">Guide {i + 1} of {len(slugs)}</p>
+    <div class="hero-cta" style="margin-top:12px">{"".join(links)}</div>
+  </div>
+</section>"""
+
+
 def tutorial_html(data: dict[str, Any]) -> str:
     """The tutorial index: one block per series, one card per step.
 
@@ -962,8 +1125,14 @@ def main() -> int:
         body = body.replace("<!--EXAMPLES-->", examples_html(data))
         body = body.replace("<!--TUTORIAL-->", tutorial_html(data))
         body = body.replace("<!--BENCHMARKS-->", benchmarks_html(data))
-        body = substitute(body, data, frag.name)
+        body = body.replace("<!--GUIDES-->", guides_html())
         page = frag.stem
+        # Every guide gets the same foot, generated from the shelf. Doing it here
+        # rather than in the fragments is what stops a re-ordered shelf leaving a
+        # page pointing at whatever used to come next.
+        if page.startswith("guide-"):
+            body = body.replace("<!--GUIDE-NAV-->", guide_nav_html(page))
+        body = substitute(body, data, frag.name)
         out = SHELL.format(
             title=html.escape(meta["title"]),
             description=html.escape(meta["description"]),

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2. Ask the graph about the population — axiom tutorial</title>
+<meta name="description" content="Step 2 of 6: Is a difference between two populations a difference that matters?">
+<meta property="og:title" content="2. Ask the graph about the population — axiom tutorial">
+<meta property="og:description" content="Step 2 of 6: Is a difference between two populations a difference that matters?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx" href="guides.html">Guides</a><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Making a model travel · step 2 of 6</p>
+    <h1 style="max-width:18ch">Ask the graph about the population</h1>
+    <p class="lede prose mt">Is a difference between two populations a difference that matters?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>Populations always differ somehow. The question is whether they differ in a way that changes the effect. That is a claim about mechanisms, so it is answered on a graph — a **selection diagram**, in which every node whose mechanism differs between the two populations gets an extra parent <code>S[node]</code> standing for &#x27;this one is not the same here&#x27;.</p>
+      <p><strong>The verdict is not &#x27;yes&#x27;. It is a formula, a named assumption, the set that licenses it, and the thing that would refute it. The source&#x27;s age-specific effects reweighted by district B&#x27;s age mix — which is why the strata weights on <code>Population</code> were not decoration.</strong></p>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 2</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>from axiom.identify import CausalGraph, selection_diagram, transport_verdict
+
+# What we believe about how illness comes about, and what differs
+# between the districts: the age composition, and nothing else.
+world = CausalGraph.from_edges(
+    &quot;filters -&gt; illness, age -&gt; illness, age -&gt; filters,&quot;
+    &quot; sanitation -&gt; illness, sanitation -&gt; filters&quot;,
+    selection=[&quot;age&quot;],
+    name=&quot;two_districts&quot;,
+)
+
+print(&quot;the selection diagram makes the difference a node:&quot;)
+for edge in sorted(selection_diagram(world).edges):
+    print(&quot;   &quot;, &quot; -&gt; &quot;.join(edge))
+print()
+
+verdict = transport_verdict(world, &quot;filters&quot;, &quot;illness&quot;)
+print(&quot;status  :&quot;, verdict.status)
+print(&quot;route   :&quot;, verdict.verdict.route)
+print(&quot;set     :&quot;, verdict.s_admissible_set)
+print(&quot;formula :&quot;, verdict.formula)
+print()
+for a in verdict.verdict.assumptions:
+    print(f&quot;assumption   {a.name}  [{a.state}]&quot;)
+    print(f&quot;  says       {a.statement}&quot;)
+    print(f&quot;  refuted by {a.challenged_by}&quot;)</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>the selection diagram makes the difference a node:
+    S[age] -&gt; age
+    age -&gt; filters
+    age -&gt; illness
+    filters -&gt; illness
+    sanitation -&gt; filters
+    sanitation -&gt; illness
+
+status  : identified
+route   : s_admissible_adjustment
+set     : (&#x27;age&#x27;,)
+formula : P*(illness|do(filters)) = Σ_{age} P(illness|do(filters),age) P*(age)
+
+assumption   s_admissibility  [satisfied]
+  says       Z=[&#x27;age&#x27;] is S-admissible for the effect of filters on illness: (illness ⊥ S | filters, Z) in G_bar(filters) of the selection diagram, so P*(illness|do(filters)) = Σ_{age} P(illness|do(filters),age) P*(age)
+  refuted by a mechanism difference between the populations the diagram omits</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="transport-1-two-questions.html"><span class="wt-toc-n">1</span>The number you have is not the number you need</a><a class="wt-toc-i" href="transport-2-ask-the-graph.html"><span class="wt-toc-n">2</span>Ask the graph about the population</a><a class="wt-toc-i" href="transport-3-four-answers.html"><span class="wt-toc-n">3</span>Four things the graph can say</a><a class="wt-toc-i" href="transport-4-what-a-graph-cannot-settle.html"><span class="wt-toc-n">4</span>The facets a graph cannot settle</a><a class="wt-toc-i" href="transport-5-correct-it.html"><span class="wt-toc-n">5</span>Correct it, and watch the interval widen</a><a class="wt-toc-i" href="transport-6-the-ledger.html"><span class="wt-toc-n">6</span>The ledger is the deliverable</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="transport-1-two-questions.html">&larr; 1 · The number you have is not the number you need</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="transport-3-four-answers.html">3 · Four things the graph can say &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

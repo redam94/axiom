@@ -2,8 +2,17 @@
 
 A static site, hostable on GitHub Pages with no build step at serve time. Eleven
 authored pages -- a landing page, one per pillar, the examples index, the
-benchmarks, two case studies and a searchable API map -- plus one generated
-walkthrough page per example in `examples/`.
+benchmarks, two case studies and a searchable API map -- plus a fourteen-page
+concept shelf under `guides.html`, and one generated walkthrough page per example
+in `examples/`.
+
+The rest of the site shows axiom *doing* things. The guides explain the ideas the
+doing rests on, for a reader who has not met them -- and in particular the thread
+the other pages assume rather than teach: that a quantity has to be written down
+precisely enough to be carried somewhere else, and that the carrying has to leave
+a record. Four of the twelve guides are that thread (`guide-estimand`,
+`guide-dimensions`, `guide-transport`, `guide-provenance`), and the
+`transfer` tutorial series runs the same story as executable steps.
 
 The two case studies are deliberately opposite shapes. **HYPER-3** is an analysis
 story: a trial runs and a stopping rule fires. **GEIGER-1911** is a design one --
@@ -23,6 +32,7 @@ site/
   index.html  identify.html  design.html  calibrate.html  surface.html
   meta.html  examples.html  benchmarks.html              <- generated; committed
   case-study.html  rutherford.html  api.html
+  guides.html  guide-*.html  glossary.html               <- the concept shelf
   example-01-....html ... example-12-....html            <- one per walkthrough,
                                                             generated from data
   _src/*.html          content fragments (edit these)
@@ -75,6 +85,33 @@ It catches what a browser would show and nothing else would:
   descending domain — a funnel's standard error, which grows downward — drew a
   single meaningless label and no gridlines.
 - **Anything that throws.**
+
+## Where the guides come from
+
+The twelve concept guides are authored fragments -- prose and hand-drawn SVG, not
+generated pages. But they are held to the same rule as everything else: a guide may
+not assert a number, a verdict or a refusal it did not get from a real call. The
+`guides` section of `generate.py` produces those, and three of them are *derived*
+rather than transcribed, which is the whole reason they are generated:
+
+- **The eight-facet table** on `guide-estimand` is built by perturbing one facet at a
+  time and asking `Estimand.transfer_to` what happens. So the page cannot go on
+  claiming a facet is bridgeable after the licensing rule changes -- the row changes
+  with it, including which two facets come back `blocked`.
+- **The four transport verdicts** on `guide-transport` come from four selection
+  diagrams, not from a table in a docstring. They are genuinely four different
+  answers: the transport formula, trivial transportability (the target identifies it
+  from its own data and does not need the source study), an S-admissible set
+  containing something nobody measured, and `unsupported`.
+- **The refusals** on `guide-dimensions` are real exceptions, caught while the
+  section runs, printed with the message the library actually raised.
+
+The shelf itself -- which guides exist, in what order, grouped how -- is declared
+once in `build.py` as `GUIDE_SHELVES`, because three things have to agree and drift
+if written three times: the index cards, the reading order, and the previous/next
+foot on each page. `build.py` substitutes `<!--GUIDES-->` on the index and
+`<!--GUIDE-NAV-->` on each guide. A `guide-*.html` fragment with no row in
+`GUIDE_SHELVES` is a hard build error rather than a page nothing links to.
 
 ## Where the API page comes from
 

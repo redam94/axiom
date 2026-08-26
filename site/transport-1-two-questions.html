@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1. The number you have is not the number you need — axiom tutorial</title>
+<meta name="description" content="Step 1 of 6: You have a defensible result. Why can you not just use it?">
+<meta property="og:title" content="1. The number you have is not the number you need — axiom tutorial">
+<meta property="og:description" content="Step 1 of 6: You have a defensible result. Why can you not just use it?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx" href="guides.html">Guides</a><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Making a model travel · step 1 of 6</p>
+    <h1 style="max-width:18ch">The number you have is not the number you need</h1>
+    <p class="lede prose mt">You have a defensible result. Why can you not just use it?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>A filter-distribution programme ran in district A: uptake recorded per household, illness days counted over twelve weeks, and identification settled — a defensible effect. The decision is in district B, where the ministry budgets per person and over a year. Nothing about the study was wrong. It simply measured a different quantity from the one the decision needs.</p>
+      <p><strong><code>differing_facets</code> is the whole problem stated in one line. Three of the eight facets differ, and until they are named, &#x27;we have a good estimate&#x27; is a claim about district A that somebody is about to spend district B&#x27;s money on.</strong></p>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 1</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>from axiom.core import D, Intervention, Outcome, Population, TimeWindow, Treatment
+from axiom.estimands import Estimand, Level, Quantity
+
+filters = Treatment(
+    name=&quot;filters&quot;, dimension=D.entity, unit=&quot;households reached&quot;,
+    description=&quot;a ceramic filter delivered and demonstrated&quot;,
+)
+illness = Outcome(
+    name=&quot;illness_days&quot;, dimension=D.outcome, unit=&quot;days/period&quot;,
+    description=&quot;reported days of diarrheal illness&quot;, aggregation=&quot;mean&quot;,
+)
+shared = dict(
+    quantity=Quantity(kind=&quot;contrast&quot;),
+    treatment=filters,
+    intervention=Intervention(doses={&quot;filters&quot;: 1.0}),
+    reference=Intervention(doses={&quot;filters&quot;: 0.0}),
+    outcome=illness,
+    dimension=D.outcome,
+)
+
+# What the trial measured.
+measured = Estimand(
+    name=&quot;filter_effect_A_household_12wk&quot;,
+    population=Population(
+        name=&quot;district_A&quot;,
+        strata={&quot;age&quot;: {&quot;under_5&quot;: 0.34, &quot;5_to_17&quot;: 0.29, &quot;adult&quot;: 0.37}},
+    ),
+    window=TimeWindow(start=0, stop=12, basis=&quot;cumulative&quot;),
+    level=Level(unit=&quot;cluster&quot;),
+    **shared,
+)
+
+# What the decision needs.
+needed = Estimand(
+    name=&quot;filter_effect_B_person_52wk&quot;,
+    population=Population(
+        name=&quot;district_B&quot;,
+        strata={&quot;age&quot;: {&quot;under_5&quot;: 0.21, &quot;5_to_17&quot;: 0.24, &quot;adult&quot;: 0.55}},
+    ),
+    window=TimeWindow(start=0, stop=52, basis=&quot;cumulative&quot;),
+    level=Level(unit=&quot;individual&quot;),
+    **shared,
+)
+
+print(&quot;measured :&quot;, measured.name)
+print(&quot;needed   :&quot;, needed.name)
+print()
+print(&quot;facets that differ:&quot;, measured.differing_facets(needed))
+print()
+print(&quot;these are different objects, and they say so:&quot;)
+print(&quot;  measured&quot;, measured.content_hash()[:16])
+print(&quot;  needed  &quot;, needed.content_hash()[:16])</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>measured : filter_effect_A_household_12wk
+needed   : filter_effect_B_person_52wk
+
+facets that differ: (&#x27;population&#x27;, &#x27;window&#x27;, &#x27;level&#x27;)
+
+these are different objects, and they say so:
+  measured adaf9c9abfa4b2fd
+  needed   6a864f41935b7358</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="transport-1-two-questions.html"><span class="wt-toc-n">1</span>The number you have is not the number you need</a><a class="wt-toc-i" href="transport-2-ask-the-graph.html"><span class="wt-toc-n">2</span>Ask the graph about the population</a><a class="wt-toc-i" href="transport-3-four-answers.html"><span class="wt-toc-n">3</span>Four things the graph can say</a><a class="wt-toc-i" href="transport-4-what-a-graph-cannot-settle.html"><span class="wt-toc-n">4</span>The facets a graph cannot settle</a><a class="wt-toc-i" href="transport-5-correct-it.html"><span class="wt-toc-n">5</span>Correct it, and watch the interval widen</a><a class="wt-toc-i" href="transport-6-the-ledger.html"><span class="wt-toc-n">6</span>The ledger is the deliverable</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="transport-2-ask-the-graph.html">2 · Ask the graph about the population &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

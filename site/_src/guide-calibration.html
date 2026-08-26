@@ -1,0 +1,178 @@
+<!--meta {
+  "title": "Folding an experiment in · axiom guides",
+  "description": "An experiment measures one thing precisely. Calibration is how that one thing constrains a model of everything else — as a prior, as a likelihood, or as a hard constraint — and why the choice of route changes the answer.",
+  "active": "guides"
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · doing the work</p>
+    <h1 style="max-width:18ch">Folding an experiment in</h1>
+    <p class="lede prose mt">You have an observational model of the whole system and one
+      clean experimental measurement of a small corner of it. The experiment is far more
+      trustworthy and far less complete. Neither on its own answers the decision. Calibration
+      is how the trustworthy thing disciplines the complete one.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Why not just use the experiment</p>
+      <h2>The experiment answers a smaller question than the decision asks</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>On the <a href="calibrate.html">calibrate page</a>, an experiment measures a
+          first-period lift of <strong>{{calibrate.setup.measurement.estimate:.3f}}</strong>
+          with a standard error of {{calibrate.setup.measurement.se:.3f}}. That is a
+          precise, randomized, defensible number.</p>
+        <p>The decision needs something else: the steady-state effect of a dose the
+          experiment never tested, which is
+          <strong>{{calibrate.setup.truth_decision}}</strong>. The experiment measured one
+          point on a curve; the decision asks about a different point on the same curve,
+          after the dynamics have settled.</p>
+        <p>So the experiment cannot answer the question by itself, and the observational
+          model — fitted on data where treatment and confounder correlate at
+          {{calibrate.setup.confounding_correlation:.2f}} — cannot be trusted on its own
+          either. Calibration is the operation that uses each for what it is good at.</p>
+      </div>
+      <div>
+        <div class="note">
+          <p class="note-t">This is a transfer, and it needs a licence</p>
+          <p class="small" style="margin:0">Moving from “first-period lift at the tested
+            dose” to “steady-state effect at the decision dose” crosses the
+            <code>window</code> and <code>intervention</code> facets. Every word of
+            <a href="guide-transport.html">the transportability guide</a> applies, and the
+            corrections are recorded in a ledger rather than absorbed into a fitted
+            parameter.</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">The measurement knows what it measured</p>
+          <p class="small" style="margin:0">A <code>Measurement</code> in axiom carries the
+            estimand it is a measurement <em>of</em> — here
+            <code>{{calibrate.routes.constraint}}</code>, with target hash
+            <code>{{calibrate.setup.measurement.target_hash}}</code>. That is what lets the
+            transfer be checked rather than assumed.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The three routes</p>
+      <h2>Where the experiment enters the model changes what it does</h2>
+      <p>There is no single “incorporate the experiment” operation. There are three, they
+        make different claims, and they give different answers on the same data.</p>
+    </div>
+
+    <div class="grid-3">
+      <div>
+        <h3>As a prior</h3>
+        <p class="small muted">Turn the measurement into a prior on the relevant parameter
+          and fit as usual. Simple and familiar — but it says the experiment constrains
+          <em>that parameter</em>, when what it actually constrains is a derived quantity
+          the parameter only partly controls.</p>
+        <p class="small"><strong>Says:</strong> “my belief about this parameter is now
+          centred here.”</p>
+      </div>
+      <div>
+        <h3>As a likelihood term</h3>
+        <p class="small muted">Add the measurement to the likelihood as an observation of
+          the derived quantity, computed through the same <code>forward()</code> the model
+          uses. The experiment then constrains whatever combination of parameters actually
+          produces it.</p>
+        <p class="small"><strong>Says:</strong> “whatever the parameters are, they must
+          reproduce this measurement.”</p>
+      </div>
+      <div>
+        <h3>As a hard constraint</h3>
+        <p class="small muted">Require the model to match the measurement exactly. Rarely
+          right — it treats a measurement with a standard error as though it had none, and
+          it makes the experiment unfalsifiable by the rest of the data.</p>
+        <p class="small"><strong>Says:</strong> “this is true, full stop.”</p>
+      </div>
+    </div>
+
+    <div class="ledger mt">
+      <div class="ledger-row">
+        <span class="ledger-f">{{calibrate.routes.rows[0].label}}</span>
+        <span class="ledger-s">The observational fit alone. The parameter lands
+          {{calibrate.routes.rows[0].sd_above_truth:.2f}} standard deviations from the truth,
+          and the realized decision quantity is
+          {{calibrate.routes.rows[0].realized:.2f}} against a truth of
+          {{calibrate.setup.truth_decision}}.</span>
+        <span class="ledger-v"><span class="tag is-bad">{{calibrate.routes.rows[0].verdict}}</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">{{calibrate.routes.rows[1].label}}</span>
+        <span class="ledger-s">The measurement folded in as a prior on the amplitude. The
+          parameter is now close to the truth — and the decision quantity still disagrees
+          with the experiment, because pinning the parameter is not the same as reproducing
+          the measurement.</span>
+        <span class="ledger-v"><span class="tag is-bad">{{calibrate.routes.rows[1].verdict}}</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">{{calibrate.routes.rows[2].label}}</span>
+        <span class="ledger-s">The measurement as a likelihood term on the derived quantity.
+          The parameter is less precisely pinned, and that is the point: the model is free to
+          find any parameters that <em>reproduce the experiment</em>, and the realized
+          quantity lands at {{calibrate.routes.rows[2].realized:.2f}}.</span>
+        <span class="ledger-v"><span class="tag is-good">{{calibrate.routes.rows[2].verdict}}</span></span>
+      </div>
+    </div>
+
+    <p class="prose mt">The middle row is the instructive one. By the obvious diagnostic —
+      is the parameter near its true value — the prior route looks best of the three. By the
+      only diagnostic that matters — does the model agree with the experiment on the
+      quantity the experiment measured — it fails. A parameter is not a quantity, and
+      calibrating the first does not calibrate the second.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The check</p>
+      <h2>Agreement, stated as a number</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>After calibrating, ask the model to predict the thing the experiment measured, and
+          compare. That comparison is a <em>z</em> statistic against the measurement's own
+          standard error, and it is the check that distinguishes the three routes above:
+          {{calibrate.routes.rows[0].z:.2f}}, {{calibrate.routes.rows[1].z:.2f}} and
+          {{calibrate.routes.rows[2].z:.2f}} respectively.</p>
+        <p>A model that cannot reproduce the experiment it was calibrated against has not
+          been calibrated. It has been nudged, and the nudge went somewhere else in the
+          parameter space.</p>
+        <p>When the model and the experiment genuinely disagree after an honest fold-in,
+          that is information — usually about the transfer, not the experiment. The window
+          was wrong, the population differed, or the dose the experiment tested is on a part
+          of the curve the model has the wrong shape for.</p>
+      </div>
+      <div class="stack">
+        <div class="note">
+          <p class="note-t">Calibration is a loop, not a step</p>
+          <p class="small" style="margin:0">Fit, find what the decision is most sensitive to,
+            measure that, fold it in, re-decide, and look again at what is now most
+            uncertain. Each turn tells you what the next experiment should be. The
+            <a href="tutorial.html">depot tutorial</a> runs one full turn, and the
+            experiment reverses the decision the observational fit would have made.</p>
+        </div>
+        <div class="note">
+          <p class="note-t">Keep the ledger across the loop</p>
+          <p class="small" style="margin:0">Every fold-in writes lines — the pooling of
+            measurements, the design factor, the transfer corrections. After three turns
+            that ledger is the only account of why the current model believes what it
+            believes. See <a href="guide-provenance.html">provenance</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--GUIDE-NAV-->

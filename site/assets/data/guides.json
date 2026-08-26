@@ -1,0 +1,330 @@
+{
+ "facets": [
+  {
+   "facet": "quantity",
+   "fixes": "which functional: a contrast, a marginal, a ratio, an elasticity, an area",
+   "changed": "quantity",
+   "differing": [
+    "quantity"
+   ],
+   "status": "blocked",
+   "statement": "functional differs: contrast vs elasticity",
+   "assumptions": [],
+   "blocked": "a different functional is a different quantity; re-express first"
+  },
+  {
+   "facet": "intervention",
+   "fixes": "what is set, to what value, and how",
+   "changed": "intervention",
+   "differing": [
+    "intervention"
+   ],
+   "status": "downgraded",
+   "statement": "intervention differs in dose, version, or timing",
+   "assumptions": [
+    {
+     "name": "surface_correct_between_doses",
+     "statement": "the response surface is correct between the source and target dose levels",
+     "challenged_by": "curvature; the chord-versus-marginal correction",
+     "state": "unverified"
+    }
+   ],
+   "blocked": ""
+  },
+  {
+   "facet": "outcome",
+   "fixes": "which outcome, at what aggregation, in what dimension",
+   "changed": "outcome",
+   "differing": [
+    "outcome"
+   ],
+   "status": "downgraded",
+   "statement": "outcome differs",
+   "assumptions": [
+    {
+     "name": "outcome_commensurability",
+     "statement": "illness_days is commensurable with (or a valid surrogate for) clinic_visits",
+     "challenged_by": "usually not falsifiable; must be asserted",
+     "state": "unverified"
+    },
+    {
+     "name": "outcome_unit_conversion_registered",
+     "statement": "a conversion from days/period to visits/period is registered in the unit system",
+     "challenged_by": "UnitSystem.factor raising",
+     "state": "unverified"
+    }
+   ],
+   "blocked": ""
+  },
+  {
+   "facet": "population",
+   "fixes": "the target population and the strata that define it",
+   "changed": "population",
+   "differing": [
+    "population"
+   ],
+   "status": "downgraded",
+   "statement": "population differs: district_A vs district_B",
+   "assumptions": [
+    {
+     "name": "s_admissibility",
+     "statement": "the effect transports from district_A to district_B given an S-admissible set",
+     "challenged_by": "overlap; moderator interaction in meta",
+     "state": "unverified"
+    }
+   ],
+   "blocked": ""
+  },
+  {
+   "facet": "window",
+   "fixes": "the time window and whether it is per-period or cumulative",
+   "changed": "window",
+   "differing": [
+    "window"
+   ],
+   "status": "downgraded",
+   "statement": "time window or basis differs",
+   "assumptions": [
+    {
+     "name": "stationary_dynamics",
+     "statement": "the response dynamics are stationary across the two windows",
+     "challenged_by": "half-life against window length",
+     "state": "unverified"
+    },
+    {
+     "name": "carryover_contained",
+     "statement": "carryover from doses in the window is contained within it",
+     "challenged_by": "half-life against window length",
+     "state": "unverified"
+    }
+   ],
+   "blocked": ""
+  },
+  {
+   "facet": "level",
+   "fixes": "the unit of analysis and the interference model",
+   "changed": "level",
+   "differing": [
+    "level"
+   ],
+   "status": "downgraded",
+   "statement": "level differs",
+   "assumptions": [
+    {
+     "name": "linear_aggregation",
+     "statement": "the effect aggregates linearly from cluster to individual level, or an explicit aggregation model is supplied",
+     "challenged_by": "the Jensen gap under a nonlinear response",
+     "state": "unverified"
+    }
+   ],
+   "blocked": ""
+  },
+  {
+   "facet": "conditioning",
+   "fixes": "the strata the answer is conditional on; empty for a marginal one",
+   "changed": "conditioning",
+   "differing": [
+    "conditioning"
+   ],
+   "status": "downgraded",
+   "statement": "conditioning strata differ: ['age']",
+   "assumptions": [
+    {
+     "name": "target_strata_weights_known",
+     "statement": "the target population's weights over ['age'] are known",
+     "challenged_by": "the provenance of the strata distribution",
+     "state": "satisfied"
+    }
+   ],
+   "blocked": ""
+  },
+  {
+   "facet": "dimension",
+   "fixes": "derived from the others and asserted against the declaration",
+   "changed": "dimension, outcome",
+   "differing": [
+    "outcome",
+    "dimension"
+   ],
+   "status": "blocked",
+   "statement": "dimension differs: Y vs $",
+   "assumptions": [],
+   "blocked": "quantities of different dimension are different quantities"
+  }
+ ],
+ "n_facets": 8,
+ "n_bridgeable": 6,
+ "n_blocked": 2,
+ "transport": {
+  "verdicts": [
+   {
+    "belief": "only the age mix differs",
+    "status": "identified",
+    "route": "s_admissible_adjustment",
+    "set": [
+     "age"
+    ],
+    "formula": "P*(illness|do(filters)) = \u03a3_{age} P(illness|do(filters),age) P*(age)",
+    "reason": "",
+    "missing": []
+   },
+   {
+    "belief": "illness itself behaves differently there",
+    "status": "identified",
+    "route": "trivial",
+    "set": [
+     "age",
+     "sanitation"
+    ],
+    "formula": "P*(illness|do(filters)) = \u03a3_{age,sanitation} P*(illness|filters,age,sanitation) P*(age,sanitation)",
+    "reason": "",
+    "missing": []
+   },
+   {
+    "belief": "sanitation differs, and nobody measured it",
+    "status": "downgraded",
+    "route": "s_admissible_adjustment_unmeasured",
+    "set": [
+     "sanitation"
+    ],
+    "formula": "P*(illness|do(filters)) = \u03a3_{sanitation} P(illness|do(filters),sanitation) P*(sanitation)",
+    "reason": "",
+    "missing": []
+   },
+   {
+    "belief": "illness differs and age was never measured",
+    "status": "unsupported",
+    "route": "",
+    "set": [],
+    "formula": "",
+    "reason": "selection nodes ['S[illness]'] stay d-connected to illness given filters in G_bar(filters) and the target graph alone has no measured back-door or front-door set; no S-admissible pre-treatment set found; the complete sID algorithm (Bareinboim & Pearl 2014 Thm 3 recursion) is not implemented",
+    "missing": [
+     "sid_recursion"
+    ]
+   }
+  ],
+  "diagram_edges": [
+   "S[age] -> age",
+   "age -> filters",
+   "age -> illness",
+   "filters -> illness",
+   "sanitation -> filters",
+   "sanitation -> illness"
+  ],
+  "formula": "P*(illness|do(filters)) = \u03a3_{age} P(illness|do(filters),age) P*(age)",
+  "set": [
+   "age"
+  ],
+  "assumption": {
+   "name": "s_admissibility",
+   "statement": "Z=['age'] is S-admissible for the effect of filters on illness: (illness \u22a5 S | filters, Z) in G_bar(filters) of the selection diagram, so P*(illness|do(filters)) = \u03a3_{age} P(illness|do(filters),age) P*(age)",
+   "challenged_by": "a mechanism difference between the populations the diagram omits"
+  },
+  "graph_hash": "7d7407f973adf97c18706614ff786ef953d1f79f461aaf0dbcdfea29ab33f01d"
+ },
+ "transfer": {
+  "differing": [
+   "population",
+   "window",
+   "level"
+  ],
+  "plan_status": "downgraded",
+  "status": "downgraded",
+  "factor": 1.22905,
+  "offset": 0.0,
+  "se_scale": 1.767767,
+  "estimate": -1.84,
+  "se": 0.41,
+  "moved": -2.2615,
+  "widened": 0.8908,
+  "se_growth": 2.173,
+  "complete": "identified",
+  "complete_reason": "every differing facet accounted for exactly once (population, window, level)",
+  "lines": [
+   {
+    "kind": "facet:population",
+    "statement": "population differs: district_A vs district_B",
+    "assumption": "s_admissibility",
+    "state": "satisfied",
+    "challenged_by": "overlap; moderator interaction in meta"
+   },
+   {
+    "kind": "facet:window",
+    "statement": "0.813636 of the carryover mass lands within 12 period(s); scaled to the steady-state total by 1.22905",
+    "assumption": "carryover_contained",
+    "state": "unverified",
+    "challenged_by": "half-life against window length"
+   },
+   {
+    "kind": "facet:level",
+    "statement": "cluster read at individual level: point factor 1 (additive effect), SE factor 1.76777",
+    "assumption": "linear_aggregation",
+    "state": "unverified",
+    "challenged_by": "the Jensen gap under a nonlinear response"
+   },
+   {
+    "kind": "transport",
+    "statement": "transport verdict identified via s_admissible_adjustment",
+    "assumption": "s_admissibility",
+    "state": "satisfied",
+    "challenged_by": "a mechanism difference between the populations the diagram omits"
+   }
+  ],
+  "n_lines": 4,
+  "n_unverified": 2
+ },
+ "provenance": {
+  "source_hash": "adaf9c9abfa4b2fddea9998b92d6ddb3193ff6ff8142626539b65a7a7b276137",
+  "target_hash": "6a864f41935b73585e5f0dde5b0bd58727401b0ea0b347855ab4fca33df5a4b6",
+  "ledger_hash": "14c74efa68608cace20fd0b80f04d0aae03cac6df32908ce2ad3847ca22bfc36",
+  "rebuilt_hash": "adaf9c9abfa4b2fddea9998b92d6ddb3193ff6ff8142626539b65a7a7b276137",
+  "stable": true,
+  "moved_hash": "854b16405ece6c638495c9f148cc3a5b7ec38d13bb2718e664aa5240dea7cc31",
+  "one_field_changes_it": true,
+  "diff_fields": [
+   "window.stop"
+  ],
+  "diff_repr": "spec='axiom.estimands.spec:Estimand' changed={'window.stop': (12, 13)}",
+  "schema_version": "1",
+  "envelope_keys": [
+   "data",
+   "schema_version",
+   "spec"
+  ]
+ },
+ "dimensions": {
+  "declared_refusal": "estimand 'mismatched': declared dimension $ but a contrast of Y over N derives to Y",
+  "outcome": "Y",
+  "currency": "$",
+  "bases": [
+   "area",
+   "count",
+   "currency",
+   "entity",
+   "exposure_count",
+   "mass",
+   "outcome",
+   "pressure",
+   "time",
+   "volume"
+  ],
+  "converted": 14.0,
+  "conversion_kind": "unit_conversion",
+  "conversion_statement": "converted week to day by factor 7",
+  "conversion_is_a_fact": true,
+  "unit_refusals": [
+   {
+    "src": "USD",
+    "dst": "day",
+    "error": "DimensionError",
+    "says": "cannot convert 'USD' [currency] to 'day' [time]: different dimensions"
+   },
+   {
+    "src": "day",
+    "dst": "month",
+    "error": "UnitConversionError",
+    "says": "unit 'month' is not declared in the unit system"
+   }
+  ]
+ }
+}

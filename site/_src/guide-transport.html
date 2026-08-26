@@ -1,0 +1,441 @@
+<!--meta {
+  "title": "Why a model does not travel — transportability · axiom",
+  "description": "A study can be correctly designed, correctly identified and correctly fitted, and still give the wrong answer where the decision is taken. Selection diagrams, S-admissibility, the transport formula, and the four things a graph can say.",
+  "active": "guides"
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · transportability</p>
+    <h1 style="max-width:18ch">Why a model does not travel</h1>
+    <p class="lede prose mt">Every check in the previous guides can pass, and the number can
+      still be wrong where it lands. Identification asks whether an effect is recoverable
+      <em>from these data</em>. Transportability asks the question nobody writes down:
+      recoverable <em>for whom</em>, and does that match who you are about to decide
+      for.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The situation</p>
+      <h2>Nothing went wrong, and the answer is wrong</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>A household water-filter programme was evaluated in district A. Uptake was
+          recorded per household, illness days were counted over twelve weeks, and
+          identification was settled properly. The estimate is defensible: filters cut
+          reported illness by <strong>{{guides.transfer.estimate}}</strong> days per
+          period, with a standard error of {{guides.transfer.se}}.</p>
+        <p>The decision is in district B. The ministry budgets <em>per person</em>, not per
+          household, and plans over <em>a year</em>, not twelve weeks. District B is also
+          older — a third of district A is under five, against a fifth of district B — and
+          that matters, because filters help small children most.</p>
+        <p>Nobody is proposing anything dishonest. Somebody is about to put
+          {{guides.transfer.estimate}} into a slide about district B, and three separate
+          things about that number are not true there.</p>
+      </div>
+      <div>
+        <div class="note">
+          <p class="note-t">This is the failure that survives every other check</p>
+          <p class="small" style="margin:0">A confounder shows up as a biased estimate you
+            can hunt for. A bad prior shows up in a posterior predictive check. A transfer
+            that was never written down shows up as nothing at all: the number is correct,
+            the interval is honest, the code has no bug, and the answer is to a question
+            nobody asked.</p>
+        </div>
+        <div class="ledger mt">
+          <div class="ledger-row">
+            <span class="ledger-f">measured</span>
+            <span class="ledger-s">district A · per household · 12 weeks</span>
+            <span class="ledger-v">{{guides.transfer.estimate}}</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">needed</span>
+            <span class="ledger-s">district B · per person · 52 weeks</span>
+            <span class="ledger-v">?</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Step one</p>
+      <h2>Name what differs, before arguing about it</h2>
+      <p>A quantity in axiom is an <a href="guide-estimand.html"><code>Estimand</code></a>,
+        and it is the same quantity as another only if all eight of its facets match.
+        Comparing the two here gives the argument its actual shape: three facets differ, and
+        they are not the same kind of problem as each other.</p>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">population</span>
+        <span class="ledger-s">district A's age mix is not district B's, and the effect
+          depends on age. This one is a claim about <strong>mechanism</strong>, so a graph
+          can settle it.</span>
+        <span class="ledger-v"><span class="tag">graph</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">window</span>
+        <span class="ledger-s">twelve weeks caught part of the effect of a filter; a year
+          catches more of it. This one is a claim about <strong>dynamics</strong>, so the
+          carryover kernel settles it.</span>
+        <span class="ledger-v"><span class="tag">surface</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">level</span>
+        <span class="ledger-s">a household is not a person, and five people in one house
+          are not five independent observations. This one is a claim about
+          <strong>aggregation</strong>.</span>
+        <span class="ledger-v"><span class="tag">design</span></span>
+      </div>
+    </div>
+    <p class="prose mt">Written down, the disagreement stops being “is this number
+      applicable” — a question nobody can win — and becomes three specific questions with
+      three different owners. That is most of the value, and it happens before any
+      mathematics.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Step two</p>
+      <h2>A selection diagram: where two worlds differ</h2>
+      <p>Populations always differ somehow. The question is never “are they different” —
+        they are — but whether they differ <em>in a way that changes this effect</em>. That
+        is a claim about mechanisms, so it is written on a graph.</p>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <figure class="fig">
+          <div class="fig-head">
+            <p class="fig-t">The same causal structure, plus one node for the difference</p>
+            <p class="fig-s">Every variable whose mechanism differs between the two districts
+              gets an extra parent <code>S[·]</code>, meaning “this one is not the same
+              here”. Here only the age composition differs.</p>
+          </div>
+          <svg viewBox="0 0 420 250" role="img" width="100%"
+               aria-label="A selection diagram. A square S-node points to age; age points to
+                           filters and to illness; sanitation points to filters and to
+                           illness; filters points to illness.">
+            <defs>
+              <marker id="tarr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6"
+                      markerHeight="6" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--ink-3)"/>
+              </marker>
+              <marker id="tarrs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6"
+                      markerHeight="6" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--boundary)"/>
+              </marker>
+            </defs>
+            <!-- S node: the only thing that differs between the districts -->
+            <rect x="16" y="34" width="62" height="30" rx="4" fill="none"
+                  stroke="var(--boundary)" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <text x="47" y="54" text-anchor="middle" fill="var(--boundary)"
+                  font-family="var(--f-mono)" font-size="13">S[age]</text>
+            <line x1="80" y1="49" x2="128" y2="49" stroke="var(--boundary)"
+                  stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#tarrs)"/>
+
+            <circle cx="152" cy="49" r="26" fill="var(--panel)" stroke="var(--rule-2)"/>
+            <text x="152" y="54" text-anchor="middle" fill="var(--ink)"
+                  font-family="var(--f-mono)" font-size="12">age</text>
+
+            <circle cx="152" cy="196" r="30" fill="var(--panel)" stroke="var(--rule-2)"/>
+            <text x="152" y="201" text-anchor="middle" fill="var(--ink)"
+                  font-family="var(--f-mono)" font-size="11">sanitation</text>
+
+            <circle cx="290" cy="49" r="28" fill="var(--panel)" stroke="var(--rule-2)"/>
+            <text x="290" y="54" text-anchor="middle" fill="var(--ink)"
+                  font-family="var(--f-mono)" font-size="12">filters</text>
+
+            <circle cx="290" cy="196" r="28" fill="var(--panel)" stroke="var(--rule-2)"/>
+            <text x="290" y="201" text-anchor="middle" fill="var(--ink)"
+                  font-family="var(--f-mono)" font-size="12">illness</text>
+
+            <line x1="180" y1="49" x2="258" y2="49" stroke="var(--ink-3)"
+                  marker-end="url(#tarr)"/>
+            <line x1="165" y1="74" x2="277" y2="172" stroke="var(--ink-3)"
+                  marker-end="url(#tarr)"/>
+            <line x1="180" y1="188" x2="258" y2="150" stroke="var(--ink-3)"
+                  marker-end="url(#tarr)"/>
+            <line x1="182" y1="196" x2="258" y2="196" stroke="var(--ink-3)"
+                  marker-end="url(#tarr)"/>
+            <line x1="290" y1="77" x2="290" y2="164" stroke="var(--ink-3)"
+                  marker-end="url(#tarr)"/>
+          </svg>
+          <p class="stamp"><b>axiom.identify.selection_diagram</b>(graph) ·
+            graph hash {{guides.transport.graph_hash}}</p>
+        </figure>
+      </div>
+      <div class="stack">
+        <p class="prose">Once the difference is a node, ordinary graph reasoning answers the
+          question. If the S-node can be separated from the outcome by conditioning on some
+          measured set <code>Z</code>, the source study's <code>Z</code>-specific effects
+          can be reweighted to the target's own distribution of <code>Z</code>. That set is
+          called <strong>S-admissible</strong>, and the reweighting is the
+          <strong>transport formula</strong>.</p>
+        <div>
+          <p class="readout-l">What axiom returns for this diagram</p>
+          <div class="readout">
+            <div class="readout-v" style="font-size:1.1rem">{{guides.transport.formula}}</div>
+            <p class="readout-d">S-admissible set:
+              <code>{{guides.transport.set}}</code> — so district A's age-specific effects,
+              reweighted by district B's age mix. This is why the strata weights on
+              <code>Population</code> are not decoration.</p>
+          </div>
+        </div>
+        <div class="note">
+          <p class="note-t">The verdict is not the word “yes”</p>
+          <p class="small" style="margin:0">It is a formula, the set that licenses it, a
+            named assumption — <code>{{guides.transport.assumption.name}}</code> — and the
+            thing that would refute it:
+            <em>{{guides.transport.assumption.challenged_by}}</em>. An answer you cannot
+            attack is not an answer you can trust.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Step three</p>
+      <h2>Four things a graph can say</h2>
+      <p>The same question, asked against four different beliefs about <em>what</em> differs
+        between the districts. Only one is the easy case, and one of the others is better
+        news than it looks.</p>
+    </div>
+
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f"><span class="tag is-good">{{guides.transport.verdicts[0].status}}</span></span>
+        <span class="ledger-s"><strong>{{guides.transport.verdicts[0].belief}}.</strong>
+          The transport formula applies: reweight the source's effects by the target's own
+          distribution. Route <code>{{guides.transport.verdicts[0].route}}</code>.</span>
+        <span class="ledger-v"><code>{{guides.transport.verdicts[0].set}}</code></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f"><span class="tag is-good">{{guides.transport.verdicts[1].status}}</span></span>
+        <span class="ledger-s"><strong>{{guides.transport.verdicts[1].belief}}.</strong>
+          Route <code>{{guides.transport.verdicts[1].route}}</code> — and this is the
+          surprise. If the target population can identify the effect from its own data,
+          you do not need the source study at all. The right move is to stop arguing about
+          transfer and go and estimate it there.</span>
+        <span class="ledger-v"><code>{{guides.transport.verdicts[1].set}}</code></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f"><span class="tag is-warn">{{guides.transport.verdicts[2].status}}</span></span>
+        <span class="ledger-s"><strong>{{guides.transport.verdicts[2].belief}}.</strong>
+          A set that would license the transfer exists — but it contains something nobody
+          recorded, so the formula is not computable from what you have. Downgraded, not
+          refused: the route is named so you know what to go and measure.</span>
+        <span class="ledger-v"><code>{{guides.transport.verdicts[2].set}}</code></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f"><span class="tag is-bad">{{guides.transport.verdicts[3].status}}</span></span>
+        <span class="ledger-s"><strong>{{guides.transport.verdicts[3].belief}}.</strong>
+          None of the three sufficient conditions holds. Note the word: <em>unsupported</em>,
+          not <em>impossible</em>.</span>
+        <span class="ledger-v"><code>{{guides.transport.verdicts[3].missing}}</code></span>
+      </div>
+    </div>
+
+    <div class="note mt" style="max-width:var(--measure)">
+      <p class="note-t">Why the last one does not say “no”</p>
+      <p class="small" style="margin:0">axiom implements three <em>sufficient</em>
+        conditions for transportability, not the complete decision procedure. When none of
+        them fires, a valid transfer may still exist that these three cannot see. Saying
+        “not transportable” would be a claim about the world; saying
+        <code>unsupported</code> with <code>{{guides.transport.verdicts[3].missing}}</code>
+        attached is a claim about the evidence, which is the only one the library is
+        entitled to make.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Step four</p>
+      <h2>What the assumptions cost</h2>
+      <p>A graph settles one facet out of the three. Twelve weeks is not fifty-two weeks and
+        a household is not a person, and no causal graph has an opinion about either. Each
+        remaining facet is licensed by a named assumption, and each assumption comes with an
+        operator that says what the correction actually <em>is</em>.</p>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="ledger">
+          <div class="ledger-row">
+            <span class="ledger-f">factor</span>
+            <span class="ledger-s">on the estimate — the share of the filter's effect that
+              a twelve-week window missed</span>
+            <span class="ledger-v">{{guides.transfer.factor:.4f}}</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">offset</span>
+            <span class="ledger-s">nothing here is additive</span>
+            <span class="ledger-v">{{guides.transfer.offset:.4f}}</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">se&nbsp;scale</span>
+            <span class="ledger-s">on the standard error alone — the design effect of
+              reading a household measurement per person</span>
+            <span class="ledger-v">{{guides.transfer.se_scale:.4f}}</span>
+          </div>
+        </div>
+      </div>
+      <div class="stack">
+        <div>
+          <p class="readout-l">What the study measured</p>
+          <div class="readout">
+            <div class="readout-v">{{guides.transfer.estimate}} &plusmn;
+              {{guides.transfer.se}}</div>
+            <p class="readout-d">district A · per household · 12 weeks</p>
+          </div>
+        </div>
+        <div>
+          <p class="readout-l">What it becomes where the decision is</p>
+          <div class="readout">
+            <div class="readout-v">{{guides.transfer.moved}} &plusmn;
+              {{guides.transfer.widened}}</div>
+            <p class="readout-d">district B · per person · 52 weeks — the point estimate
+              grew, and the standard error grew by a factor of
+              <strong>{{guides.transfer.se_growth}}</strong></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="prose mt">The widening is the honest part, and it is the part a spreadsheet
+      never does. Reading a household-level measurement at the person level does not make
+      the effect less certain by accident. It makes it less certain because five people in
+      one house share a water source, and pretending they are five independent observations
+      is exactly the mistake that produces intervals nobody should believe.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Step five</p>
+      <h2>The thing you actually hand over</h2>
+      <p>Not the number. The number, plus every boundary it crossed and what was assumed to
+        get it across. That list is built by construction rather than by discipline, and it
+        refuses to be incomplete.</p>
+    </div>
+
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">{{guides.transfer.lines[0].kind}}</span>
+        <span class="ledger-s">{{guides.transfer.lines[0].statement}}<br>
+          <em class="muted small">rests on
+          <code>{{guides.transfer.lines[0].assumption}}</code> — challenged by
+          {{guides.transfer.lines[0].challenged_by}}</em></span>
+        <span class="ledger-v"><span class="tag is-good">{{guides.transfer.lines[0].state}}</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">{{guides.transfer.lines[1].kind}}</span>
+        <span class="ledger-s">{{guides.transfer.lines[1].statement}}<br>
+          <em class="muted small">rests on
+          <code>{{guides.transfer.lines[1].assumption}}</code> — challenged by
+          {{guides.transfer.lines[1].challenged_by}}</em></span>
+        <span class="ledger-v"><span class="tag is-warn">{{guides.transfer.lines[1].state}}</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">{{guides.transfer.lines[2].kind}}</span>
+        <span class="ledger-s">{{guides.transfer.lines[2].statement}}<br>
+          <em class="muted small">rests on
+          <code>{{guides.transfer.lines[2].assumption}}</code> — challenged by
+          {{guides.transfer.lines[2].challenged_by}}</em></span>
+        <span class="ledger-v"><span class="tag is-warn">{{guides.transfer.lines[2].state}}</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">{{guides.transfer.lines[3].kind}}</span>
+        <span class="ledger-s">{{guides.transfer.lines[3].statement}}<br>
+          <em class="muted small">rests on
+          <code>{{guides.transfer.lines[3].assumption}}</code> — challenged by
+          {{guides.transfer.lines[3].challenged_by}}</em></span>
+        <span class="ledger-v"><span class="tag is-good">{{guides.transfer.lines[3].state}}</span></span>
+      </div>
+    </div>
+
+    <div class="grid-2 mt">
+      <div>
+        <p class="readout-l">Completeness</p>
+        <div class="readout">
+          <div class="readout-v" style="font-size:1.1rem">{{guides.transfer.complete}}</div>
+          <p class="readout-d">{{guides.transfer.complete_reason}} — a ledger that skipped a
+            differing facet would fail this check rather than reaching a reader.</p>
+        </div>
+      </div>
+      <div>
+        <p class="readout-l">Overall status</p>
+        <div class="readout">
+          <div class="readout-v" style="font-size:1.1rem">{{guides.transfer.status}}</div>
+          <p class="readout-d">Not <code>identified</code>, and correctly so:
+            {{guides.transfer.n_unverified}} of the {{guides.transfer.n_lines}} lines are
+            still <code>unverified</code>. Nothing here has checked the half-life against
+            the window or the Jensen gap against a nonlinear response. The status describes
+            the evidence; it is not a grade.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What to take away</p>
+      <h2>Three habits, in order of how much they save you</h2>
+    </div>
+    <div class="rules">
+      <div class="rule-i">
+        <div class="rule-n">01</div>
+        <div>
+          <h4>Write down the question you need before you look at the one you have</h4>
+          <p>Almost all of the value on this page came from the first step, which was free.
+            Naming three differing facets turned an unwinnable argument about whether a
+            number “applies” into three specific questions with three different owners.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">02</div>
+        <div>
+          <h4>Make the difference between populations a node, not an adjective</h4>
+          <p>“Different population” is not a finding. <code>S[age]</code> is: it says
+            exactly which mechanism differs, it can be argued with, and once it is on the
+            graph the question of whether that difference matters has a mechanical
+            answer.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">03</div>
+        <div>
+          <h4>Let the correction widen the interval</h4>
+          <p>Every honest transfer costs precision. If a number crosses three boundaries and
+            comes out just as certain as it went in, the uncertainty did not vanish — it
+            stopped being recorded. Here the standard error grew
+            {{guides.transfer.se_growth}}&times;, and that is the finding.</p>
+        </div>
+      </div>
+    </div>
+    <p class="prose mt">The <a href="tutorial.html">Making a model travel</a> tutorial runs
+      this whole story as six executable steps, and
+      <a href="guide-provenance.html">the next guide</a> is about the machinery that makes
+      the ledger above something you can still trust six months later.</p>
+  </div>
+</section>
+
+<!--GUIDE-NAV-->

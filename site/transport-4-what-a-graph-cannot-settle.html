@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4. The facets a graph cannot settle — axiom tutorial</title>
+<meta name="description" content="Step 4 of 6: The population is licensed. What about the window and the level?">
+<meta property="og:title" content="4. The facets a graph cannot settle — axiom tutorial">
+<meta property="og:description" content="Step 4 of 6: The population is licensed. What about the window and the level?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx" href="guides.html">Guides</a><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Making a model travel · step 4 of 6</p>
+    <h1 style="max-width:18ch">The facets a graph cannot settle</h1>
+    <p class="lede prose mt">The population is licensed. What about the window and the level?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>A selection diagram settles one facet out of eight. Twelve weeks is not fifty-two weeks, and a household is not a person, and no causal graph has an opinion about either. <code>transfer_to</code> walks all eight facets and, for each one that differs, either names the assumption that licenses it or refuses.</p>
+      <p><strong>Three differing facets, three named assumptions, every one <code>unverified</code> until something checks it. Nothing passed silently — and note the last block: a transfer that cannot be licensed at all is refused rather than assumed away.</strong></p>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 4</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>plan = measured.transfer_to(needed)
+print(&quot;plan status:&quot;, plan.status)
+print()
+for entry in plan.entries:
+    print(f&quot;{entry.facet}&quot;)
+    print(f&quot;  {entry.statement}&quot;)
+    for a in entry.assumptions:
+        print(f&quot;  needs  {a.name}  [{a.state}]&quot;)
+        print(f&quot;         challenged by {a.challenged_by}&quot;)
+print()
+
+# A facet that is not bridgeable by any assumption is refused, not
+# licensed. A different functional is a different quantity.
+elasticity = needed.model_copy(
+    update={&quot;name&quot;: &quot;elasticity&quot;, &quot;quantity&quot;: Quantity(kind=&quot;elasticity&quot;)})
+blocked = measured.transfer_to(elasticity)
+print(&quot;asking for an elasticity instead:&quot;, blocked.status)
+print(&quot; &quot;, blocked.reason)</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>plan status: downgraded
+
+population
+  population differs: district_A vs district_B
+  needs  s_admissibility  [unverified]
+         challenged by overlap; moderator interaction in meta
+window
+  time window or basis differs
+  needs  stationary_dynamics  [unverified]
+         challenged by half-life against window length
+  needs  carryover_contained  [unverified]
+         challenged by half-life against window length
+level
+  level differs
+  needs  linear_aggregation  [unverified]
+         challenged by the Jensen gap under a nonlinear response
+
+asking for an elasticity instead: blocked
+  quantity: a different functional is a different quantity; re-express first</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="transport-1-two-questions.html"><span class="wt-toc-n">1</span>The number you have is not the number you need</a><a class="wt-toc-i" href="transport-2-ask-the-graph.html"><span class="wt-toc-n">2</span>Ask the graph about the population</a><a class="wt-toc-i" href="transport-3-four-answers.html"><span class="wt-toc-n">3</span>Four things the graph can say</a><a class="wt-toc-i" href="transport-4-what-a-graph-cannot-settle.html"><span class="wt-toc-n">4</span>The facets a graph cannot settle</a><a class="wt-toc-i" href="transport-5-correct-it.html"><span class="wt-toc-n">5</span>Correct it, and watch the interval widen</a><a class="wt-toc-i" href="transport-6-the-ledger.html"><span class="wt-toc-n">6</span>The ledger is the deliverable</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="transport-3-four-answers.html">&larr; 3 · Four things the graph can say</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn btn-2" href="transport-5-correct-it.html">5 · Correct it, and watch the interval widen &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

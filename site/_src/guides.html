@@ -1,0 +1,103 @@
+<!--meta {
+  "title": "Guides — causal modelling from the ground up · axiom",
+  "description": "Short, plain-language guides to causal inference and to the part most workflows skip: writing a model down precisely enough that its answer can be carried somewhere else. Confounding, identification, estimands, transportability, provenance."
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Concepts · no installation required</p>
+    <h1 style="max-width:20ch">The ideas the rest of&nbsp;this site assumes</h1>
+    <p class="lede prose mt">The tutorials show axiom doing things. These pages explain what
+      the things are, for a reader who has not met them — what makes a question causal,
+      why a confounder is not just another variable, and why a study that was right where it
+      ran can be wrong where it is used.</p>
+    <p class="prose mt">You do not need Python to read any of them. Where a page shows code,
+      the output beside it is what that code printed when this page was built.</p>
+    <div class="hero-cta">
+      <a class="btn btn-1" href="guide-causal-question.html">Start at the beginning →</a>
+      <a class="btn btn-2" href="guide-transport.html">Jump to transportability</a>
+      <a class="btn btn-2" href="glossary.html">Glossary</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">If you are short of time</p>
+      <h2>Three ways through</h2>
+    </div>
+    <div class="grid-3">
+      <div>
+        <h3>“I need to make a decision from data I already have.”</h3>
+        <p class="small muted">Read <a href="guide-causal-question.html">prediction is not
+          intervention</a>, then <a href="guide-confounding.html">confounders, colliders and
+          mediators</a>, then <a href="guide-identification.html">identification comes before
+          estimation</a>. That is enough to know whether your data can answer your question
+          at all — which is usually the finding.</p>
+      </div>
+      <div>
+        <h3>“Somebody handed me a number and I have to use it.”</h3>
+        <p class="small muted">Go straight to <a href="guide-estimand.html">the estimand in
+          eight facets</a> and then <a href="guide-transport.html">why a model does not
+          travel</a>. Most numbers that turn out to be wrong were not wrongly computed. They
+          were correctly computed for a slightly different question.</p>
+      </div>
+      <div>
+        <h3>“I have to defend this in six months.”</h3>
+        <p class="small muted"><a href="guide-provenance.html">Provenance</a> first, then
+          <a href="guide-critique.html">what would have to be true to overturn this</a>. The
+          useful artefact is not the estimate. It is the list of things you assumed and what
+          each one would take to break.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The shelf</p>
+      <h2>Twelve guides, in order</h2>
+      <p>Each stands on its own, and each assumes the ones above it. Fifteen minutes a
+        page, give or take.</p>
+    </div>
+<!--GUIDES-->
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Then what</p>
+      <h2>Where these go next</h2>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f"><a href="tutorial.html">Tutorials</a></span>
+        <span class="ledger-s">Five problems carried all the way through, a step to a page,
+          every step's output captured from a real run. Start with <em>Making a model
+          travel</em> if you came here for transportability.</span>
+        <span class="ledger-v">{{tutorial.n}}</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f"><a href="examples.html">Examples</a></span>
+        <span class="ledger-s">The same ideas in twelve fields — agriculture, epidemiology,
+          ecology, education, manufacturing — each a short worked walkthrough.</span>
+        <span class="ledger-v">{{examples.n}}</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f"><a href="identify.html">The five pillars</a></span>
+        <span class="ledger-s">What the library actually does, pillar by pillar, with the
+          numbers each one produced on this build.</span>
+        <span class="ledger-v">5</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f"><a href="glossary.html">Glossary</a></span>
+        <span class="ledger-s">Every term these guides use, defined once, with a link to
+          the page that explains it properly.</span>
+        <span class="ledger-v">&rarr;</span>
+      </div>
+    </div>
+  </div>
+</section>

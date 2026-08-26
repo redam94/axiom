@@ -1,0 +1,183 @@
+<!--meta {
+  "title": "Dimensions, units and scope · axiom guides",
+  "description": "Three different kinds of mismatch that all look like a unit problem. A dimension mismatch is always an error; a unit mismatch needs a registered conversion; a scope mismatch is not an arithmetic problem at all.",
+  "active": "guides"
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · writing the question down</p>
+    <h1 style="max-width:18ch">Dimensions, units and scope</h1>
+    <p class="lede prose mt">Physics students learn early that you cannot add a length to a
+      mass, and that checking dimensions catches most algebra errors before they cost
+      anything. Statistical software almost universally does not do this — a dataframe column
+      is a column of floats, and floats add.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Three things, kept separate on purpose</p>
+      <h2>They all look like a units problem. Only one is.</h2>
+    </div>
+
+    <div class="grid-3">
+      <div>
+        <h3>Dimension</h3>
+        <p class="small muted">What <em>kind</em> of thing this is: currency, time, an
+          outcome count, a number of entities. There is no conversion factor between
+          different dimensions, at any exchange rate, ever.</p>
+        <p class="small"><strong>A mismatch always raises.</strong> There is no flag to
+          disable it, because the operation has no meaning to permit.</p>
+        <p class="stamp" style="margin-top:8px">declared bases on this build:
+          <code>{{guides.dimensions.bases}}</code></p>
+      </div>
+      <div>
+        <h3>Unit</h3>
+        <p class="small muted">Which measure of that dimension: USD or EUR, days or weeks.
+          Two units of the same dimension <em>may</em> be interconvertible — if somebody
+          registered the factor.</p>
+        <p class="small"><strong>A mismatch raises unless a conversion is
+          registered</strong>, and when one is, the conversion writes a ledger line
+          recording itself.</p>
+        <p class="stamp" style="margin-top:8px">axiom ships <em>no</em> conversions; a domain
+          declares the ones it needs</p>
+      </div>
+      <div>
+        <h3>Scope</h3>
+        <p class="small muted">Which population, which window, which level of aggregation.
+          The number is in the right units and means something else anyway.</p>
+        <p class="small"><strong>Not an arithmetic problem at all.</strong> No factor fixes
+          it; it is settled by a transfer plan and a named assumption, which is the subject
+          of <a href="guide-transport.html">transportability</a>.</p>
+        <p class="stamp" style="margin-top:8px">handled by
+          <code>Estimand.transfer_to</code>, not by units</p>
+      </div>
+    </div>
+
+    <div class="note mt" style="max-width:var(--measure)">
+      <p class="note-t">Why the third one is the dangerous one</p>
+      <p class="small" style="margin:0">A dimension error stops the program. A unit error
+        stops the program. A scope error produces a number in perfectly correct units that
+        answers a question nobody asked — and it is the only one of the three that reaches a
+        slide.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What it looks like</p>
+      <h2>Three refusals from this build</h2>
+      <p>Each of these is a real exception, raised while this page was being generated.</p>
+    </div>
+
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">DimensionError</span>
+        <span class="ledger-s">An estimand's dimension is <em>derived</em> from its other
+          facets and checked against the one declared, so a quantity cannot claim to be in a
+          dimension its own definition does not produce:<br>
+          <em class="muted small">{{guides.dimensions.declared_refusal}}</em></span>
+        <span class="ledger-v"><span class="tag is-bad">raises</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">{{guides.dimensions.unit_refusals[0].error}}</span>
+        <span class="ledger-s">Converting
+          <code>{{guides.dimensions.unit_refusals[0].src}}</code> to
+          <code>{{guides.dimensions.unit_refusals[0].dst}}</code>:<br>
+          <em class="muted small">{{guides.dimensions.unit_refusals[0].says}}</em></span>
+        <span class="ledger-v"><span class="tag is-bad">raises</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">{{guides.dimensions.unit_refusals[1].error}}</span>
+        <span class="ledger-s">Converting
+          <code>{{guides.dimensions.unit_refusals[1].src}}</code> to
+          <code>{{guides.dimensions.unit_refusals[1].dst}}</code> — the same dimension, but
+          nobody said what a month is:<br>
+          <em class="muted small">{{guides.dimensions.unit_refusals[1].says}}</em></span>
+        <span class="ledger-v"><span class="tag is-bad">raises</span></span>
+      </div>
+    </div>
+
+    <p class="prose mt">The last one is the one that feels excessive and is not. Is a month
+      thirty days, or a twelfth of a year, or the actual calendar month this row falls in?
+      Those give different answers, the difference compounds over a long window, and the
+      library has no business picking for you. Registering the factor takes one line and
+      makes the choice visible to the next reader.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">When it does convert</p>
+      <h2>A conversion is a fact, and it still writes a line</h2>
+    </div>
+    <div class="grid-2">
+      <div>
+        <p class="readout-l">Declared, then converted</p>
+        <div class="readout">
+          <div class="readout-v">2 weeks = {{guides.dimensions.converted}} days</div>
+          <p class="readout-d"><code>{{guides.dimensions.conversion_kind}}</code> —
+            “{{guides.dimensions.conversion_statement}}”</p>
+        </div>
+      </div>
+      <div class="prose">
+        <p>The ledger line carries no assumption:
+          <code>assumption is None</code>, because seven days in a week is a fact somebody
+          registered, not a claim that might fail. That distinction is load-bearing. A
+          ledger where facts and assumptions look alike is a ledger nobody reads, and the
+          whole point of <a href="guide-provenance.html">the paper trail</a> is that its
+          unverified lines stand out.</p>
+        <p>Contrast that with a scope correction — “the twelve-week window caught 81% of the
+          effect” — which <em>does</em> carry an assumption, names what would challenge it,
+          and stays <code>unverified</code> until something checks it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Why this earns its keep</p>
+      <h2>The bug class it removes</h2>
+    </div>
+    <div class="rules">
+      <div class="rule-i">
+        <div class="rule-n">01</div>
+        <div>
+          <h4>Cost quietly added to effect</h4>
+          <p>A cost-per-unit and an effect-per-unit are both floats, and a helper four
+            layers down adds them. The result is a number in no dimension at all, and it
+            propagates to a decision. With dimensions declared, this raises at the
+            boundary.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">02</div>
+        <div>
+          <h4>Weekly and daily series joined on index</h4>
+          <p>Two panels, both indexed 0…N, one weekly and one daily. Nothing complains; the
+            effect comes out seven times too small. A declared time unit makes the join a
+            conversion that either has a registered factor or refuses.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">03</div>
+        <div>
+          <h4>A standard deviation treated as a variance</h4>
+          <p>The reason dimension exponents are fractions rather than integers: a standard
+            deviation is the square root of a variance, so it is genuinely a different
+            dimension, and mixing them is catchable rather than a matter of naming
+            discipline.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--GUIDE-NAV-->

@@ -1,0 +1,253 @@
+<!--meta {
+  "title": "Provenance: hashes, ledgers and the paper trail · axiom guides",
+  "description": "Every number carries how it got here, or it is not evidence. Content-hashed specs, assumption ledgers that refuse to be incomplete, and why a result you cannot re-derive in six months is a rumour.",
+  "active": "guides"
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · writing the question down</p>
+    <h1 style="max-width:20ch">Provenance: the paper&nbsp;trail</h1>
+    <p class="lede prose mt">Six months after an analysis, the number survives and everything
+      around it evaporates. The slide says 12%. Nobody can say which data, which window,
+      which adjustment set, or which of the four versions of the model produced it. At that
+      point it is not evidence. It is a rumour with a decimal point.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The problem</p>
+      <h2>Analyses decay in a specific, predictable way</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>Nobody sets out to lose the context. It goes in a fixed order, and it goes fast.
+          First the <em>alternatives</em> disappear: the three specifications you tried
+          before this one, and why you rejected them. Then the <em>assumptions</em>: the
+          adjustment set, the window, the population, all of which felt too obvious to write
+          down at the time.</p>
+        <p>Then the <em>question</em> goes. The number gets quoted in a context slightly
+          different from the one it was computed for, then again from there, and by the third
+          hop it is answering something nobody ever measured. Nothing dishonest happened at
+          any step.</p>
+        <p>What is left is a number and a confident memory. That is the state most
+          organisations are in about most of their evidence, and it is why the same questions
+          get re-analysed every eighteen months.</p>
+      </div>
+      <div>
+        <div class="note">
+          <p class="note-t">The design response</p>
+          <p class="small" style="margin:0">Make the trail a property of the object rather
+            than a discipline of the analyst. Anything that depends on discipline is gone by
+            the second deadline. In axiom every configuration object is a
+            <code>Spec</code>: frozen, versioned, and content-hashed, and every transfer of
+            evidence across a boundary appends a ledger line — not because somebody
+            remembered to, but because the alternative does not typecheck.</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">This site is built the same way</p>
+          <p class="small" style="margin:0">Every figure and statistic on these pages was
+            produced by running axiom, and every figure names the call that produced it.
+            The numbers on this page were computed while it was being generated.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Mechanism one</p>
+      <h2>A content hash: the same question has the same name</h2>
+      <p>Every spec hashes its own canonical contents. The hash does not depend on dictionary
+        insertion order, on <code>PYTHONHASHSEED</code>, or on which machine computed it — so
+        it is an address for the question rather than an artefact of a process.</p>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="ledger">
+          <div class="ledger-row">
+            <span class="ledger-f">the estimand measured</span>
+            <span class="ledger-s"><code>{{guides.provenance.source_hash}}</code></span>
+            <span class="ledger-v"></span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">rebuilt from its own serialization</span>
+            <span class="ledger-s"><code>{{guides.provenance.rebuilt_hash}}</code></span>
+            <span class="ledger-v"><span class="tag is-good">identical</span></span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">one field moved — window 12&nbsp;→&nbsp;13</span>
+            <span class="ledger-s"><code>{{guides.provenance.moved_hash}}</code></span>
+            <span class="ledger-v"><span class="tag is-warn">different</span></span>
+          </div>
+        </div>
+        <p class="stamp">round-trip stable: {{guides.provenance.stable}} ·
+          one changed field changes the hash:
+          {{guides.provenance.one_field_changes_it}}</p>
+      </div>
+      <div class="prose">
+        <p>The second row is the one that matters. A spec serializes to JSON and back to an
+          equal object, and the hash survives the round trip — so a question stored in a
+          database in March is provably the same question in September.</p>
+        <p>The third row is the other half. Changing the window from twelve periods to
+          thirteen is a change most workflows would not even record, and it produces a
+          completely different address. You cannot accidentally present the answer to
+          Tuesday's question as the answer to Monday's.</p>
+        <p>And when two hashes differ, you do not have to hunt for why:</p>
+        <div class="out">
+          <div class="out-h">source.diff(moved)</div>
+          <pre>{{guides.provenance.diff_repr}}</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="note mt" style="max-width:var(--measure)">
+      <p class="note-t">Versioned, so old records stay readable</p>
+      <p class="small" style="margin:0">Each spec class carries a
+        <code>SCHEMA_VERSION</code> (this one is
+        <code>{{guides.provenance.schema_version}}</code>) and serializes through one
+        envelope — <code>{{guides.provenance.envelope_keys}}</code>. Loading an older
+        version applies a registered migration, or raises naming both versions. A stored
+        analysis does not silently become unreadable because the library moved on, and it
+        does not silently load <em>wrong</em> either.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Mechanism two</p>
+      <h2>A ledger that refuses to be incomplete</h2>
+      <p>A hash records <em>what</em> the question was. A ledger records <em>what happened
+        to the answer</em> — every boundary it crossed and what was assumed to get it
+        across.</p>
+    </div>
+
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">{{guides.transfer.lines[0].kind}}</span>
+        <span class="ledger-s">{{guides.transfer.lines[0].statement}}<br>
+          <em class="muted small">{{guides.transfer.lines[0].assumption}} — challenged by
+          {{guides.transfer.lines[0].challenged_by}}</em></span>
+        <span class="ledger-v"><span class="tag is-good">{{guides.transfer.lines[0].state}}</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">{{guides.transfer.lines[1].kind}}</span>
+        <span class="ledger-s">{{guides.transfer.lines[1].statement}}<br>
+          <em class="muted small">{{guides.transfer.lines[1].assumption}} — challenged by
+          {{guides.transfer.lines[1].challenged_by}}</em></span>
+        <span class="ledger-v"><span class="tag is-warn">{{guides.transfer.lines[1].state}}</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">{{guides.transfer.lines[2].kind}}</span>
+        <span class="ledger-s">{{guides.transfer.lines[2].statement}}<br>
+          <em class="muted small">{{guides.transfer.lines[2].assumption}} — challenged by
+          {{guides.transfer.lines[2].challenged_by}}</em></span>
+        <span class="ledger-v"><span class="tag is-warn">{{guides.transfer.lines[2].state}}</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">{{guides.transfer.lines[3].kind}}</span>
+        <span class="ledger-s">{{guides.transfer.lines[3].statement}}<br>
+          <em class="muted small">{{guides.transfer.lines[3].assumption}} — challenged by
+          {{guides.transfer.lines[3].challenged_by}}</em></span>
+        <span class="ledger-v"><span class="tag is-good">{{guides.transfer.lines[3].state}}</span></span>
+      </div>
+    </div>
+
+    <div class="grid-2 mt">
+      <div class="prose">
+        <p>Three properties make this more than logging.</p>
+        <p><strong>It is complete by construction.</strong> The ledger starts from the
+          transfer plan with one line per differing facet, marked uncorrected. Each
+          correction <em>replaces</em> a line rather than adding one. So a facet nobody
+          corrected is still visible — as an explicitly uncorrected facet — instead of being
+          absent and unnoticed. <code>check_complete</code> then verifies it:
+          <em>{{guides.transfer.complete_reason}}</em>.</p>
+        <p><strong>Facts and assumptions look different.</strong> A registered unit
+          conversion carries no assumption. An assumption carries a name, a state, and the
+          thing that would refute it. You can read a ledger and see immediately which lines
+          are exposed.</p>
+        <p><strong>It is addressable.</strong> The ledger has its own content hash —
+          <code>{{guides.provenance.ledger_hash}}</code> — so a number in a report can be
+          traced back to the exact chain that produced it.</p>
+      </div>
+      <div class="stack">
+        <div>
+          <p class="readout-l">How many of these lines are load-bearing</p>
+          <div class="readout">
+            <div class="readout-v">{{guides.transfer.n_unverified}} of
+              {{guides.transfer.n_lines}}</div>
+            <p class="readout-d">still <code>unverified</code>. That is the honest state of
+              this transfer, and it is why the overall status is
+              <code>{{guides.transfer.status}}</code> rather than
+              <code>identified</code>.</p>
+          </div>
+        </div>
+        <div class="note">
+          <p class="note-t">Downgraded is not a failing grade</p>
+          <p class="small" style="margin:0">It is a description of the evidence. Most real
+            work is downgraded, permanently and correctly. The alternative — a tool that
+            reports <code>identified</code> because nothing checked — is not a better
+            result, it is a worse instrument.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What to take from this</p>
+      <h2>Provenance is what makes evidence reusable instead of disposable</h2>
+    </div>
+    <div class="rules">
+      <div class="rule-i">
+        <div class="rule-n">01</div>
+        <div>
+          <h4>Write the question down and store its hash with the answer</h4>
+          <p>This is the whole practice in one sentence, and it is cheap. Everything else on
+            this page is machinery for making it hard to skip.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">02</div>
+        <div>
+          <h4>Record the alternative you rejected, not only the choice you made</h4>
+          <p>“We used a geometric carryover” is half a record. “We used a geometric
+            carryover rather than a delayed one, because the half-life implied by the second
+            was longer than the observation window” is a record somebody can audit — and
+            revisit when a longer window arrives.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">03</div>
+        <div>
+          <h4>Never let a number and its interval definition be separated</h4>
+          <p>An interval means nothing without knowing what kind it is and at what mass. On
+            this site they always travel together — e.g.
+            <code>[{{identify.backdoor.estimates[1].lower:.4f}},
+            {{identify.backdoor.estimates[1].upper:.4f}}] (95% WALD)</code> — never a bare
+            pair of numbers.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">04</div>
+        <div>
+          <h4>Make the trail the default path, not the diligent one</h4>
+          <p>If producing the record is a separate step, it will be skipped exactly when it
+            matters most — under deadline, on the analysis that turns out to be
+            important.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--GUIDE-NAV-->
