@@ -1,0 +1,204 @@
+<!--meta {
+  "title": "Deciding what to measure · axiom guides",
+  "description": "Power is not the question. What the decision turns on is the question. Sizing against the boundary that matters, valuing an experiment before running it, and why the conventional MDE often prices a study nobody needed.",
+  "active": "guides"
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · doing the work</p>
+    <h1 style="max-width:18ch">Deciding what to measure</h1>
+    <p class="lede prose mt">The standard question is “what sample size do I need for 80%
+      power?” It has a precise answer, and it is the wrong question — because it never asks
+      what the study is <em>for</em>. An experiment is a purchase. The thing you are buying
+      is a change in what you would decide.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Start here</p>
+      <h2>Power against what, and why does that number matter?</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>Conventional sizing asks you to nominate a minimum detectable effect and then
+          sizes to detect it. Where does the MDE come from? Usually from a convention, a
+          previous study, or the number that made the sample size affordable.</p>
+        <p>None of those is the number the decision turns on. That number is a
+          <strong>boundary</strong>: the effect above which you would act and below which
+          you would not. It comes from the economics of the decision — what the intervention
+          costs, what an outcome unit is worth — and it is knowable before any data
+          exists.</p>
+        <p>Sizing against the boundary rather than a convention changes the answer, and it
+          changes it in both directions. Sometimes you need far more units than convention
+          suggested. Often, as below, you need far fewer, or you discover the experiment was
+          never worth running.</p>
+      </div>
+      <div>
+        <div class="note">
+          <p class="note-t">The reframe</p>
+          <p class="small" style="margin:0"><strong>Not:</strong> “can I detect an effect of
+            size <em>d</em>?”<br><strong>But:</strong> “after this study, how much more
+            often will I take the right action than I would have without it — and is that
+            worth what it costs?”</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">Which makes the prior load-bearing</p>
+          <p class="small" style="margin:0">You cannot answer the second question without
+            saying what you currently believe. That is not a weakness of the approach; it is
+            the approach noticing that conventional sizing also depends on a prior and
+            simply does not tell you which one. See
+            <a href="guide-priors.html">priors that mean something</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">A real example from this build</p>
+      <h2>When the conventional study is buying something you already have</h2>
+      <p>The design page sizes an experiment properly and finds, first, that the
+        conventional target is not in doubt.</p>
+    </div>
+
+    <div class="grid-3">
+      <div>
+        <p class="readout-l">The prior, before the study</p>
+        <div class="readout">
+          <div class="readout-v">{{design.prior.mean:.2f}}</div>
+          <div class="readout-e"><span>{{design.prior.interval[0]:.2f}}</span>
+            <span>{{design.prior.interval[1]:.2f}}</span></div>
+          <p class="readout-d">what the team already believes about the effect</p>
+        </div>
+      </div>
+      <div>
+        <p class="readout-l">Mass already above the conventional MDE</p>
+        <div class="readout">
+          <div class="readout-v">{{design.prior.probability_exceeds_mde:.1%}}</div>
+          <p class="readout-d">The conventional design would spend real money to establish
+            that the effect exceeds {{design.prior.mde_conventional}} — a proposition
+            already held with {{design.prior.probability_exceeds_mde:.1%}} confidence.
+            Whatever that experiment is for, it is not that.</p>
+        </div>
+      </div>
+      <div>
+        <p class="readout-l">Sized against what the decision turns on</p>
+        <div class="readout">
+          <div class="readout-v">{{design.sizing.n}}</div>
+          <p class="readout-d">units for {{design.sizing.power:.0%}} power against an effect
+            of {{design.sizing.effect:.2f}} — against a proposal of
+            {{design.sizing.proposed_n}}. Same decision, less than half the study.</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="prose mt">This is the most common finding in honest design work and it is
+      almost never reported, because nobody runs the analysis that would reveal it. The
+      conventional path produces a defensible-looking number, the study runs, and the
+      question of whether it was worth running is never posed in a form that could have been
+      answered “no”.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Putting a price on it</p>
+      <h2>What is this experiment worth, in the currency of the decision?</h2>
+      <p>If a study changes what you would do, its value is the value of the better
+        decisions. That is computable before it runs, from the prior, the boundary and the
+        stakes.</p>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="ledger">
+          <div class="ledger-row">
+            <span class="ledger-f">EVPI</span>
+            <span class="ledger-s">Expected value of <em>perfect</em> information — what you
+              would pay to know the effect exactly. The ceiling on what any study can be
+              worth.</span>
+            <span class="ledger-v">{{design.value.evpi:,.0f}} {{design.value.numeraire}}</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">EVSI</span>
+            <span class="ledger-s">Expected value of <em>this sample</em> — what this
+              specific design, at this size, is worth. Always below EVPI, and the gap is what
+              a bigger study could still buy.</span>
+            <span class="ledger-v">{{design.value.evsi:,.0f}} {{design.value.numeraire}}</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">the exchange rate</span>
+            <span class="ledger-s">Neither number exists without somebody stating what an
+              outcome unit is worth. That statement is recorded, not assumed.</span>
+            <span class="ledger-v">{{design.value.value_per_outcome:,.0f}}
+              {{design.value.numeraire}}</span>
+          </div>
+        </div>
+        <p class="stamp">from the ledger: {{design.leaderboard.ledger_line}}</p>
+      </div>
+      <div class="prose">
+        <p>Two things follow immediately, and both are uncomfortable in the right way.</p>
+        <p>First, a study whose EVSI is below its cost should not be run, however good its
+          power. Power measures the study's statistical properties; EVSI measures whether
+          anybody's behaviour will change. They come apart more often than not.</p>
+        <p>Second, the value depends on the decision's economics, so it forces a conversation
+          that is otherwise deferred forever: what <em>is</em> an outcome unit worth here?
+          Answering it badly is better than not answering it, because a stated exchange rate
+          can be argued with and revised. An implicit one cannot.</p>
+        <p>Note also that these are <em>expected</em> values under your current beliefs. If
+          the prior is wrong, so is the valuation — which is one more reason to state the
+          prior in units somebody can dispute.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Before you run it</p>
+      <h2>Decide the stopping rule now, not later</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>“We'll look at the data as it comes in and stop when it's clear” is a procedure
+          with no error rate. Peeking repeatedly at accumulating data and stopping when the
+          result crosses a threshold will produce a crossing eventually, whether or not the
+          effect is real.</p>
+        <p>The fix is old and well understood: decide the review schedule in advance, and
+          spend your error budget across those looks — an O'Brien–Fleming boundary is
+          conservative early and relaxes as evidence accumulates. What matters is that the
+          rule exists before the first look and is recorded with the design.</p>
+        <p>The <a href="case-study.html">HYPER-3 case study</a> runs exactly this: a
+          monitoring plan whose stopping boundary is set before the trial, and which fires at
+          the first scheduled review in one stratum.</p>
+      </div>
+      <div>
+        <div class="note">
+          <p class="note-t">Design is where transportability is cheapest to fix</p>
+          <p class="small" style="margin:0">Every mismatch in
+            <a href="guide-transport.html">the transportability guide</a> — wrong population,
+            wrong window, wrong level — is an expensive correction after the fact and a free
+            choice beforehand. If the decision is per person over a year, measure per person
+            over a year. Designing the study against the <em>target</em> estimand rather
+            than the convenient one removes the whole problem.</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">And write it down before it runs</p>
+          <p class="small" style="margin:0">The estimand, the graph, the prior, the boundary
+            and the stopping rule, hashed and stored. That is a pre-registration, it takes an
+            afternoon, and it is the difference between a result and a story. See
+            <a href="guide-provenance.html">provenance</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--GUIDE-NAV-->

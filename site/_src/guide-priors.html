@@ -1,0 +1,201 @@
+<!--meta {
+  "title": "Priors that mean something · axiom guides",
+  "description": "A prior is a claim about magnitudes in units you can argue about, not a regularization knob. How to elicit one, how to check it against what you already believe, and why a 'weakly informative' default is often a strong claim in disguise.",
+  "active": "guides"
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · doing the work</p>
+    <h1 style="max-width:16ch">Priors that mean something</h1>
+    <p class="lede prose mt">The objection to Bayesian methods is that priors are subjective.
+      The reply is not that they are objective. It is that the alternative — a procedure with
+      no prior — is not neutral either; it is a procedure whose assumptions are simply not
+      written down anywhere you can attack them.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What a prior actually is</p>
+      <h2>A statement about magnitudes, in units</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>A useful prior is not “I am fairly uncertain.” It is a sentence like: <em>a
+          filter in a household reduces reported illness by somewhere between one and four
+          days per twelve weeks; two would not surprise me; ten would astonish me.</em></p>
+        <p>That sentence is checkable. Somebody who has run three of these programmes can
+          tell you it is wrong, and why. It also has consequences — it says that an estimate
+          of thirty days is more likely a data problem than a discovery, which is a claim you
+          want your analysis to make rather than one you want to make manually after the
+          fact.</p>
+        <p>A prior stated as “normal(0, 10) on the coefficient” is not that sentence. It may
+          encode the same belief or it may encode something wild, and you cannot tell without
+          knowing the scale of the outcome, the scale of the treatment, and what the
+          coefficient multiplies.</p>
+      </div>
+      <div class="stack">
+        <div class="note">
+          <p class="note-t">The test</p>
+          <p class="small" style="margin:0">Can you state your prior as a claim about the
+            <em>outcome</em>, in the outcome's own units, to somebody with domain knowledge
+            and no statistics? If not, you have a regularization setting, not a prior — and
+            you should not be surprised when it does something you did not intend.</p>
+        </div>
+        <div class="note">
+          <p class="note-t">“Weakly informative” can be a strong claim</p>
+          <p class="small" style="margin:0">A wide prior on a parameter that enters
+            multiplicatively, or through a saturating transform, can put most of its mass on
+            physically impossible responses. Wide is not the same as humble. The only way to
+            know is to push the prior through the model and look at the outcomes it
+            implies.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The check that catches most problems</p>
+      <h2>Simulate from the prior and look at what it predicts</h2>
+      <p>Before any data. Draw parameters from the prior, push them through the model, and
+        look at the outcomes. If it routinely produces effects nobody in the room believes
+        are possible, the prior is wrong — and you have found out for free.</p>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <figure class="fig">
+          <div class="fig-head">
+            <p class="fig-t">A prior, pushed through the model</p>
+            <p class="fig-s">Effects implied by draws from the prior on the design page.
+              The prior is a claim about this distribution, not about a coefficient.</p>
+          </div>
+          <div class="chart" data-chart="hist" data-file="design"
+               data-opt='{"counts":"prior.draws_hist","edges":"prior.draws_edges",
+                          "threshold":{{design.prior.mde_conventional:.1f}},
+                          "thresholdLabel":"conventional MDE",
+                          "height":260,"xLabel":"implied effect on the outcome"}'></div>
+          <p class="stamp"><b>axiom.design</b> prior draws ·
+            mean {{design.prior.mean:.2f}} · sd {{design.prior.sd:.2f}}</p>
+        </figure>
+      </div>
+      <div class="stack">
+        <div>
+          <p class="readout-l">What this prior believes</p>
+          <div class="readout">
+            <div class="readout-v">{{design.prior.mean:.2f}}</div>
+            <div class="readout-e"><span>{{design.prior.interval[0]:.2f}}</span>
+              <span>{{design.prior.interval[1]:.2f}}</span></div>
+            <p class="readout-d">Central mass between
+              {{design.prior.interval[0]:.2f}} and {{design.prior.interval[1]:.2f}} on an
+              outcome whose own standard deviation is
+              {{design.prior.outcome_sd:.2f}} — an effect around one standard deviation, which
+              is a strong claim that somebody should be made to defend.</p>
+          </div>
+        </div>
+        <div class="note">
+          <p class="note-t">And it has a consequence you can act on</p>
+          <p class="small" style="margin:0">This prior puts
+            <strong>{{design.prior.probability_exceeds_mde:.1%}}</strong> of its mass above
+            the conventional minimum detectable effect of
+            {{design.prior.mde_conventional}}. In other words, the experiment as
+            conventionally sized would be spending money to establish something the team
+            already believes. That is a design finding, and it came from taking the prior
+            seriously — see <a href="guide-design.html">deciding what to
+            measure</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Where priors come from</p>
+      <h2>Four sources, in descending order of comfort</h2>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">A previous experiment</span>
+        <span class="ledger-s">The best case — but only after checking that it measured the
+          same <a href="guide-estimand.html">estimand</a>. A prior derived from a study of a
+          different population or window carries that transfer's assumptions into your
+          posterior, silently, unless you record them.</span>
+        <span class="ledger-v"><span class="tag is-good">strong</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">Pooled evidence</span>
+        <span class="ledger-s">Several studies, combined with their heterogeneity taken
+          seriously rather than averaged. This is what <code>axiom.meta</code> is for, and
+          the pooled interval it produces is usually wider than any single study's — which
+          is the correct and unwelcome answer.</span>
+        <span class="ledger-v"><span class="tag is-good">strong</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">Elicitation</span>
+        <span class="ledger-s">Ask the people who know the domain, in outcome units, for a
+          plausible range and a surprising one. Ask several separately, and treat the spread
+          between them as information rather than a problem to resolve.</span>
+        <span class="ledger-v"><span class="tag is-warn">honest</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">Physical or logical bounds</span>
+        <span class="ledger-s">A share cannot exceed one; a response that saturates cannot
+          exceed its ceiling; a count cannot be negative. Weak, always available, and it
+          rules out more nonsense than people expect.</span>
+        <span class="ledger-v"><span class="tag">floor</span></span>
+      </div>
+    </div>
+
+    <div class="note mt" style="max-width:var(--measure)">
+      <p class="note-t">Whichever source, record it</p>
+      <p class="small" style="margin:0">A prior derived from an experiment should carry the
+        line that says so. On the <a href="calibrate.html">calibrate page</a> the
+        prior derived from a measurement arrives with its provenance attached, so the
+        posterior can be traced back past the fit to the experiment that shaped it. A
+        number whose prior came from nowhere recorded is a number with a missing
+        premise.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Afterwards</p>
+      <h2>Two checks, and one thing not to do</h2>
+    </div>
+    <div class="grid-3">
+      <div>
+        <h3>Did the data move it?</h3>
+        <p class="small muted">Compare prior and posterior. If they are identical, the data
+          said nothing about this parameter and any conclusion is your prior wearing a
+          disguise. If the posterior is far outside the prior's plausible range, either the
+          prior or the model is wrong — investigate before celebrating.</p>
+      </div>
+      <div>
+        <h3>Does it change the decision?</h3>
+        <p class="small muted">Refit with the two other priors your colleagues would have
+          chosen. If the decision is the same under all three, the prior was not
+          load-bearing and the argument about it is a waste of a meeting. If it flips, that
+          is the finding — and it tells you what evidence is worth buying.</p>
+      </div>
+      <div>
+        <h3>Do not tune it to the answer</h3>
+        <p class="small muted">Adjusting a prior after seeing the posterior, until the
+          result looks right, is not Bayesian updating. It is the same failure as
+          p-hacking with more machinery. Writing the prior down and
+          <a href="guide-provenance.html">hashing it</a> before the fit makes this hard
+          to do by accident and visible when done on purpose.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--GUIDE-NAV-->

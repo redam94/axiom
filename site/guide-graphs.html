@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Writing your beliefs down — causal graphs · axiom guides</title>
+<meta name="description" content="A causal graph is not a picture of the data. It is a set of falsifiable claims about mechanism, most of them made by the arrows you left out. How to draw one, and what it buys you.">
+<meta property="og:title" content="Writing your beliefs down — causal graphs · axiom guides">
+<meta property="og:description" content="A causal graph is not a picture of the data. It is a set of falsifiable claims about mechanism, most of them made by the arrows you left out. How to draw one, and what it buys you.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="guide-graphs">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="guides.html">Guides</a><a class="navx" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · foundations</p>
+    <h1 style="max-width:18ch">Writing your beliefs down</h1>
+    <p class="lede prose mt">The objection to causal graphs is always the same: “you are just
+      assuming the answer.” It has it exactly backwards. Everyone analysing data is assuming
+      a causal structure — choosing which variables to include is nothing else. A graph is
+      the version you can be argued with about.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What a graph is</p>
+      <h2>Arrows are claims, and the missing ones are the strong claims</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>An arrow <code>A → B</code> says: intervening on <code>A</code> could change
+          <code>B</code>. That is a weak, cheap claim, and you should be generous with
+          them.</p>
+        <p>The <em>absence</em> of an arrow says: it could not, at all, by any route not
+          already drawn. That is a strong claim, and it is where all the content is. A graph
+          with an arrow between every pair of variables assumes nothing and is worth nothing;
+          it will identify no effect at all. Every conclusion you can draw comes from an
+          arrow you were willing to leave out.</p>
+        <p>This is why the graph is the honest object. A regression with six covariates in it
+          makes exactly the same class of claims — it just makes them implicitly, in the
+          choice of those six, where nobody can see them to disagree.</p>
+      </div>
+      <div class="stack">
+        <div class="note">
+          <p class="note-t">Draw it before you see the estimate</p>
+          <p class="small" style="margin:0">A graph drawn after a disappointing result is
+            not a model, it is a rationalisation. axiom asks for the graph before it will
+            fit anything, and hashes it — so the structure the answer rests on is the one
+            that was believed beforehand. See
+            <a href="guide-provenance.html">provenance</a>.</p>
+        </div>
+        <div class="note">
+          <p class="note-t">It is not a diagram of your dataframe</p>
+          <p class="small" style="margin:0">Variables you never measured belong on the graph.
+            They are usually the most important nodes on it, and marking one
+            <code>unmeasured</code> is how axiom comes to say “this is not identified, and
+            here is the thing you would need”.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">How to draw one</p>
+      <h2>Four questions, in this order</h2>
+    </div>
+    <div class="rules">
+      <div class="rule-i">
+        <div class="rule-n">01</div>
+        <div>
+          <h4>What am I proposing to change, and what do I care about?</h4>
+          <p>Those two nodes exist before anything else. If you cannot name them, the
+            question is not ready to be a causal one — see
+            <a href="guide-causal-question.html">the previous guide</a>.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">02</div>
+        <div>
+          <h4>In the data I have, what decided the treatment's value?</h4>
+          <p>This is the question that finds confounders, and it is a question about
+            process, not about correlation. Who chose? On what basis? If any part of that
+            answer also plausibly affects the outcome, it is a node with two arrows out of
+            it.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">03</div>
+        <div>
+          <h4>What else moves the outcome, and is it connected to the treatment?</h4>
+          <p>Things that affect the outcome but nothing else are harmless — they cost
+            precision, not validity. It is the ones with a path back to the treatment that
+            matter, which is why the previous question comes first.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">04</div>
+        <div>
+          <h4>What decided who is in the dataset at all?</h4>
+          <p>The most commonly skipped question, and the one that produces
+            <a href="guide-confounding.html">collider bias</a> before any analysis begins.
+            Survivors, responders, patients who came back, customers who did not churn: if
+            membership depends on both treatment and outcome, that is a node too.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What it is worth</p>
+      <h2>A graph is testable, and it pays for itself twice</h2>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <h3>It tells you what to condition on</h3>
+        <p class="small muted">Rather than choosing covariates by intuition or by stepwise
+          search, you derive them. On the <a href="identify.html">identify page</a> the
+          licensed set is <code>Z</code>, and it is
+          derived from the graph before any data is touched. When more than one valid set
+          exists, that is useful too — fitting both is a check on the graph rather than a
+          choice between answers.</p>
+        <h3 class="mt">It tells you when to stop</h3>
+        <p class="small muted">A graph can say <em>no route exists</em>. That verdict —
+          which arrives before fitting, costs nothing, and names the variable that would fix
+          it — is the single highest-value output in causal work, and no amount of
+          modelling effort substitutes for it.</p>
+      </div>
+      <div>
+        <h3>It makes predictions you can check</h3>
+        <p class="small muted">A graph implies conditional independences: if it is right,
+          certain correlations must vanish once certain variables are held fixed. Those are
+          testable against the data you already have. A graph that fails its own implied
+          independences is refuted — by you, before a reviewer does it.</p>
+        <div class="note mt">
+          <p class="note-t">What a passing test does and does not mean</p>
+          <p class="small" style="margin:0">Several different graphs imply the same
+            independences, so passing does not single yours out. It rules out a class of
+            wrong ones, which is what any honest test does. axiom's
+            <code>axiom.discover</code> works this space directly, returning the family of
+            structures the data cannot distinguish rather than one confident answer.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Common objections, answered</p>
+      <h2>Three things people say, and what to say back</h2>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">“I don't know the true graph.”</span>
+        <span class="ledger-s">Nobody does. Draw the one you believe, then draw the two
+          plausible ones you fear, and check whether the decision changes across all three.
+          If it does not, the uncertainty was not load-bearing. If it does, you have
+          discovered what to go and measure — which is a result.</span>
+        <span class="ledger-v">→</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">“This is just assumptions.”</span>
+        <span class="ledger-s">Yes — the same assumptions the regression was making
+          invisibly. The graph does not add assumptions, it exposes them. Ask the objector
+          which arrow they disagree with; that conversation is productive, and the one about
+          covariate lists never is.</span>
+        <span class="ledger-v">→</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">“My problem is too complicated for a DAG.”</span>
+        <span class="ledger-s">Usually it is too complicated <em>not</em> to have one.
+          Feedback loops, time, clusters and dynamics all have standard treatments —
+          <code>axiom.dynamics</code> handles cyclic and time-indexed structures, and a
+          cluster-DAG lets you group nodes you do not need to resolve individually.</span>
+        <span class="ledger-v">→</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Guide 3 of 12</p>
+    <div class="hero-cta" style="margin-top:12px"><a class="btn btn-2" href="guide-confounding.html">&larr; Confounders, colliders and mediators</a><a class="btn btn-2" href="guides.html">All the guides</a><a class="btn btn-1" href="guide-identification.html">Identification comes before estimation &rarr;</a></div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

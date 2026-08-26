@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6. The ledger is the deliverable — axiom tutorial</title>
+<meta name="description" content="Step 6 of 6: What do you hand the person who has to sign off on this?">
+<meta property="og:title" content="6. The ledger is the deliverable — axiom tutorial">
+<meta property="og:description" content="Step 6 of 6: What do you hand the person who has to sign off on this?">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="tutorial-step">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx" href="guides.html">Guides</a><a class="navx navx-on" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Making a model travel · step 6 of 6</p>
+    <h1 style="max-width:18ch">The ledger is the deliverable</h1>
+    <p class="lede prose mt">What do you hand the person who has to sign off on this?</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="prose">
+      <p>Not the number. The number plus the list of every place it crossed a boundary and what was assumed to get it across. That list is a <code>Ledger</code>, it is built by construction rather than by discipline, and <code>check_complete</code> refuses a ledger with a facet missing from it.</p>
+      <p><strong><code>downgraded</code>, not <code>identified</code> — and correctly so. Two of the three assumptions are still <code>unverified</code>: nothing here has checked the half-life against the window, or the Jensen gap against a nonlinear response. The status is a description of the evidence, not a grade. Verifying those two is what the calibrate and surface pillars are for.</strong></p>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+<section>
+  <div class="wrap">
+    <div class="code" style="max-width:var(--measure)">
+      <div class="code-h"><span>step 6</span>
+        <button class="copy" type="button">Copy</button></div>
+      <pre>for line in resolved.ledger.lines:
+    print(f&quot;[{line.kind}]&quot;)
+    print(f&quot;  {line.statement}&quot;)
+    if line.assumption is not None:
+        print(f&quot;  rests on {line.assumption.name} [{line.assumption.state}]&quot;)
+
+print()
+complete = resolved.ledger.check_complete(plan)
+print(&quot;completeness :&quot;, complete.status)
+print(&quot; &quot;, complete.reason)
+print()
+print(&quot;and the whole transfer is addressable:&quot;)
+print(&quot;  source estimand&quot;, measured.content_hash()[:16])
+print(&quot;  target estimand&quot;, needed.content_hash()[:16])
+print(&quot;  ledger         &quot;, resolved.ledger.content_hash()[:16])
+print()
+print(&quot;re-deriving any of those from the same inputs gives the same&quot;)
+print(&quot;hash on any machine, so a number in a slide can be traced back&quot;)
+print(&quot;to the exact question it answered.&quot;)</pre>
+    </div>
+    <div class="code" style="max-width:var(--measure);margin-top:16px">
+      <div class="code-h"><span>what it printed</span></div>
+      <pre>[facet:population]
+  population differs: district_A vs district_B
+  rests on s_admissibility [satisfied]
+[facet:window]
+  0.813636 of the carryover mass lands within 12 period(s); scaled to the steady-state total by 1.22905
+  rests on carryover_contained [unverified]
+[facet:level]
+  cluster read at individual level: point factor 1 (additive effect), SE factor 1.76777
+  rests on linear_aggregation [unverified]
+[transport]
+  transport verdict identified via s_admissible_adjustment
+  rests on s_admissibility [satisfied]
+
+completeness : identified
+  every differing facet accounted for exactly once (population, window, level)
+
+and the whole transfer is addressable:
+  source estimand adaf9c9abfa4b2fd
+  target estimand 6a864f41935b7358
+  ledger          14c74efa68608cac
+
+re-deriving any of those from the same inputs gives the same
+hash on any machine, so a number in a slide can be traced back
+to the exact question it answered.</pre>
+    </div>
+    <p class="prose mt"><small>Every line above was captured by running this code
+      at build time. The steps share one namespace, so the code on this page is
+      the code you would type after the steps before it.</small></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="wt-toc"><a class="wt-toc-i" href="transport-1-two-questions.html"><span class="wt-toc-n">1</span>The number you have is not the number you need</a><a class="wt-toc-i" href="transport-2-ask-the-graph.html"><span class="wt-toc-n">2</span>Ask the graph about the population</a><a class="wt-toc-i" href="transport-3-four-answers.html"><span class="wt-toc-n">3</span>Four things the graph can say</a><a class="wt-toc-i" href="transport-4-what-a-graph-cannot-settle.html"><span class="wt-toc-n">4</span>The facets a graph cannot settle</a><a class="wt-toc-i" href="transport-5-correct-it.html"><span class="wt-toc-n">5</span>Correct it, and watch the interval widen</a><a class="wt-toc-i" href="transport-6-the-ledger.html"><span class="wt-toc-n">6</span>The ledger is the deliverable</a></div>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-2" href="transport-5-correct-it.html">&larr; 5 · Correct it, and watch the interval widen</a><a class="btn btn-2" href="tutorial.html">All 6 steps</a><a class="btn" href="tutorial.html">The other tutorial &rarr;</a></div>
+  </div>
+</section>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!--meta {
+  "title": "Identification comes before estimation · axiom guides",
+  "description": "Whether an effect is recoverable at all is a question about the graph, not the sample. It is answerable before you fit anything, and 'no' is the most valuable answer you can get.",
+  "active": "guides"
+} -->
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · foundations</p>
+    <h1 style="max-width:20ch">Identification comes before estimation</h1>
+    <p class="lede prose mt">Estimation asks: given that this quantity is recoverable, what
+      is it, and how precisely? Identification asks the prior question — is it recoverable at
+      all? The two get confused constantly, because every estimator answers the second
+      question whether or not the first one was ever asked.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The distinction</p>
+      <h2>More data does not fix a missing route</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>An <em>estimation</em> problem gets better with sample size. Wide interval, noisy
+          answer, unstable fit — collect more rows and it improves.</p>
+        <p>An <em>identification</em> problem does not. If a common cause of treatment and
+          outcome was never measured, then a million rows gives you the same wrong number
+          with a much tighter interval around it. The bias does not shrink; only the
+          honesty does.</p>
+        <p>This is the case worth being frightened of, because it looks exactly like
+          success. Below is a real fit from this build, on a graph where the confounder
+          <code>Z</code> exists but was not observed.</p>
+      </div>
+      <div>
+        <p class="readout-l">A confident, precise, wrong answer</p>
+        <div class="readout">
+          <div class="readout-v">{{identify.not_identified.naive.estimate:.3f}}</div>
+          <div class="readout-bar" style="--pos:{{@ identify.not_identified.naive.estimate identify.not_identified.naive.lower identify.not_identified.naive.upper }}"><i></i><i></i></div>
+          <div class="readout-e"><span>{{identify.not_identified.naive.lower:.3f}}</span>
+            <span>{{identify.not_identified.naive.upper:.3f}}</span></div>
+          <p class="readout-d">The truth is {{identify.not_identified.truth}}. The estimate
+            is off by {{identify.not_identified.naive.error:+.3f}}, against a standard error
+            of {{identify.not_identified.naive.se:.3f}} — the bias dwarfs the stated
+            uncertainty, and nothing in the output says so. Graph:
+            <code>{{identify.not_identified.graph}}</code>, measured
+            <code>{{identify.not_identified.measured}}</code>.</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">What axiom does with this graph</p>
+          <p class="small" style="margin:0">Status
+            <code>{{identify.not_identified.status}}</code>, route
+            <code>{{identify.not_identified.route}}</code>, and it names what is missing:
+            <code>{{identify.not_identified.unmeasured_required}}</code> — which nobody
+            recorded. The verdict arrives before the fit, from the graph alone.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The routes</p>
+      <h2>Three ways in, and they need different things</h2>
+      <p>Identification is not one criterion. It is a search over several, each licensed by
+        a different feature of the graph. Knowing which one you are on tells you what would
+        break it.</p>
+    </div>
+
+    <div class="grid-3">
+      <div>
+        <h3>Back door</h3>
+        <p class="small muted">Block every non-causal path from treatment to outcome by
+          conditioning on a set that contains no descendant of the treatment. The workhorse:
+          if you measured the common causes, this is your route.</p>
+        <p class="small"><strong>Needs:</strong> the confounders measured.<br>
+          <strong>Breaks on:</strong> one you did not think of.</p>
+        <p class="stamp" style="margin-top:8px">this build:
+          <code>{{identify.backdoor.route}}</code> ·
+          adjust on <code>{{identify.backdoor.adjustment_set}}</code></p>
+      </div>
+      <div>
+        <h3>Front door</h3>
+        <p class="small muted">When the confounder is unmeasured but the whole effect passes
+          through a mediator you <em>did</em> measure, the effect can be recovered in two
+          stages — treatment to mediator, mediator to outcome — without ever seeing the
+          confounder.</p>
+        <p class="small"><strong>Needs:</strong> a fully mediating variable with no
+          unblocked back door of its own.<br>
+          <strong>Breaks on:</strong> any direct path that skips the mediator.</p>
+        <p class="stamp" style="margin-top:8px">worked end to end in
+          <a href="example-04-epidemiology-frontdoor.html">the epidemiology example</a></p>
+      </div>
+      <div>
+        <h3>Instrument</h3>
+        <p class="small muted">A variable that moves the treatment, has no other route to
+          the outcome, and shares no cause with it. It gives you a lever: variation in the
+          treatment that is unrelated to the confounding.</p>
+        <p class="small"><strong>Needs:</strong> relevance and exclusion — the second is
+          untestable and is where the arguments happen.<br>
+          <strong>Breaks on:</strong> a weak instrument, or any second path.</p>
+        <p class="stamp" style="margin-top:8px">this build: 2SLS recovers
+          {{identify.instrument.estimates[1].estimate:.3f}} where naive OLS gives
+          {{identify.instrument.estimates[0].estimate:.3f}} · truth
+          {{identify.instrument.truth}}</p>
+      </div>
+    </div>
+
+    <div class="note mt" style="max-width:var(--measure)">
+      <p class="note-t">And sometimes there is no route</p>
+      <p class="small" style="margin:0">On the graph
+        <code>{{identify.not_identified.blocked.graph}}</code> axiom returns
+        <code>{{identify.not_identified.blocked.status}}</code>:
+        “{{identify.not_identified.blocked.reason}}”. That is not a limitation of the
+        library — no method recovers this effect from these variables, and a tool that
+        returned a number here would be inventing one.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The three verdicts</p>
+      <h2>What “identified” actually means, and what it does not</h2>
+      <p>axiom returns a status rather than a boolean, because the interesting cases are the
+        ones in between.</p>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f"><span class="tag is-good">identified</span></span>
+        <span class="ledger-s">A licensed route exists and everything it needs was measured.
+          Note what this is <em>not</em>: it is not a claim that the graph is right. It says
+          “if your graph is true, this estimator recovers this quantity.” The graph remains
+          your responsibility.</span>
+        <span class="ledger-v">→ estimate</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f"><span class="tag is-warn">downgraded</span></span>
+        <span class="ledger-s">A route exists in principle but something it requires is
+          unmeasured or unverified. You can still get a number — with the assumption named,
+          its state recorded, and what would challenge it attached. Most real work lives
+          here.</span>
+        <span class="ledger-v">→ estimate + ledger</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f"><span class="tag is-bad">blocked</span></span>
+        <span class="ledger-s">No route exists in this graph. The answer is to change the
+          data — measure the missing variable, find an instrument, run an experiment — not
+          to change the estimator.</span>
+        <span class="ledger-v">→ go and measure</span>
+      </div>
+    </div>
+
+    <p class="prose mt">The habit worth building is to run identification <em>first</em>, on
+      the graph, before any data is loaded. It costs seconds, it needs no sample, and when
+      it says <code>blocked</code> it has saved you the entire analysis and told you what to
+      go and get. When the depot tutorial does exactly this, the answer is that the panel on
+      hand cannot support the decision — and the rest of that tutorial is about designing the
+      experiment that can.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">One more thing it does not mean</p>
+      <h2>Identified here is not identified everywhere</h2>
+    </div>
+    <p class="prose">Identification is a statement about recovering an effect
+      <em>in the population the data came from</em>. It says nothing about whether that
+      effect applies to the population you are about to decide for. Those are different
+      questions with different criteria, and the second one is skipped far more often —
+      it is the subject of <a href="guide-transport.html">why a model does not travel</a>,
+      four guides on.</p>
+  </div>
+</section>
+
+<!--GUIDE-NAV-->

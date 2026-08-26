@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Provenance: hashes, ledgers and the paper trail · axiom guides</title>
+<meta name="description" content="Every number carries how it got here, or it is not evidence. Content-hashed specs, assumption ledgers that refuse to be incomplete, and why a result you cannot re-derive in six months is a rumour.">
+<meta property="og:title" content="Provenance: hashes, ledgers and the paper trail · axiom guides">
+<meta property="og:description" content="Every number carries how it got here, or it is not evidence. Content-hashed specs, assumption ledgers that refuse to be incomplete, and why a result you cannot re-derive in six months is a rumour.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="guide-provenance">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="guides.html">Guides</a><a class="navx" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · writing the question down</p>
+    <h1 style="max-width:20ch">Provenance: the paper&nbsp;trail</h1>
+    <p class="lede prose mt">Six months after an analysis, the number survives and everything
+      around it evaporates. The slide says 12%. Nobody can say which data, which window,
+      which adjustment set, or which of the four versions of the model produced it. At that
+      point it is not evidence. It is a rumour with a decimal point.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The problem</p>
+      <h2>Analyses decay in a specific, predictable way</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>Nobody sets out to lose the context. It goes in a fixed order, and it goes fast.
+          First the <em>alternatives</em> disappear: the three specifications you tried
+          before this one, and why you rejected them. Then the <em>assumptions</em>: the
+          adjustment set, the window, the population, all of which felt too obvious to write
+          down at the time.</p>
+        <p>Then the <em>question</em> goes. The number gets quoted in a context slightly
+          different from the one it was computed for, then again from there, and by the third
+          hop it is answering something nobody ever measured. Nothing dishonest happened at
+          any step.</p>
+        <p>What is left is a number and a confident memory. That is the state most
+          organisations are in about most of their evidence, and it is why the same questions
+          get re-analysed every eighteen months.</p>
+      </div>
+      <div>
+        <div class="note">
+          <p class="note-t">The design response</p>
+          <p class="small" style="margin:0">Make the trail a property of the object rather
+            than a discipline of the analyst. Anything that depends on discipline is gone by
+            the second deadline. In axiom every configuration object is a
+            <code>Spec</code>: frozen, versioned, and content-hashed, and every transfer of
+            evidence across a boundary appends a ledger line — not because somebody
+            remembered to, but because the alternative does not typecheck.</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">This site is built the same way</p>
+          <p class="small" style="margin:0">Every figure and statistic on these pages was
+            produced by running axiom, and every figure names the call that produced it.
+            The numbers on this page were computed while it was being generated.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Mechanism one</p>
+      <h2>A content hash: the same question has the same name</h2>
+      <p>Every spec hashes its own canonical contents. The hash does not depend on dictionary
+        insertion order, on <code>PYTHONHASHSEED</code>, or on which machine computed it — so
+        it is an address for the question rather than an artefact of a process.</p>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="ledger">
+          <div class="ledger-row">
+            <span class="ledger-f">the estimand measured</span>
+            <span class="ledger-s"><code>adaf9c9abfa4b2fddea9998b92d6ddb3193ff6ff8142626539b65a7a7b276137</code></span>
+            <span class="ledger-v"></span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">rebuilt from its own serialization</span>
+            <span class="ledger-s"><code>adaf9c9abfa4b2fddea9998b92d6ddb3193ff6ff8142626539b65a7a7b276137</code></span>
+            <span class="ledger-v"><span class="tag is-good">identical</span></span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">one field moved — window 12&nbsp;→&nbsp;13</span>
+            <span class="ledger-s"><code>854b16405ece6c638495c9f148cc3a5b7ec38d13bb2718e664aa5240dea7cc31</code></span>
+            <span class="ledger-v"><span class="tag is-warn">different</span></span>
+          </div>
+        </div>
+        <p class="stamp">round-trip stable: True ·
+          one changed field changes the hash:
+          True</p>
+      </div>
+      <div class="prose">
+        <p>The second row is the one that matters. A spec serializes to JSON and back to an
+          equal object, and the hash survives the round trip — so a question stored in a
+          database in March is provably the same question in September.</p>
+        <p>The third row is the other half. Changing the window from twelve periods to
+          thirteen is a change most workflows would not even record, and it produces a
+          completely different address. You cannot accidentally present the answer to
+          Tuesday's question as the answer to Monday's.</p>
+        <p>And when two hashes differ, you do not have to hunt for why:</p>
+        <div class="out">
+          <div class="out-h">source.diff(moved)</div>
+          <pre>spec=&#x27;axiom.estimands.spec:Estimand&#x27; changed={&#x27;window.stop&#x27;: (12, 13)}</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="note mt" style="max-width:var(--measure)">
+      <p class="note-t">Versioned, so old records stay readable</p>
+      <p class="small" style="margin:0">Each spec class carries a
+        <code>SCHEMA_VERSION</code> (this one is
+        <code>1</code>) and serializes through one
+        envelope — <code>data, schema_version, spec</code>. Loading an older
+        version applies a registered migration, or raises naming both versions. A stored
+        analysis does not silently become unreadable because the library moved on, and it
+        does not silently load <em>wrong</em> either.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Mechanism two</p>
+      <h2>A ledger that refuses to be incomplete</h2>
+      <p>A hash records <em>what</em> the question was. A ledger records <em>what happened
+        to the answer</em> — every boundary it crossed and what was assumed to get it
+        across.</p>
+    </div>
+
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">facet:population</span>
+        <span class="ledger-s">population differs: district_A vs district_B<br>
+          <em class="muted small">s_admissibility — challenged by
+          overlap; moderator interaction in meta</em></span>
+        <span class="ledger-v"><span class="tag is-good">satisfied</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">facet:window</span>
+        <span class="ledger-s">0.813636 of the carryover mass lands within 12 period(s); scaled to the steady-state total by 1.22905<br>
+          <em class="muted small">carryover_contained — challenged by
+          half-life against window length</em></span>
+        <span class="ledger-v"><span class="tag is-warn">unverified</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">facet:level</span>
+        <span class="ledger-s">cluster read at individual level: point factor 1 (additive effect), SE factor 1.76777<br>
+          <em class="muted small">linear_aggregation — challenged by
+          the Jensen gap under a nonlinear response</em></span>
+        <span class="ledger-v"><span class="tag is-warn">unverified</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">transport</span>
+        <span class="ledger-s">transport verdict identified via s_admissible_adjustment<br>
+          <em class="muted small">s_admissibility — challenged by
+          a mechanism difference between the populations the diagram omits</em></span>
+        <span class="ledger-v"><span class="tag is-good">satisfied</span></span>
+      </div>
+    </div>
+
+    <div class="grid-2 mt">
+      <div class="prose">
+        <p>Three properties make this more than logging.</p>
+        <p><strong>It is complete by construction.</strong> The ledger starts from the
+          transfer plan with one line per differing facet, marked uncorrected. Each
+          correction <em>replaces</em> a line rather than adding one. So a facet nobody
+          corrected is still visible — as an explicitly uncorrected facet — instead of being
+          absent and unnoticed. <code>check_complete</code> then verifies it:
+          <em>every differing facet accounted for exactly once (population, window, level)</em>.</p>
+        <p><strong>Facts and assumptions look different.</strong> A registered unit
+          conversion carries no assumption. An assumption carries a name, a state, and the
+          thing that would refute it. You can read a ledger and see immediately which lines
+          are exposed.</p>
+        <p><strong>It is addressable.</strong> The ledger has its own content hash —
+          <code>14c74efa68608cace20fd0b80f04d0aae03cac6df32908ce2ad3847ca22bfc36</code> — so a number in a report can be
+          traced back to the exact chain that produced it.</p>
+      </div>
+      <div class="stack">
+        <div>
+          <p class="readout-l">How many of these lines are load-bearing</p>
+          <div class="readout">
+            <div class="readout-v">2 of
+              4</div>
+            <p class="readout-d">still <code>unverified</code>. That is the honest state of
+              this transfer, and it is why the overall status is
+              <code>downgraded</code> rather than
+              <code>identified</code>.</p>
+          </div>
+        </div>
+        <div class="note">
+          <p class="note-t">Downgraded is not a failing grade</p>
+          <p class="small" style="margin:0">It is a description of the evidence. Most real
+            work is downgraded, permanently and correctly. The alternative — a tool that
+            reports <code>identified</code> because nothing checked — is not a better
+            result, it is a worse instrument.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">What to take from this</p>
+      <h2>Provenance is what makes evidence reusable instead of disposable</h2>
+    </div>
+    <div class="rules">
+      <div class="rule-i">
+        <div class="rule-n">01</div>
+        <div>
+          <h4>Write the question down and store its hash with the answer</h4>
+          <p>This is the whole practice in one sentence, and it is cheap. Everything else on
+            this page is machinery for making it hard to skip.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">02</div>
+        <div>
+          <h4>Record the alternative you rejected, not only the choice you made</h4>
+          <p>“We used a geometric carryover” is half a record. “We used a geometric
+            carryover rather than a delayed one, because the half-life implied by the second
+            was longer than the observation window” is a record somebody can audit — and
+            revisit when a longer window arrives.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">03</div>
+        <div>
+          <h4>Never let a number and its interval definition be separated</h4>
+          <p>An interval means nothing without knowing what kind it is and at what mass. On
+            this site they always travel together — e.g.
+            <code>[1.9849,
+            2.0404] (95% WALD)</code> — never a bare
+            pair of numbers.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">04</div>
+        <div>
+          <h4>Make the trail the default path, not the diligent one</h4>
+          <p>If producing the record is a separate step, it will be skipped exactly when it
+            matters most — under deadline, on the analysis that turns out to be
+            important.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Guide 8 of 12</p>
+    <div class="hero-cta" style="margin-top:12px"><a class="btn btn-2" href="guide-transport.html">&larr; Why a model does not travel</a><a class="btn btn-2" href="guides.html">All the guides</a><a class="btn btn-1" href="guide-priors.html">Priors that mean something &rarr;</a></div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

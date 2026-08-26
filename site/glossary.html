@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glossary · axiom</title>
+<meta name="description" content="Every term the axiom guides use, defined once, in plain language, with a link to the page that explains it properly.">
+<meta property="og:title" content="Glossary · axiom">
+<meta property="og:description" content="Every term the axiom guides use, defined once, in plain language, with a link to the page that explains it properly.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="glossary">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="guides.html">Guides</a><a class="navx" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Reference</p>
+    <h1 style="max-width:14ch">Glossary</h1>
+    <p class="lede prose mt">Short definitions, in the vocabulary this library uses:
+      treatment, dose, unit, outcome, covariate. Where a term has a guide of its own, the
+      definition here is the one-line version and the link is the real answer.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Causal structure</p>
+      <h2>What causes what</h2>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">causal graph (DAG)</span>
+        <span class="ledger-s">A set of variables and arrows, where an arrow means
+          “intervening here could change that”. The <em>missing</em> arrows carry the
+          content. <a href="guide-graphs.html">Guide →</a></span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">confounder</span>
+        <span class="ledger-s">A common cause of treatment and outcome. Creates a
+          correlation that is not an effect. Must be adjusted for.
+          <a href="guide-confounding.html">Guide →</a></span>
+        <span class="ledger-v"><span class="tag is-good">adjust</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">collider</span>
+        <span class="ledger-s">A common <em>effect</em> of two variables. Adjusting for it
+          creates a correlation that was not there — the reason “control for everything” is
+          bad advice.</span>
+        <span class="ledger-v"><span class="tag is-bad">never</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">mediator</span>
+        <span class="ledger-s">A variable on the causal path from treatment to outcome.
+          Adjusting for it leaves the direct effect only — a different question.</span>
+        <span class="ledger-v"><span class="tag is-warn">depends</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">instrument</span>
+        <span class="ledger-s">A variable that moves the treatment and reaches the outcome
+          by no other route. A lever, used when the back door cannot be closed.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">d-separation</span>
+        <span class="ledger-s">The graphical rule for reading conditional independence off a
+          DAG. What every identification criterion on this site is ultimately checking.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f"><code>do(X = x)</code></span>
+        <span class="ledger-s">Setting a variable from outside, breaking whatever normally
+          determines it. Different from observing that it equals <em>x</em>, and the whole
+          difference between prediction and intervention.
+          <a href="guide-causal-question.html">Guide →</a></span>
+        <span class="ledger-v"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Identification</p>
+      <h2>Whether the effect is recoverable at all</h2>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">identification</span>
+        <span class="ledger-s">Whether a causal quantity can be recovered from the available
+          data <em>at all</em>, given the graph. Prior to, and independent of, estimation.
+          <a href="guide-identification.html">Guide →</a></span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">back-door criterion</span>
+        <span class="ledger-s">Block every non-causal path by conditioning on a set
+          containing no descendant of the treatment. The most common route.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">front-door criterion</span>
+        <span class="ledger-s">Recover the effect through a fully mediating variable, even
+          when the confounder is unmeasured.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">adjustment set</span>
+        <span class="ledger-s">The variables to condition on. Derived from the graph, not
+          chosen by intuition. Several valid sets are a consistency check, not a menu.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">status: identified / downgraded / blocked</span>
+        <span class="ledger-s">A licensed route with everything measured; a route whose
+          requirements are unmeasured or unverified; no route in this graph. Most real work
+          is <code>downgraded</code>, correctly.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">assumption</span>
+        <span class="ledger-s">In axiom, a named object with a statement, a state
+          (<code>satisfied</code> / <code>unverified</code>) and the thing that would refute
+          it. Not a footnote.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">sensitivity analysis</span>
+        <span class="ledger-s">How strong an unmeasured confounder would have to be to
+          overturn the conclusion. Report it with the estimate.
+          <a href="guide-critique.html">Guide →</a></span>
+        <span class="ledger-v"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Defining the quantity</p>
+      <h2>What exactly is being estimated</h2>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">estimand</span>
+        <span class="ledger-s">The quantity you want, written down completely: eight facets,
+          all required. Distinct from the <em>estimator</em> (the procedure) and the
+          <em>estimate</em> (the number). <a href="guide-estimand.html">Guide →</a></span>
+        <span class="ledger-v">8 facets</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">facet</span>
+        <span class="ledger-s">One of the eight things an estimand fixes: quantity,
+          intervention, outcome, population, window, level, conditioning, dimension. Two
+          quantities are the same only if all eight match.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">contrast / marginal / elasticity</span>
+        <span class="ledger-s">Different <em>functionals</em> of the same response curve —
+          a difference between two doses, a slope at a dose, a percentage response. Not
+          interchangeable, and axiom refuses to transfer between them.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">dimension / unit / scope</span>
+        <span class="ledger-s">What kind of thing (currency, time, outcome); which measure
+          of it (USD, days); and which population, window and level. Three separate
+          mismatches. <a href="guide-dimensions.html">Guide →</a></span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">level</span>
+        <span class="ledger-s">The unit of analysis — individual, cluster, aggregate —
+          together with the interference model. A household is not a person.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">interference</span>
+        <span class="ledger-s">When one unit's treatment affects another unit's outcome. If
+          it is present and undeclared, most standard analysis is wrong; axiom blocks a
+          level transfer that would assume it away.</span>
+        <span class="ledger-v"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Carrying an answer somewhere else</p>
+      <h2>Transportability</h2>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">transportability</span>
+        <span class="ledger-s">Whether an effect measured in one population is valid in
+          another. A different question from identification, with different criteria.
+          <a href="guide-transport.html">Guide →</a></span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">selection diagram</span>
+        <span class="ledger-s">A causal graph plus an <code>S[·]</code> node on every
+          variable whose mechanism differs between the two populations. Turns “different
+          population” from an adjective into a testable structure.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">S-admissible set</span>
+        <span class="ledger-s">A set <code>Z</code> that separates the S-nodes from the
+          outcome, licensing the transport formula. Here:
+          <code>age</code>.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">transport formula</span>
+        <span class="ledger-s">The source population's <code>Z</code>-specific effects,
+          reweighted by the target's own distribution of <code>Z</code>:
+          <code>P*(illness|do(filters)) = Σ_{age} P(illness|do(filters),age) P*(age)</code></span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">trivial transportability</span>
+        <span class="ledger-s">The target population identifies the effect from its own
+          data, so the source study is not needed at all. Good news that reads like a
+          technicality.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">transfer plan</span>
+        <span class="ledger-s">What <code>Estimand.transfer_to</code> returns: every
+          differing facet with the assumption that would license it, or a refusal. No facet
+          passes silently.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">unsupported</span>
+        <span class="ledger-s">None of the implemented sufficient conditions fires. A claim
+          about the evidence, deliberately not a claim that no transfer exists.</span>
+        <span class="ledger-v"><span class="tag is-warn">not “no”</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Keeping the trail</p>
+      <h2>Provenance</h2>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">spec</span>
+        <span class="ledger-s">Any declarative configuration object in axiom: frozen,
+          versioned, content-hashed, and serializable to JSON and back.
+          <a href="guide-provenance.html">Guide →</a></span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">content hash</span>
+        <span class="ledger-s">A stable address for a spec's contents, independent of
+          process, machine and dict ordering. Same question, same hash; one changed field,
+          different hash.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">ledger / ledger line</span>
+        <span class="ledger-s">The record of every boundary a number crossed. One line per
+          differing facet, complete by construction, with facts and assumptions
+          distinguishable at a glance.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">schema version</span>
+        <span class="ledger-s">Every spec class carries one. Loading an older record applies
+          a registered migration or raises naming both versions — it never loads
+          wrong.</span>
+        <span class="ledger-v"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Design, fitting and evidence</p>
+      <h2>Doing the work</h2>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">prior</span>
+        <span class="ledger-s">A claim about magnitudes in the outcome's own units, statable
+          to a domain expert. Not a regularization setting.
+          <a href="guide-priors.html">Guide →</a></span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">prior predictive check</span>
+        <span class="ledger-s">Simulate from the prior, push it through the model, and look
+          at the outcomes it implies. Catches most bad priors before any data.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">MDE</span>
+        <span class="ledger-s">Minimum detectable effect. Conventionally the input to
+          sizing; better treated as an output, derived from the boundary the decision turns
+          on. <a href="guide-design.html">Guide →</a></span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">EVPI / EVSI</span>
+        <span class="ledger-s">Expected value of perfect information, and of this specific
+          sample. What the study is worth in the decision's own currency — the ceiling, and
+          the actual.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">calibration</span>
+        <span class="ledger-s">Folding an experimental measurement into a broader model, as
+          a prior, a likelihood term, or a constraint. The route changes the answer.
+          <a href="guide-calibration.html">Guide →</a></span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">carryover</span>
+        <span class="ledger-s">How a dose's effect spills into later periods. Decides how
+          much of an effect a short observation window can see, and therefore the
+          <code>window</code> facet's correction.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">response surface</span>
+        <span class="ledger-s">The fitted mapping from dose to outcome. Everything — the
+          likelihood, the design maths, the optimizer — reads it through one
+          <code>forward()</code>.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">design effect</span>
+        <span class="ledger-s">How much a clustered sample inflates a standard error
+          relative to an independent one. Why reading a household measurement per person
+          widens the interval.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">meta-analysis</span>
+        <span class="ledger-s">Pooling evidence across studies with their heterogeneity
+          taken seriously. The pooled interval is usually wider than any single study's.</span>
+        <span class="ledger-v"></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">stopping rule</span>
+        <span class="ledger-s">A pre-committed schedule of looks and the boundary each must
+          cross. Without one, “stop when it's clear” has no error rate.</span>
+        <span class="ledger-v"></span>
+      </div>
+    </div>
+
+    <p class="prose mt" style="margin-top:32px">Looking for a specific function or class
+      instead? The <a href="api.html">API map</a> lists every public symbol in the library
+      with its signature and a real call taken from an executed notebook.</p>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

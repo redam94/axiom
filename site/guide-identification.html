@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Identification comes before estimation · axiom guides</title>
+<meta name="description" content="Whether an effect is recoverable at all is a question about the graph, not the sample. It is answerable before you fit anything, and &#x27;no&#x27; is the most valuable answer you can get.">
+<meta property="og:title" content="Identification comes before estimation · axiom guides">
+<meta property="og:description" content="Whether an effect is recoverable at all is a question about the graph, not the sample. It is answerable before you fit anything, and &#x27;no&#x27; is the most valuable answer you can get.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="guide-identification">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="guides.html">Guides</a><a class="navx" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · foundations</p>
+    <h1 style="max-width:20ch">Identification comes before estimation</h1>
+    <p class="lede prose mt">Estimation asks: given that this quantity is recoverable, what
+      is it, and how precisely? Identification asks the prior question — is it recoverable at
+      all? The two get confused constantly, because every estimator answers the second
+      question whether or not the first one was ever asked.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The distinction</p>
+      <h2>More data does not fix a missing route</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>An <em>estimation</em> problem gets better with sample size. Wide interval, noisy
+          answer, unstable fit — collect more rows and it improves.</p>
+        <p>An <em>identification</em> problem does not. If a common cause of treatment and
+          outcome was never measured, then a million rows gives you the same wrong number
+          with a much tighter interval around it. The bias does not shrink; only the
+          honesty does.</p>
+        <p>This is the case worth being frightened of, because it looks exactly like
+          success. Below is a real fit from this build, on a graph where the confounder
+          <code>Z</code> exists but was not observed.</p>
+      </div>
+      <div>
+        <p class="readout-l">A confident, precise, wrong answer</p>
+        <div class="readout">
+          <div class="readout-v">2.726</div>
+          <div class="readout-bar" style="--pos:50.0%"><i></i><i></i></div>
+          <div class="readout-e"><span>2.693</span>
+            <span>2.758</span></div>
+          <p class="readout-d">The truth is 2. The estimate
+            is off by +0.726, against a standard error
+            of 0.017 — the bias dwarfs the stated
+            uncertainty, and nothing in the output says so. Graph:
+            <code>X -&gt; Y, Z -&gt; X, Z -&gt; Y</code>, measured
+            <code>X, Y</code>.</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">What axiom does with this graph</p>
+          <p class="small" style="margin:0">Status
+            <code>downgraded</code>, route
+            <code>backdoor_unmeasured</code>, and it names what is missing:
+            <code>Z</code> — which nobody
+            recorded. The verdict arrives before the fit, from the graph alone.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The routes</p>
+      <h2>Three ways in, and they need different things</h2>
+      <p>Identification is not one criterion. It is a search over several, each licensed by
+        a different feature of the graph. Knowing which one you are on tells you what would
+        break it.</p>
+    </div>
+
+    <div class="grid-3">
+      <div>
+        <h3>Back door</h3>
+        <p class="small muted">Block every non-causal path from treatment to outcome by
+          conditioning on a set that contains no descendant of the treatment. The workhorse:
+          if you measured the common causes, this is your route.</p>
+        <p class="small"><strong>Needs:</strong> the confounders measured.<br>
+          <strong>Breaks on:</strong> one you did not think of.</p>
+        <p class="stamp" style="margin-top:8px">this build:
+          <code>backdoor</code> ·
+          adjust on <code>Z</code></p>
+      </div>
+      <div>
+        <h3>Front door</h3>
+        <p class="small muted">When the confounder is unmeasured but the whole effect passes
+          through a mediator you <em>did</em> measure, the effect can be recovered in two
+          stages — treatment to mediator, mediator to outcome — without ever seeing the
+          confounder.</p>
+        <p class="small"><strong>Needs:</strong> a fully mediating variable with no
+          unblocked back door of its own.<br>
+          <strong>Breaks on:</strong> any direct path that skips the mediator.</p>
+        <p class="stamp" style="margin-top:8px">worked end to end in
+          <a href="example-04-epidemiology-frontdoor.html">the epidemiology example</a></p>
+      </div>
+      <div>
+        <h3>Instrument</h3>
+        <p class="small muted">A variable that moves the treatment, has no other route to
+          the outcome, and shares no cause with it. It gives you a lever: variation in the
+          treatment that is unrelated to the confounding.</p>
+        <p class="small"><strong>Needs:</strong> relevance and exclusion — the second is
+          untestable and is where the arguments happen.<br>
+          <strong>Breaks on:</strong> a weak instrument, or any second path.</p>
+        <p class="stamp" style="margin-top:8px">this build: 2SLS recovers
+          1.999 where naive OLS gives
+          2.347 · truth
+          2</p>
+      </div>
+    </div>
+
+    <div class="note mt" style="max-width:var(--measure)">
+      <p class="note-t">And sometimes there is no route</p>
+      <p class="small" style="margin:0">On the graph
+        <code>X -&gt; Y, X &lt;-&gt; Y</code> axiom returns
+        <code>blocked</code>:
+        “no back-door, front-door, or instrumental route exists in the graph”. That is not a limitation of the
+        library — no method recovers this effect from these variables, and a tool that
+        returned a number here would be inventing one.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The three verdicts</p>
+      <h2>What “identified” actually means, and what it does not</h2>
+      <p>axiom returns a status rather than a boolean, because the interesting cases are the
+        ones in between.</p>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f"><span class="tag is-good">identified</span></span>
+        <span class="ledger-s">A licensed route exists and everything it needs was measured.
+          Note what this is <em>not</em>: it is not a claim that the graph is right. It says
+          “if your graph is true, this estimator recovers this quantity.” The graph remains
+          your responsibility.</span>
+        <span class="ledger-v">→ estimate</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f"><span class="tag is-warn">downgraded</span></span>
+        <span class="ledger-s">A route exists in principle but something it requires is
+          unmeasured or unverified. You can still get a number — with the assumption named,
+          its state recorded, and what would challenge it attached. Most real work lives
+          here.</span>
+        <span class="ledger-v">→ estimate + ledger</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f"><span class="tag is-bad">blocked</span></span>
+        <span class="ledger-s">No route exists in this graph. The answer is to change the
+          data — measure the missing variable, find an instrument, run an experiment — not
+          to change the estimator.</span>
+        <span class="ledger-v">→ go and measure</span>
+      </div>
+    </div>
+
+    <p class="prose mt">The habit worth building is to run identification <em>first</em>, on
+      the graph, before any data is loaded. It costs seconds, it needs no sample, and when
+      it says <code>blocked</code> it has saved you the entire analysis and told you what to
+      go and get. When the depot tutorial does exactly this, the answer is that the panel on
+      hand cannot support the decision — and the rest of that tutorial is about designing the
+      experiment that can.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">One more thing it does not mean</p>
+      <h2>Identified here is not identified everywhere</h2>
+    </div>
+    <p class="prose">Identification is a statement about recovering an effect
+      <em>in the population the data came from</em>. It says nothing about whether that
+      effect applies to the population you are about to decide for. Those are different
+      questions with different criteria, and the second one is skipped far more often —
+      it is the subject of <a href="guide-transport.html">why a model does not travel</a>,
+      four guides on.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Guide 4 of 12</p>
+    <div class="hero-cta" style="margin-top:12px"><a class="btn btn-2" href="guide-graphs.html">&larr; Writing your beliefs down</a><a class="btn btn-2" href="guides.html">All the guides</a><a class="btn btn-1" href="guide-estimand.html">The estimand, in eight facets &rarr;</a></div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

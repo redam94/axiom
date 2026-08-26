@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The estimand, in eight facets · axiom guides</title>
+<meta name="description" content="Two quantities are the same quantity only if all eight facets match: quantity, intervention, outcome, population, window, level, conditioning, dimension. Six of the eight can be bridged by a named assumption; two cannot be bridged at all.">
+<meta property="og:title" content="The estimand, in eight facets · axiom guides">
+<meta property="og:description" content="Two quantities are the same quantity only if all eight facets match: quantity, intervention, outcome, population, window, level, conditioning, dimension. Six of the eight can be bridged by a named assumption; two cannot be bridged at all.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="guide-estimand">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="guides.html">Guides</a><a class="navx" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Guide · writing the question down</p>
+    <h1 style="max-width:16ch">The estimand, in eight facets</h1>
+    <p class="lede prose mt">“The effect of filters on illness” is not a quantity. It is a
+      topic. Somewhere between that phrase and a number, eight separate decisions get made —
+      and if they are made silently, they get made differently by each person in the
+      room.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Why bother</p>
+      <h2>The argument nobody can win</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>Two analysts study the same programme and report different effects. The meeting
+          that follows is about methods: whose model, whose covariates, whose software. It
+          goes badly, because that is not what differs.</p>
+        <p>One computed the effect of going from no filter to one filter, per household, over
+          the twelve weeks observed, in the district studied. The other computed the effect
+          per person, at steady state, in the district being decided for. Both are correct.
+          They are answers to different questions, and no comparison of methods will ever
+          reveal that.</p>
+        <p>An <code>Estimand</code> is that question written down completely enough that the
+          two are visibly different objects — with different content hashes — before anybody
+          argues about the number.</p>
+      </div>
+      <div>
+        <div class="note">
+          <p class="note-t">The rule</p>
+          <p class="small" style="margin:0">Two quantities are the <strong>same
+            quantity</strong> if and only if all eight facets match. Not “are roughly
+            comparable”. Match. Anything else is a transfer, and a transfer needs a
+            licence.</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">It is a key, not paperwork</p>
+          <p class="small" style="margin:0">The eight facets exist because they are exactly
+            the dimensions along which an answer can fail to carry to a new setting. That is
+            why <code>Estimand</code> is the object that
+            <a href="guide-transport.html">transportability</a> is defined on, and why the
+            list has eight entries rather than however many felt tidy.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The eight</p>
+      <h2>What each one fixes, and what it takes to change it</h2>
+      <p>The table below is not transcribed from documentation. Each row was produced by
+        taking one estimand, changing <em>only</em> that facet, and asking axiom what
+        happens — so it cannot describe a rule the library no longer has.</p>
+    </div>
+
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">quantity</span>
+        <span class="ledger-s">which functional: a contrast, a marginal, a ratio, an elasticity, an area<br>
+          <em class="muted small">a different functional is a different quantity; re-express first</em></span>
+        <span class="ledger-v"><span class="tag is-bad">blocked</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">intervention</span>
+        <span class="ledger-s">what is set, to what value, and how<br>
+          <em class="muted small">licensed by
+          <code>surface_correct_between_doses</code> — challenged by
+          curvature; the chord-versus-marginal correction</em></span>
+        <span class="ledger-v"><span class="tag is-warn">downgraded</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">outcome</span>
+        <span class="ledger-s">which outcome, at what aggregation, in what dimension<br>
+          <em class="muted small">licensed by
+          <code>outcome_commensurability</code> — challenged by
+          usually not falsifiable; must be asserted</em></span>
+        <span class="ledger-v"><span class="tag is-warn">downgraded</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">population</span>
+        <span class="ledger-s">the target population and the strata that define it<br>
+          <em class="muted small">licensed by
+          <code>s_admissibility</code> — challenged by
+          overlap; moderator interaction in meta</em></span>
+        <span class="ledger-v"><span class="tag is-warn">downgraded</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">window</span>
+        <span class="ledger-s">the time window and whether it is per-period or cumulative<br>
+          <em class="muted small">licensed by
+          <code>stationary_dynamics</code> and
+          <code>carryover_contained</code> — challenged by
+          half-life against window length</em></span>
+        <span class="ledger-v"><span class="tag is-warn">downgraded</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">level</span>
+        <span class="ledger-s">the unit of analysis and the interference model<br>
+          <em class="muted small">licensed by
+          <code>linear_aggregation</code> — challenged by
+          the Jensen gap under a nonlinear response</em></span>
+        <span class="ledger-v"><span class="tag is-warn">downgraded</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">conditioning</span>
+        <span class="ledger-s">the strata the answer is conditional on; empty for a marginal one<br>
+          <em class="muted small">licensed by
+          <code>target_strata_weights_known</code> — challenged by
+          the provenance of the strata distribution</em></span>
+        <span class="ledger-v"><span class="tag is-warn">downgraded</span></span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">dimension</span>
+        <span class="ledger-s">derived from the others and asserted against the declaration<br>
+          <em class="muted small">quantities of different dimension are different quantities</em></span>
+        <span class="ledger-v"><span class="tag is-bad">blocked</span></span>
+      </div>
+    </div>
+
+    <p class="prose mt">6 of the 8 can be bridged by
+      naming an assumption. 2 cannot be bridged at all, and that is the
+      more interesting number.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The two that cannot be bridged</p>
+      <h2>Refusal is a feature, and it is rare enough to matter</h2>
+    </div>
+    <div class="grid-2">
+      <div>
+        <h3>A different functional is a different question</h3>
+        <p class="small muted">A contrast — how much does illness change between no filter
+          and one filter — and an elasticity — what percentage change follows a one percent
+          change in coverage — are not two versions of one quantity. There is no assumption
+          that turns one into the other, so axiom does not offer one:
+          <em>a different functional is a different quantity; re-express first</em></p>
+        <p class="small">The fix is not an argument. It is to compute the elasticity from
+          the fitted surface, which is a thing you can do — but by re-deriving it, not by
+          relabelling the contrast you already have.</p>
+      </div>
+      <div>
+        <h3>A different dimension is a different thing</h3>
+        <p class="small muted">Illness days and treatment cost are not commensurable at any
+          exchange rate the library is entitled to invent:
+          <em>quantities of different dimension are different quantities</em></p>
+        <p class="small">Converting between them is a decision about value, and it belongs
+          to whoever owns the decision — recorded explicitly, not smuggled in by a model
+          that quietly added a currency to an outcome. See
+          <a href="guide-dimensions.html">dimensions, units and scope</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The habit</p>
+      <h2>Write the target estimand before you look at any data</h2>
+    </div>
+    <div class="rules">
+      <div class="rule-i">
+        <div class="rule-n">01</div>
+        <div>
+          <h4>It stops the wrong argument</h4>
+          <p>When two answers disagree, the first question becomes “are these the same
+            estimand?” rather than “whose model is better”. Often they are not, and the
+            disagreement dissolves in a minute instead of a fortnight.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">02</div>
+        <div>
+          <h4>It is a commitment device</h4>
+          <p>Written first, hashed, and stored, the estimand is evidence that the question
+            was not adjusted after the answer arrived. That is most of what
+            pre-registration buys, at almost no cost. See
+            <a href="guide-provenance.html">provenance</a>.</p>
+        </div>
+      </div>
+      <div class="rule-i">
+        <div class="rule-n">03</div>
+        <div>
+          <h4>It makes reuse safe instead of tempting</h4>
+          <p>Six months later, somebody will find your number and use it. With an estimand
+            attached, <code>transfer_to</code> tells them in one call what would have to be
+            true — and refuses when nothing would be. Without one, they will just use
+            it.</p>
+        </div>
+      </div>
+    </div>
+    <p class="prose mt">The <a href="tutorial.html">Making a model travel</a> tutorial builds
+      exactly this comparison in its first step, and
+      <a href="guide-transport.html">the transportability guide</a> carries it all the way to
+      a corrected number and its ledger.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Guide 5 of 12</p>
+    <div class="hero-cta" style="margin-top:12px"><a class="btn btn-2" href="guide-identification.html">&larr; Identification comes before estimation</a><a class="btn btn-2" href="guides.html">All the guides</a><a class="btn btn-1" href="guide-dimensions.html">Dimensions, units and scope &rarr;</a></div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>
