@@ -16,6 +16,7 @@ The executed series under `nbs/design/`:
 - [06-economics-and-portfolio.ipynb](../../nbs/design/06-economics-and-portfolio.ipynb)
 - [07-sequential.ipynb](../../nbs/design/07-sequential.ipynb)
 - [08-identifiability.ipynb](../../nbs/design/08-identifiability.ipynb)
+- [09-assignment.ipynb](../../nbs/design/09-assignment.ipynb)
 
 ## Package
 
@@ -28,6 +29,9 @@ The executed series under `nbs/design/`:
 
 ```{eval-rst}
 .. automodule:: axiom.design.anchor
+   :members:
+
+.. automodule:: axiom.design.assign
    :members:
 
 .. automodule:: axiom.design.cluster
