@@ -68,6 +68,8 @@ __all__ = [
     "intervals",
     "lines",
     "mark_x",
+    "mark_y",
+    "points",
     "scatter_fit",
     "shade",
     "steps",
@@ -527,6 +529,37 @@ def density(
     return _legend_fit(fig)
 
 
+def points(
+    groups: Mapping[str, tuple[Sequence[float], Sequence[float]]],
+    *,
+    colors: Sequence[str] | None = None,
+    symbols: Sequence[str] | None = None,
+    size: int = 10,
+    **layout: Any,
+) -> go.Figure:
+    """Named clouds of (x, y) — where a design put its points, where a path went."""
+    fig = figure(**layout)
+    palette = list(colors) if colors is not None else list(SERIES)
+    marks = list(symbols) if symbols is not None else ["circle", "diamond", "square", "x"]
+    for i, (name, (xs, ys)) in enumerate(groups.items()):
+        fig.add_scatter(
+            x=np.asarray(xs, dtype=float),
+            y=np.asarray(ys, dtype=float),
+            mode="markers",
+            name=name,
+            marker={
+                "size": size,
+                "color": palette[i % len(palette)],
+                "symbol": marks[i % len(marks)],
+                "line": {"width": 2, "color": SURFACE},
+            },
+            showlegend=True,
+            hovertemplate=f"{name}: %{{x:.4g}}, %{{y:.4g}}<extra></extra>",
+        )
+    fig.update_xaxes(showgrid=True, gridcolor=GRID)
+    return _legend_fit(fig)
+
+
 def scatter_fit(
     truth: Sequence[float],
     estimate: Sequence[float],
@@ -638,6 +671,26 @@ def mark_x(
             xanchor="right" if right else "left",
             yanchor="top",
             xshift=-6 if right else 6,
+            font={"size": 11, "color": color},
+        )
+    return fig
+
+
+def mark_y(
+    fig: go.Figure, y: float, *, text: str = "", color: str = MUTED, dash: str = "dot"
+) -> go.Figure:
+    """A horizontal reference — zero on a slope, a target, a break-even."""
+    fig.add_hline(x0=0, x1=1, y=y, line={"color": color, "width": 2, "dash": dash})
+    if text:
+        fig.add_annotation(
+            x=0.99,
+            xref="paper",
+            y=y,
+            yref="y",
+            text=text,
+            showarrow=False,
+            xanchor="right",
+            yanchor="bottom",
             font={"size": 11, "color": color},
         )
     return fig
