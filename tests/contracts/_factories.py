@@ -272,6 +272,9 @@ from axiom.infer import (
 )
 from axiom.io import (
     CatalogEntry,
+    Change,
+    Consensus,
+    Definition,
     Deviation,
     ExperimentRun,
     Program,
@@ -2019,6 +2022,31 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
         created="2026-03-02T09:00:00+00:00",
         derived_from="b" * 64,
         tags={"role": "plan"},
+    ),
+    Definition: lambda: Definition(
+        scope="northwind/growth",
+        name="conversion",
+        version=2,
+        digest="c" * 64,
+        type_name="axiom.core.entities:Outcome",
+        registered="2026-03-02T09:00:00+00:00",
+        supersedes="b" * 64,
+        note="the growth team switched to a rate",
+    ),
+    Change: lambda: Change(
+        scope="northwind/growth",
+        name="conversion",
+        from_version=1,
+        to_version=2,
+        at="2026-03-02T09:00:00+00:00",
+        changed={"aggregation": "'sum' -> 'mean'"},
+        digests=("b" * 64, "c" * 64),
+    ),
+    Consensus: lambda: Consensus(
+        name="conversion",
+        scopes=("northwind/growth", "acme/growth"),
+        by_digest={"b" * 64: ("acme/growth",), "c" * 64: ("northwind/growth",)},
+        differences={"northwind/growth": {"aggregation": "'sum' -> 'mean'"}},
     ),
     Transition: lambda: Transition(
         stage="committed", at="2026-03-04T09:00:00+00:00", note="plan frozen"
