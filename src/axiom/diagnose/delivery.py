@@ -45,9 +45,8 @@ import numpy.typing as npt
 from pydantic import Field, model_validator
 from scipy import stats
 
-from axiom.core import Assumption, LedgerLine, NonEmptyStr, Spec, Verdict
+from axiom.core import Assumption, LedgerLine, Multiplicity, NonEmptyStr, Spec, Verdict, adjust
 from axiom.design import ASSUMPTIONS, ArmAllocation, Assigned, BalanceRow, standardized_differences
-from axiom.diagnose.structure import Correction, adjust
 
 __all__ = [
     "SRM_ALPHA",
@@ -355,7 +354,7 @@ class BalanceCheck(Spec):
 
     tests: tuple[BalanceTest, ...]
     rows: tuple[BalanceRow, ...]
-    correction: Correction
+    correction: Multiplicity
     alpha: float = Field(gt=0, lt=1)
     imbalanced: tuple[str, ...]
     skipped: tuple[str, ...] = ()
@@ -398,7 +397,7 @@ def balance(
     allocation: ArmAllocation | None = None,
     *,
     alpha: float = SRM_ALPHA,
-    correction: Correction = "holm",
+    correction: Multiplicity = "holm",
 ) -> BalanceCheck:
     """Standardized differences plus a one-way F test per covariate, corrected.
 
@@ -523,7 +522,7 @@ def check_delivery(
     covariates: Mapping[str, npt.ArrayLike] | None = None,
     arm_of: npt.ArrayLike | Assigned | None = None,
     alpha: float = SRM_ALPHA,
-    correction: Correction = "holm",
+    correction: Multiplicity = "holm",
 ) -> DeliveryReport:
     """Every delivery check the arguments support, and one verdict over them.
 

@@ -114,7 +114,10 @@ from axiom.design import (
     OpportunityCost,
     PowerCurve,
     PowerResult,
+    ProgramDecision,
+    ProgramReport,
     ProgramSchedule,
+    Readout,
     Recommendation,
     ReExperimentTiming,
     SampleSize,
@@ -152,6 +155,7 @@ from axiom.design import (
     pocock,
     power,
     power_curve,
+    program_decisions,
     pulse,
     rank_treatments,
     recommend,
@@ -1453,6 +1457,17 @@ def _confidence_sequence() -> ConfidenceSequence:
     )
 
 
+_READOUTS = (
+    Readout(experiment="E1", party="acme", metric="primary", p_value=0.001, evalue=40.0),
+    Readout(experiment="E1", party="acme", metric="churn", p_value=0.4, evalue=1.1),
+    Readout(experiment="E2", party="northwind", metric="primary", p_value=0.02, evalue=8.0),
+)
+
+
+def _program_report() -> ProgramReport:
+    return program_decisions(_READOUTS, alpha=0.05, method="e_bh", period="2026-Q3")
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     IndependenceResult: _independence_result,
     ImpliedIndependence: _implied_independence,
@@ -1980,6 +1995,9 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     Collision: lambda: collisions(_OCCUPANCIES)[0],
     ConfidenceSequence: _confidence_sequence,
     AnytimeLook: lambda: _confidence_sequence().looks[-1],
+    Readout: lambda: _READOUTS[0],
+    ProgramReport: _program_report,
+    ProgramDecision: lambda: _program_report().decisions[0],
     Provenance: lambda: Provenance(
         axiom_version="0.0.0",
         created="2026-08-21T00:00:00+00:00",

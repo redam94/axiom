@@ -166,6 +166,18 @@ from axiom.design.precision import (
     cost_per_outcome_power,
     max_detectable_cost_per_outcome,
 )
+from axiom.design.program import (
+    ARBITRARY_DEPENDENCE,
+    ProgramMethod,
+    ProgramReport,
+    Readout,
+    expected_false_go,
+    from_p_value,
+    program_decisions,
+)
+from axiom.design.program import (
+    Decision as ProgramDecision,
+)
 from axiom.design.schedule import (
     Pattern,
     Schedule,
@@ -240,6 +252,7 @@ from axiom.design.structural import (
 )
 
 __all__ = [
+    "ARBITRARY_DEPENDENCE",
     "ASSUMPTIONS",
     "AnchoredEffect",
     "AnytimeLook",
@@ -302,9 +315,13 @@ __all__ = [
     "PowerResult",
     "Prescription",
     "ProfileReport",
+    "ProgramDecision",
+    "ProgramMethod",
+    "ProgramReport",
     "ProgramSchedule",
     "RERANDOMIZED",
     "ReExperimentTiming",
+    "Readout",
     "Recommendation",
     "STAGEWISE_ORDERING",
     "STOPPED_ESTIMATE_BIAS",
@@ -375,10 +392,12 @@ __all__ = [
     "evsi",
     "evsi_gaussian",
     "exclusions",
+    "expected_false_go",
     "expected_posterior_sd",
     "experiment_se_for_design",
     "experiment_value",
     "fisher_information",
+    "from_p_value",
     "harm_boundary",
     "holdout_tradeoff",
     "identifiability_ridge",
@@ -411,6 +430,7 @@ __all__ = [
     "prior_from_history",
     "profile_combination",
     "profile_likelihood",
+    "program_decisions",
     "pulse",
     "ramp",
     "random_switchback",

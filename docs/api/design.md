@@ -85,6 +85,9 @@ The executed series under `nbs/design/`:
 .. automodule:: axiom.design.portfolio
    :members:
 
+.. automodule:: axiom.design.program
+   :members:
+
 .. automodule:: axiom.design.power
    :members:
 
