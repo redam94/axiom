@@ -24,6 +24,9 @@ The executed series under `nbs/identify/`:
 ## Modules
 
 ```{eval-rst}
+.. automodule:: axiom.identify.compliance
+   :members:
+
 .. automodule:: axiom.identify.backdoor
    :members:
 
