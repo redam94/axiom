@@ -191,6 +191,12 @@ from axiom.design.simulate import (
     simulate_panel,
     simulated_power,
 )
+from axiom.design.stopped import (
+    STAGEWISE_ORDERING,
+    StoppedEstimate,
+    stagewise_tail,
+    stopped_estimate,
+)
 from axiom.design.structural import (
     DerivativeMethod,
     FisherInformation,
@@ -258,6 +264,7 @@ __all__ = [
     "ProgramSchedule",
     "ReExperimentTiming",
     "Recommendation",
+    "STAGEWISE_ORDERING",
     "STOPPED_ESTIMATE_BIAS",
     "SampleSize",
     "Scaling",
@@ -269,6 +276,7 @@ __all__ = [
     "SimulatedPower",
     "SimulationSpec",
     "SpendingFunction",
+    "StoppedEstimate",
     "StoppingRule",
     "StudySummary",
     "TreatmentCandidate",
@@ -366,6 +374,8 @@ __all__ = [
     "simulated_identifiability",
     "simulated_power",
     "spending",
+    "stagewise_tail",
+    "stopped_estimate",
     "t_critical",
     "time_to_re_experiment",
     "wald_t",
