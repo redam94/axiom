@@ -691,12 +691,27 @@ def bounds() -> Any:
 
 # -- plotting --------------------------------------------------------------------------
 
-TUTORING_COLOR = "#2f7fd1"
-MESSAGING_COLOR = "#3aa17e"
-TRUTH_COLOR = "#5b6472"
-DECISION_COLOR = "#b5453b"
-ACCENT = "#8a63c4"
-GRID = "rgba(128,128,128,0.20)"
+# The shared notebook style: one registered plotly template and one validated palette
+# for all eighty-four notebooks. Imported for its side effect (the template) and for the
+# colours below, so this case study cannot drift into a look of its own.
+import sys as _sys
+from pathlib import Path as _Path
+
+_NBS = str(_Path(__file__).resolve().parents[2])
+if _NBS not in _sys.path:
+    _sys.path.insert(0, _NBS)
+
+from _style import AQUA, AXIS, BLUE, CRITICAL, GRID as _GRID, INK, MUTED, ORANGE, SUBTLE, SURFACE, VIOLET
+
+# Two treatments are two categorical slots — the first two, which are the pair with the
+# widest separation under every colour-vision simulation. Truth and the decision
+# threshold are reference marks rather than series, so they take ink and the status red.
+TUTORING_COLOR = BLUE
+MESSAGING_COLOR = ORANGE
+TRUTH_COLOR = MUTED
+DECISION_COLOR = CRITICAL
+ACCENT = VIOLET
+GRID = _GRID
 
 
 def figure(title: str, x: str, y: str, *, height: int = 380, **kwargs: object) -> Any:
@@ -709,7 +724,7 @@ def figure(title: str, x: str, y: str, *, height: int = 380, **kwargs: object) -
         xaxis_title=x,
         yaxis_title=y,
         height=height,
-        template="plotly_white",
+        template="axiom",
         margin={"l": 65, "r": 30, "t": 60, "b": 50},
         legend={"orientation": "h", "yanchor": "bottom", "y": 1.0, "x": 0.0},
         **kwargs,
