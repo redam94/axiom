@@ -128,19 +128,21 @@ faith.
 
 The scope and lifecycle layer is plumbing. It makes the rest of the backlog
 possible to state; it does not do any of it. Recorded here as the 1.3 list, in
-the order they bite a house running experiments across many parties. Items 1, 3, 4
-and most of 7 were closed on 2026-08-27 and are struck through; the rest are
-open, and the follow-ons opened by closing them are listed after the list.
+the order they bite a house running experiments across many parties. **All eight
+were closed on 2026-08-27** — item 7 only in part, as its entry says — and are
+struck through; what remains in the area is listed after them, and each closing
+note ends with its own "what this does not do".
 
 1. ~~**Assignment is computed, never executed or audited.**~~ **Closed
    2026-08-27** by `design.assign` (hash / block / re-randomize, a rule that
    re-derives without its roster) and `diagnose.delivery` (sample ratio,
    exposure rate, balance, at the alpha a weekly check can afford).
    [0030](0030-the-experiment-that-was-actually-run.md).
-2. **Experiment collision is unmodeled.** `no_interference` is a named
-   `method_assumption` and is never tested. `portfolio.recommend` has no
-   exclusion constraint, so nothing stops it proposing two experiments that
-   share units and weeks.
+2. ~~**Experiment collision is unmodeled.**~~ **Closed 2026-08-27** by
+   `design.collision`: disjoint / concurrent / confounded rather than a
+   boolean, the concurrent case priced in the units power speaks, and the
+   confounded pairs fed to `recommend` as a constraint net value cannot buy
+   off. [0033](0033-two-experiments-in-the-same-markets.md).
 3. ~~**`meta.pool` has no party level.**~~ **Closed 2026-08-27** by
    `effect_key="nested"`: a second variance component, `mu`'s uncertainty
    scaled to the number of parties rather than the number of studies, and
@@ -151,13 +153,16 @@ open, and the follow-ons opened by closing them are listed after the list.
    the median-unbiased estimate and its interval — the correction
    `STOPPED_ESTIMATE_BIAS.challenged_by` had been asking for since Phase 5.
    [0028](0028-the-estimate-a-stopped-study-may-report.md).
-5. **No program-level error control.** Holm and Benjamini-Hochberg exist in
-   `diagnose/structure.py` for one analysis. Nothing controls the error rate
-   across parties × treatments × guardrails, and nothing reports the expected
-   number of wrong go-decisions per period.
-6. **Monitoring is group-sequential only.** No confidence sequences and no
-   e-values, so there is no honest always-on readout for somebody who will look
-   whenever they like.
+5. ~~**No program-level error control.**~~ **Closed 2026-08-27** by
+   `design.program`: four routes with `e_bh` for the arbitrary dependence a
+   book of experiments actually has, guardrails counted as the decisions they
+   are, and `n · alpha` printed on every report so `none` is a choice somebody
+   made. [0035](0035-eight-wrong-go-decisions-a-quarter.md).
+6. ~~**Monitoring is group-sequential only.**~~ **Closed 2026-08-27** by
+   `design.anytime`: a normal-mixture confidence sequence valid at every look at
+   once, ~55 % wider than a fixed-sample interval, against the 19.4 % error rate
+   a fixed-sample interval actually has when it is read ten times.
+   [0034](0034-the-look-nobody-scheduled.md).
 7. ~~**Delivery and compliance are asserted.**~~ **Partly closed 2026-08-27**
    by `identify.compliance`: the intention-to-treat and complier effects are
    reported together, with the population under each and the assumptions that
@@ -165,11 +170,13 @@ open, and the follow-ons opened by closing them are listed after the list.
    problem, not a compliance one) and **continuous exposure** (a partially
    delivered dose is a local average derivative, not a complier type).
    [0031](0031-assigned-is-not-received.md).
-8. **No outcome-definition registry.** `StudyRecord.estimand_hash` is the right
-   hook and defaults to `""`. Optional provenance is absent provenance once
-   there are thirty parties and one of them has quietly redefined its outcome.
+8. ~~**No outcome-definition registry.**~~ **Closed 2026-08-27** by
+   `io.DefinitionRegistry`: versions that are content rather than intent, drift
+   reported as a field-level diff, and a party that never registered a term
+   recorded as `unverified` rather than agreeing by silence.
+   [0036](0036-what-this-party-means-by-conversion.md).
 
-Follow-ons opened by closing 1, 3, 4 and 7, each recorded in its own note:
+What closing them opened, each recorded in its own note:
 
 * a **classical three-level estimator** in `meta.classical` — a REML over
   `(tau², tau_party²)` would give the same two variance components without a
@@ -179,12 +186,24 @@ Follow-ons opened by closing 1, 3, 4 and 7, each recorded in its own note:
   another study of an existing party against
   `N(mu, sqrt(tau_party² + tau²))` for a new one. The pool can now tell those
   apart and `meta.priors.prior_from_pool` cannot yet ask;
-* a **`population` facet that can hold a latent subpopulation**. The compliers
-  are a population an `Estimand` cannot describe — they can be sized and never
-  listed — so `transfer_to` cannot refuse a pool that mixes one party's
-  intention-to-treat with another's complier effect, which is the exact failure
-  [0031](0031-assigned-is-not-received.md) is about. This is the most valuable
-  remaining item in the area and is larger than anything above it.
+* ~~a **`population` facet that can hold a latent subpopulation**~~ — closed by
+  [0032](0032-a-population-you-can-size-and-cannot-list.md), which also decided
+  that a *pool* must be stricter than a *transfer*: an assumption attached to
+  one number is not a licence to average it with another;
+* **attrition and continuous exposure** — a partly-delivered dose is a local
+  average derivative rather than a complier type, and missing outcomes are a
+  selection problem the delivery check measures and nothing models
+  ([0031](0031-assigned-is-not-received.md) §D31.6);
+* a **factorial interaction check** — `CONCURRENT_EXPERIMENTS.challenged_by`
+  names it and nothing implements it
+  ([0033](0033-two-experiments-in-the-same-markets.md) §D33.5);
+* **online error control** — `design.program` is a batch procedure and a book
+  whose experiments finish continuously wants alpha-investing
+  ([0035](0035-eight-wrong-go-decisions-a-quarter.md) §D35.7);
+* a **corpus that resolves its own definitions** — `meta.commensurable` still
+  takes estimands as an argument rather than resolving each record's outcome
+  through the registry for its scope
+  ([0036](0036-what-this-party-means-by-conversion.md) §D36.6).
 
 The ergonomic front — a `build` entry point that takes the typed `design`
 objects and commits a run in one call — is also deferred. `ExperimentRun` takes
