@@ -29,13 +29,16 @@ __all__ = [
     "wald",
 ]
 
-IntervalDefinition = Literal["eti", "hdi", "wald", "stagewise"]
+IntervalDefinition = Literal["eti", "hdi", "wald", "stagewise", "anytime"]
 """``eti``/``hdi`` are posterior credible intervals; ``wald`` is a frequentist
 ``estimate ± z · se`` confidence interval; ``stagewise`` is the confidence
 interval of a sequentially monitored study, built by inverting the stage-wise
 ordered tail probability (``design.stopped``). The type says which, because
 a stopped study's stage-wise interval is not its Wald interval and the two
-must never be read as the same object."""
+must never be read as the same object; ``anytime`` is a confidence sequence,
+valid at every look simultaneously rather than at one chosen in advance
+(``design.anytime``), and is wider than either at any single look because that
+is what it buys."""
 
 
 class Interval(Spec):
@@ -155,8 +158,9 @@ def interval(draws: npt.ArrayLike, *, definition: IntervalDefinition, mass: floa
     if definition == "hdi":
         return hdi(draws, mass)
     raise ValueError(
-        f"{definition!r} is not a posterior interval; use wald() for a fixed-sample CI "
-        "or design.stopped_estimate for a sequentially monitored one"
+        f"{definition!r} is not a posterior interval; use wald() for a fixed-sample CI, "
+        "design.stopped_estimate for a study stopped at a boundary, or "
+        "design.confidence_sequence for one that may be looked at at any time"
     )
 
 
