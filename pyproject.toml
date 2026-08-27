@@ -1,6 +1,6 @@
 [project]
 name = "axiom"
-version = "1.1.4"
+version = "1.2.0"
 description = "Bayesian causal decision science: identification, experimental design and calibration, response-surface methodology, and evidence meta-analysis"
 readme = "README.md"
 license = "LicenseRef-Proprietary"
