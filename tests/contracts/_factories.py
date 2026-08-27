@@ -12,6 +12,8 @@ import math
 from collections.abc import Callable
 from fractions import Fraction
 
+import pandas as pd
+
 from axiom.adapters import MarketingRoles
 from axiom.adapters.agronomy import EconomicOptimum, Prices, TrialRoles
 from axiom.calibrate import (
@@ -231,12 +233,15 @@ from axiom.dynamics import (
 from axiom.estimands import Estimand, EstimandResult, FacetDiff, Level, Quantity, TransferPlan
 from axiom.identify import (
     CausalGraph,
+    ComplianceReport,
+    ComplianceTable,
     EndogeneityTest,
     FrontDoorRoute,
     InstrumentRoute,
     LinearEstimate,
     RoleAssignment,
     assign_roles,
+    compliance,
     identify,
     transport_verdict,
 )
@@ -1391,6 +1396,19 @@ def _delivery_report() -> DeliveryReport:
     )
 
 
+def _compliance_frame():  # type: ignore[no-untyped-def]
+    n = 400
+    assigned = [float(i % 2) for i in range(n)]
+    # compliers take it when assigned; a fifth are never-takers, a twentieth always-takers
+    exposed = [1.0 if i % 20 == 0 else (0.0 if i % 5 == 0 else a) for i, a in enumerate(assigned)]
+    y = [10.0 + 2.0 * e + math.sin(float(i)) for i, e in enumerate(exposed)]
+    return pd.DataFrame({"y": y, "assigned": assigned, "exposed": exposed})
+
+
+def _compliance_report() -> ComplianceReport:
+    return compliance(_compliance_frame(), "y", "assigned", "exposed")
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     IndependenceResult: _independence_result,
     ImpliedIndependence: _implied_independence,
@@ -1909,6 +1927,8 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     BalanceTest: lambda: _delivery_report().covariates.tests[0],  # type: ignore[union-attr]
     BalanceCheck: lambda: _delivery_report().covariates,  # type: ignore[return-value]
     DeliveryReport: _delivery_report,
+    ComplianceTable: lambda: _compliance_report().table,
+    ComplianceReport: _compliance_report,
     Provenance: lambda: Provenance(
         axiom_version="0.0.0",
         created="2026-08-21T00:00:00+00:00",
