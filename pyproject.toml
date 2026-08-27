@@ -1,6 +1,6 @@
 [project]
 name = "axiom"
-version = "1.1.4"
+version = "1.2.0"
 description = "Bayesian causal decision science: identification, experimental design and calibration, response-surface methodology, and evidence meta-analysis"
 readme = "README.md"
 license = "LicenseRef-Proprietary"
@@ -153,6 +153,10 @@ markers = [
 python_version = "3.12"
 strict = true
 files = ["src/axiom"]
+# IPython ships type information for its machinery but not for the display
+# helpers. The two calls axiom makes into it -- `Math` and `display`, both in
+# `display.show_math` -- are untyped there and correct here.
+untyped_calls_exclude = ["IPython"]
 
 # Optional report backends that ship no type information. They are reached only
 # from axiom.report.render.*, always behind a try/ImportError that returns a typed

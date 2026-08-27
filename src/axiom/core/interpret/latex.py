@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from fractions import Fraction
 
+from axiom.core.dimensions import dimensionless
 from axiom.core.expr import (
     Add,
     Apply,
@@ -17,6 +18,7 @@ from axiom.core.expr import (
     Data,
     Div,
     Equation,
+    Expr,
     Gather,
     Link,
     Model,
@@ -83,7 +85,40 @@ def _frac(q: Fraction) -> str:
 
 
 def _paren(node: Model, s: str) -> str:
-    return f"\\left({s}\\right)" if isinstance(node, Add) else s
+    """Parenthesize a sum, and anything that already reads as negative."""
+    return f"\\left({s}\\right)" if isinstance(node, Add) or s.startswith("-") else s
+
+
+def _split_sign(node: Model) -> tuple[bool, Model]:
+    """``(negative, magnitude)`` — how a term is written once its sign is a ``-`` in front.
+
+    ``-a`` is the tree ``(-1) · a`` (``Apply(fn="neg")`` cannot take a dimensioned
+    argument), and a subtraction is that tree inside an ``Add``. Rendering those
+    literally gives ``a + -1 \\cdot b``, which is the tree faithfully and the
+    mathematics badly; this pulls the sign out so a sum reads as ``a - b``.
+    """
+    if isinstance(node, Const) and not isinstance(node.value, tuple) and node.value < 0:
+        return True, Const(value=-node.value, dimension=node.dimension)
+    if isinstance(node, Mul):
+        negative = False
+        kept: list[Expr] = []
+        for factor in node.factors:
+            if (
+                isinstance(factor, Const)
+                and not isinstance(factor.value, tuple)
+                and factor.value < 0
+            ):
+                negative = not negative
+                if factor.value != -1.0:  # a bare -1 is the sign and nothing else
+                    kept.append(Const(value=-factor.value, dimension=factor.dimension))
+            else:
+                kept.append(factor)
+        if not negative:
+            return False, node
+        if not kept:
+            return True, Const(value=1.0, dimension=dimensionless())
+        return True, (kept[0] if len(kept) == 1 else Mul(factors=tuple(kept)))
+    return False, node
 
 
 def latex(model: Model) -> str:
@@ -96,8 +131,19 @@ def latex(model: Model) -> str:
         case Data() | Param():
             return _sym(model.name)
         case Add():
-            return " + ".join(latex(t) for t in model.terms)
+            out = ""
+            for i, term in enumerate(model.terms):
+                negative, magnitude = _split_sign(term)
+                shown = _paren(magnitude, latex(magnitude)) if negative else latex(term)
+                if i == 0:
+                    out = f"-{shown}" if negative else shown
+                else:
+                    out += f" - {shown}" if negative else f" + {shown}"
+            return out
         case Mul():
+            negative, magnitude = _split_sign(model)
+            if negative:
+                return f"-{_paren(magnitude, latex(magnitude))}"
             return " \\cdot ".join(_paren(f, latex(f)) for f in model.factors)
         case Div():
             return f"\\frac{{{latex(model.numerator)}}}{{{latex(model.denominator)}}}"

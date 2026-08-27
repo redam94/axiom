@@ -325,3 +325,143 @@ def test_a_causal_graph_card_keeps_the_arrows() -> None:
     assert "Z -> X" in text
     assert "A <-> B" in text, "the bidirected edge is the one that decides identifiability"
     assert "toy" in text
+
+
+# -- the model tree, and tables ----------------------------------------------------------
+
+
+def _expression_fixtures() -> tuple[object, object, object]:
+    from axiom.core import D, Data, Param, dimensionless
+
+    dose = Data(name="dose", dimension=D.currency)
+    k = Param(name="k", dimension=D.currency)
+    beta = Param(name="beta", dimension=D.outcome)
+    _ = dimensionless
+    return dose, k, beta
+
+
+def test_an_expression_card_leads_with_the_algebra() -> None:
+    dose, k, beta = _expression_fixtures()
+    text = render(beta * (dose / k))
+    assert "Expression — mul" in text
+    assert "\\beta \\cdot \\frac{\\mathrm{dose}}{k}" in text
+    assert "beta, k" in text and "dose" in text
+
+
+def test_an_expression_that_fails_its_own_checker_says_so_on_the_card() -> None:
+    """A tree that does not type-check is what a reader most needs told."""
+    dose, _k, beta = _expression_fixtures()
+    from axiom.core import Add
+
+    card = card_for(Add(terms=(dose, beta)))
+    assert card.status == "bad"
+    assert "must share a dimension" in card.note
+
+
+def test_an_opaque_tree_says_why_it_cannot_be_written_down() -> None:
+    from axiom.core import D, Opaque
+
+    card = card_for(Opaque(name="mystery", inputs=(), dimension=D.currency))
+    assert "opaque" in card.note
+
+
+def test_a_model_spec_card_names_the_outcome_and_the_likelihood() -> None:
+    from axiom.core import D, Data, Likelihood, ModelSpec, Param, Prior
+
+    dose = Data(name="dose", dimension=D.currency)
+    beta = Param(
+        name="beta",
+        dimension=D.outcome / D.currency,
+        prior=Prior(family="normal", hyper={"mu": 0.0, "sigma": 1.0}),
+    )
+    sigma = Param(
+        name="sigma", dimension=D.outcome, prior=Prior(family="halfnormal", hyper={"sigma": 1.0})
+    )
+    spec = ModelSpec(
+        name="linear",
+        mean=beta * dose,
+        outcome=Data(name="y", dimension=D.outcome),
+        likelihood=Likelihood(family="normal", scale="sigma"),
+        parameters=(beta, sigma),
+    )
+    text = render(spec)
+    assert "Model — linear" in text
+    assert "normal" in text and "beta, sigma" in text and "dose" in text
+
+
+def test_the_math_types_are_read_off_the_expr_union() -> None:
+    """A fourteenth node type must not silently lose its typeset rendering."""
+    from typing import get_args
+
+    from axiom.core import Expr
+    from axiom.display import _MATH_TYPES
+
+    for node in get_args(get_args(Expr)[0]):
+        assert node in _MATH_TYPES
+
+
+def test_show_math_writes_tex_when_there_is_no_notebook() -> None:
+    from axiom.display import show_math
+
+    dose, k, _beta = _expression_fixtures()
+    buffer = io.StringIO()
+    show_math(dose - k, file=buffer)
+    assert buffer.getvalue().strip() == "$$\\mathrm{dose} - k$$"
+
+
+def test_show_math_refuses_an_opaque_tree_as_a_card_not_a_wrong_rendering() -> None:
+    from axiom.core import D, Opaque
+    from axiom.display import show_math
+
+    buffer = io.StringIO()
+    show_math(Opaque(name="mystery", inputs=(), dimension=D.currency), file=buffer, plain=True)
+    assert "opaque" in buffer.getvalue()
+
+
+def test_a_table_lines_its_columns_up_and_puts_numbers_on_the_right() -> None:
+    from axiom.display import render_table
+
+    text = render_table(
+        [["exp", 2.718, 1], ["sigmoid", 0.5, 12]], headers=("fn", "value", "n"), title="values"
+    )
+    rows = text.splitlines()
+    assert rows[0] == "values"
+    assert rows[1].startswith("fn")
+    body = [r for r in rows if r.startswith(("exp", "sigmoid"))]
+    assert body[0].index("2.718") == body[1].index("0.5") + len("0.5") - len("2.718")
+    assert body[0].rstrip().endswith("1") and body[1].rstrip().endswith("12")
+
+
+def test_a_table_pads_a_short_row_rather_than_dropping_it() -> None:
+    from axiom.display import render_table
+
+    text = render_table([["a", 1], ["b"]], headers=("k", "v"))
+    assert len(text.splitlines()) == 4
+
+
+def test_table_writes_whether_or_not_rich_is_installed() -> None:
+    from axiom.display import table
+
+    buffer = io.StringIO()
+    table([["exp", 2.718]], headers=("fn", "value"), file=buffer, plain=True)
+    assert "exp" in buffer.getvalue() and "2.718" in buffer.getvalue()
+
+
+@pytest.mark.skipif(not available(), reason="rich is not installed")
+def test_the_rich_table_carries_the_same_cells() -> None:
+    from axiom.display import table
+
+    buffer = io.StringIO()
+    table([["exp", 2.718], ["sigmoid", 0.5]], headers=("fn", "value"), file=buffer)
+    written = buffer.getvalue()
+    for fragment in ("fn", "value", "exp", "2.718", "sigmoid", "0.5"):
+        assert fragment in written
+
+
+@pytest.mark.skipif(not available(), reason="rich is not installed")
+def test_a_card_exports_to_html_without_publishing_itself() -> None:
+    """rich detects a notebook and would print the panel instead of recording it."""
+    from axiom.display import _html_card
+
+    html = _html_card(card_for(Interval(lower=1.0, upper=2.0, definition="eti", mass=0.9)))
+    assert html.startswith("<pre") and "1.00 to 2.00" in html

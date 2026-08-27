@@ -715,12 +715,26 @@ PRIOR_SDS = {"log_a": 2.0, "lam": 6.0, "log_c": 3.0, "log_w": 1.0, "log_b": 3.0}
 
 # -- the house style -------------------------------------------------------------------
 
-HARD_COLOR = "#b5453b"
-DIFFUSE_COLOR = "#2f7fd1"
-TRUTH_COLOR = "#5b6472"
-ACCENT = "#8a63c4"
-SLIT_COLOR = "#3aa17e"
-GRID = "#e6e8eb"
+# The shared notebook style: one registered plotly template and one validated palette
+# for all eighty-four notebooks. Imported for its side effect (the template) and for the
+# colours below, so this case study cannot drift into a look of its own.
+import sys as _sys
+from pathlib import Path as _Path
+
+_NBS = str(_Path(__file__).resolve().parents[2])
+if _NBS not in _sys.path:
+    _sys.path.insert(0, _NBS)
+
+from _style import AQUA, AXIS, BLUE, CRITICAL, GRID as _GRID, INK, MUTED, ORANGE, SUBTLE, SURFACE, VIOLET
+
+# The two competing hypotheses are the two categorical slots with the widest separation
+# under every colour-vision simulation; the truth is a reference mark, not a series.
+HARD_COLOR = ORANGE
+DIFFUSE_COLOR = BLUE
+TRUTH_COLOR = MUTED
+ACCENT = VIOLET
+SLIT_COLOR = AQUA
+GRID = _GRID
 
 
 def figure(title: str, x: str, y: str, *, height: int = 400, **kwargs: object) -> Any:
@@ -733,7 +747,7 @@ def figure(title: str, x: str, y: str, *, height: int = 400, **kwargs: object) -
         xaxis_title=x,
         yaxis_title=y,
         height=height,
-        template="plotly_white",
+        template="axiom",
         margin={"l": 70, "r": 30, "t": 60, "b": 50},
         legend={"orientation": "h", "yanchor": "bottom", "y": 1.0, "x": 0.0},
         **kwargs,
