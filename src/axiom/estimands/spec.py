@@ -44,7 +44,15 @@ from typing import Literal
 from pydantic import model_validator
 
 from axiom.core.dimensions import Dimension, DimensionError, dimensionless
-from axiom.core.entities import EntityName, Intervention, Outcome, Population, TimeWindow, Treatment
+from axiom.core.entities import (
+    EntityName,
+    Intervention,
+    LatentSelection,
+    Outcome,
+    Population,
+    TimeWindow,
+    Treatment,
+)
 from axiom.core.result import Blocked, NonEmptyStr
 from axiom.core.spec import Spec
 from axiom.core.verdict import Assumption, LedgerLine, Status
@@ -422,22 +430,79 @@ def _outcome(s: Estimand, t: Estimand) -> FacetDiff:
     return FacetDiff(facet="outcome", statement="outcome differs", assumptions=tuple(assumptions))
 
 
+def _s_admissibility(s: Estimand, t: Estimand) -> Assumption:
+    return Assumption(
+        name="s_admissibility",
+        facet="population",
+        statement=(
+            f"the effect transports from {s.population.name} to {t.population.name} "
+            "given an S-admissible set"
+        ),
+        challenged_by="overlap; moderator interaction in meta",
+        detail={"verdict": "pending selection-diagram verdict (identify.transport)"},
+    )
+
+
+def _latent_homogeneity(latent: LatentSelection, *, into: bool) -> Assumption:
+    """The condition that bridges a latent subpopulation and the population around it.
+
+    Not falsifiable, and it is worth being exact about why: a never-taker is by
+    construction never exposed under this instrument, so no design using it ever
+    observes the effect being assumed equal. Only a *different* instrument can,
+    and that recruits a different subpopulation.
+    """
+    direction = "outward to the whole population" if into else "inward to the subpopulation"
+    return Assumption(
+        name="latent_type_homogeneity",
+        facet="population",
+        statement=(
+            f"the effect on the {latent.kind}s of {latent.instrument} is the effect on every "
+            f"unit, so the quantity carries {direction}"
+        ),
+        challenged_by=(
+            "an instrument of different strength giving a different effect, which recruits a "
+            "different subpopulation and so is evidence about heterogeneity across types; "
+            "never the units themselves, who are not observed under both exposures"
+        ),
+        detail={
+            "kind": latent.kind,
+            "instrument": latent.instrument,
+            "exposure": latent.exposure,
+            "share": "" if latent.share is None else f"{latent.share:.6g}",
+        },
+    )
+
+
 def _population(s: Estimand, t: Estimand) -> FacetDiff:
+    source, target = s.population.latent, t.population.latent
+    if source is not None and target is not None and not source.same_stratum(target):
+        return FacetDiff(
+            facet="population",
+            statement=(f"two latent subpopulations differ: {source} vs {target}"),
+            blocked=Blocked(
+                reason=(
+                    "a latent subpopulation is defined by which units respond to which "
+                    f"instrument, so the {source.kind}s of {source.instrument} and the "
+                    f"{target.kind}s of {target.instrument} are different sets of units; no "
+                    "assumption over observables bridges them, because no observable "
+                    "distinguishes a member of either"
+                )
+            ),
+        )
+    assumptions: list[Assumption] = []
+    if (source is None) != (target is None):
+        latent = source if source is not None else target
+        if latent is None:  # unreachable: exactly one of the two is set here
+            raise RuntimeError("a one-sided latent difference must have a latent side")
+        assumptions.append(_latent_homogeneity(latent, into=source is not None))
+    if s.population.name != t.population.name or s.population.strata != t.population.strata:
+        assumptions.append(_s_admissibility(s, t))
+    if not assumptions:  # only the description or the stratum's share differs
+        assumptions.append(_s_admissibility(s, t))
     return FacetDiff(
         facet="population",
         statement=f"population differs: {s.population.name} vs {t.population.name}",
-        assumptions=(
-            Assumption(
-                name="s_admissibility",
-                facet="population",
-                statement=(
-                    f"the effect transports from {s.population.name} to {t.population.name} "
-                    "given an S-admissible set"
-                ),
-                challenged_by="overlap; moderator interaction in meta",
-                detail={"verdict": "pending selection-diagram verdict (identify.transport)"},
-            ),
-        ),
+        assumptions=tuple(assumptions),
     )
 
 
