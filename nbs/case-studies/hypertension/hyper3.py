@@ -448,16 +448,33 @@ def ancova_covariates(stratum: str | None) -> list[str]:
 
 # -- plotting --------------------------------------------------------------------------
 
+# The shared notebook style: one registered plotly template and one validated palette
+# for all eighty-four notebooks. Imported for its side effect (the template) and for the
+# colours below, so this case study cannot drift into a look of its own.
+import sys as _sys
+from pathlib import Path as _Path
+
+_NBS = str(_Path(__file__).resolve().parents[2])
+if _NBS not in _sys.path:
+    _sys.path.insert(0, _NBS)
+
+from _style import AQUA, AXIS, BLUE, CRITICAL, GRID as _GRID, INK, MUTED, ORANGE, SUBTLE, SURFACE, VIOLET
+
+# The arms are *ordered* — a control and three ascending doses — so they take a one-hue
+# ordinal ramp rather than four unrelated categorical colours, and the control sits
+# outside it in muted ink. The age bands are ordered too, so they take the second ramp.
+# Both were validated: monotone lightness, visible step gaps, light end clear of the
+# surface (dataviz `validate_palette --ordinal`).
 ARM_COLOR: Mapping[str, str] = {
-    "standard_of_care": "#5b6472",
-    "dose_10": "#2f7fd1",
-    "dose_20": "#8a63c4",
-    "dose_40": "#d1483f",
+    "standard_of_care": MUTED,
+    "dose_10": "#86b6ef",
+    "dose_20": "#3987e5",
+    "dose_40": "#184f95",
 }
 STRATUM_COLOR: Mapping[str, str] = {
-    "age_25_35": "#3aa17e",
-    "age_36_50": "#c9a227",
-    "age_51_plus": "#b5453b",
+    "age_25_35": "#f4a077",
+    "age_36_50": "#eb6834",
+    "age_51_plus": "#9c3f14",
 }
 ARM_LABEL: Mapping[str, str] = {
     "standard_of_care": "standard of care",
@@ -465,7 +482,7 @@ ARM_LABEL: Mapping[str, str] = {
     "dose_20": "20 mg",
     "dose_40": "40 mg",
 }
-GRID = "rgba(128,128,128,0.20)"
+GRID = _GRID
 
 
 def figure(title: str, x: str, y: str, *, height: int = 380, **kwargs: object) -> Any:
@@ -478,7 +495,7 @@ def figure(title: str, x: str, y: str, *, height: int = 380, **kwargs: object) -
         xaxis_title=x,
         yaxis_title=y,
         height=height,
-        template="plotly_white",
+        template="axiom",
         margin={"l": 60, "r": 30, "t": 60, "b": 50},
         legend={"orientation": "h", "yanchor": "bottom", "y": 1.0, "x": 0.0},
         **kwargs,
