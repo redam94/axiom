@@ -28,6 +28,9 @@ The executed series under `nbs/io/`:
 .. automodule:: axiom.io.catalog
    :members:
 
+.. automodule:: axiom.io.definitions
+   :members:
+
 .. automodule:: axiom.io.experiment
    :members:
 
