@@ -23,6 +23,7 @@ The executed series under `nbs/diagnose/`:
 - [04-refute-and-backtest.ipynb](../../nbs/diagnose/04-refute-and-backtest.ipynb)
 - [05-ppc-and-residuals.ipynb](../../nbs/diagnose/05-ppc-and-residuals.ipynb)
 - [06-refuting-the-graph.ipynb](../../nbs/diagnose/06-refuting-the-graph.ipynb)
+- [07-delivery.ipynb](../../nbs/diagnose/07-delivery.ipynb)
 
 ## Package
 
@@ -38,6 +39,9 @@ The executed series under `nbs/diagnose/`:
    :members:
 
 .. automodule:: axiom.diagnose.coverage
+   :members:
+
+.. automodule:: axiom.diagnose.delivery
    :members:
 
 .. automodule:: axiom.diagnose.learning

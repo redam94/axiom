@@ -8,6 +8,7 @@ round-tripped.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
 from fractions import Fraction
 
@@ -75,7 +76,10 @@ from axiom.data import ColumnScaling, Completeness, RoleMap, ScalingParameters
 from axiom.design import (
     MDE,
     AnchoredEffect,
+    ArmAllocation,
+    ArmAssignment,
     Assignment,
+    BalanceRow,
     Boundary,
     CalibrationResult,
     CandidateScore,
@@ -119,6 +123,7 @@ from axiom.design import (
     ValuePerOutcome,
     alpha_spending,
     anchor_draws,
+    assign,
     cost_per_outcome_interval,
     cost_per_outcome_power,
     crossing_probabilities,
@@ -153,10 +158,16 @@ from axiom.design.identifiability import (
     ProfileReport,
 )
 from axiom.diagnose import (
+    ArmCount,
     Backtest,
+    BalanceCheck,
+    BalanceTest,
     Benchmark,
     BiasBounds,
     CoverageResult,
+    Delivery,
+    DeliveryReport,
+    DeliveryRow,
     EstimandCoverage,
     EstimandCoverageResult,
     FitSettings,
@@ -173,6 +184,7 @@ from axiom.diagnose import (
     ResidualReport,
     ResidualTest,
     RobustnessValue,
+    SampleRatio,
     SBCResult,
     SBCSpec,
     SpecCurve,
@@ -186,6 +198,7 @@ from axiom.diagnose import (
     WeakIdReport,
     benchmark,
     bias_bounds,
+    check_delivery,
     rank_uniformity,
     robustness_value,
     tipping_point,
@@ -1348,6 +1361,36 @@ def _stopped_estimate() -> StoppedEstimate:
     return result
 
 
+_ASSIGN_UNITS = tuple(f"u{i:04d}" for i in range(120))
+_ASSIGN_ALLOCATION = ArmAllocation(arms=("control", "low", "high"), shares=(0.5, 0.25, 0.25))
+
+
+def _assigned():  # type: ignore[no-untyped-def]
+    n = len(_ASSIGN_UNITS)
+    covariates = {
+        "age": [20.0 + 40.0 * i / (n - 1) for i in range(n)],
+        "pre_outcome": [math.cos(float(i)) for i in range(n)],
+    }
+    return assign(_ASSIGN_UNITS, _ASSIGN_ALLOCATION, method="block", seed=4, covariates=covariates)
+
+
+def _arm_assignment() -> ArmAssignment:
+    return _assigned().spec
+
+
+def _balance_row() -> BalanceRow:
+    return _arm_assignment().balance[0]
+
+
+def _delivery_report() -> DeliveryReport:
+    assigned = _assigned()
+    return check_delivery(
+        assigned,
+        exposed={"control": 55, "low": 28, "high": 24},
+        covariates=dict(assigned.covariates or {}),
+    )
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     IndependenceResult: _independence_result,
     ImpliedIndependence: _implied_independence,
@@ -1856,6 +1899,16 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     Release: _release,
     EpsilonSplit: lambda: orthogonal_split(1.0, 3),
     StoppedEstimate: _stopped_estimate,
+    ArmAllocation: lambda: _ASSIGN_ALLOCATION,
+    ArmAssignment: _arm_assignment,
+    BalanceRow: _balance_row,
+    ArmCount: lambda: _delivery_report().ratio.arms[0],
+    SampleRatio: lambda: _delivery_report().ratio,
+    DeliveryRow: lambda: _delivery_report().exposure.arms[0],  # type: ignore[union-attr]
+    Delivery: lambda: _delivery_report().exposure,  # type: ignore[return-value]
+    BalanceTest: lambda: _delivery_report().covariates.tests[0],  # type: ignore[union-attr]
+    BalanceCheck: lambda: _delivery_report().covariates,  # type: ignore[return-value]
+    DeliveryReport: _delivery_report,
     Provenance: lambda: Provenance(
         axiom_version="0.0.0",
         created="2026-08-21T00:00:00+00:00",

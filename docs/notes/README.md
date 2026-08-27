@@ -43,3 +43,4 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0027 | [The invariants hold inside one analysis and stop at its edge](0027-scope-and-the-experiment-lifecycle.md) | decision + progress |
 | 0028 | [Naming a bias is not correcting it](0028-the-estimate-a-stopped-study-may-report.md) | decision |
 | 0029 | [Twelve studies from three clients are not twelve draws](0029-the-party-a-study-came-from.md) | decision |
+| 0030 | [A well-diagnosed wrong number](0030-the-experiment-that-was-actually-run.md) | decision |
