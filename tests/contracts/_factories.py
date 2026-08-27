@@ -237,7 +237,14 @@ from axiom.infer import (
     PointEstimate,
     SampleSettings,
 )
-from axiom.io import Provenance
+from axiom.io import (
+    CatalogEntry,
+    Deviation,
+    ExperimentRun,
+    Program,
+    Provenance,
+    Transition,
+)
 from axiom.meta import (
     BaujatData,
     Cell,
@@ -1298,6 +1305,37 @@ def _stability_report() -> StabilityReport:
     )
 
 
+def _deviation() -> Deviation:
+    return Deviation(
+        role="window",
+        planned="a" * 64,
+        realized="b" * 64,
+        reason="the field ran four weeks long",
+        at="2026-05-04T09:00:00+00:00",
+        stage="running",
+        state="asserted",
+    )
+
+
+def _experiment_run() -> ExperimentRun:
+    return ExperimentRun(
+        experiment="NW-14",
+        scope="northwind/dose-response",
+        stage="read",
+        roles={"window": "b" * 64, "schedule": "c" * 64},
+        estimand_hash="d" * 64,
+        plan_hash="e" * 64,
+        readout_hash="f" * 64,
+        readout_estimand="d" * 64,
+        deviations=(_deviation(),),
+        ledger=(LedgerLine(kind="note", statement="the field window slipped four weeks"),),
+        history=(
+            Transition(stage="designed", at="2026-03-02T09:00:00+00:00"),
+            Transition(stage="committed", at="2026-03-04T09:00:00+00:00", note="plan frozen"),
+        ),
+    )
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     IndependenceResult: _independence_result,
     ImpliedIndependence: _implied_independence,
@@ -1812,6 +1850,26 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
         seed=7,
         environment={"python": "3.12"},
     ),
+    Program: lambda: Program(
+        party="northwind",
+        program="dose-response",
+        description="fertilizer dose-response across the north region",
+        started="2026-01-05",
+    ),
+    CatalogEntry: lambda: CatalogEntry(
+        digest="a" * 64,
+        type_name="axiom.core.entities:TimeWindow",
+        scope="northwind/dose-response",
+        label="window",
+        created="2026-03-02T09:00:00+00:00",
+        derived_from="b" * 64,
+        tags={"role": "plan"},
+    ),
+    Transition: lambda: Transition(
+        stage="committed", at="2026-03-04T09:00:00+00:00", note="plan frozen"
+    ),
+    Deviation: _deviation,
+    ExperimentRun: _experiment_run,
     TrialRoles: lambda: TrialRoles(
         harvest="grain",
         nutrients=("nitrogen", "phosphorus"),
