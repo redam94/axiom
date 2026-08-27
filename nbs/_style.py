@@ -592,7 +592,7 @@ def heat(
         colorscale=scale,
         reversescale=diverging,
         zmid=(0.0 if diverging else None) if zmid is None else zmid,
-        text=[[text_fmt.format(v) for v in row] for row in z],
+        text=[["" if np.isnan(v) else text_fmt.format(v) for v in row] for row in z],
         texttemplate="%{text}",
         textfont={"size": 11},
         xgap=2,
