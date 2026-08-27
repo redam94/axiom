@@ -10,6 +10,15 @@ from axiom.design.anchor import (
     anchor_draws,
     anchor_effect,
 )
+from axiom.design.anytime import (
+    AnytimeLook,
+    ConfidenceSequence,
+    anytime_p,
+    confidence_sequence,
+    evalue,
+    mixture_boundary,
+    tune,
+)
 from axiom.design.assign import (
     RERANDOMIZED,
     ArmAllocation,
@@ -233,6 +242,7 @@ from axiom.design.structural import (
 __all__ = [
     "ASSUMPTIONS",
     "AnchoredEffect",
+    "AnytimeLook",
     "ArmAllocation",
     "ArmAssignment",
     "AssignMethod",
@@ -249,6 +259,7 @@ __all__ = [
     "Collision",
     "CollisionKind",
     "Combination",
+    "ConfidenceSequence",
     "CostPerOutcomeInterval",
     "CostPerOutcomePower",
     "CrossingProbabilities",
@@ -317,6 +328,7 @@ __all__ = [
     "alternating",
     "anchor_draws",
     "anchor_effect",
+    "anytime_p",
     "arm_for",
     "assign",
     "bartlett_bandwidth",
@@ -330,6 +342,7 @@ __all__ = [
     "coefficient_power",
     "coefficient_sample_size",
     "collisions",
+    "confidence_sequence",
     "constant",
     "contrast_score",
     "cost_per_outcome_interval",
@@ -355,6 +368,7 @@ __all__ = [
     "estimate_synthetic_control",
     "estimate_time_based_regression",
     "evaluate_candidate",
+    "evalue",
     "evoi_gaussian",
     "evpi",
     "evpi_gaussian",
@@ -378,6 +392,7 @@ __all__ = [
     "method_assumption",
     "method_spec",
     "mid_horizon_factor",
+    "mixture_boundary",
     "monitor",
     "obrien_fleming",
     "observation_from_model",
@@ -415,6 +430,7 @@ __all__ = [
     "stopped_estimate",
     "t_critical",
     "time_to_re_experiment",
+    "tune",
     "variance_inflation",
     "wald_t",
 ]

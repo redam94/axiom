@@ -31,6 +31,9 @@ The executed series under `nbs/design/`:
 .. automodule:: axiom.design.anchor
    :members:
 
+.. automodule:: axiom.design.anytime
+   :members:
+
 .. automodule:: axiom.design.assign
    :members:
 

@@ -79,6 +79,7 @@ from axiom.data import ColumnScaling, Completeness, RoleMap, ScalingParameters
 from axiom.design import (
     MDE,
     AnchoredEffect,
+    AnytimeLook,
     ArmAllocation,
     ArmAssignment,
     Assignment,
@@ -88,6 +89,7 @@ from axiom.design import (
     CandidateScore,
     ClusterDesign,
     Collision,
+    ConfidenceSequence,
     CostPerOutcomeInterval,
     CostPerOutcomePower,
     CrossingProbabilities,
@@ -130,6 +132,7 @@ from axiom.design import (
     anchor_draws,
     assign,
     collisions,
+    confidence_sequence,
     cost_per_outcome_interval,
     cost_per_outcome_power,
     crossing_probabilities,
@@ -1444,6 +1447,12 @@ _OCCUPANCIES = (
 )
 
 
+def _confidence_sequence() -> ConfidenceSequence:
+    return confidence_sequence(
+        (0.4, 1.2, 2.1, 2.9), (0.25, 0.5, 0.75, 1.0), alpha=0.05, name="NW-14"
+    )
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     IndependenceResult: _independence_result,
     ImpliedIndependence: _implied_independence,
@@ -1969,6 +1978,8 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     Incompatibility: lambda: _commensurability().entries[0],
     Occupancy: lambda: _OCCUPANCIES[0],
     Collision: lambda: collisions(_OCCUPANCIES)[0],
+    ConfidenceSequence: _confidence_sequence,
+    AnytimeLook: lambda: _confidence_sequence().looks[-1],
     Provenance: lambda: Provenance(
         axiom_version="0.0.0",
         created="2026-08-21T00:00:00+00:00",
