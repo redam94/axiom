@@ -45,3 +45,4 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0029 | [Twelve studies from three clients are not twelve draws](0029-the-party-a-study-came-from.md) | decision |
 | 0030 | [A well-diagnosed wrong number](0030-the-experiment-that-was-actually-run.md) | decision |
 | 0031 | [Assigned is not received, and the readout has to say which](0031-assigned-is-not-received.md) | decision |
+| 0032 | [A population you can size and cannot list](0032-a-population-you-can-size-and-cannot-list.md) | decision + deviation |

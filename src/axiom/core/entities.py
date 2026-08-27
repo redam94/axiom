@@ -162,6 +162,55 @@ class Covariate(Spec):
     dim = property(dimension_of)
 
 
+class LatentSelection(Spec):
+    """A subpopulation defined by a response nobody observes: sized, never listed.
+
+    The compliers of an encouragement design are the standard case. They are a
+    real set of units with a real average effect, their share is identified
+    from two exposure rates, and no covariate distinguishes a member from a
+    never-taker — you can say how many there are and never which ones. That
+    breaks the usual description of a population as strata weights, which is
+    why it gets its own field on ``Population`` rather than an entry in
+    ``strata``.
+
+    Identity is ``(kind, instrument, exposure)`` and **not** ``share``. A
+    complier is a unit whose ``exposure`` responds to ``instrument``, so
+    changing the instrument changes the set: the compliers of a letter and the
+    compliers of a phone call are different people, and their effects are
+    different quantities however similar the two designs look. ``share`` is a
+    property of the population the stratum was taken from and varies across
+    them; it is carried for reading, not for identity.
+
+    ``kind`` is free text with a convention: ``"complier"``, ``"always_taker"``,
+    ``"never_taker"`` for an instrumental design, and any principal stratum
+    (Frangakis and Rubin) otherwise — ``"survivor"`` for truncation by death.
+    """
+
+    kind: EntityName
+    instrument: EntityName
+    exposure: EntityName
+    share: float | None = None
+    description: str = ""
+
+    @model_validator(mode="after")
+    def _share_is_a_share(self) -> LatentSelection:
+        if self.share is not None and not 0.0 <= self.share <= 1.0:
+            raise ValueError(f"share must be in [0, 1], got {self.share}")
+        return self
+
+    def same_stratum(self, other: LatentSelection) -> bool:
+        """Whether two selections pick out the same set of units, share aside."""
+        return (self.kind, self.instrument, self.exposure) == (
+            other.kind,
+            other.instrument,
+            other.exposure,
+        )
+
+    def __str__(self) -> str:
+        size = "" if self.share is None else f", {self.share:.1%}"
+        return f"{self.kind}s of {self.instrument} on {self.exposure}{size}"
+
+
 class Population(Spec):
     """A target population: a name and, where known, the strata weights that define it.
 
@@ -169,11 +218,22 @@ class Population(Spec):
     summing to one. Transfer across populations is licensed by S-admissibility
     (graph) and, for conditional-to-marginal moves, by these weights being
     known (review B1).
+
+    ``latent`` narrows the population to a subpopulation no covariate can
+    describe — the compliers of an instrument, the survivors of a truncation.
+    A latent population is a different population from the one it sits inside,
+    and ``Estimand.transfer_to`` treats it as one: see note 0032.
     """
 
     name: EntityName
     description: str = ""
     strata: dict[str, dict[str, float]] = {}
+    latent: LatentSelection | None = None
+
+    @property
+    def is_latent(self) -> bool:
+        """True when the population is a subpopulation that can be sized but not listed."""
+        return self.latent is not None
 
     @field_validator("strata")
     @classmethod

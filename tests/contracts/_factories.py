@@ -48,6 +48,7 @@ from axiom.core import (
     Gather,
     Interval,
     Intervention,
+    LatentSelection,
     LedgerLine,
     Likelihood,
     Link,
@@ -270,6 +271,7 @@ from axiom.io import (
 from axiom.meta import (
     BaujatData,
     Cell,
+    Commensurability,
     Corpus,
     EffectShrinkage,
     EggerTest,
@@ -281,6 +283,7 @@ from axiom.meta import (
     FunnelContour,
     FunnelData,
     Heterogeneity,
+    Incompatibility,
     LeaveOneOut,
     ParameterSummary,
     Pooled,
@@ -294,6 +297,7 @@ from axiom.meta import (
     TauEstimate,
     baujat,
     charge,
+    commensurable,
     egger,
     fixed_effect,
     forest_data,
@@ -1409,6 +1413,18 @@ def _compliance_report() -> ComplianceReport:
     return compliance(_compliance_frame(), "y", "assigned", "exposed")
 
 
+_LATENT = LatentSelection(kind="complier", instrument="letter", exposure="attended", share=0.61)
+
+
+def _commensurability() -> Commensurability:
+    everybody = _estimand(name="itt", population=Population(name="enrolled"))
+    compliers = _estimand(name="cace", population=Population(name="enrolled", latent=_LATENT))
+    corpus = Corpus(records=(_study(0), _study(1)), name="two")
+    return commensurable(
+        corpus, {corpus.records[0].study: everybody, corpus.records[1].study: compliers}
+    )
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     IndependenceResult: _independence_result,
     ImpliedIndependence: _implied_independence,
@@ -1929,6 +1945,9 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     DeliveryReport: _delivery_report,
     ComplianceTable: lambda: _compliance_report().table,
     ComplianceReport: _compliance_report,
+    LatentSelection: lambda: _LATENT,
+    Commensurability: _commensurability,
+    Incompatibility: lambda: _commensurability().entries[0],
     Provenance: lambda: Provenance(
         axiom_version="0.0.0",
         created="2026-08-21T00:00:00+00:00",

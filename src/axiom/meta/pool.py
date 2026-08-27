@@ -123,8 +123,10 @@ from axiom.core import (
     dimensionless,
     interval,
 )
+from axiom.estimands import Estimand
 from axiom.infer import get_backend
 from axiom.meta.bias import delta_identification
+from axiom.meta.commensurate import Commensurability, commensurable
 from axiom.meta.moderators import ModeratorDesign, moderator_matrix
 from axiom.meta.schema import Corpus, StudyRecord, poolable_quantity
 
@@ -857,13 +859,21 @@ def pool(
     backend: str = "laplace",
     draws: int = 2000,
     seed: int | None = 0,
+    estimands: Mapping[str, Estimand] | None = None,
 ) -> Pooled | Unverified | Unsupported:
     """Fit the pool and summarize it.
 
     ``backend`` is an ``infer`` backend name (``"laplace"`` needs nothing
     beyond core; ``"numpyro"`` needs the extra). A backend that cannot stand
     behind its draws returns ``Unverified`` unchanged; an unusable corpus
-    returns ``Unsupported`` with the reason. ``delta`` (when asked for) is
+    returns ``Unsupported`` with the reason.
+
+    ``estimands`` maps each record's ``study`` to the ``Estimand`` behind it.
+    Supplied, it is checked with ``meta.commensurable`` and a corpus that is
+    averaging different quantities comes back ``Unsupported`` naming the
+    records and the facet. Omitted, the pool runs as it always has and says
+    ``unchecked`` in ``PoolResult.detail["commensurability"]`` — the check is
+    optional, the silence about it is not. ``delta`` (when asked for) is
     flagged ``identified=False`` — and is the prior — on a corpus with no
     dual-read contributor in the family.
     """
@@ -875,6 +885,16 @@ def pool(
     unusable = _capability_guard(spec, backend)
     if isinstance(unusable, Unsupported):
         return unusable
+    agreement: Commensurability | None = None
+    if estimands is not None:
+        agreement = commensurable(corpus, estimands, family=spec.family)
+        verdict = agreement.verdict()
+        if verdict.status == "blocked":
+            return Unsupported(
+                reason=f"the corpus is not pooling one quantity: {verdict.reason}",
+                detail={"family": spec.family, "reference": agreement.reference},
+                missing=("commensurable estimands",),
+            )
     model, data = _build(spec, lay)
     post = _run(backend, model, data, draws=draws, seed=seed)
     if isinstance(post, Unverified | Unsupported):
@@ -883,7 +903,16 @@ def pool(
     if spec.marginal:
         post = _with_effects(spec, lay, post, seed=seed)
     result = _summarize(
-        spec, corpus, lay, model, post, names, backend=backend, draws=draws, seed=seed
+        spec,
+        corpus,
+        lay,
+        model,
+        post,
+        names,
+        backend=backend,
+        draws=draws,
+        seed=seed,
+        agreement=agreement,
     )
     return Pooled(result=result, posterior=post, model=model, data=data, spec=spec)
 
@@ -987,6 +1016,7 @@ def _summarize(
     backend: str,
     draws: int,
     seed: int | None,
+    agreement: Commensurability | None = None,
 ) -> PoolResult:
     mass, definition = spec.mass, spec.definition
     trees = {
@@ -1003,6 +1033,11 @@ def _summarize(
         "effect_key": spec.effect_key,
         "moderators": "centered at the corpus mean" if spec.moderators else "none",
         "scale": lay.scale,
+        "commensurability": (
+            "unchecked: no estimands supplied, so nothing compared what the records measure"
+            if agreement is None
+            else agreement.ledger_line().statement
+        ),
     }
     if lay.scale == "log":
         detail["log_scale"] = "estimate -> log(estimate); se -> se / estimate (delta method)"
