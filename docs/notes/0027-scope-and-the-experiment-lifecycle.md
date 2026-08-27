@@ -128,7 +128,9 @@ faith.
 
 The scope and lifecycle layer is plumbing. It makes the rest of the backlog
 possible to state; it does not do any of it. Recorded here as the 1.3 list, in
-the order they bite a house running experiments across many parties:
+the order they bite a house running experiments across many parties. Items 3
+and 4 were closed on 2026-08-27 and are struck through; the rest are open, and
+two follow-ons opened by closing them are listed after the list.
 
 1. **Assignment is computed, never executed or audited.** `match_clusters`
    returns a seeded `Assignment` with its `pre_smd`; there is no unit-level
@@ -140,14 +142,16 @@ the order they bite a house running experiments across many parties:
    `method_assumption` and is never tested. `portfolio.recommend` has no
    exclusion constraint, so nothing stops it proposing two experiments that
    share units and weeks.
-3. **`meta.pool` has no party level.** `effect_key` is `"contributor"` or
-   `"study"`: one shared effect for all of a party's records, or every record
-   independent. Neither is right for repeated studies in one market. The fix is
-   a third key and a nested tree — study within party within family.
-4. **A stopped estimate is flagged, not corrected.** `STOPPED_ESTIMATE_BIAS`
-   names its own remedy in `challenged_by` — a median-unbiased or stage-wise
-   ordered estimate — and that estimator does not exist, so an early-stopped
-   readout is pooled as though it were unbiased.
+3. ~~**`meta.pool` has no party level.**~~ **Closed 2026-08-27** by
+   `effect_key="nested"`: a second variance component, `mu`'s uncertainty
+   scaled to the number of parties rather than the number of studies, and
+   `delta` identified alongside within-party heterogeneity for the first time.
+   [0029](0029-the-party-a-study-came-from.md).
+4. ~~**A stopped estimate is flagged, not corrected.**~~ **Closed 2026-08-27**
+   by `design.stopped_estimate`, which inverts the stage-wise ordered tail for
+   the median-unbiased estimate and its interval — the correction
+   `STOPPED_ESTIMATE_BIAS.challenged_by` had been asking for since Phase 5.
+   [0028](0028-the-estimate-a-stopped-study-may-report.md).
 5. **No program-level error control.** Holm and Benjamini-Hochberg exist in
    `diagnose/structure.py` for one analysis. Nothing controls the error rate
    across parties × treatments × guardrails, and nothing reports the expected
@@ -163,7 +167,21 @@ the order they bite a house running experiments across many parties:
    hook and defaults to `""`. Optional provenance is absent provenance once
    there are thirty parties and one of them has quietly redefined its outcome.
 
+Two follow-ons opened by closing 3 and 4, both recorded in their own notes:
+
+* a **classical three-level estimator** in `meta.classical` — a REML over
+  `(tau², tau_party²)` would give the same two variance components without a
+  sampler, and would remove the `Unsupported` a free `tau_party` currently
+  returns under `laplace` ([0029](0029-the-party-a-study-came-from.md) §D29.6);
+* a **prior handoff that knows which party it is for** — `N(alpha_p, tau)` for
+  another study of an existing party against
+  `N(mu, sqrt(tau_party² + tau²))` for a new one. The pool can now tell those
+  apart and `meta.priors.prior_from_pool` cannot yet ask.
+
 The ergonomic front — a `build` entry point that takes the typed `design`
 objects and commits a run in one call — is also deferred. `ExperimentRun` takes
 `Spec`s by role, which is what keeps it in `io` and below everything it
-records; a builder over it belongs in `build` with the rest of them.
+records; a builder over it belongs in `build` with the rest of them. With
+`design.stopped_estimate` landed, that entry point now has a specific first
+job: hand `build_measurement` the corrected pair and file a `"stopped_early"`
+`Deviation` in the same call ([0028](0028-the-estimate-a-stopped-study-may-report.md)).
