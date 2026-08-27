@@ -128,16 +128,15 @@ faith.
 
 The scope and lifecycle layer is plumbing. It makes the rest of the backlog
 possible to state; it does not do any of it. Recorded here as the 1.3 list, in
-the order they bite a house running experiments across many parties. Items 3
-and 4 were closed on 2026-08-27 and are struck through; the rest are open, and
-two follow-ons opened by closing them are listed after the list.
+the order they bite a house running experiments across many parties. Items 1, 3, 4
+and most of 7 were closed on 2026-08-27 and are struck through; the rest are
+open, and the follow-ons opened by closing them are listed after the list.
 
-1. **Assignment is computed, never executed or audited.** `match_clusters`
-   returns a seeded `Assignment` with its `pre_smd`; there is no unit-level
-   hash bucketing, no stratified or blocked randomization, no re-randomization
-   against a balance criterion, and — the expensive one — no sample-ratio
-   or delivery check anywhere in the repo. `diagnose/` checks the model. Nothing
-   checks that the experiment was delivered.
+1. ~~**Assignment is computed, never executed or audited.**~~ **Closed
+   2026-08-27** by `design.assign` (hash / block / re-randomize, a rule that
+   re-derives without its roster) and `diagnose.delivery` (sample ratio,
+   exposure rate, balance, at the alpha a weekly check can afford).
+   [0030](0030-the-experiment-that-was-actually-run.md).
 2. **Experiment collision is unmodeled.** `no_interference` is a named
    `method_assumption` and is never tested. `portfolio.recommend` has no
    exclusion constraint, so nothing stops it proposing two experiments that
@@ -159,15 +158,18 @@ two follow-ons opened by closing them are listed after the list.
 6. **Monitoring is group-sequential only.** No confidence sequences and no
    e-values, so there is no honest always-on readout for somebody who will look
    whenever they like.
-7. **Delivery and compliance are asserted.** No ITT/treated-on-treated pair, no
-   dose-assigned versus dose-delivered distinction in the readout estimators,
-   no attrition model. Two parties with different delivery quality produce
-   readouts that are the same estimand on paper and not in fact.
+7. ~~**Delivery and compliance are asserted.**~~ **Partly closed 2026-08-27**
+   by `identify.compliance`: the intention-to-treat and complier effects are
+   reported together, with the population under each and the assumptions that
+   license the second. Still open within this item: **attrition** (a selection
+   problem, not a compliance one) and **continuous exposure** (a partially
+   delivered dose is a local average derivative, not a complier type).
+   [0031](0031-assigned-is-not-received.md).
 8. **No outcome-definition registry.** `StudyRecord.estimand_hash` is the right
    hook and defaults to `""`. Optional provenance is absent provenance once
    there are thirty parties and one of them has quietly redefined its outcome.
 
-Two follow-ons opened by closing 3 and 4, both recorded in their own notes:
+Follow-ons opened by closing 1, 3, 4 and 7, each recorded in its own note:
 
 * a **classical three-level estimator** in `meta.classical` — a REML over
   `(tau², tau_party²)` would give the same two variance components without a
@@ -176,7 +178,13 @@ Two follow-ons opened by closing 3 and 4, both recorded in their own notes:
 * a **prior handoff that knows which party it is for** — `N(alpha_p, tau)` for
   another study of an existing party against
   `N(mu, sqrt(tau_party² + tau²))` for a new one. The pool can now tell those
-  apart and `meta.priors.prior_from_pool` cannot yet ask.
+  apart and `meta.priors.prior_from_pool` cannot yet ask;
+* a **`population` facet that can hold a latent subpopulation**. The compliers
+  are a population an `Estimand` cannot describe — they can be sized and never
+  listed — so `transfer_to` cannot refuse a pool that mixes one party's
+  intention-to-treat with another's complier effect, which is the exact failure
+  [0031](0031-assigned-is-not-received.md) is about. This is the most valuable
+  remaining item in the area and is larger than anything above it.
 
 The ergonomic front — a `build` entry point that takes the typed `design`
 objects and commits a run in one call — is also deferred. `ExperimentRun` takes
