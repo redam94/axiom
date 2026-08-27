@@ -1,6 +1,7 @@
-# io — serialization, provenance, registry
+# io — serialization, provenance, registry, scopes, experiment runs
 
-io: the `analysis.axiom` format, provenance, and a content-addressed registry.
+io: the `analysis.axiom` format, provenance, a content-addressed registry, the
+scopes artifacts belong to, and the life of one experiment.
 
 No pickle, cloudpickle, or dill anywhere in this package; gate 5 asserts it.
 
@@ -9,6 +10,7 @@ No pickle, cloudpickle, or dill anywhere in this package; gate 5 asserts it.
 The executed series under `nbs/io/`:
 
 - [01-save-load-an-analysis.ipynb](../../nbs/io/01-save-load-an-analysis.ipynb)
+- [02-many-parties-one-catalog.ipynb](../../nbs/io/02-many-parties-one-catalog.ipynb)
 
 ## Package
 
@@ -21,6 +23,12 @@ The executed series under `nbs/io/`:
 
 ```{eval-rst}
 .. automodule:: axiom.io.analysis
+   :members:
+
+.. automodule:: axiom.io.catalog
+   :members:
+
+.. automodule:: axiom.io.experiment
    :members:
 
 .. automodule:: axiom.io.provenance
