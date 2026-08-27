@@ -87,6 +87,7 @@ from axiom.design import (
     CalibrationResult,
     CandidateScore,
     ClusterDesign,
+    Collision,
     CostPerOutcomeInterval,
     CostPerOutcomePower,
     CrossingProbabilities,
@@ -106,6 +107,7 @@ from axiom.design import (
     LookSchedule,
     MethodEstimate,
     MethodSpec,
+    Occupancy,
     OperatingCharacteristics,
     OpportunityCost,
     PowerCurve,
@@ -127,6 +129,7 @@ from axiom.design import (
     alpha_spending,
     anchor_draws,
     assign,
+    collisions,
     cost_per_outcome_interval,
     cost_per_outcome_power,
     crossing_probabilities,
@@ -1425,6 +1428,22 @@ def _commensurability() -> Commensurability:
     )
 
 
+_OCCUPANCIES = (
+    Occupancy(
+        experiment="NW-14",
+        units=("london", "leeds"),
+        window=TimeWindow(start=0, stop=8),
+        treatments=("price",),
+    ),
+    Occupancy(
+        experiment="NW-15",
+        units=("leeds", "york"),
+        window=TimeWindow(start=4, stop=12),
+        treatments=("banner",),
+    ),
+)
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     IndependenceResult: _independence_result,
     ImpliedIndependence: _implied_independence,
@@ -1948,6 +1967,8 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     LatentSelection: lambda: _LATENT,
     Commensurability: _commensurability,
     Incompatibility: lambda: _commensurability().entries[0],
+    Occupancy: lambda: _OCCUPANCIES[0],
+    Collision: lambda: collisions(_OCCUPANCIES)[0],
     Provenance: lambda: Provenance(
         axiom_version="0.0.0",
         created="2026-08-21T00:00:00+00:00",

@@ -37,6 +37,9 @@ The executed series under `nbs/design/`:
 .. automodule:: axiom.design.cluster
    :members:
 
+.. automodule:: axiom.design.collision
+   :members:
+
 .. automodule:: axiom.design.economics
    :members:
 
