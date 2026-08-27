@@ -48,3 +48,4 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0032 | [A population you can size and cannot list](0032-a-population-you-can-size-and-cannot-list.md) | decision + deviation |
 | 0033 | [Colliding is not automatically wrong, and the calendar knows which](0033-two-experiments-in-the-same-markets.md) | decision |
 | 0034 | [A spending function cannot price a look nobody scheduled](0034-the-look-nobody-scheduled.md) | decision |
+| 0035 | [Eight wrong go-decisions a quarter, all individually defensible](0035-eight-wrong-go-decisions-a-quarter.md) | decision |

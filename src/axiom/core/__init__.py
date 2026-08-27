@@ -89,6 +89,7 @@ from axiom.core.model import (
     log_prior,
     unconstrain,
 )
+from axiom.core.multiplicity import Multiplicity, adjust
 from axiom.core.posterior import Posterior
 from axiom.core.protocols import (
     Capability,
@@ -165,6 +166,7 @@ __all__ = [
     "Model",
     "ModelSpec",
     "Mul",
+    "Multiplicity",
     "NonEmptyStr",
     "ODESystem",
     "Opaque",
@@ -202,6 +204,7 @@ __all__ = [
     "Unsupported",
     "Unverified",
     "Verdict",
+    "adjust",
     "causal_convolve",
     "check",
     "children",

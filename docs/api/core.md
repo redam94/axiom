@@ -57,6 +57,9 @@ The executed series under `nbs/core/`:
 .. automodule:: axiom.core.intervals
    :members:
 
+.. automodule:: axiom.core.multiplicity
+   :members:
+
 .. automodule:: axiom.core.model
    :members:
 
