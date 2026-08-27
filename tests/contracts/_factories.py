@@ -112,6 +112,7 @@ from axiom.design import (
     SensitivityTable,
     SimulatedPower,
     SimulationSpec,
+    StoppedEstimate,
     StoppingRule,
     StudySummary,
     TreatmentCandidate,
@@ -130,9 +131,11 @@ from axiom.design import (
     match_clusters,
     mde,
     method_spec,
+    monitor,
     operating_characteristics,
     opportunity_cost,
     perturb,
+    pocock,
     power,
     power_curve,
     pulse,
@@ -140,6 +143,7 @@ from axiom.design import (
     recommend,
     sample_size,
     schedule_with_cooldown,
+    stopped_estimate,
     time_to_re_experiment,
 )
 from axiom.design.identifiability import (
@@ -1336,6 +1340,14 @@ def _experiment_run() -> ExperimentRun:
     )
 
 
+def _stopped_estimate() -> StoppedEstimate:
+    looks = LookSchedule(labels=("L1", "L2", "L3"), information=(0.4, 0.7, 1.0))
+    rule = StoppingRule(name="Pocock-3", looks=looks, boundaries=(pocock(0.05, looks),))
+    result = stopped_estimate(monitor(rule, [0.6, 0.9, 2.6], ses=[0.9, 0.7, 0.5]))
+    assert isinstance(result, StoppedEstimate)
+    return result
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     IndependenceResult: _independence_result,
     ImpliedIndependence: _implied_independence,
@@ -1843,6 +1855,7 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     EpsilonLedger: _ledger,
     Release: _release,
     EpsilonSplit: lambda: orthogonal_split(1.0, 3),
+    StoppedEstimate: _stopped_estimate,
     Provenance: lambda: Provenance(
         axiom_version="0.0.0",
         created="2026-08-21T00:00:00+00:00",

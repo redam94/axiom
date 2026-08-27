@@ -93,6 +93,9 @@ The executed series under `nbs/design/`:
 .. automodule:: axiom.design.simulate
    :members:
 
+.. automodule:: axiom.design.stopped
+   :members:
+
 .. automodule:: axiom.design.structural
    :members:
 ```
