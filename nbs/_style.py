@@ -389,13 +389,22 @@ def compare(
         showlegend=False,
         hovertemplate="%{y}: <b>%{x:.4g}</b><extra></extra>",
     )
+    # A negative bar writes its value to the left of the axis, where the row labels are,
+    # so the gutter has to widen for it.
+    label_room = 8 + 7 * max((len(n) for n in names), default=8)
     fig.update_layout(
         bargap=0.34,
         height=layout.get("height", _rows_height(fig, len(names))),
-        margin={"l": 8 + 7 * max((len(n) for n in names), default=8), "r": 78},
+        margin={"l": label_room + (56 if min(vals, default=0.0) < 0 else 0), "r": 78},
     )
     fig.update_xaxes(showgrid=True, gridcolor=GRID, zeroline=True, zerolinecolor=AXIS)
-    fig.update_yaxes(autorange="reversed", showgrid=False)
+    fig.update_yaxes(
+        autorange="reversed",
+        showgrid=False,
+        # Room between a row label and a negative bar's value, which is written leftwards
+        # from the axis into the same gutter.
+        ticksuffix="      " if min(vals, default=0.0) < 0 else "",
+    )
     return fig
 
 
