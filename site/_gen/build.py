@@ -37,6 +37,7 @@ WORKFLOW = [
 # HYPER-3 is an analysis story and GEIGER-1911 is a design one, and the nav should say
 # which is which rather than making a reader open both to find out.
 EXTRA = [
+    ("about", "About"),
     ("guides", "Guides"),
     ("tutorial", "Tutorial"),
     ("examples", "Examples"),

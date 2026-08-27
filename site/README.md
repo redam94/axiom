@@ -1,10 +1,16 @@
 # site/ — the axiom marketing and demonstration site
 
-A static site, hostable on GitHub Pages with no build step at serve time. Eleven
-authored pages -- a landing page, one per pillar, the examples index, the
-benchmarks, two case studies and a searchable API map -- plus a fourteen-page
-concept shelf under `guides.html`, and one generated walkthrough page per example
-in `examples/`.
+A static site, hostable on GitHub Pages with no build step at serve time. Twelve
+authored pages -- a landing page, an about page, one per pillar, the examples
+index, the benchmarks, two case studies and a searchable API map -- plus a
+fourteen-page concept shelf under `guides.html`, and one generated walkthrough
+page per example in `examples/`.
+
+`about.html` is the page for a reader who arrived without context: the loop the
+library is built around, where the code came from and what was deliberately left
+behind, the scope it refuses, and the four kinds of evidence that it works. It is
+the only authored page with no chart on it — its one figure is the charter's loop,
+drawn as inline SVG, because a diagram of the workflow is not a measurement.
 
 The rest of the site shows axiom *doing* things. The guides explain the ideas the
 doing rests on, for a reader who has not met them -- and in particular the thread
@@ -29,8 +35,9 @@ the call that made it.
 
 ```
 site/
-  index.html  identify.html  design.html  calibrate.html  surface.html
-  meta.html  examples.html  benchmarks.html              <- generated; committed
+  index.html  about.html  identify.html  design.html
+  calibrate.html  surface.html  meta.html                <- generated; committed
+  examples.html  benchmarks.html
   case-study.html  rutherford.html  api.html
   guides.html  guide-*.html  glossary.html               <- the concept shelf
   example-01-....html ... example-12-....html            <- one per walkthrough,

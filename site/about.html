@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About axiom — what it is, where it came from, what it refuses to be</title>
+<meta name="description" content="axiom is a Python toolkit for Bayesian causal decision science: identification, experimental design, calibration, response surfaces and evidence meta-analysis, around one loop and one vocabulary. What it is for, where it came from, how it is checked, and what it deliberately is not.">
+<meta property="og:title" content="About axiom — what it is, where it came from, what it refuses to be">
+<meta property="og:description" content="axiom is a Python toolkit for Bayesian causal decision science: identification, experimental design, calibration, response surfaces and evidence meta-analysis, around one loop and one vocabulary. What it is for, where it came from, how it is checked, and what it deliberately is not.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/axiom.css">
+<script>
+// Set the theme before first paint so the page never flashes the wrong one.
+(function () {
+  try {
+    var t = localStorage.getItem('axiom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private mode: fall through to the system setting */ }
+})();
+</script>
+</head>
+<body data-page="about">
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>axiom</a>
+    <nav class="chain" aria-label="The five pillars, in working order"><a class="step" href="identify.html" title="Can the data answer it?"><span class="step-n">1</span><span class="step-l">Identify</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="design.html" title="What should I measure?"><span class="step-n">2</span><span class="step-l">Design</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="calibrate.html" title="Fold the experiment in"><span class="step-n">3</span><span class="step-l">Calibrate</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="surface.html" title="Map the response"><span class="step-n">4</span><span class="step-l">Surface</span></a><span class="step-link" aria-hidden="true"></span><a class="step" href="meta.html" title="All the evidence"><span class="step-n">5</span><span class="step-l">Pool</span></a></nav>
+    <nav class="navx-wrap" aria-label="More"><a class="navx navx-on" href="about.html">About</a><a class="navx" href="guides.html">Guides</a><a class="navx" href="tutorial.html">Tutorial</a><a class="navx" href="examples.html">Examples</a><a class="navx" href="benchmarks.html">Benchmarks</a><a class="navx" href="case-study.html">HYPER-3</a><a class="navx" href="rutherford.html">GEIGER-1911</a><a class="navx" href="api.html">API</a></nav>
+    <button class="theme" type="button" aria-label="Switch between light and dark">
+      <span class="theme-ico" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+<main id="main">
+
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">About · Python 3.12+ · 843 public symbols</p>
+    <h1 style="max-width:22ch">Most of the work happens before the estimator</h1>
+    <p class="lede prose mt">Statistical libraries are generous with estimators and silent
+      about everything around them. But the expensive mistakes in applied work are almost
+      never a mis-specified regression. They are a quantity nobody defined precisely enough
+      to compare, a graph that never licensed the comparison in the first place, an
+      experiment sized for an effect everyone already believed, and a number that arrived
+      in a slide with no record of what it assumed.</p>
+    <p class="lede prose">axiom is built for that part. It starts a step earlier — is the
+      number you want recoverable from the data you have? — and keeps going a step later —
+      what is it worth, what did it assume, and does it still mean the same thing where you
+      are about to use it?</p>
+    <div class="hero-cta">
+      <a class="btn btn-1" href="tutorial.html">See the whole loop →</a>
+      <a class="btn btn-2" href="guides.html">Start with the concepts</a>
+      <a class="btn btn-2" href="api.html">Browse the API</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The organizing idea</p>
+      <h2>One loop, and every arrow is a package</h2>
+      <p>axiom supports one workflow end to end, and nothing else is in scope. Each box is
+        a question somebody actually has to answer; each arrow is a subpackage that turns
+        the answer into the next question's input. The loop closes because a quantity
+        measured by an experiment and a quantity read off a model can be compared — which
+        is the whole product, and the reason an estimand here has eight facets rather than
+        a name.</p>
+    </div>
+
+    <div class="grid-2">
+      <figure class="fig">
+        <div class="fig-head">
+          <p class="fig-t">The loop the charter commits to</p>
+          <p class="fig-s">Declare, check, design, measure, fold in, decide, pool — and the
+            pooled evidence becomes the next question's prior.</p>
+        </div>
+        <svg viewBox="0 0 620 400" role="img" width="100%"
+             aria-label="A flow diagram. Declare an estimand leads to: is it identified? If no, it leads to what would identify it, which leads to design an experiment, which leads to calibrate on the result. If yes, it leads to fit a response surface, which leads to make a decision. Design an experiment also feeds the response surface, and calibration feeds the decision. Both the decision and the calibration feed pool into meta-evidence, which returns to the start.">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6"
+                    markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--ink-3)"/>
+            </marker>
+          </defs>
+
+          <rect x="40" y="10" width="240" height="42" rx="8" fill="var(--panel)"
+                stroke="var(--rule-2)"/>
+          <text x="160" y="36" text-anchor="middle" font-family="var(--f-mono)"
+                font-size="12" fill="var(--ink)">declare an estimand</text>
+
+          <rect x="40" y="94" width="240" height="42" rx="8" fill="var(--panel)"
+                stroke="var(--rule-2)"/>
+          <text x="160" y="120" text-anchor="middle" font-family="var(--f-mono)"
+                font-size="12" fill="var(--ink)">is it identified?</text>
+
+          <rect x="340" y="94" width="240" height="42" rx="8" fill="var(--panel)"
+                stroke="var(--rule-2)"/>
+          <text x="460" y="120" text-anchor="middle" font-family="var(--f-mono)"
+                font-size="12" fill="var(--ink)">what would identify it?</text>
+
+          <rect x="40" y="188" width="240" height="42" rx="8" fill="var(--panel)"
+                stroke="var(--rule-2)"/>
+          <text x="160" y="214" text-anchor="middle" font-family="var(--f-mono)"
+                font-size="12" fill="var(--ink)">fit a response surface</text>
+
+          <rect x="340" y="188" width="240" height="42" rx="8" fill="var(--panel)"
+                stroke="var(--rule-2)"/>
+          <text x="460" y="214" text-anchor="middle" font-family="var(--f-mono)"
+                font-size="12" fill="var(--ink)">design an experiment</text>
+
+          <rect x="40" y="282" width="240" height="42" rx="8" fill="var(--panel)"
+                stroke="var(--rule-2)"/>
+          <text x="160" y="308" text-anchor="middle" font-family="var(--f-mono)"
+                font-size="12" fill="var(--ink)">make a decision</text>
+
+          <rect x="340" y="282" width="240" height="42" rx="8" fill="var(--panel)"
+                stroke="var(--rule-2)"/>
+          <text x="460" y="308" text-anchor="middle" font-family="var(--f-mono)"
+                font-size="12" fill="var(--ink)">calibrate on the result</text>
+
+          <rect x="170" y="352" width="280" height="38" rx="8" fill="var(--panel)"
+                stroke="var(--rule-2)"/>
+          <text x="310" y="376" text-anchor="middle" font-family="var(--f-mono)"
+                font-size="12" fill="var(--ink)">pool into meta-evidence</text>
+
+          <line x1="160" y1="52" x2="160" y2="90" stroke="var(--ink-3)" marker-end="url(#ar)"/>
+          <line x1="280" y1="115" x2="336" y2="115" stroke="var(--ink-3)" marker-end="url(#ar)"/>
+          <text x="308" y="106" text-anchor="middle" font-family="var(--f-mono)"
+                font-size="10" fill="var(--ink-3)">no</text>
+          <line x1="160" y1="136" x2="160" y2="184" stroke="var(--ink-3)" marker-end="url(#ar)"/>
+          <text x="172" y="164" font-family="var(--f-mono)" font-size="10"
+                fill="var(--ink-3)">yes</text>
+          <line x1="460" y1="136" x2="460" y2="184" stroke="var(--ink-3)" marker-end="url(#ar)"/>
+          <line x1="336" y1="209" x2="284" y2="209" stroke="var(--ink-3)" marker-end="url(#ar)"/>
+          <line x1="460" y1="230" x2="460" y2="278" stroke="var(--ink-3)" marker-end="url(#ar)"/>
+          <line x1="160" y1="230" x2="160" y2="278" stroke="var(--ink-3)" marker-end="url(#ar)"/>
+          <line x1="336" y1="303" x2="284" y2="303" stroke="var(--ink-3)" marker-end="url(#ar)"/>
+          <path d="M160 324 L160 371 L166 371" fill="none" stroke="var(--ink-3)"
+                marker-end="url(#ar)"/>
+          <path d="M460 324 L460 371 L454 371" fill="none" stroke="var(--ink-3)"
+                marker-end="url(#ar)"/>
+          <path d="M310 352 L310 340 L604 340 L604 31 L284 31" fill="none"
+                stroke="var(--ink-3)" stroke-dasharray="4 4" marker-end="url(#ar)"/>
+        </svg>
+        <p class="stamp">docs/plan/00-charter.md — “Each arrow is a package. Nothing else is
+          in scope.”</p>
+      </figure>
+
+      <div>
+        <div class="ledger">
+          <div class="ledger-row">
+            <span class="ledger-f">declare</span>
+            <span class="ledger-s"><code>estimands</code> — the quantity, in eight facets, so
+              two numbers can be compared or refused.</span>
+            <span class="ledger-v">8 facets</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">check</span>
+            <span class="ledger-s"><a href="identify.html">identify</a> — the route the graph
+              licenses, or the named variable that is missing.</span>
+            <span class="ledger-v">4 routes</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">design</span>
+            <span class="ledger-s"><a href="design.html">design</a> — how big, which
+              estimator, what it is worth, what withholding costs.</span>
+            <span class="ledger-v">165 symbols</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">fold in</span>
+            <span class="ledger-s"><a href="calibrate.html">calibrate</a> — the experiment
+              enters the model through the prior or the likelihood, with a ledger line for
+              every assumption.</span>
+            <span class="ledger-v">2 routes</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">map</span>
+            <span class="ledger-s"><a href="surface.html">surface</a> — the dose–response,
+              its optimum under a budget, and where to probe next.</span>
+            <span class="ledger-v">one <code>forward()</code></span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">pool</span>
+            <span class="ledger-s"><a href="meta.html">meta</a> — everything you have run,
+              and what a new study should expect.</span>
+            <span class="ledger-v">70 symbols</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">critique</span>
+            <span class="ledger-s">diagnose — would the procedure have found an effect that
+              was not there, and what would overturn this one?</span>
+            <span class="ledger-v">85 symbols</span>
+          </div>
+        </div>
+        <div class="note mt">
+          <p class="note-t">Why the loop matters more than any box in it</p>
+          <p class="small" style="margin:0">Each of these exists elsewhere, in better-known
+            packages. What does not exist elsewhere is the handoff: an identification verdict
+            that travels with the estimate, an experiment priced against the decision waiting
+            on it, and a transfer between two quantities that is refused when it cannot be
+            licensed. The seams are the library.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Where it came from</p>
+      <h2>A rewrite, not a fork</h2>
+    </div>
+    <div class="grid-2">
+      <div class="prose">
+        <p>axiom began inside a marketing-mix platform: 177,000 lines across 32 subpackages,
+          with a web API, a frontend, an agent framework and a reporting engine attached. The
+          five subpackages that mattered — estimands, calibration, planning, diagnostics,
+          benchmarks — came to about 24,000 lines, and every one of them reached into a
+          5,375-line model class for the posterior it operated on.</p>
+        <p>Stripping that out in place would have meant rewriting the seam anyway, in a repo
+          that also had to keep a server and a frontend compiling. So the seam was stated
+          once, and everything was written against it:</p>
+        <p class="prose"><strong>the causal, design and calibration layer should depend on a
+          posterior, not on a model class.</strong></p>
+        <p>That is about 120 lines of protocol in <code>axiom.core</code>. A NumPyro fit, a
+          Laplace approximation, an analysis reloaded from disk and a dict built by hand are
+          the same kind of thing to everything above it.</p>
+        <p>The second decision was the vocabulary. The mathematics came out of marketing; the
+          nouns deliberately did not. A saturating response curve is not a marketing idea, and
+          the moment it is called a “channel response” the next team that needs it for a
+          fertilizer trial writes it again. So the core speaks treatment, dose, unit, outcome,
+          covariate — and marketing is <em>one adapter</em>, with a build gate that keeps its
+          words out of everything below it.</p>
+      </div>
+      <div>
+        <div class="note">
+          <p class="note-t">Clean-room, against recorded values</p>
+          <p class="small" style="margin:0">Nothing was copied. Every ported computation is
+            checked against the value the parent produced, recorded in
+            <code>tests/golden/</code> — and where a port deliberately changes a number, the
+            fixture points at the note that says why. A golden failure stops the build.</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">The vocabulary rule is a test</p>
+          <p class="small" style="margin:0">A gate walks every identifier in the library and
+            fails on <code>channel</code>, <code>spend</code>, <code>geo</code>,
+            <code>kpi</code>, <code>roas</code>. It exempts exactly one package:
+            <code>axiom.adapters</code>, which exports 17 symbols
+            and is the only place those words are allowed.</p>
+        </div>
+        <div class="note mt">
+          <p class="note-t">Domain-general on purpose</p>
+          <p class="small" style="margin:0">The same library runs the
+            <a href="examples.html">12 worked examples</a>: agronomy, labour
+            economics, education, epidemiology, ecology, public health, clinical research,
+            energy, process engineering, marketing, psychology and product analytics. None of
+            them is a special case in the code.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Scope</p>
+      <h2>What it refuses to be</h2>
+      <p>A short list of things that are out permanently, rather than “later”. Each one is a
+        real request that was turned down, and writing them here is cheaper than discovering
+        the boundary by pull request.</p>
+    </div>
+    <div class="grid-3">
+      <div>
+        <h3>Not a platform</h3>
+        <p class="small muted">No web application, HTTP API or frontend. No authentication,
+          tenancy, sessions, job queues or object stores. axiom is a library that returns
+          typed results to whatever is calling it.</p>
+      </div>
+      <div>
+        <h3>Not an agent</h3>
+        <p class="small muted">No language model and no agent framework inside the library. A
+          model that writes report prose exists, as a separate distribution that depends on
+          axiom and that axiom never imports — the gates walk the package and cannot see it.</p>
+      </div>
+      <div>
+        <h3>Not a marketing-mix model</h3>
+        <p class="small muted">An MMM is a <em>configuration</em> of the response surface plus
+          the marketing adapter, not a class in this repository. Nor are ad-platform
+          connectors, Excel configuration or data-studio pipelines.</p>
+      </div>
+    </div>
+    <div class="note mt-lg">
+      <p class="note-t">Two amendments, recorded rather than quietly taken</p>
+      <p class="small" style="margin:0">The charter said “no report generator”, and a report
+        engine shipped anyway — templates plus HTML, PowerPoint and PDF renderers — because a
+        result that cannot leave the notebook does not close the loop. And the charter said
+        “no language model”, which still holds inside the library while an add-on that writes
+        prose lives outside it. Both are written down as deviations with their reasons, in
+        <code>docs/notes/</code>, which is where an argument this project lost is kept.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">How you can tell</p>
+      <h2>Four kinds of evidence, none of them a claim</h2>
+      <p>A library about provenance has to be able to answer the question it asks of everyone
+        else. Each of these is a command you can run.</p>
+    </div>
+    <div class="cards">
+      <a class="card" href="benchmarks.html">
+        <p class="card-n">01 · AGAINST OTHERS</p>
+        <h3>Published values</h3>
+        <p>Real datasets collected by other people, reproduced end to end and checked against
+          R <code>metafor</code>, NIST certified values and two published papers.</p>
+        <div class="card-f">
+          <p class="card-stat">3e-04
+            <small>worst relative disagreement across
+              12 checked values</small></p>
+          <p class="card-go">See the benchmarks <span aria-hidden="true">→</span></p>
+        </div>
+      </a>
+      <a class="card" href="examples.html">
+        <p class="card-n">02 · ACROSS FIELDS</p>
+        <h3>Runnable examples</h3>
+        <p>The same library in twelve fields, each a narrated walkthrough that says why every
+          step is the necessary step — and what the run actually showed.</p>
+        <div class="card-f">
+          <p class="card-stat">49s
+            <small>to run all 12 on the core install</small></p>
+          <p class="card-go">See the examples <span aria-hidden="true">→</span></p>
+        </div>
+      </a>
+      <a class="card" href="api.html">
+        <p class="card-n">03 · AGAINST ITSELF</p>
+        <h3>Every symbol, demonstrated</h3>
+        <p>A gate fails the build if a public symbol is not used in an executed notebook. The
+          API page shows a real call for each one, lifted out of those notebooks.</p>
+        <div class="card-f">
+          <p class="card-stat">838 / 843
+            <small>symbols with a real call on the page</small></p>
+          <p class="card-go">Browse the API <span aria-hidden="true">→</span></p>
+        </div>
+      </a>
+      <a class="card" href="case-study.html">
+        <p class="card-n">04 · END TO END</p>
+        <h3>Known-truth recovery</h3>
+        <p>Every estimator is checked against a simulated world whose answer is written down,
+          and the trial in the case study is one of those worlds run in full.</p>
+        <div class="card-f">
+          <p class="card-stat">12 gates
+            <small>contract tests that fail the build, on every commit</small></p>
+          <p class="card-go">Read the case study <span aria-hidden="true">→</span></p>
+        </div>
+      </a>
+    </div>
+    <p class="small muted mt">The twelve gates are not unit tests. They encode the design
+      decisions: that importing the library pulls no sampler, that no core module mentions a
+      marketing noun, that every interval carries its definition and mass, that every
+      evidence transfer leaves a ledger line, that the numpy and jax evaluations of a model
+      agree to eight decimals, and that no public symbol goes undemonstrated.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Who it is for</p>
+      <h2>Three readers, three entrances</h2>
+    </div>
+    <div class="grid-3">
+      <div>
+        <h3>You have data and a decision</h3>
+        <p class="small muted">Start with the <a href="guides.html">concept guides</a> — no
+          installation needed — and then the <a href="tutorial.html">tutorial</a>, which
+          carries one decision from “what are we asking” to a written recommendation. The
+          most common finding is that the data on hand cannot answer the question, and it is
+          better to learn that in an afternoon than in a review.</p>
+      </div>
+      <div>
+        <h3>You are designing a study</h3>
+        <p class="small muted">Go to <a href="design.html">Design</a>, then
+          <a href="rutherford.html">GEIGER-1911</a> — a case study in which nothing is fitted
+          until the last section, because the deliverable is a set of angles, an aperture, a
+          time allocation and a stopping rule, all produced before the apparatus exists.</p>
+      </div>
+      <div>
+        <h3>You maintain a modelling stack</h3>
+        <p class="small muted">Read <a href="api.html">the API map</a> and the layering it is
+          grouped by, then the notebooks under <code>nbs/</code>. Imports point down only and
+          a contract test enforces it, so a subpackage can be read on its own.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">In practice</p>
+      <h2>What you would need to know to use it</h2>
+    </div>
+    <div class="grid-2">
+      <div>
+        <h3>Status, and what is deferred</h3>
+        <p class="small muted">Every subpackage is implemented, every public symbol is
+          demonstrated in an executed notebook, and the contract gates and recovery suites
+          are green. Deferred deliberately, and written down rather than implied:
+          non-parametric surfaces, discrete latent structure, block-bootstrap switchback
+          standard errors, and stage-wise-ordered estimates for a stopped sequential trial.</p>
+        <p class="small muted mt">The plan that produced the code, and every decision taken
+          along the way — including the ones that were reversed — are in the repository under
+          <code>docs/plan/</code> and <code>docs/notes/</code>.</p>
+      </div>
+      <div>
+        <h3>Practical facts</h3>
+        <div class="ledger mt">
+          <div class="ledger-row">
+            <span class="ledger-f">python</span>
+            <span class="ledger-s">3.12 or newer.</span>
+            <span class="ledger-v">3.12+</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">core install</span>
+            <span class="ledger-s">numpy, scipy, pandas, pydantic — enough for
+              identification, design, planning and closed-form meta-analysis. A sampler is an
+              extra you add when you need posterior draws.</span>
+            <span class="ledger-v">4 packages</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">import cost</span>
+            <span class="ledger-s"><code>import axiom.identify, axiom.design, axiom.surface, axiom.meta, axiom.estimands</code> pulls no sampler
+              at all.</span>
+            <span class="ledger-v">0.78s</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">docs</span>
+            <span class="ledger-s">This site is the narrative one. The generated API
+              reference, plus the plan and the notes, build separately from the
+              docstrings.</span>
+            <span class="ledger-v">2 sites</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">author</span>
+            <span class="ledger-s">Matthew Reda.</span>
+            <span class="ledger-v">2026</span>
+          </div>
+          <div class="ledger-row">
+            <span class="ledger-f">licence</span>
+            <span class="ledger-s">Proprietary. All rights reserved — no licence to use,
+              copy, modify or distribute is granted by the source being visible.</span>
+            <span class="ledger-v">proprietary</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Next</p>
+      <h2>Where to go from here</h2>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row">
+        <span class="ledger-f">read</span>
+        <span class="ledger-s">The <a href="guides.html">concept guides</a> — what makes a
+          question causal, and why a number that was right where it was measured can be wrong
+          where it is used.</span>
+        <span class="ledger-v">no install</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">follow</span>
+        <span class="ledger-s">The <a href="tutorial.html">tutorial</a> — one decision, eight
+          steps, ending in a document a board could act on.</span>
+        <span class="ledger-v">8 steps</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">watch</span>
+        <span class="ledger-s">The two case studies: <a href="case-study.html">HYPER-3</a>, a
+          trial that stops an arm early, and <a href="rutherford.html">GEIGER-1911</a>, a
+          design worked out before the apparatus exists.</span>
+        <span class="ledger-v">2 studies</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">verify</span>
+        <span class="ledger-s">The <a href="benchmarks.html">benchmarks</a> and the
+          <a href="examples.html">examples</a>, both runnable from the repository.</span>
+        <span class="ledger-v">12 values</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-f">use</span>
+        <span class="ledger-s">The <a href="api.html">API map</a>, searchable, grouped by
+          subpackage and layer, with a real call for every symbol.</span>
+        <span class="ledger-v">843 symbols</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <p class="foot-b"><strong>axiom</strong> — Bayesian causal decision science.
+      Declare what you want to know, find out whether the data can tell you, design the
+      experiment that would, fold its answer back in, map the surface it implies, and pool
+      everything you have.</p>
+    <p class="foot-s">Every figure and every number on this site was produced by running
+      axiom. Rebuild them with <code>python site/_gen/generate.py</code>.
+      Source: <a href="https://github.com/redam94/axiom">github.com/redam94/axiom</a>.</p>
+  </div>
+</footer>
+<script src="assets/charts.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>
