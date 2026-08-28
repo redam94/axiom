@@ -2,7 +2,9 @@ __pycache__/
 *.py[cod]
 .venv/
 .uv/
-uv.lock
+# uv.lock is COMMITTED, deliberately. It is what makes CI reproducible: without
+# it every CI run re-resolved the dependency graph from scratch and could pick a
+# pre-release nobody had ever run. See docs/notes/0043.
 dist/
 /build/
 *.egg-info/

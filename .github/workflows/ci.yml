@@ -11,7 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      # Deliberately NOT --locked: this job is the canary for `pip install
+      # axiom` against a fresh resolution of the four dependencies. It is the
+      # one job allowed to drift, because drifting is what it is for.
       - run: uv pip install --system -e . pytest
       - run: pytest tests/contracts tests/unit -q -m "not slow"
       # Phase 7 exit criterion 3: meta-analysis (classical path) works on core alone.
@@ -25,7 +33,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --group dev
+        with:
+          enable-cache: true
+      - run: uv sync --group dev --locked
       - run: uv run pytest tests/ -n logical -m "not slow"
 
   lint:
@@ -33,7 +43,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --group dev
+        with:
+          enable-cache: true
+      - run: uv sync --group dev --locked
       - run: uv run black --check --diff src tests examples
       - run: uv run ruff check src tests examples
       - run: uv run mypy
@@ -44,7 +56,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --group dev
+        with:
+          enable-cache: true
+      - run: uv sync --group dev --locked
       - run: uv run pytest tests/ -n logical -m slow
 
   # The API reference must build warning-free (see `make docs`), and it must do

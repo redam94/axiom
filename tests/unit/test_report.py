@@ -129,6 +129,7 @@ def test_missing_names_every_absent_key_at_once(template: Report) -> None:
     )
 
 
+@pytest.mark.skipif(not available(), reason="plotly not installed")
 def test_the_same_template_renders_two_contexts_and_keeps_its_hash(
     template: Report, context: dict[str, object]
 ) -> None:
@@ -209,6 +210,7 @@ def test_page_breaks_become_positions_not_blocks() -> None:
 # -- uncertainty is not a rendering option --------------------------------------------------
 
 
+@pytest.mark.skipif(not available(), reason="plotly not installed")
 def test_a_surface_figure_carries_its_band(template: Report, context: dict[str, object]) -> None:
     """A ResponseBand source is drawn through viz, which cannot draw one without its band."""
     out = resolve(template, context)
@@ -458,6 +460,7 @@ def test_resolved_text_distinguishes_headings(context: dict[str, object]) -> Non
     assert isinstance(paragraph, ResolvedText) and not paragraph.is_heading
 
 
+@pytest.mark.skipif(not available(), reason="plotly not installed")
 def test_dimensions_are_untouched_by_reporting(band: ResponseBand) -> None:
     """A band keeps its dimension through a report; nothing here rescales a number."""
     assert band.dimension == D.outcome

@@ -429,7 +429,12 @@ def test_funnel_without_a_mode_is_unverified_not_nan() -> None:
     assert got.detail["converged"] == "False"
     assert "min_eigenvalue" in got.detail and "optimizer" in got.detail
     est = find_mode(hierarchical(), data)
-    assert not est.converged
+    # Two routes to the same verdict, and which one you get is a property of the
+    # install rather than of the model: with jax, find_mode returns a mode it
+    # knows did not converge; without it the finite-difference curvature check
+    # cannot resolve a_sd, so find_mode declines to vouch for a mode at all.
+    # "There is no mode here" is the invariant under test either way.
+    assert isinstance(est, Unverified) or not est.converged
     forced = as_posterior(laplace(hierarchical(), data, draws=200, seed=0, allow_unverified=True))
     assert forced.provenance["verified"] is False
     assert forced.provenance["hessian_pd"] is False
