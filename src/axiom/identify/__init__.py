@@ -26,6 +26,11 @@ from axiom.identify.backdoor import (
     requires_unmeasured,
     roles,
 )
+from axiom.identify.bounds import (
+    SELECTION_MONOTONICITY,
+    LeeBounds,
+    lee_bounds,
+)
 from axiom.identify.cluster import ClusterDAG, compatible, identify_cluster_effect
 from axiom.identify.compliance import (
     EXCLUSION,
@@ -105,6 +110,7 @@ __all__ = [
     "IdentifiedEffect",
     "InstrumentRoute",
     "JointTable",
+    "LeeBounds",
     "LinearEstimate",
     "MONOTONICITY",
     "Marginal",
@@ -114,6 +120,7 @@ __all__ = [
     "Role",
     "RoleAssignment",
     "Route",
+    "SELECTION_MONOTONICITY",
     "SequentialPlan",
     "TransportVerdict",
     "acyclify",
@@ -142,6 +149,7 @@ __all__ = [
     "instruments",
     "intention_to_treat",
     "latent_projection",
+    "lee_bounds",
     "minimal_adjustment_sets",
     "minimal_s_admissible_sets",
     "ols",
