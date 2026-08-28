@@ -72,15 +72,26 @@ Independent of any of the above, and worth separating from it:
   under `pytest -n logical`, with every core on the runner busy; scheduler
   noise there is strictly additive, so one unlucky probe can be twice the
   honest cost. It now takes the minimum of three, for the reason `timeit`
-  reports a minimum rather than a mean. That alone was not enough, and the
-  second fault is the interesting one: the budget was `t_pandas + 0.6`, a
-  *constant* allowance described in its own comment as "generous for slow CI
-  runners" when it is precisely the opposite. A slower runner inflates
-  `t_axiom` while the allowance stays put, so the gate tightens exactly where
-  it promised to relax. The module docstring had said from the start that the
-  bound was relative to `import pandas`; it is now the ratio it always claimed
-  to be. Measured: 2.6x on a developer laptop, 2.25x on the runner that failed
-  it at 1.384s against 1.215s. The budget is 3.0x.
+  reports a minimum rather than a mean. The second fault is the interesting
+  one. The budget was `t_pandas + 0.6`, a *constant* allowance whose own
+  comment called it "generous for slow CI runners" when it is precisely the
+  opposite: a slower runner inflates `t_axiom` while the allowance stays put,
+  so the gate tightens exactly where it promised to relax. Three measurements,
+  once it was possible to take them all:
+
+  | | pandas | axiom | ratio | difference |
+  |---|---|---|---|---|
+  | laptop, dev venv | 0.165s | 0.428s | 2.6x | +0.26s |
+  | runner, dev venv | 0.615s | 1.384s | 2.25x | +0.77s |
+  | runner, core only | 0.179s | 0.546s | 3.06x | +0.37s |
+
+  Neither form alone covers those three. A constant allowance tightens where
+  the machine is slow, and the middle row failed `+0.6`; a pure ratio tightens
+  where pandas is cheap, and the bottom row failed `3.0x` by ten milliseconds.
+  The cost has a fixed part and a part that scales, so the bound is now the
+  more generous of the two and both have to be exceeded before it fails. That
+  is still nowhere near loose enough to miss what the gate is for: a top-level
+  `import plotly` or `import pymc` moves this by whole multiples.
 
 ## D43.5 — three tests that were asserting the platform
 
@@ -99,10 +110,13 @@ than the destination. All three concern the same degenerate funnel, where
   that, wearing the one disguise indistinguishable from a bug. It joins the
   tuple, is logged, and the next optimizer gets its turn.
 - `test_funnel_without_a_mode_is_unverified_not_nan` asserted
-  `detail["converged"] == "False"`. Whether the optimizer stops just short of
-  the neck or converges into it is a floating-point property of the platform.
-  What is true everywhere, and what actually makes the mode unusable, is
-  `hessian_pd == "False"` — which is what it asserts now.
+  `detail["converged"] == "False"`, and then `not find_mode(...).converged`.
+  Whether the optimizer stops just short of the neck or settles into it on
+  curvature that is positive *semi*-definite and no better is a floating-point
+  property of the platform, and `converged` is the field that records which.
+  What is true everywhere, and what actually makes the mode unusable, is that
+  nowhere in this funnel is the curvature positive definite. Both assertions
+  now read `hessian_pd`.
 - `test_init_falls_back_to_zeros_when_the_mode_is_unverified` required the
   literal string `"mode search"` in the init note. `_init_z` has three ways to
   say a mode is unusable and only two of them start that way; the funnel took

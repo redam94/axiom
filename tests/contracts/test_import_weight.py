@@ -61,25 +61,30 @@ def test_no_heavy_modules_imported() -> None:
 
 
 # axiom's own import, measured against `import pandas` in the same interpreter.
-# The observed ratio is stable across very different machines -- 2.6x on a warm
-# developer laptop, 2.25x on a GitHub runner -- because both numbers scale with
-# the same disk and the same interpreter. 3.0 leaves room for that spread and
-# still catches the thing this gate is for: a subpackage acquiring a heavy
-# top-level import would move the ratio, not nudge it.
+# Neither a pure ratio nor a pure allowance describes it, because the cost has
+# both a fixed part and a part that scales with the machine, and the three
+# environments this runs in sit in different places:
+#
+#   developer laptop, dev venv    pandas 0.165s   axiom 0.428s   2.6x   +0.26s
+#   GitHub runner,    dev venv    pandas 0.615s   axiom 1.384s   2.25x  +0.77s
+#   GitHub runner,    core only   pandas 0.179s   axiom 0.546s   3.06x  +0.37s
+#
+# A constant allowance alone tightens on a slow runner (the middle row failed
+# `t_pandas + 0.6`). A ratio alone tightens where pandas is cheap (the bottom
+# row failed 3.0x by 10ms). The bound is the more generous of the two, which is
+# the shape of the thing being measured; both terms have to be exceeded before
+# it fails. That is still far inside what this gate exists to catch -- a
+# subpackage acquiring a top-level `import plotly` or `import pymc` moves this
+# by whole multiples, not by ten milliseconds.
 _IMPORT_RATIO_BUDGET = 3.0
+_IMPORT_ALLOWANCE_S = 0.5
 
 
 def test_import_time_is_bounded() -> None:
     r = _fastest_probe()
-    # A ratio, not `t_pandas + <constant>`. The docstring above always said this
-    # bound was relative; expressed as a constant allowance it was the opposite
-    # of the "generous for slow CI runners" it claimed to be, because a slower
-    # runner inflates t_axiom while the allowance stays put. It failed at 1.384s
-    # against 1.215s on a runner where axiom was in fact comfortably inside its
-    # usual multiple of pandas.
-    budget = _IMPORT_RATIO_BUDGET * r["t_pandas"]
+    budget = max(_IMPORT_RATIO_BUDGET * r["t_pandas"], r["t_pandas"] + _IMPORT_ALLOWANCE_S)
     assert r["t_axiom"] < budget, (
         f"import axiom took {r['t_axiom']:.3f}s, "
         f"{r['t_axiom'] / r['t_pandas']:.2f}x pandas' {r['t_pandas']:.3f}s "
-        f"(budget {_IMPORT_RATIO_BUDGET:.1f}x = {budget:.3f}s)"
+        f"(budget {budget:.3f}s)"
     )
