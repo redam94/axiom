@@ -86,6 +86,11 @@ from axiom.design.evoi import (
     preposterior_sd,
     preposterior_sd_ratio,
 )
+from axiom.design.factorial import (
+    Factorial,
+    FactorialCell,
+    factorial,
+)
 from axiom.design.identifiability import (
     Combination,
     EstimabilityReport,
@@ -286,6 +291,8 @@ __all__ = [
     "EconomicInputs",
     "EstimabilityReport",
     "ExperimentValue",
+    "Factorial",
+    "FactorialCell",
     "FisherInformation",
     "HoldoutTradeoff",
     "IdentifiabilityRidge",
@@ -396,6 +403,7 @@ __all__ = [
     "expected_posterior_sd",
     "experiment_se_for_design",
     "experiment_value",
+    "factorial",
     "fisher_information",
     "from_p_value",
     "harm_boundary",

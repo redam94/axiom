@@ -99,6 +99,8 @@ from axiom.design import (
     EIGEstimate,
     EVOIResult,
     ExperimentValue,
+    Factorial,
+    FactorialCell,
     FisherInformation,
     HoldoutTradeoff,
     IdentifiabilityRidge,
@@ -143,6 +145,7 @@ from axiom.design import (
     evaluate_candidate,
     evoi_gaussian,
     experiment_value,
+    factorial,
     harm_boundary,
     holdout_tradeoff,
     match_clusters,
@@ -1505,6 +1508,18 @@ def _dose_report() -> DerivativeReport:
     return response_to_dose(frame, "y", "assigned", "dose")
 
 
+def _factorial() -> Factorial:
+    n = 400
+    left = [float(i % 2) for i in range(n)]
+    right = [float((i // 2) % 2) for i in range(n)]
+    y = [
+        10.0 + 2.0 * a + 1.0 * b + 1.5 * a * b + math.sin(float(i))
+        for i, (a, b) in enumerate(zip(left, right, strict=True))
+    ]
+    frame = pd.DataFrame({"y": y, "price": left, "banner": right})
+    return factorial(frame, "y", "price", "banner")
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     IndependenceResult: _independence_result,
     ImpliedIndependence: _implied_independence,
@@ -2035,6 +2050,8 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     Incompatibility: lambda: _commensurability().entries[0],
     Occupancy: lambda: _OCCUPANCIES[0],
     Collision: lambda: collisions(_OCCUPANCIES)[0],
+    Factorial: _factorial,
+    FactorialCell: lambda: _factorial().cells[0],
     ConfidenceSequence: _confidence_sequence,
     AnytimeLook: lambda: _confidence_sequence().looks[-1],
     Readout: lambda: _READOUTS[0],

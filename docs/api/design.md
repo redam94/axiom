@@ -49,6 +49,9 @@ The executed series under `nbs/design/`:
 .. automodule:: axiom.design.identifiability
    :members:
 
+.. automodule:: axiom.design.factorial
+   :members:
+
 .. automodule:: axiom.design.eig
    :members:
 
