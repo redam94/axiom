@@ -40,12 +40,11 @@ the same edges a search would add, but anchored on the graph you drew.
 from __future__ import annotations
 
 import itertools
-from collections.abc import Sequence
 from typing import Literal
 
 from pydantic import Field, model_validator
 
-from axiom.core import Assumption, NonEmptyStr, Spec, Unsupported, Verdict
+from axiom.core import Assumption, Multiplicity, NonEmptyStr, Spec, Unsupported, Verdict, adjust
 from axiom.discover.independence import IndependenceResult, PartialCorrelation
 from axiom.discover.score import Dataset
 from axiom.identify import CausalGraph
@@ -60,7 +59,8 @@ __all__ = [
     "refute_structure",
 ]
 
-Correction = Literal["none", "holm", "benjamini_hochberg"]
+Correction = Multiplicity
+"""This subpackage's name for ``core.Multiplicity``; the arithmetic is ``core.adjust``."""
 
 MAX_CONDITIONING = 4
 """Largest separating set searched for when the obvious one does not separate."""
@@ -224,34 +224,8 @@ def _separating_set(
 # -- multiplicity ---------------------------------------------------------------------------
 
 
-def adjust(p_values: Sequence[float], correction: Correction) -> tuple[float, ...]:
-    """Adjust for testing many implications at once.
-
-    ``holm`` controls the family-wise error rate — the chance of *any* false
-    refutation — which is the conservative choice a refutation wants: saying a
-    graph is wrong should need more than one lucky test among forty.
-    ``benjamini_hochberg`` controls the false discovery rate instead, which is
-    the right choice when the output is a ranked list of repairs rather than a
-    single verdict. ``none`` leaves them alone and is reported as such.
-    """
-    values = list(p_values)
-    total = len(values)
-    if total == 0 or correction == "none":
-        return tuple(values)
-    order = sorted(range(total), key=lambda i: values[i])
-    adjusted = [0.0] * total
-    if correction == "holm":
-        running = 0.0
-        for rank, index in enumerate(order):
-            running = max(running, (total - rank) * values[index])
-            adjusted[index] = min(1.0, running)
-        return tuple(adjusted)
-    running = 1.0
-    for rank in range(total - 1, -1, -1):
-        index = order[rank]
-        running = min(running, total * values[index] / (rank + 1))
-        adjusted[index] = min(1.0, running)
-    return tuple(adjusted)
+# ``adjust`` moved to ``core.multiplicity`` so ``design`` could reach it too, and is
+# imported above because this module has always been where callers found it.
 
 
 # -- the check ------------------------------------------------------------------------------

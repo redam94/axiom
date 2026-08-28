@@ -7,6 +7,12 @@ See ``docs/plan/03-roadmap.md`` (Phase 8) and ``nbs/diagnose/``.
 
 from __future__ import annotations
 
+from axiom.diagnose.attrition import (
+    NO_DIFFERENTIAL_ATTRITION,
+    Attrition,
+    AttritionRow,
+    attrition,
+)
 from axiom.diagnose.backtest import (
     Backtest,
     FrozenPredictor,
@@ -32,6 +38,21 @@ from axiom.diagnose.coverage import (
     estimand_coverage,
     misspecify,
     truth_producer,
+)
+from axiom.diagnose.delivery import (
+    SRM_ALPHA,
+    ArmCount,
+    BalanceCheck,
+    BalanceTest,
+    Delivery,
+    DeliveryReport,
+    DeliveryRow,
+    SampleRatio,
+    arm_counts,
+    balance,
+    check_delivery,
+    delivery,
+    sample_ratio,
 )
 from axiom.diagnose.learning import (
     LearningReport,
@@ -118,12 +139,20 @@ from axiom.diagnose.weak_id import (
 )
 
 __all__ = [
+    "ArmCount",
+    "Attrition",
+    "AttritionRow",
     "Backtest",
+    "BalanceCheck",
+    "BalanceTest",
     "Benchmark",
     "BiasBounds",
     "Correction",
     "CoverageResult",
     "DEFAULT_STATISTICS",
+    "Delivery",
+    "DeliveryReport",
+    "DeliveryRow",
     "EstimandCoverage",
     "EstimandCoverageResult",
     "ExpectedSign",
@@ -134,6 +163,7 @@ __all__ = [
     "ImpliedIndependence",
     "IndependenceCheck",
     "LearningReport",
+    "NO_DIFFERENTIAL_ATTRITION",
     "OriginFailure",
     "OriginForecast",
     "PPCResult",
@@ -148,6 +178,8 @@ __all__ = [
     "RobustnessValue",
     "SBCResult",
     "SBCSpec",
+    "SRM_ALPHA",
+    "SampleRatio",
     "ShiftedPosterior",
     "Simulator",
     "SpecCurve",
@@ -166,13 +198,18 @@ __all__ = [
     "WorldView",
     "added_noise",
     "apply_option",
+    "arm_counts",
+    "attrition",
+    "balance",
     "benchmark",
     "bhattacharyya",
     "bias_bounds",
+    "check_delivery",
     "coverage",
     "crps",
     "default_bins",
     "default_estimand",
+    "delivery",
     "draw_prior",
     "estimand_coverage",
     "forecast",
@@ -193,6 +230,7 @@ __all__ = [
     "residuals",
     "robustness_value",
     "rolling_origin",
+    "sample_ratio",
     "sbc",
     "sbc_pool",
     "sbc_surface",

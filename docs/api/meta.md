@@ -31,6 +31,9 @@ The executed series under `nbs/meta/`:
 .. automodule:: axiom.meta.classical
    :members:
 
+.. automodule:: axiom.meta.commensurate
+   :members:
+
 .. automodule:: axiom.meta.contribute
    :members:
 
@@ -41,6 +44,9 @@ The executed series under `nbs/meta/`:
    :members:
 
 .. automodule:: axiom.meta.moderators
+   :members:
+
+.. automodule:: axiom.meta.nested
    :members:
 
 .. automodule:: axiom.meta.pool

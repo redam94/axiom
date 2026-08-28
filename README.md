@@ -23,7 +23,7 @@ with what the run actually showed — which is not always what the setup pointed
 `python examples/run_all.py` runs all of them in about a minute on the core
 install.
 
-Four pillars, one vocabulary:
+Five pillars and the programme around them, one vocabulary:
 
 | Pillar | Question it answers | Package |
 |---|---|---|
@@ -32,10 +32,11 @@ Four pillars, one vocabulary:
 | **Experimental calibration** | How does a randomized result update an observational model, and what did that transfer assume? | `axiom.calibrate` |
 | **Response-surface methodology** | What does the dose–response surface look like, where is its optimum, and where should I probe next? | `axiom.surface` |
 | **Meta-analysis** | What does the whole body of evidence say, and how heterogeneous is it? | `axiom.meta` |
+| **Running a programme** | Whose experiment is this, was it delivered as assigned, may these two readouts be compared, and how many of this quarter's decisions are wrong? | `axiom.io`, `axiom.design`, `axiom.diagnose`, `axiom.build` |
 
 ## Status
 
-**1.0.** All fifteen subpackages are implemented, every public symbol is
+**1.3.** All subpackages are implemented, every public symbol is
 demonstrated in an executed notebook under `nbs/`, and the twelve contract
 gates plus the recovery suites are green. Start with the **tutorial** in
 `nbs/tutorial/` — one decision carried from "what are we asking" through
@@ -44,9 +45,19 @@ report — then the **case study** in `nbs/case-studies/hypertension/` (a
 sequential dose-finding trial that has to stop a dose arm early if it is harming
 people, worked end to end in six notebooks), the end-to-end notebooks in
 `nbs/end-to-end/`, and the subpackage series. The plan that produced the code is
-in `docs/plan/`, the decisions taken along the way in `docs/notes/`. Deferred to 1.1: a PyMC backend,
-block-bootstrap switchback SEs, non-parametric surfaces, and stage-wise-ordered
-estimates for a stopped sequential trial.
+in `docs/plan/`, the decisions taken along the way in `docs/notes/`.
+
+**1.3 added the layer a house running experiments for many parties needs.** An
+artifact belongs to a scope and leaving it is a ledgered transfer; a readout has
+a committed plan behind it and departing from it is a recorded deviation; an
+assignment is a rule that re-derives rather than a roster somebody kept; a
+delivery check says whether the experiment happened as assigned; two concurrent
+experiments are classified and priced; a partly-complied or partly-observed
+readout reports the estimand it actually measured rather than the one it was
+meant to; a pool refuses to average quantities over different populations; and
+a quarter of go/no-go decisions is corrected as a quarter rather than one
+readout at a time. `docs/notes/0027`–`0042` record every decision and what each
+one deliberately does not do.
 
 ## Documentation
 

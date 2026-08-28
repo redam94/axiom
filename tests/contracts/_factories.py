@@ -8,8 +8,11 @@ round-tripped.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
 from fractions import Fraction
+
+import pandas as pd
 
 from axiom.adapters import MarketingRoles
 from axiom.adapters.agronomy import EconomicOptimum, Prices, TrialRoles
@@ -45,6 +48,7 @@ from axiom.core import (
     Gather,
     Interval,
     Intervention,
+    LatentSelection,
     LedgerLine,
     Likelihood,
     Link,
@@ -75,11 +79,17 @@ from axiom.data import ColumnScaling, Completeness, RoleMap, ScalingParameters
 from axiom.design import (
     MDE,
     AnchoredEffect,
+    AnytimeLook,
+    ArmAllocation,
+    ArmAssignment,
     Assignment,
+    BalanceRow,
     Boundary,
     CalibrationResult,
     CandidateScore,
     ClusterDesign,
+    Collision,
+    ConfidenceSequence,
     CostPerOutcomeInterval,
     CostPerOutcomePower,
     CrossingProbabilities,
@@ -89,6 +99,8 @@ from axiom.design import (
     EIGEstimate,
     EVOIResult,
     ExperimentValue,
+    Factorial,
+    FactorialCell,
     FisherInformation,
     HoldoutTradeoff,
     IdentifiabilityRidge,
@@ -99,11 +111,17 @@ from axiom.design import (
     LookSchedule,
     MethodEstimate,
     MethodSpec,
+    Occupancy,
+    OnlineDecision,
+    OnlineProgram,
     OperatingCharacteristics,
     OpportunityCost,
     PowerCurve,
     PowerResult,
+    ProgramDecision,
+    ProgramReport,
     ProgramSchedule,
+    Readout,
     Recommendation,
     ReExperimentTiming,
     SampleSize,
@@ -112,12 +130,16 @@ from axiom.design import (
     SensitivityTable,
     SimulatedPower,
     SimulationSpec,
+    StoppedEstimate,
     StoppingRule,
     StudySummary,
     TreatmentCandidate,
     ValuePerOutcome,
     alpha_spending,
     anchor_draws,
+    assign,
+    collisions,
+    confidence_sequence,
     cost_per_outcome_interval,
     cost_per_outcome_power,
     crossing_probabilities,
@@ -125,21 +147,27 @@ from axiom.design import (
     evaluate_candidate,
     evoi_gaussian,
     experiment_value,
+    factorial,
     harm_boundary,
     holdout_tradeoff,
     match_clusters,
     mde,
     method_spec,
+    monitor,
+    online_decisions,
     operating_characteristics,
     opportunity_cost,
     perturb,
+    pocock,
     power,
     power_curve,
+    program_decisions,
     pulse,
     rank_treatments,
     recommend,
     sample_size,
     schedule_with_cooldown,
+    stopped_estimate,
     time_to_re_experiment,
 )
 from axiom.design.identifiability import (
@@ -149,10 +177,18 @@ from axiom.design.identifiability import (
     ProfileReport,
 )
 from axiom.diagnose import (
+    ArmCount,
+    Attrition,
+    AttritionRow,
     Backtest,
+    BalanceCheck,
+    BalanceTest,
     Benchmark,
     BiasBounds,
     CoverageResult,
+    Delivery,
+    DeliveryReport,
+    DeliveryRow,
     EstimandCoverage,
     EstimandCoverageResult,
     FitSettings,
@@ -169,6 +205,7 @@ from axiom.diagnose import (
     ResidualReport,
     ResidualTest,
     RobustnessValue,
+    SampleRatio,
     SBCResult,
     SBCSpec,
     SpecCurve,
@@ -180,8 +217,10 @@ from axiom.diagnose import (
     TippingPoint,
     UnitResiduals,
     WeakIdReport,
+    attrition,
     benchmark,
     bias_bounds,
+    check_delivery,
     rank_uniformity,
     robustness_value,
     tipping_point,
@@ -214,13 +253,21 @@ from axiom.dynamics import (
 from axiom.estimands import Estimand, EstimandResult, FacetDiff, Level, Quantity, TransferPlan
 from axiom.identify import (
     CausalGraph,
+    ComplianceReport,
+    ComplianceTable,
+    DerivativeReport,
     EndogeneityTest,
+    FirstStage,
     FrontDoorRoute,
     InstrumentRoute,
+    LeeBounds,
     LinearEstimate,
     RoleAssignment,
     assign_roles,
+    compliance,
     identify,
+    lee_bounds,
+    response_to_dose,
     transport_verdict,
 )
 from axiom.identify.cluster import ClusterDAG
@@ -237,10 +284,21 @@ from axiom.infer import (
     PointEstimate,
     SampleSettings,
 )
-from axiom.io import Provenance
+from axiom.io import (
+    CatalogEntry,
+    Change,
+    Consensus,
+    Definition,
+    Deviation,
+    ExperimentRun,
+    Program,
+    Provenance,
+    Transition,
+)
 from axiom.meta import (
     BaujatData,
     Cell,
+    Commensurability,
     Corpus,
     EffectShrinkage,
     EggerTest,
@@ -252,6 +310,7 @@ from axiom.meta import (
     FunnelContour,
     FunnelData,
     Heterogeneity,
+    Incompatibility,
     LeaveOneOut,
     ParameterSummary,
     Pooled,
@@ -263,8 +322,10 @@ from axiom.meta import (
     Release,
     StudyRecord,
     TauEstimate,
+    ThreeLevel,
     baujat,
     charge,
+    commensurable,
     egger,
     fixed_effect,
     forest_data,
@@ -276,6 +337,7 @@ from axiom.meta import (
     random_effects,
     release,
     tau_dersimonian_laird,
+    three_level,
 )
 from axiom.report import (
     Divider,
@@ -1298,6 +1360,185 @@ def _stability_report() -> StabilityReport:
     )
 
 
+def _deviation() -> Deviation:
+    return Deviation(
+        role="window",
+        planned="a" * 64,
+        realized="b" * 64,
+        reason="the field ran four weeks long",
+        at="2026-05-04T09:00:00+00:00",
+        stage="running",
+        state="asserted",
+    )
+
+
+def _experiment_run() -> ExperimentRun:
+    return ExperimentRun(
+        experiment="NW-14",
+        scope="northwind/dose-response",
+        stage="read",
+        roles={"window": "b" * 64, "schedule": "c" * 64},
+        estimand_hash="d" * 64,
+        plan_hash="e" * 64,
+        readout_hash="f" * 64,
+        readout_estimand="d" * 64,
+        deviations=(_deviation(),),
+        ledger=(LedgerLine(kind="note", statement="the field window slipped four weeks"),),
+        history=(
+            Transition(stage="designed", at="2026-03-02T09:00:00+00:00"),
+            Transition(stage="committed", at="2026-03-04T09:00:00+00:00", note="plan frozen"),
+        ),
+    )
+
+
+def _stopped_estimate() -> StoppedEstimate:
+    looks = LookSchedule(labels=("L1", "L2", "L3"), information=(0.4, 0.7, 1.0))
+    rule = StoppingRule(name="Pocock-3", looks=looks, boundaries=(pocock(0.05, looks),))
+    result = stopped_estimate(monitor(rule, [0.6, 0.9, 2.6], ses=[0.9, 0.7, 0.5]))
+    assert isinstance(result, StoppedEstimate)
+    return result
+
+
+_ASSIGN_UNITS = tuple(f"u{i:04d}" for i in range(120))
+_ASSIGN_ALLOCATION = ArmAllocation(arms=("control", "low", "high"), shares=(0.5, 0.25, 0.25))
+
+
+def _assigned():  # type: ignore[no-untyped-def]
+    n = len(_ASSIGN_UNITS)
+    covariates = {
+        "age": [20.0 + 40.0 * i / (n - 1) for i in range(n)],
+        "pre_outcome": [math.cos(float(i)) for i in range(n)],
+    }
+    return assign(_ASSIGN_UNITS, _ASSIGN_ALLOCATION, method="block", seed=4, covariates=covariates)
+
+
+def _arm_assignment() -> ArmAssignment:
+    return _assigned().spec
+
+
+def _balance_row() -> BalanceRow:
+    return _arm_assignment().balance[0]
+
+
+def _delivery_report() -> DeliveryReport:
+    assigned = _assigned()
+    return check_delivery(
+        assigned,
+        exposed={"control": 55, "low": 28, "high": 24},
+        covariates=dict(assigned.covariates or {}),
+    )
+
+
+def _compliance_frame():  # type: ignore[no-untyped-def]
+    n = 400
+    assigned = [float(i % 2) for i in range(n)]
+    # compliers take it when assigned; a fifth are never-takers, a twentieth always-takers
+    exposed = [1.0 if i % 20 == 0 else (0.0 if i % 5 == 0 else a) for i, a in enumerate(assigned)]
+    y = [10.0 + 2.0 * e + math.sin(float(i)) for i, e in enumerate(exposed)]
+    return pd.DataFrame({"y": y, "assigned": assigned, "exposed": exposed})
+
+
+def _compliance_report() -> ComplianceReport:
+    return compliance(_compliance_frame(), "y", "assigned", "exposed")
+
+
+_LATENT = LatentSelection(kind="complier", instrument="letter", exposure="attended", share=0.61)
+
+
+def _commensurability() -> Commensurability:
+    everybody = _estimand(name="itt", population=Population(name="enrolled"))
+    compliers = _estimand(name="cace", population=Population(name="enrolled", latent=_LATENT))
+    corpus = Corpus(records=(_study(0), _study(1)), name="two")
+    return commensurable(
+        corpus, {corpus.records[0].study: everybody, corpus.records[1].study: compliers}
+    )
+
+
+_OCCUPANCIES = (
+    Occupancy(
+        experiment="NW-14",
+        units=("london", "leeds"),
+        window=TimeWindow(start=0, stop=8),
+        treatments=("price",),
+    ),
+    Occupancy(
+        experiment="NW-15",
+        units=("leeds", "york"),
+        window=TimeWindow(start=4, stop=12),
+        treatments=("banner",),
+    ),
+)
+
+
+def _confidence_sequence() -> ConfidenceSequence:
+    return confidence_sequence(
+        (0.4, 1.2, 2.1, 2.9), (0.25, 0.5, 0.75, 1.0), alpha=0.05, name="NW-14"
+    )
+
+
+_READOUTS = (
+    Readout(experiment="E1", party="acme", metric="primary", p_value=0.001, evalue=40.0),
+    Readout(experiment="E1", party="acme", metric="churn", p_value=0.4, evalue=1.1),
+    Readout(experiment="E2", party="northwind", metric="primary", p_value=0.02, evalue=8.0),
+)
+
+
+def _program_report() -> ProgramReport:
+    return program_decisions(_READOUTS, alpha=0.05, method="e_bh", period="2026-Q3")
+
+
+def _attrition() -> Attrition:
+    return attrition({"treated": 3000, "control": 3000}, {"treated": 2670, "control": 2050})
+
+
+def _lee_bounds() -> LeeBounds:
+    n = 400
+    assigned = [float(i % 2) for i in range(n)]
+    # every fourth control unit goes silent, so the treated arm over-selects
+    reported = [1.0 if (a == 1.0 or i % 4) else 0.0 for i, a in enumerate(assigned)]
+    y = [10.0 + 1.5 * a + math.sin(float(i)) for i, a in enumerate(assigned)]
+    frame = pd.DataFrame({"y": y, "assigned": assigned, "reported": reported})
+    result = lee_bounds(frame, "y", "assigned", "reported")
+    if not isinstance(result, LeeBounds):
+        raise RuntimeError(f"the factory world must be boundable: {result}")
+    return result
+
+
+def _dose_report() -> DerivativeReport:
+    n = 400
+    assigned = [float(i % 2) for i in range(n)]
+    dose = [1.0 + 0.5 * a + 0.25 * math.cos(float(i)) for i, a in enumerate(assigned)]
+    y = [10.0 + 0.8 * d + math.sin(float(i)) for i, d in enumerate(dose)]
+    frame = pd.DataFrame({"y": y, "assigned": assigned, "dose": dose})
+    return response_to_dose(frame, "y", "assigned", "dose")
+
+
+def _factorial() -> Factorial:
+    n = 400
+    left = [float(i % 2) for i in range(n)]
+    right = [float((i // 2) % 2) for i in range(n)]
+    y = [
+        10.0 + 2.0 * a + 1.0 * b + 1.5 * a * b + math.sin(float(i))
+        for i, (a, b) in enumerate(zip(left, right, strict=True))
+    ]
+    frame = pd.DataFrame({"y": y, "price": left, "banner": right})
+    return factorial(frame, "y", "price", "banner")
+
+
+def _online_program() -> OnlineProgram:
+    ps = [0.001, 0.02, 0.4, 0.6, 0.003, 0.9]
+    stream = [Readout(experiment=f"E{i}", p_value=p) for i, p in enumerate(ps)]
+    return online_decisions(stream, alpha=0.05, stream="2026-Q3")
+
+
+def _three_level() -> ThreeLevel:
+    y = [0.4, 0.5, 0.6, 0.9, 1.0, 1.1, 0.1, 0.2, 0.3]
+    se = [0.12, 0.15, 0.11, 0.13, 0.12, 0.14, 0.11, 0.16, 0.12]
+    study = list(range(9))
+    party = [0, 0, 0, 1, 1, 1, 2, 2, 2]
+    return three_level(y, se, study, party)
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     IndependenceResult: _independence_result,
     ImpliedIndependence: _implied_independence,
@@ -1790,6 +2031,7 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
         empirical=0.44,
     ),
     PoolResult: _pool_result,
+    ThreeLevel: _three_level,
     LeaveOneOut: lambda: leave_one_out(_META_Y, _META_SE, method="dl"),
     EggerTest: lambda: egger(_META_Y, _META_SE),
     FunnelContour: lambda: funnel_data(
@@ -1805,6 +2047,38 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     EpsilonLedger: _ledger,
     Release: _release,
     EpsilonSplit: lambda: orthogonal_split(1.0, 3),
+    StoppedEstimate: _stopped_estimate,
+    ArmAllocation: lambda: _ASSIGN_ALLOCATION,
+    ArmAssignment: _arm_assignment,
+    BalanceRow: _balance_row,
+    ArmCount: lambda: _delivery_report().ratio.arms[0],
+    SampleRatio: lambda: _delivery_report().ratio,
+    DeliveryRow: lambda: _delivery_report().exposure.arms[0],  # type: ignore[union-attr]
+    Delivery: lambda: _delivery_report().exposure,  # type: ignore[return-value]
+    BalanceTest: lambda: _delivery_report().covariates.tests[0],  # type: ignore[union-attr]
+    BalanceCheck: lambda: _delivery_report().covariates,  # type: ignore[return-value]
+    DeliveryReport: _delivery_report,
+    Attrition: _attrition,
+    AttritionRow: lambda: _attrition().arms[0],
+    LeeBounds: _lee_bounds,
+    ComplianceTable: lambda: _compliance_report().table,
+    ComplianceReport: _compliance_report,
+    DerivativeReport: _dose_report,
+    FirstStage: lambda: _dose_report().stage,
+    LatentSelection: lambda: _LATENT,
+    Commensurability: _commensurability,
+    Incompatibility: lambda: _commensurability().entries[0],
+    Occupancy: lambda: _OCCUPANCIES[0],
+    Collision: lambda: collisions(_OCCUPANCIES)[0],
+    Factorial: _factorial,
+    FactorialCell: lambda: _factorial().cells[0],
+    ConfidenceSequence: _confidence_sequence,
+    AnytimeLook: lambda: _confidence_sequence().looks[-1],
+    Readout: lambda: _READOUTS[0],
+    ProgramReport: _program_report,
+    ProgramDecision: lambda: _program_report().decisions[0],
+    OnlineProgram: _online_program,
+    OnlineDecision: lambda: _online_program().decisions[0],
     Provenance: lambda: Provenance(
         axiom_version="0.0.0",
         created="2026-08-21T00:00:00+00:00",
@@ -1812,6 +2086,51 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
         seed=7,
         environment={"python": "3.12"},
     ),
+    Program: lambda: Program(
+        party="northwind",
+        program="dose-response",
+        description="fertilizer dose-response across the north region",
+        started="2026-01-05",
+    ),
+    CatalogEntry: lambda: CatalogEntry(
+        digest="a" * 64,
+        type_name="axiom.core.entities:TimeWindow",
+        scope="northwind/dose-response",
+        label="window",
+        created="2026-03-02T09:00:00+00:00",
+        derived_from="b" * 64,
+        tags={"role": "plan"},
+    ),
+    Definition: lambda: Definition(
+        scope="northwind/growth",
+        name="conversion",
+        version=2,
+        digest="c" * 64,
+        type_name="axiom.core.entities:Outcome",
+        registered="2026-03-02T09:00:00+00:00",
+        supersedes="b" * 64,
+        note="the growth team switched to a rate",
+    ),
+    Change: lambda: Change(
+        scope="northwind/growth",
+        name="conversion",
+        from_version=1,
+        to_version=2,
+        at="2026-03-02T09:00:00+00:00",
+        changed={"aggregation": "'sum' -> 'mean'"},
+        digests=("b" * 64, "c" * 64),
+    ),
+    Consensus: lambda: Consensus(
+        name="conversion",
+        scopes=("northwind/growth", "acme/growth"),
+        by_digest={"b" * 64: ("acme/growth",), "c" * 64: ("northwind/growth",)},
+        differences={"northwind/growth": {"aggregation": "'sum' -> 'mean'"}},
+    ),
+    Transition: lambda: Transition(
+        stage="committed", at="2026-03-04T09:00:00+00:00", note="plan frozen"
+    ),
+    Deviation: _deviation,
+    ExperimentRun: _experiment_run,
     TrialRoles: lambda: TrialRoles(
         harvest="grain",
         nutrients=("nitrogen", "phosphorus"),

@@ -24,6 +24,11 @@ from axiom.meta.classical import (
     tau_paule_mandel,
     tau_reml,
 )
+from axiom.meta.commensurate import (
+    Commensurability,
+    Incompatibility,
+    commensurable,
+)
 from axiom.meta.contribute import (
     record_from_result,
     record_from_summary,
@@ -52,6 +57,11 @@ from axiom.meta.ingest import (
 from axiom.meta.moderators import (
     ModeratorDesign,
     moderator_matrix,
+)
+from axiom.meta.nested import (
+    ThreeLevel,
+    three_level,
+    variance_shares,
 )
 from axiom.meta.pool import (
     EffectShrinkage,
@@ -104,6 +114,7 @@ from axiom.meta.store import (
 __all__ = [
     "BaujatData",
     "Cell",
+    "Commensurability",
     "Corpus",
     "CorpusStore",
     "DEFAULT_COLUMNS",
@@ -117,6 +128,7 @@ __all__ = [
     "FunnelContour",
     "FunnelData",
     "Heterogeneity",
+    "Incompatibility",
     "LeaveOneOut",
     "Mechanism",
     "ModeratorDesign",
@@ -137,11 +149,13 @@ __all__ = [
     "StudyRecord",
     "TauEstimate",
     "TauMethod",
+    "ThreeLevel",
     "baujat",
     "carry_forward",
     "cell_from_records",
     "charge",
     "check_cell",
+    "commensurable",
     "contributor_totals",
     "delta_identification",
     "egger",
@@ -172,4 +186,6 @@ __all__ = [
     "tau_dersimonian_laird",
     "tau_paule_mandel",
     "tau_reml",
+    "three_level",
+    "variance_shares",
 ]

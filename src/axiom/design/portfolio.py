@@ -27,7 +27,7 @@ Ported by specification from the parent's ``planning/history.py`` and
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 from pydantic import Field, model_validator
 
@@ -234,7 +234,10 @@ def _value_per_cost(p: LearningPriority) -> float:
 
 
 def recommend(
-    candidates: Sequence[TreatmentCandidate], budget: float | None = None
+    candidates: Sequence[TreatmentCandidate],
+    budget: float | None = None,
+    *,
+    exclusions: Mapping[str, Sequence[str]] | None = None,
 ) -> Recommendation | Unsupported:
     """Greedy knapsack over ``rank_treatments``: net value per cost, within ``budget``.
 
@@ -243,6 +246,14 @@ def recommend(
     each is added if its cost fits in what remains of the budget (a
     non-positive cost always fits). ``Unsupported`` when no candidate has
     positive net value.
+
+    ``exclusions`` maps a treatment to the treatments it may not be run beside
+    — ``design.collision.exclusions`` builds it from a schedule — and a
+    candidate whose exclusion set already holds a selected treatment is skipped
+    however good its net value is. Two experiments that would move the same
+    lever on the same units in the same weeks do not become compatible by being
+    worth a lot. The skipped ones are named in ``detail["skipped_excluded"]``
+    rather than dropped silently.
     """
     if budget is not None and not (math.isfinite(budget) and budget >= 0.0):
         raise ValueError(f"budget must be finite and non-negative, got {budget}")
@@ -258,13 +269,18 @@ def recommend(
             detail={p.treatment: f"net_value={p.net_value:.6g}" for p in priorities},
         )
     order = sorted(eligible, key=lambda p: (-_value_per_cost(p), -p.net_value, p.treatment))
+    forbidden = {k: set(v) for k, v in (exclusions or {}).items()}
     remaining = math.inf if budget is None else budget
     selected: list[str] = []
     total_cost = 0.0
     total_net = 0.0
     skipped: list[str] = []
+    excluded: list[str] = []
     for p in order:
-        if p.cost <= remaining:
+        clash = sorted(forbidden.get(p.treatment, set()).intersection(selected))
+        if clash:
+            excluded.append(f"{p.treatment} (beside {', '.join(clash)})")
+        elif p.cost <= remaining:
             selected.append(p.treatment)
             total_cost += p.cost
             total_net += p.net_value
@@ -282,6 +298,7 @@ def recommend(
             "rule": "greedy by net_value / cost among positive net value, within budget",
             "order": ", ".join(p.treatment for p in order),
             "skipped_over_budget": ", ".join(skipped),
+            "skipped_excluded": ", ".join(excluded),
             "remaining_budget": "unbounded" if budget is None else f"{remaining:.12g}",
         },
     )

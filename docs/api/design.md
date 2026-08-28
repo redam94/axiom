@@ -16,6 +16,7 @@ The executed series under `nbs/design/`:
 - [06-economics-and-portfolio.ipynb](../../nbs/design/06-economics-and-portfolio.ipynb)
 - [07-sequential.ipynb](../../nbs/design/07-sequential.ipynb)
 - [08-identifiability.ipynb](../../nbs/design/08-identifiability.ipynb)
+- [09-assignment.ipynb](../../nbs/design/09-assignment.ipynb)
 
 ## Package
 
@@ -30,13 +31,25 @@ The executed series under `nbs/design/`:
 .. automodule:: axiom.design.anchor
    :members:
 
+.. automodule:: axiom.design.anytime
+   :members:
+
+.. automodule:: axiom.design.assign
+   :members:
+
 .. automodule:: axiom.design.cluster
+   :members:
+
+.. automodule:: axiom.design.collision
    :members:
 
 .. automodule:: axiom.design.economics
    :members:
 
 .. automodule:: axiom.design.identifiability
+   :members:
+
+.. automodule:: axiom.design.factorial
    :members:
 
 .. automodule:: axiom.design.eig
@@ -69,10 +82,16 @@ The executed series under `nbs/design/`:
 .. automodule:: axiom.design.methods.time_based_regression
    :members:
 
+.. automodule:: axiom.design.online
+   :members:
+
 .. automodule:: axiom.design.optimizer
    :members:
 
 .. automodule:: axiom.design.portfolio
+   :members:
+
+.. automodule:: axiom.design.program
    :members:
 
 .. automodule:: axiom.design.power
@@ -91,6 +110,9 @@ The executed series under `nbs/design/`:
    :members:
 
 .. automodule:: axiom.design.simulate
+   :members:
+
+.. automodule:: axiom.design.stopped
    :members:
 
 .. automodule:: axiom.design.structural

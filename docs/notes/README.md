@@ -40,3 +40,19 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0024 | [A model reads like the mathematics, and builds the same tree](0024-expression-operators.md) | decision |
 | 0025 | [A notebook is not a paler medium than a terminal](0025-notebooks-render-themselves.md) | decision + progress |
 | 0026 | [A notebook that only demonstrates the API has not made the case for it](0026-a-notebook-has-to-argue-for-itself.md) | decision + progress |
+| 0027 | [The invariants hold inside one analysis and stop at its edge](0027-scope-and-the-experiment-lifecycle.md) | decision + progress |
+| 0028 | [Naming a bias is not correcting it](0028-the-estimate-a-stopped-study-may-report.md) | decision |
+| 0029 | [Twelve studies from three clients are not twelve draws](0029-the-party-a-study-came-from.md) | decision |
+| 0030 | [A well-diagnosed wrong number](0030-the-experiment-that-was-actually-run.md) | decision |
+| 0031 | [Assigned is not received, and the readout has to say which](0031-assigned-is-not-received.md) | decision |
+| 0032 | [A population you can size and cannot list](0032-a-population-you-can-size-and-cannot-list.md) | decision + deviation |
+| 0033 | [Colliding is not automatically wrong, and the calendar knows which](0033-two-experiments-in-the-same-markets.md) | decision |
+| 0034 | [A spending function cannot price a look nobody scheduled](0034-the-look-nobody-scheduled.md) | decision |
+| 0035 | [Eight wrong go-decisions a quarter, all individually defensible](0035-eight-wrong-go-decisions-a-quarter.md) | decision |
+| 0036 | [Silence is not agreement](0036-what-this-party-means-by-conversion.md) | decision |
+| 0037 | [Reached is not observed, and a bound is not a downgraded point](0037-reached-is-not-observed.md) | decision |
+| 0038 | [A dose is not a switch](0038-a-dose-is-not-a-switch.md) | decision |
+| 0039 | [Was the neighbour the background, or the effect?](0039-the-neighbour-or-the-effect.md) | decision |
+| 0040 | [The experiments that finish on Tuesdays](0040-the-experiments-that-finish-on-tuesdays.md) | decision |
+| 0041 | [The two components without a sampler, and the prior that knows whose it is](0041-the-two-components-without-a-sampler.md) | decision |
+| 0042 | [The thing that files it](0042-the-thing-that-files-it.md) | decision |
