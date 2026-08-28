@@ -5,7 +5,7 @@ whether the data can tell you, design the experiment that would, fold the
 experiment's answer back into the model, map the response surface it implies,
 and pool the evidence across every study you have run.
 
-Four pillars, one vocabulary:
+Five pillars and the programme around them, one vocabulary:
 
 | Pillar | Question it answers | Package |
 |---|---|---|
@@ -14,6 +14,7 @@ Four pillars, one vocabulary:
 | **Experimental calibration** | How does a randomized result update an observational model, and what did that transfer assume? | `axiom.calibrate` |
 | **Response-surface methodology** | What does the dose–response surface look like, where is its optimum, and where should I probe next? | `axiom.surface` |
 | **Meta-analysis** | What does the whole body of evidence say, and how heterogeneous is it? | `axiom.meta` |
+| **Running a programme** | Whose experiment is this, was it delivered as assigned, may these two readouts be compared, and how many of this quarter's decisions are wrong? | `axiom.io`, `axiom.design`, `axiom.diagnose`, `axiom.build` |
 
 ## Start here
 

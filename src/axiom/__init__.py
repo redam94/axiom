@@ -3,13 +3,17 @@
 Identification, experimental design and calibration, response-surface
 methodology, and evidence meta-analysis, over one domain-general vocabulary.
 
-Version 1.0: every subpackage is implemented and demonstrated under ``nbs/``;
-the plan is in ``docs/plan/`` and the decision log in ``docs/notes/``.
+Version 1.3: every subpackage is implemented and demonstrated under ``nbs/``;
+the plan is in ``docs/plan/`` and the decision log in ``docs/notes/``. 1.3 adds
+the layer a house running experiments for many parties needs — scopes and
+experiment lifecycles, assignment and delivery, collision, compliance and
+attrition, latent populations, programme-level and always-valid error control —
+which is notes 0027 through 0042.
 
 Import discipline: this module must never import a sampler, a plotting library,
 or anything outside {numpy, scipy, pandas, pydantic}. Pinned by
 ``tests/contracts/test_import_weight.py``.
 """
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 __all__: list[str] = []

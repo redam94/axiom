@@ -6,7 +6,8 @@ meta-analysis. It is a clean-room rewrite that ports selected mathematics from
 `../mmm-framework`; it is *not* a fork and does not depend on it.
 
 - **Author**: Matthew Reda · **Python**: 3.12+
-- **Status**: 1.0 — implemented through Phase 9. Read `docs/plan/` and `docs/notes/` before changing anything.
+- **Status**: 1.3 — Phases 1–9 plus the multi-party experimentation layer
+  (`docs/notes/0027`–`0042`). Read `docs/plan/` and `docs/notes/` before changing anything.
 
 ## Read these first
 
