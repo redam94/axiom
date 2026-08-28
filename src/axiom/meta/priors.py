@@ -12,6 +12,21 @@ next study as its prior. Two targets:
   fixed). Right when the new study is another draw from the family — the
   usual case, and the one that is wider.
 
+A pool with a party level (``effect_key="nested"``, note 0029) can tell two
+more questions apart, and they have different answers:
+
+* ``target="new_party"`` — the next study is for a party this corpus has never
+  seen: ``N(E[mu], sqrt(E[tau_party²] + E[tau²] + sd[mu]²))``. It must cross
+  both levels, so it is the widest of the four.
+* ``target="same_party"`` — the next study is another study for a party already
+  in the corpus, named by ``party``: ``N(E[alpha_p], sqrt(E[tau²] +
+  sd[alpha_p]²))``. It crosses one level, and it is much tighter, which is the
+  whole reason the party level was worth fitting.
+
+Asking for either against a two-level pool raises rather than quietly returning
+the two-level answer: a prior that says "for this party" when nothing in the
+pool knew about parties is the failure the targets exist to prevent.
+
 ``family="normal"`` returns the prior on the pooled scale. ``family=
 "lognormal"`` returns a prior on the *positive* quantity: when the pool was
 on the log scale (``PoolResult.scale == "log"``) the normal on the log
@@ -36,16 +51,44 @@ from axiom.meta.pool import PoolResult
 
 __all__ = ["PriorTarget", "prior_from_pool"]
 
-PriorTarget = Literal["mu", "predictive"]
+PriorTarget = Literal["mu", "predictive", "new_party", "same_party"]
 PriorFamilyOut = Literal["normal", "lognormal"]
 
 
-def _location_and_spread(result: PoolResult, target: PriorTarget) -> tuple[float, float]:
+def _expected_square(mean: float, sd: float) -> float:
+    return mean**2 + sd**2
+
+
+def _party_summary(result: PoolResult, party: str):  # type: ignore[no-untyped-def]
+    for summary in result.alphas:
+        if summary.name.endswith(f"[{party}]"):
+            return summary
+    known = [s.name.split("[")[1][:-1] for s in result.alphas if "[" in s.name]
+    raise KeyError(f"no party {party!r} in this pool; it has {known}")
+
+
+def _location_and_spread(
+    result: PoolResult, target: PriorTarget, party: str = ""
+) -> tuple[float, float]:
     m = result.mu.mean
     if target == "mu":
         return m, result.mu.sd
-    tau2 = result.tau.mean**2 + result.tau.sd**2
-    return m, float(np.sqrt(tau2 + result.mu.sd**2))
+    tau2 = _expected_square(result.tau.mean, result.tau.sd)
+    if target == "predictive":
+        return m, float(np.sqrt(tau2 + result.mu.sd**2))
+    if result.tau_party is None:
+        raise ValueError(
+            f"target={target!r} needs a pool with a party level "
+            "(PoolSpec(effect_key='nested')); this pool has one variance component, so it "
+            "cannot tell a new party from another study of an old one"
+        )
+    if target == "new_party":
+        tau_party2 = _expected_square(result.tau_party.mean, result.tau_party.sd)
+        return m, float(np.sqrt(tau_party2 + tau2 + result.mu.sd**2))
+    if not party:
+        raise ValueError("target='same_party' needs the party it is for")
+    alpha = _party_summary(result, party)
+    return alpha.mean, float(np.sqrt(tau2 + alpha.sd**2))
 
 
 def prior_from_pool(
@@ -53,17 +96,22 @@ def prior_from_pool(
     *,
     target: PriorTarget = "predictive",
     family: PriorFamilyOut = "normal",
+    party: str = "",
 ) -> tuple[Prior, LedgerLine]:
     """Turn a ``PoolResult`` into a ``core.Prior`` plus the ledger line that records it.
 
-    ``ValueError`` when the spread is not positive (a degenerate pool) or a
-    natural-scale pool with a non-positive mean is asked for a lognormal.
+    ``party`` names the party ``target="same_party"`` is for and is ignored
+    otherwise. ``ValueError`` when the spread is not positive (a degenerate
+    pool), a natural-scale pool with a non-positive mean is asked for a
+    lognormal, or a party-level target is asked of a two-level pool.
     """
-    if target not in ("mu", "predictive"):
-        raise ValueError(f"target must be 'mu' or 'predictive', got {target!r}")
+    if target not in ("mu", "predictive", "new_party", "same_party"):
+        raise ValueError(
+            "target must be 'mu', 'predictive', 'new_party' or 'same_party', " f"got {target!r}"
+        )
     if family not in ("normal", "lognormal"):
         raise ValueError(f"family must be 'normal' or 'lognormal', got {family!r}")
-    m, s = _location_and_spread(result, target)
+    m, s = _location_and_spread(result, target, party)
     if not (np.isfinite(m) and np.isfinite(s) and s > 0.0):
         raise ValueError(f"pool gives a degenerate prior: mean {m}, sd {s}")
     detail = {
@@ -81,6 +129,11 @@ def prior_from_pool(
         "tau_sd": repr(result.tau.sd),
         "backend": result.backend,
     }
+    if party:
+        detail["party"] = party
+    if result.tau_party is not None:
+        detail["tau_party_mean"] = repr(result.tau_party.mean)
+        detail["n_parties"] = str(result.n_parties)
     if family == "normal":
         prior = Prior(family="normal", hyper={"mu": float(m), "sigma": float(s)})
         statement = (

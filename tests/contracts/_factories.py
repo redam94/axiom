@@ -322,6 +322,7 @@ from axiom.meta import (
     Release,
     StudyRecord,
     TauEstimate,
+    ThreeLevel,
     baujat,
     charge,
     commensurable,
@@ -336,6 +337,7 @@ from axiom.meta import (
     random_effects,
     release,
     tau_dersimonian_laird,
+    three_level,
 )
 from axiom.report import (
     Divider,
@@ -1529,6 +1531,14 @@ def _online_program() -> OnlineProgram:
     return online_decisions(stream, alpha=0.05, stream="2026-Q3")
 
 
+def _three_level() -> ThreeLevel:
+    y = [0.4, 0.5, 0.6, 0.9, 1.0, 1.1, 0.1, 0.2, 0.3]
+    se = [0.12, 0.15, 0.11, 0.13, 0.12, 0.14, 0.11, 0.16, 0.12]
+    study = list(range(9))
+    party = [0, 0, 0, 1, 1, 1, 2, 2, 2]
+    return three_level(y, se, study, party)
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     IndependenceResult: _independence_result,
     ImpliedIndependence: _implied_independence,
@@ -2021,6 +2031,7 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
         empirical=0.44,
     ),
     PoolResult: _pool_result,
+    ThreeLevel: _three_level,
     LeaveOneOut: lambda: leave_one_out(_META_Y, _META_SE, method="dl"),
     EggerTest: lambda: egger(_META_Y, _META_SE),
     FunnelContour: lambda: funnel_data(
