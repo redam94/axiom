@@ -36,6 +36,16 @@ would apply to a quantity that never appears in the output. So:
 Records with no estimand supplied are reported in ``unchecked`` and never
 counted as passing. A pool run without estimands says ``unchecked`` in its
 detail rather than nothing at all.
+
+**Definitions, one level further back.** An estimand names a ``core.Outcome``,
+and two parties can name outcomes that are equal as specs and mean different
+things — or *unequal* specs and file records under the same quantity anyway.
+``io.DefinitionRegistry`` versions what each party means by a term
+(``docs/notes/0036-what-this-party-means-by-conversion.md``), and passing one to
+``commensurable`` resolves each record's party's current definition and refuses
+the pool when they disagree. That is the wiring 0036 §D36.6 left open: without
+it the check compares whatever estimands the caller happened to supply, and with
+it the estimands are checked against what each party has on record.
 """
 
 from __future__ import annotations
@@ -45,6 +55,7 @@ from collections.abc import Mapping
 from axiom.core import Assumption, LedgerLine, NonEmptyStr, Spec, Verdict
 from axiom.core.verdict import Status
 from axiom.estimands import Estimand, Facet, TransferPlan
+from axiom.io import DefinitionRegistry, Program
 from axiom.meta.schema import Corpus
 
 __all__ = [
@@ -154,12 +165,62 @@ def _latent_block(plan: TransferPlan, source: Estimand, target: Estimand) -> str
     )
 
 
+def _definition_entries(
+    corpus: Corpus,
+    known: list,  # type: ignore[type-arg]
+    anchor: str,
+    definitions: DefinitionRegistry,
+    programs: Mapping[str, Program],
+    term: str,
+) -> list[Incompatibility]:
+    """Every record whose party defines ``term`` differently from the anchor's."""
+    by_study = {r.study: r for r in corpus.records}
+    missing = sorted({r.contributor for r in known if r.contributor not in programs})
+    if missing:
+        raise KeyError(
+            f"no Program supplied for contributor(s) {missing}; a definition lives in a "
+            "party's scope and cannot be resolved without one"
+        )
+    resolved: dict[str, str] = {}
+    for record in known:
+        program = programs[record.contributor]
+        try:
+            resolved[record.study] = definitions.current(program, term).digest
+        except KeyError as e:
+            raise KeyError(
+                f"{record.contributor} has no definition of {term!r}; register one or drop "
+                "the definitions argument"
+            ) from e
+    anchor_digest = resolved[anchor]
+    out = []
+    for study, digest in resolved.items():
+        if study == anchor or digest == anchor_digest:
+            continue
+        out.append(
+            Incompatibility(
+                study=study,
+                reference=anchor,
+                facet="outcome",
+                status="blocked",
+                reason=(
+                    f"{by_study[study].contributor} defines {term!r} as {digest[:12]}… and "
+                    f"{by_study[anchor].contributor} as {anchor_digest[:12]}…; the records are "
+                    "filed under one quantity name and are not one quantity"
+                ),
+            )
+        )
+    return out
+
+
 def commensurable(
     corpus: Corpus,
     estimands: Mapping[str, Estimand],
     *,
     family: str = "",
     reference: str = "",
+    definitions: DefinitionRegistry | None = None,
+    programs: Mapping[str, Program] | None = None,
+    term: str = "",
 ) -> Commensurability:
     """Transfer every record's estimand to a reference and report what a pool would assume.
 
@@ -168,6 +229,12 @@ def commensurable(
     corpus the way ``PoolSpec.family`` does; ``reference`` names the study whose
     estimand the others are read as, and defaults to the first checkable record
     in corpus order.
+
+    ``definitions``, ``programs`` and ``term`` together add the check one level
+    further back: each record's party's *current* definition of ``term`` is
+    resolved through the registry, and a party that defines it differently from
+    the reference's is an incompatibility on the ``outcome`` facet. All three
+    are needed together; supplying some and not others raises.
     """
     records = corpus.by_family(family).records if family else corpus.records
     if not records:
@@ -184,8 +251,18 @@ def commensurable(
     anchor = reference or known[0].study
     target = estimands[anchor]
 
+    supplied = [x is not None and x != "" for x in (definitions, programs, term)]
+    if any(supplied) and not all(supplied):
+        raise ValueError(
+            "definitions, programs and term are supplied together or not at all; got "
+            f"definitions={definitions is not None}, programs={programs is not None}, "
+            f"term={term!r}"
+        )
+
     entries: list[Incompatibility] = []
     assumptions: list[Assumption] = []
+    if definitions is not None and programs is not None and term:
+        entries.extend(_definition_entries(corpus, known, anchor, definitions, programs, term))
     seen: set[tuple[str, str]] = set()
     for record in known:
         if record.study == anchor:

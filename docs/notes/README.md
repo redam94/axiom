@@ -54,3 +54,4 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0038 | [A dose is not a switch](0038-a-dose-is-not-a-switch.md) | decision |
 | 0039 | [Was the neighbour the background, or the effect?](0039-the-neighbour-or-the-effect.md) | decision |
 | 0040 | [The experiments that finish on Tuesdays](0040-the-experiments-that-finish-on-tuesdays.md) | decision |
+| 0041 | [The two components without a sampler, and the prior that knows whose it is](0041-the-two-components-without-a-sampler.md) | decision |

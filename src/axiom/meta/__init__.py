@@ -58,6 +58,11 @@ from axiom.meta.moderators import (
     ModeratorDesign,
     moderator_matrix,
 )
+from axiom.meta.nested import (
+    ThreeLevel,
+    three_level,
+    variance_shares,
+)
 from axiom.meta.pool import (
     EffectShrinkage,
     ParameterSummary,
@@ -144,6 +149,7 @@ __all__ = [
     "StudyRecord",
     "TauEstimate",
     "TauMethod",
+    "ThreeLevel",
     "baujat",
     "carry_forward",
     "cell_from_records",
@@ -180,4 +186,6 @@ __all__ = [
     "tau_dersimonian_laird",
     "tau_paule_mandel",
     "tau_reml",
+    "three_level",
+    "variance_shares",
 ]
