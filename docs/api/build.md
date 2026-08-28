@@ -25,6 +25,9 @@ The executed series under `nbs/build/`:
 .. automodule:: axiom.build.base
    :members:
 
+.. automodule:: axiom.build.experiment
+   :members:
+
 .. automodule:: axiom.build.graph
    :members:
 
