@@ -38,6 +38,9 @@ The executed series under `nbs/diagnose/`:
 .. automodule:: axiom.diagnose.backtest
    :members:
 
+.. automodule:: axiom.diagnose.attrition
+   :members:
+
 .. automodule:: axiom.diagnose.coverage
    :members:
 

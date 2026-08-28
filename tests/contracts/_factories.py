@@ -172,6 +172,8 @@ from axiom.design.identifiability import (
 )
 from axiom.diagnose import (
     ArmCount,
+    Attrition,
+    AttritionRow,
     Backtest,
     BalanceCheck,
     BalanceTest,
@@ -209,6 +211,7 @@ from axiom.diagnose import (
     TippingPoint,
     UnitResiduals,
     WeakIdReport,
+    attrition,
     benchmark,
     bias_bounds,
     check_delivery,
@@ -249,11 +252,13 @@ from axiom.identify import (
     EndogeneityTest,
     FrontDoorRoute,
     InstrumentRoute,
+    LeeBounds,
     LinearEstimate,
     RoleAssignment,
     assign_roles,
     compliance,
     identify,
+    lee_bounds,
     transport_verdict,
 )
 from axiom.identify.cluster import ClusterDAG
@@ -1471,6 +1476,23 @@ def _program_report() -> ProgramReport:
     return program_decisions(_READOUTS, alpha=0.05, method="e_bh", period="2026-Q3")
 
 
+def _attrition() -> Attrition:
+    return attrition({"treated": 3000, "control": 3000}, {"treated": 2670, "control": 2050})
+
+
+def _lee_bounds() -> LeeBounds:
+    n = 400
+    assigned = [float(i % 2) for i in range(n)]
+    # every fourth control unit goes silent, so the treated arm over-selects
+    reported = [1.0 if (a == 1.0 or i % 4) else 0.0 for i, a in enumerate(assigned)]
+    y = [10.0 + 1.5 * a + math.sin(float(i)) for i, a in enumerate(assigned)]
+    frame = pd.DataFrame({"y": y, "assigned": assigned, "reported": reported})
+    result = lee_bounds(frame, "y", "assigned", "reported")
+    if not isinstance(result, LeeBounds):
+        raise RuntimeError(f"the factory world must be boundable: {result}")
+    return result
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     IndependenceResult: _independence_result,
     ImpliedIndependence: _implied_independence,
@@ -1989,6 +2011,9 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     BalanceTest: lambda: _delivery_report().covariates.tests[0],  # type: ignore[union-attr]
     BalanceCheck: lambda: _delivery_report().covariates,  # type: ignore[return-value]
     DeliveryReport: _delivery_report,
+    Attrition: _attrition,
+    AttritionRow: lambda: _attrition().arms[0],
+    LeeBounds: _lee_bounds,
     ComplianceTable: lambda: _compliance_report().table,
     ComplianceReport: _compliance_report,
     LatentSelection: lambda: _LATENT,

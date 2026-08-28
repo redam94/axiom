@@ -7,6 +7,12 @@ See ``docs/plan/03-roadmap.md`` (Phase 8) and ``nbs/diagnose/``.
 
 from __future__ import annotations
 
+from axiom.diagnose.attrition import (
+    NO_DIFFERENTIAL_ATTRITION,
+    Attrition,
+    AttritionRow,
+    attrition,
+)
 from axiom.diagnose.backtest import (
     Backtest,
     FrozenPredictor,
@@ -134,6 +140,8 @@ from axiom.diagnose.weak_id import (
 
 __all__ = [
     "ArmCount",
+    "Attrition",
+    "AttritionRow",
     "Backtest",
     "BalanceCheck",
     "BalanceTest",
@@ -155,6 +163,7 @@ __all__ = [
     "ImpliedIndependence",
     "IndependenceCheck",
     "LearningReport",
+    "NO_DIFFERENTIAL_ATTRITION",
     "OriginFailure",
     "OriginForecast",
     "PPCResult",
@@ -190,6 +199,7 @@ __all__ = [
     "added_noise",
     "apply_option",
     "arm_counts",
+    "attrition",
     "balance",
     "benchmark",
     "bhattacharyya",

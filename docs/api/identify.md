@@ -27,6 +27,9 @@ The executed series under `nbs/identify/`:
 .. automodule:: axiom.identify.compliance
    :members:
 
+.. automodule:: axiom.identify.bounds
+   :members:
+
 .. automodule:: axiom.identify.backdoor
    :members:
 

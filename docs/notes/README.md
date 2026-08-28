@@ -50,3 +50,4 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0034 | [A spending function cannot price a look nobody scheduled](0034-the-look-nobody-scheduled.md) | decision |
 | 0035 | [Eight wrong go-decisions a quarter, all individually defensible](0035-eight-wrong-go-decisions-a-quarter.md) | decision |
 | 0036 | [Silence is not agreement](0036-what-this-party-means-by-conversion.md) | decision |
+| 0037 | [Reached is not observed, and a bound is not a downgraded point](0037-reached-is-not-observed.md) | decision |
