@@ -51,3 +51,4 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0035 | [Eight wrong go-decisions a quarter, all individually defensible](0035-eight-wrong-go-decisions-a-quarter.md) | decision |
 | 0036 | [Silence is not agreement](0036-what-this-party-means-by-conversion.md) | decision |
 | 0037 | [Reached is not observed, and a bound is not a downgraded point](0037-reached-is-not-observed.md) | decision |
+| 0038 | [A dose is not a switch](0038-a-dose-is-not-a-switch.md) | decision |
