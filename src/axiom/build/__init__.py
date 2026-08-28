@@ -8,6 +8,7 @@ round-trips through ``load_spec``. See ``nbs/build/``.
 from __future__ import annotations
 
 from axiom.build.base import Builder, BuildError, Fields
+from axiom.build.experiment import ExperimentBuilder, readouts_across
 from axiom.build.graph import GraphBuilder
 from axiom.build.meta import MetaBuilder
 from axiom.build.prior import MomentFamily, PriorBuilder
@@ -19,6 +20,7 @@ __all__ = [
     "BuildError",
     "Builder",
     "EntitySpec",
+    "ExperimentBuilder",
     "Fields",
     "GraphBuilder",
     "MetaBuilder",
@@ -29,4 +31,5 @@ __all__ = [
     "SurfaceBuilder",
     "VariableBuilder",
     "VariableKind",
+    "readouts_across",
 ]
