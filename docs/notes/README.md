@@ -52,3 +52,4 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0036 | [Silence is not agreement](0036-what-this-party-means-by-conversion.md) | decision |
 | 0037 | [Reached is not observed, and a bound is not a downgraded point](0037-reached-is-not-observed.md) | decision |
 | 0038 | [A dose is not a switch](0038-a-dose-is-not-a-switch.md) | decision |
+| 0039 | [Was the neighbour the background, or the effect?](0039-the-neighbour-or-the-effect.md) | decision |
