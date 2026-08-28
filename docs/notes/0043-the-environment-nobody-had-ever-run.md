@@ -68,12 +68,49 @@ Independent of any of the above, and worth separating from it:
   sum over nodes; it lands on `80.00000000000001` as readily, and which one you
   get is a property of the numpy build. Every sibling assertion on that key
   already used `approx`. This one now does too.
-- `test_import_weight` took a single timing sample under `pytest -n logical`,
-  with every core on the runner busy. Scheduler noise there is strictly
-  additive, so one unlucky probe can be twice the honest cost — and was
-  (1.510s against a 1.313s budget). It now takes the minimum of three probes,
-  for the reason `timeit` reports a minimum rather than a mean. The budget is
-  unchanged; the measurement is the thing that was wrong.
+- `test_import_weight` was wrong twice over. It took a single timing sample
+  under `pytest -n logical`, with every core on the runner busy; scheduler
+  noise there is strictly additive, so one unlucky probe can be twice the
+  honest cost. It now takes the minimum of three, for the reason `timeit`
+  reports a minimum rather than a mean. That alone was not enough, and the
+  second fault is the interesting one: the budget was `t_pandas + 0.6`, a
+  *constant* allowance described in its own comment as "generous for slow CI
+  runners" when it is precisely the opposite. A slower runner inflates
+  `t_axiom` while the allowance stays put, so the gate tightens exactly where
+  it promised to relax. The module docstring had said from the start that the
+  bound was relative to `import pandas`; it is now the ratio it always claimed
+  to be. Measured: 2.6x on a developer laptop, 2.25x on the runner that failed
+  it at 1.384s against 1.215s. The budget is 3.0x.
+
+## D43.5 — three tests that were asserting the platform
+
+Pinning numpy moved the Laplace optimizer onto a different floating-point path
+on Linux, and three tests turned out to have been asserting the route rather
+than the destination. All three concern the same degenerate funnel, where
+`a_sd` is driven to zero and there is no mode to find.
+
+- `scipy.optimize`'s `trust-exact` raised `UnboundLocalError` from inside
+  `IterativeSubproblem.solve`. The step `p` is bound only on a *successful*
+  Cholesky factorization, so a Hessian indefinite enough that every one of
+  `maxiter` iterations lands in the unsuccessful branch falls out of the loop
+  and returns a name that was never assigned. `_find_mode` already catches
+  `ValueError`, `LinAlgError` and `FloatingPointError` from these solvers,
+  under a comment saying scipy raises where it should report failure. This is
+  that, wearing the one disguise indistinguishable from a bug. It joins the
+  tuple, is logged, and the next optimizer gets its turn.
+- `test_funnel_without_a_mode_is_unverified_not_nan` asserted
+  `detail["converged"] == "False"`. Whether the optimizer stops just short of
+  the neck or converges into it is a floating-point property of the platform.
+  What is true everywhere, and what actually makes the mode unusable, is
+  `hessian_pd == "False"` — which is what it asserts now.
+- `test_init_falls_back_to_zeros_when_the_mode_is_unverified` required the
+  literal string `"mode search"` in the init note. `_init_z` has three ways to
+  say a mode is unusable and only two of them start that way; the funnel took
+  the third on Linux. The note must explain itself and name the optimizer. It
+  does not have to pick which of the three truths about this mode to tell.
+
+None of the three was a wrong number. Each was a test that had written down
+one platform's route to a verdict and called it the verdict.
 
 ## What this does not do
 

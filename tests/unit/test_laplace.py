@@ -426,7 +426,12 @@ def test_funnel_without_a_mode_is_unverified_not_nan() -> None:
     data = {"y": 2.0 + rng.normal(0.0, 0.5, unit.size), "unit_index": unit}
     got = laplace(hierarchical(), data, draws=200, seed=0)
     assert isinstance(got, Unverified)
-    assert got.detail["converged"] == "False"
+    # hessian_pd, not converged: the funnel is degenerate enough that whether the
+    # optimizer stops just short of the neck or lands in it is a floating-point
+    # detail of the platform, and `converged` records which happened. What is
+    # true on every platform -- and what makes the mode unusable -- is that the
+    # curvature there is not positive definite.
+    assert got.detail["hessian_pd"] == "False"
     assert "min_eigenvalue" in got.detail and "optimizer" in got.detail
     est = find_mode(hierarchical(), data)
     # Two routes to the same verdict, and which one you get is a property of the
