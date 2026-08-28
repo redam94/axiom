@@ -249,7 +249,9 @@ from axiom.identify import (
     CausalGraph,
     ComplianceReport,
     ComplianceTable,
+    DerivativeReport,
     EndogeneityTest,
+    FirstStage,
     FrontDoorRoute,
     InstrumentRoute,
     LeeBounds,
@@ -259,6 +261,7 @@ from axiom.identify import (
     compliance,
     identify,
     lee_bounds,
+    response_to_dose,
     transport_verdict,
 )
 from axiom.identify.cluster import ClusterDAG
@@ -1493,6 +1496,15 @@ def _lee_bounds() -> LeeBounds:
     return result
 
 
+def _dose_report() -> DerivativeReport:
+    n = 400
+    assigned = [float(i % 2) for i in range(n)]
+    dose = [1.0 + 0.5 * a + 0.25 * math.cos(float(i)) for i, a in enumerate(assigned)]
+    y = [10.0 + 0.8 * d + math.sin(float(i)) for i, d in enumerate(dose)]
+    frame = pd.DataFrame({"y": y, "assigned": assigned, "dose": dose})
+    return response_to_dose(frame, "y", "assigned", "dose")
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     IndependenceResult: _independence_result,
     ImpliedIndependence: _implied_independence,
@@ -2016,6 +2028,8 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     LeeBounds: _lee_bounds,
     ComplianceTable: lambda: _compliance_report().table,
     ComplianceReport: _compliance_report,
+    DerivativeReport: _dose_report,
+    FirstStage: lambda: _dose_report().stage,
     LatentSelection: lambda: _LATENT,
     Commensurability: _commensurability,
     Incompatibility: lambda: _commensurability().entries[0],
