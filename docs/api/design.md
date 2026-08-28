@@ -82,6 +82,9 @@ The executed series under `nbs/design/`:
 .. automodule:: axiom.design.methods.time_based_regression
    :members:
 
+.. automodule:: axiom.design.online
+   :members:
+
 .. automodule:: axiom.design.optimizer
    :members:
 

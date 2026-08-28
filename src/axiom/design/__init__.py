@@ -130,6 +130,13 @@ from axiom.design.methods import (
     t_critical,
     wald_t,
 )
+from axiom.design.online import (
+    INDEPENDENT_READOUTS,
+    OnlineDecision,
+    OnlineProgram,
+    gamma_sequence,
+    online_decisions,
+)
 from axiom.design.optimizer import (
     CandidateScore,
     DesignCandidate,
@@ -295,6 +302,7 @@ __all__ = [
     "FactorialCell",
     "FisherInformation",
     "HoldoutTradeoff",
+    "INDEPENDENT_READOUTS",
     "IdentifiabilityRidge",
     "IdentifyingDesign",
     "Leaderboard",
@@ -312,6 +320,8 @@ __all__ = [
     "MonitoringPath",
     "Observation",
     "Occupancy",
+    "OnlineDecision",
+    "OnlineProgram",
     "OperatingCharacteristics",
     "OpportunityCost",
     "PanelArrays",
@@ -406,6 +416,7 @@ __all__ = [
     "factorial",
     "fisher_information",
     "from_p_value",
+    "gamma_sequence",
     "harm_boundary",
     "holdout_tradeoff",
     "identifiability_ridge",
@@ -423,6 +434,7 @@ __all__ = [
     "monitor",
     "obrien_fleming",
     "observation_from_model",
+    "online_decisions",
     "operating_characteristics",
     "opportunity_cost",
     "panel_arrays",

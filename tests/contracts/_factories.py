@@ -112,6 +112,8 @@ from axiom.design import (
     MethodEstimate,
     MethodSpec,
     Occupancy,
+    OnlineDecision,
+    OnlineProgram,
     OperatingCharacteristics,
     OpportunityCost,
     PowerCurve,
@@ -152,6 +154,7 @@ from axiom.design import (
     mde,
     method_spec,
     monitor,
+    online_decisions,
     operating_characteristics,
     opportunity_cost,
     perturb,
@@ -1520,6 +1523,12 @@ def _factorial() -> Factorial:
     return factorial(frame, "y", "price", "banner")
 
 
+def _online_program() -> OnlineProgram:
+    ps = [0.001, 0.02, 0.4, 0.6, 0.003, 0.9]
+    stream = [Readout(experiment=f"E{i}", p_value=p) for i, p in enumerate(ps)]
+    return online_decisions(stream, alpha=0.05, stream="2026-Q3")
+
+
 EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     IndependenceResult: _independence_result,
     ImpliedIndependence: _implied_independence,
@@ -2057,6 +2066,8 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
     Readout: lambda: _READOUTS[0],
     ProgramReport: _program_report,
     ProgramDecision: lambda: _program_report().decisions[0],
+    OnlineProgram: _online_program,
+    OnlineDecision: lambda: _online_program().decisions[0],
     Provenance: lambda: Provenance(
         axiom_version="0.0.0",
         created="2026-08-21T00:00:00+00:00",
