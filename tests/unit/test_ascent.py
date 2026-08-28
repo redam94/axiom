@@ -25,6 +25,7 @@ from axiom.core import (
     value,
 )
 from axiom.surface.ascent import (
+    _RESOLUTION,
     AscentPath,
     StationaryPoint,
     canonical_analysis,
@@ -478,7 +479,17 @@ def test_gradient_below_round_off_resolution_is_unsupported(x64: None) -> None:
     theta = TOY.theta(1e12, B_MAX, A)
     g = gradient(TOY, theta, x, method="finite")
     assert isinstance(g, Unsupported) and "cannot resolve the gradient in x1, x2 " in g.reason
-    assert g.detail["coordinates"] == "x1, x2" and g.detail["gradient"] == "0, 0"
+    assert g.detail["coordinates"] == "x1, x2"
+    # Not `gradient == "0, 0"`. Whether a difference of ~1e-6 on a value of size
+    # 1e12 rounds to exactly zero or to one ulp is decided by the SIMD kernel
+    # numpy dispatches to at runtime, and GitHub's runners are not all the same
+    # CPU -- this assertion was reading the last bit, and passed or failed by
+    # which machine picked up the job. The invariant that makes these
+    # coordinates unresolved either way is the one the code tests for: each
+    # first difference sits below _RESOLUTION times its own round-off floor.
+    seen = [abs(float(v)) for v in g.detail["gradient"].split(", ")]
+    floors = [float(v) for v in g.detail["floors"].split(", ")]
+    assert all(s < _RESOLUTION * f for s, f in zip(seen, floors, strict=True)), (seen, floors)
     walk = steepest_ascent(TOY, theta, x, step=0.1, n_steps=5, method="finite")
     assert isinstance(walk, Unsupported) and walk.detail["step"] == "0"
     assert "no gradient at step 0" in walk.reason and "cannot resolve the gradient" in walk.reason

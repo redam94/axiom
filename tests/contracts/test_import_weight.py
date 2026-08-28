@@ -65,19 +65,25 @@ def test_no_heavy_modules_imported() -> None:
 # both a fixed part and a part that scales with the machine, and the three
 # environments this runs in sit in different places:
 #
-#   developer laptop, dev venv    pandas 0.165s   axiom 0.428s   2.6x   +0.26s
+#   developer laptop, dev venv    pandas 0.165s   axiom 0.428s   2.60x  +0.26s
 #   GitHub runner,    dev venv    pandas 0.615s   axiom 1.384s   2.25x  +0.77s
 #   GitHub runner,    core only   pandas 0.179s   axiom 0.546s   3.06x  +0.37s
+#   GitHub runner,    core only   pandas 0.260s   axiom 0.833s   3.20x  +0.57s
 #
-# A constant allowance alone tightens on a slow runner (the middle row failed
-# `t_pandas + 0.6`). A ratio alone tightens where pandas is cheap (the bottom
-# row failed 3.0x by 10ms). The bound is the more generous of the two, which is
-# the shape of the thing being measured; both terms have to be exceeded before
-# it fails. That is still far inside what this gate exists to catch -- a
-# subpackage acquiring a top-level `import plotly` or `import pymc` moves this
-# by whole multiples, not by ten milliseconds.
-_IMPORT_RATIO_BUDGET = 3.0
-_IMPORT_ALLOWANCE_S = 0.5
+# The last two are the same job on two different days: GitHub does not give you
+# the same machine twice, so neither column is reproducible to better than about
+# a third of itself. A constant allowance alone tightens on a slow runner (row
+# two failed `t_pandas + 0.6`). A ratio alone tightens where pandas is cheap
+# (rows three and four failed `3.0x`). The bound is the more generous of the
+# two, and both terms have to be exceeded before it fails.
+#
+# The margins are wide on purpose. This is a coarse regression guard, not a
+# benchmark, and the assertion that actually holds the dependency budget is
+# `test_no_heavy_modules_imported` above -- that one is exact and names the
+# offender. A subpackage acquiring a top-level `import plotly` or `import pymc`
+# moves this one by whole multiples; nothing else should move it at all.
+_IMPORT_RATIO_BUDGET = 4.0
+_IMPORT_ALLOWANCE_S = 1.0
 
 
 def test_import_time_is_bounded() -> None:

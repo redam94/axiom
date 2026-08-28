@@ -81,17 +81,26 @@ Independent of any of the above, and worth separating from it:
 
   | | pandas | axiom | ratio | difference |
   |---|---|---|---|---|
-  | laptop, dev venv | 0.165s | 0.428s | 2.6x | +0.26s |
+  | laptop, dev venv | 0.165s | 0.428s | 2.60x | +0.26s |
   | runner, dev venv | 0.615s | 1.384s | 2.25x | +0.77s |
   | runner, core only | 0.179s | 0.546s | 3.06x | +0.37s |
+  | runner, core only | 0.260s | 0.833s | 3.20x | +0.57s |
 
-  Neither form alone covers those three. A constant allowance tightens where
-  the machine is slow, and the middle row failed `+0.6`; a pure ratio tightens
-  where pandas is cheap, and the bottom row failed `3.0x` by ten milliseconds.
-  The cost has a fixed part and a part that scales, so the bound is now the
-  more generous of the two and both have to be exceeded before it fails. That
-  is still nowhere near loose enough to miss what the gate is for: a top-level
-  `import plotly` or `import pymc` moves this by whole multiples.
+  The last two rows are the same job on two different days. GitHub does not
+  hand you the same machine twice, so neither column is reproducible to better
+  than about a third of itself, which is the fact the old bound was built
+  without.
+
+  Neither form alone covers those four. A constant allowance tightens where the
+  machine is slow, and row two failed `+0.6`; a pure ratio tightens where pandas
+  is cheap, and rows three and four failed `3.0x`. The cost has a fixed part and
+  a part that scales, so the bound is the more generous of the two and both have
+  to be exceeded before it fails, at `4.0x` or `+1.0s`. Those margins are wide
+  on purpose. This is a coarse regression guard, not a benchmark, and the
+  assertion that actually holds the dependency budget is
+  `test_no_heavy_modules_imported` beside it -- that one is exact and names the
+  offender. A top-level `import plotly` or `import pymc` moves this one by whole
+  multiples; nothing else should move it at all.
 
 ## D43.5 — three tests that were asserting the platform
 
@@ -123,8 +132,18 @@ than the destination. All three concern the same degenerate funnel, where
   the third on Linux. The note must explain itself and name the optimizer. It
   does not have to pick which of the three truths about this mode to tell.
 
-None of the three was a wrong number. Each was a test that had written down
-one platform's route to a verdict and called it the verdict.
+A fourth belongs with them, found once the rest were green.
+`test_gradient_below_round_off_resolution_is_unsupported` asserted that the
+unresolvable first differences were reported as exactly `"0, 0"`. Whether a
+change of ~1e-6 on a value of size 1e12 rounds to zero or to one ulp is decided
+by the SIMD kernel numpy dispatches to at runtime, and GitHub's runners are not
+all the same CPU: the test passed or failed by which machine picked up the job.
+It now asserts what makes those coordinates unresolved in the first place --
+each difference sits below `_RESOLUTION` times its own round-off floor -- which
+is true whichever way the last bit falls.
+
+None of the four was a wrong number. Each was a test that had written down one
+platform's route to a verdict and called it the verdict.
 
 ## What this does not do
 
