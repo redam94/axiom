@@ -120,6 +120,38 @@ direction for an error to run. `proportion_difference_se` is the correct
 other design standard error. At 0.50 vs 0.52 the shortcut is harmless; at 0.20
 vs 0.60 it overstates the SE by 10%.
 
+That was only half the fix, and the other half is the half that matters when
+planning. `mde` and `sample_size` do not take a standard error — they take an
+`sd` and *build* one, and `mde` in particular inverts a **fixed** standard
+error. That is exactly right when the variance does not depend on the mean.
+For a proportion the treated arm's variance moves as the effect grows, so the
+standard error has to be solved for jointly with the effect, and freezing it at
+the null is optimistic wherever `p_control < 0.5`:
+
+| base rate | n | frozen-SE MDE | power it really has | correct MDE |
+|---|---|---|---|---|
+| 0.05 | 2000 | 0.0273 | 0.707 | 0.0309 |
+| 0.10 | 400 | 0.0840 | 0.679 | 0.0989 |
+| 0.20 | 400 | 0.1121 | 0.735 | 0.1218 |
+| 0.50 | 400 | 0.1401 | 0.815 | 0.1374 |
+
+At a 10% base rate you are told you can detect an 8.4-point lift at 80% power
+and you actually have 68%. The bottom row is why the mistake survives: at
+`p = 0.5` the error reverses and the Gaussian answer is mildly *conservative*,
+so it only bites where the base rate is low — which is where most conversion
+studies live.
+
+`proportion_mde` root-finds on the real thing, and takes a `direction`, because
+a fall and a rise of the same size are not equally detectable: they land on
+different variances (from 0.20 at n = 400, a fall of 0.099 is as detectable as
+a rise of 0.122). `proportion_sample_size` takes both proportions, so its
+variance is fixed and the standard error falls exactly as `n^-1/2` — that one
+is an ordinary integer search. `proportion_power` completes the trio.
+
+`difference_se`, `mde` and `sample_size` keep their behaviour and now name the
+proportion function in their docstrings. Nothing can detect a binary outcome
+from a float, so a signpost is the whole of what is available.
+
 ## D44.5 — a Poisson likelihood could not be sampled at all
 
 Fixed on the way past, and worth recording because of how it hid.

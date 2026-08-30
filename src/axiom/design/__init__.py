@@ -169,6 +169,10 @@ from axiom.design.power import (
     power,
     power_curve,
     power_from_se,
+    proportion_difference_se,
+    proportion_mde,
+    proportion_power,
+    proportion_sample_size,
     sample_size,
 )
 from axiom.design.precision import (
@@ -446,6 +450,10 @@ __all__ = [
     "power",
     "power_curve",
     "power_from_se",
+    "proportion_difference_se",
+    "proportion_mde",
+    "proportion_power",
+    "proportion_sample_size",
     "preposterior_sd",
     "preposterior_sd_ratio",
     "prescribe_measurements",

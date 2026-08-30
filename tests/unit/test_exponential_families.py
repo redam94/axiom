@@ -303,6 +303,63 @@ def test_a_difference_in_proportions_is_not_a_difference_in_means() -> None:
     assert 0.0 < power_from_se(p_t - p_c, exact).power <= 1.0
 
 
+def test_the_mde_for_a_proportion_delivers_the_power_it_promises() -> None:
+    """The defect: `mde` inverts a fixed SE, but a proportion's SE moves with the effect."""
+    from axiom.design import proportion_mde, proportion_power
+    from axiom.design.power import mde
+
+    for p_c, n in [(0.05, 2000), (0.10, 400), (0.20, 400), (0.50, 400)]:
+        honest = proportion_mde(p_c, n)
+        assert not isinstance(honest, Unsupported)
+        # the effect it reports really does carry the power it was asked for
+        assert proportion_power(p_c, p_c + honest.effect, n).power == pytest.approx(0.8, abs=1e-6)
+        assert honest.design == "difference_in_proportions"
+
+        # while freezing the SE at the null misses, and misses *low* wherever the
+        # base rate is under a half -- the direction that oversells a study
+        frozen = mde(n, float(np.sqrt(p_c * (1 - p_c)))).effect
+        delivered = proportion_power(p_c, p_c + frozen, n).power
+        if p_c < 0.5:
+            assert frozen < honest.effect
+            assert delivered < 0.78
+        else:
+            assert delivered > 0.8
+
+
+def test_a_fall_is_easier_to_detect_than_a_rise_of_the_same_size() -> None:
+    """Not symmetry: the two land on different variances."""
+    from axiom.design import proportion_mde
+
+    up = proportion_mde(0.20, 400, direction="increase")
+    down = proportion_mde(0.20, 400, direction="decrease")
+    assert not isinstance(up, Unsupported) and not isinstance(down, Unsupported)
+    assert down.effect < up.effect
+    assert down.se < up.se
+
+
+def test_a_proportion_sample_size_is_the_smallest_n_that_reaches_the_target() -> None:
+    from axiom.design import proportion_power, proportion_sample_size
+
+    for p_c, p_t in [(0.10, 0.15), (0.50, 0.55), (0.02, 0.03)]:
+        got = proportion_sample_size(p_c, p_t)
+        assert not isinstance(got, Unsupported)
+        assert got.power >= 0.8
+        assert got.n_treated is not None and got.n_control is not None
+        assert got.n_treated + got.n_control == got.n
+        # minimal: one unit fewer does not reach the target
+        assert proportion_power(p_c, p_t, got.n - 1).power < 0.8
+
+
+def test_a_proportion_design_that_cannot_reach_the_target_says_so() -> None:
+    from axiom.design import proportion_mde, proportion_sample_size
+
+    tiny = proportion_mde(0.5, 10)
+    assert isinstance(tiny, Unsupported) and "power" in tiny.reason
+    assert isinstance(proportion_sample_size(0.3, 0.3), Unsupported)
+    with pytest.raises(ValueError, match="probability"):
+        proportion_mde(1.5, 100)
+
+
 def test_a_proportion_outside_zero_one_is_rejected() -> None:
     with pytest.raises(ValueError, match="probability"):
         proportion_difference_se(0.5, 1.2, 100)

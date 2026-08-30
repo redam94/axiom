@@ -51,11 +51,14 @@ __all__ = [
     "power_curve",
     "power_from_se",
     "proportion_difference_se",
+    "proportion_mde",
+    "proportion_power",
+    "proportion_sample_size",
     "sample_size",
 ]
 
 Array = npt.NDArray[np.float64]
-PowerDesign = Literal["difference_in_means", "coefficient"]
+PowerDesign = Literal["difference_in_means", "difference_in_proportions", "coefficient"]
 _N_MAX = 10**8
 
 
@@ -188,7 +191,13 @@ class PowerCurve(Spec):
 
 
 def difference_se(n: int, sd: float, allocation: float = 0.5) -> float:
-    """``sd / sqrt(n · p · (1 − p))`` — the SE of a two-arm difference in means."""
+    """``sd / sqrt(n · p · (1 − p))`` — the SE of a two-arm difference in means.
+
+    One standard deviation, shared by both arms. If the outcome is binary that
+    assumption is false — a proportion's variance is a function of its own mean,
+    so the arms differ unless the effect is zero — and no choice of ``sd``
+    repairs it. Use :func:`proportion_difference_se` instead.
+    """
     if n < 2:
         raise ValueError(f"n must be at least 2, got {n}")
     _check_sd(sd)
@@ -227,6 +236,173 @@ def proportion_difference_se(
             "and no power calculation is meaningful"
         )
     return math.sqrt(var)
+
+
+def _proportion_se(p_control: float, p_treated: float, n_t: int, n_c: int) -> float:
+    return math.sqrt(p_treated * (1.0 - p_treated) / n_t + p_control * (1.0 - p_control) / n_c)
+
+
+def proportion_power(
+    p_control: float,
+    p_treated: float,
+    n: int,
+    *,
+    alpha: float = 0.05,
+    two_sided: bool = True,
+    allocation: float = 0.5,
+) -> PowerResult:
+    """Power to detect ``p_treated - p_control`` with ``n`` units split at ``allocation``."""
+    se = proportion_difference_se(p_control, p_treated, n, allocation)
+    return PowerResult(
+        design="difference_in_proportions",
+        power=_power_value(p_treated - p_control, se, alpha, two_sided),
+        effect=p_treated - p_control,
+        se=se,
+        alpha=alpha,
+        two_sided=two_sided,
+        n=n,
+        allocation=allocation,
+    )
+
+
+def proportion_mde(
+    p_control: float,
+    n: int,
+    *,
+    alpha: float = 0.05,
+    power: float = 0.8,
+    two_sided: bool = True,
+    allocation: float = 0.5,
+    direction: Literal["increase", "decrease"] = "increase",
+) -> MDE | Unsupported:
+    """Smallest detectable change in a proportion from ``p_control``, at ``n`` units.
+
+    Not :func:`mde` with a binomial ``sd``, and the difference is not
+    cosmetic. :func:`mde` inverts a *fixed* standard error, which is correct
+    when the outcome's variance does not depend on its mean. A proportion's
+    does, so the treated arm's variance moves as the effect grows and the
+    standard error has to be solved for jointly with it. Freezing it at the
+    null is optimistic wherever ``p_control < 0.5`` — at ``p_control = 0.1``
+    and ``n = 400`` it reports a detectable lift of 8.4 points that actually
+    carries 68% power, not the 80% asked for. This function root-finds on the
+    real thing.
+
+    ``direction`` picks the sign: a rise and a fall of the same size are not
+    equally detectable, because they land on different variances.
+    ``Unsupported`` when no effect within ``[0, 1]`` reaches ``power``.
+    """
+    if not 0.0 <= p_control <= 1.0 or not math.isfinite(p_control):
+        raise ValueError(f"p_control must be a probability in [0, 1], got {p_control}")
+    if n < 2:
+        raise ValueError(f"n must be at least 2, got {n}")
+    _check_allocation(allocation)
+    _check_alpha_power(alpha, power)
+    sign = 1.0 if direction == "increase" else -1.0
+    n_t, n_c = _arms(n, allocation)
+    reach = (1.0 - p_control) if direction == "increase" else p_control
+
+    def achieved(delta: float) -> float:
+        p_t = min(max(p_control + sign * delta, 0.0), 1.0)
+        se = _proportion_se(p_control, p_t, n_t, n_c)
+        return _power_value(delta, se, alpha, two_sided)
+
+    if reach <= 0.0 or achieved(reach) < power:
+        return Unsupported(
+            reason=(
+                f"no {direction} in a proportion from {p_control:g} reaches power {power:g} "
+                f"at n = {n}: even the largest possible effect ({reach:g}) achieves "
+                f"{achieved(reach) if reach > 0 else 0.0:.4g}"
+            ),
+            detail={"p_control": f"{p_control:g}", "n": str(n), "direction": direction},
+        )
+    root = optimize.brentq(
+        lambda d: achieved(d) - power, 1e-12, reach, xtol=1e-14, rtol=1e-12, maxiter=200
+    )
+    effect = float(root)
+    p_t = min(max(p_control + sign * effect, 0.0), 1.0)
+    return MDE(
+        design="difference_in_proportions",
+        effect=effect,
+        se=_proportion_se(p_control, p_t, n_t, n_c),
+        alpha=alpha,
+        power=power,
+        two_sided=two_sided,
+        n=n,
+        allocation=allocation,
+    )
+
+
+def proportion_sample_size(
+    p_control: float,
+    p_treated: float,
+    *,
+    alpha: float = 0.05,
+    power: float = 0.8,
+    two_sided: bool = True,
+    allocation: float = 0.5,
+) -> SampleSize | Unsupported:
+    """Smallest total ``n`` (integer arms) reaching ``power`` for a known pair of proportions.
+
+    Both proportions are given, so unlike :func:`proportion_mde` the variance
+    is fixed and the standard error falls exactly as ``n**-0.5``; the
+    continuous solution bounds the integer search, as in :func:`sample_size`.
+    """
+    for name, p in (("p_control", p_control), ("p_treated", p_treated)):
+        if not 0.0 <= p <= 1.0 or not math.isfinite(p):
+            raise ValueError(f"{name} must be a probability in [0, 1], got {p}")
+    _check_allocation(allocation)
+    _check_alpha_power(alpha, power)
+    effect = p_treated - p_control
+    if effect == 0.0:
+        return Unsupported(
+            reason="sample size for a zero difference in proportions is unbounded",
+            detail={"p_control": f"{p_control:g}", "p_treated": f"{p_treated:g}"},
+        )
+    var_unit = p_treated * (1.0 - p_treated) / allocation + p_control * (1.0 - p_control) / (
+        1.0 - allocation
+    )
+    if var_unit <= 0.0:
+        return Unsupported(
+            reason=(
+                "both proportions are at 0 or 1, so the difference has no sampling variance "
+                "and no sample size is meaningful"
+            ),
+            detail={"p_control": f"{p_control:g}", "p_treated": f"{p_treated:g}"},
+        )
+    z_a = float(stats.norm.ppf(1.0 - (alpha / 2.0 if two_sided else alpha)))
+    z_b = float(stats.norm.ppf(power))
+    n_continuous = var_unit * ((z_a + z_b) / effect) ** 2
+    if n_continuous > _N_MAX:
+        return Unsupported(
+            reason=f"sample size exceeds {_N_MAX}: the difference in proportions is negligible",
+            detail={"n_continuous": f"{n_continuous:.4g}"},
+        )
+    lo = 2
+    hi = max(int(math.ceil(n_continuous)) + 2, lo + 1)
+    while lo <= _N_MAX:
+        for n in range(lo, hi + 1):
+            n_t, n_c = _arms(n, allocation)
+            se = _proportion_se(p_control, p_treated, n_t, n_c)
+            achieved = _power_value(effect, se, alpha, two_sided)
+            if achieved >= power:
+                return SampleSize(
+                    design="difference_in_proportions",
+                    n=n,
+                    effect=effect,
+                    se=se,
+                    alpha=alpha,
+                    power=achieved,
+                    target_power=power,
+                    two_sided=two_sided,
+                    allocation=allocation,
+                    n_treated=n_t,
+                    n_control=n_c,
+                )
+        lo, hi = hi + 1, min(hi * 2, _N_MAX)
+    return Unsupported(  # pragma: no cover - guarded by the n_continuous bound above
+        reason=f"sample size exceeds {_N_MAX}",
+        detail={"n_continuous": f"{n_continuous:.4g}"},
+    )
 
 
 def _arms(n: int, allocation: float) -> tuple[int, int]:
@@ -335,7 +511,12 @@ def mde(
     two_sided: bool = True,
     allocation: float = 0.5,
 ) -> MDE:
-    """Minimum detectable effect of a two-arm difference in means with ``n`` units in total."""
+    """Minimum detectable effect of a two-arm difference in means with ``n`` units in total.
+
+    Inverts a *fixed* standard error, which is what a constant ``sd`` means.
+    For a binary outcome the standard error moves with the effect and this is
+    optimistic below ``p = 0.5``; use :func:`proportion_mde`.
+    """
     se = difference_se(n, sd, allocation)
     _check_alpha_power(alpha, power)
     return MDE(
@@ -361,6 +542,9 @@ def sample_size(
     allocation: float = 0.5,
 ) -> SampleSize | Unsupported:
     """Smallest total ``n`` (integer arms at ``allocation``) reaching ``power`` for ``effect``.
+
+    For a binary outcome use :func:`proportion_sample_size`, which takes the two
+    proportions rather than one pooled ``sd``.
 
     Searches ``n`` upward from 2 in vectorized blocks; the continuous textbook
     ``n`` bounds the first block. Returns ``Unsupported`` when no ``n`` below
