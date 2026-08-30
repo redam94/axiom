@@ -222,7 +222,10 @@ def attrition(
     differential = float(max(rates) - min(rates))
     if table[:, 0].sum() == 0 or table[:, 1].sum() == 0:
         # Everybody reported, or nobody did: the table is degenerate and there is no gap.
-        chi_square, p_value, df = 0.0, 1.0, len(live) - 1
+        # float(), not int: scipy types chi2_contingency's dof as a float, and
+        # this branch has to bind `df` to the same type the other one does. It
+        # is narrowed back to an int on the way into the result either way.
+        chi_square, p_value, df = 0.0, 1.0, float(len(live) - 1)
     else:
         chi_square, p_value, df, _ = stats.chi2_contingency(table, correction=False)
     if not math.isfinite(float(chi_square)):  # pragma: no cover - guarded by the branch above

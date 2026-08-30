@@ -627,9 +627,25 @@ def _find_mode(
                 break
             try:
                 res = _minimize(obj, start, method)
-            except (ValueError, np.linalg.LinAlgError, FloatingPointError) as exc:
+            except (
+                ValueError,
+                np.linalg.LinAlgError,
+                FloatingPointError,
+                UnboundLocalError,
+            ) as exc:
                 # scipy's trust-region solvers raise on a non-finite step rather than
-                # returning failure; that is the same event as a non-finite result
+                # returning failure; that is the same event as a non-finite result.
+                #
+                # UnboundLocalError belongs in that list for the same reason, however
+                # odd it looks: in `_trustregion_exact.IterativeSubproblem.solve` the
+                # step `p` is only ever bound on a *successful* Cholesky factorization,
+                # so a Hessian indefinite enough that every one of the `maxiter`
+                # iterations lands in the unsuccessful-factorization branch falls out
+                # of the loop and returns a name that was never assigned. It is scipy
+                # reporting "I could not solve this subproblem" in the one way that is
+                # indistinguishable from a bug -- and it is exactly the funnel geometry
+                # this module exists to survive. Caught here, it is one more optimizer
+                # that did not work: logged, and the next method gets its turn.
                 log.warning(
                     "laplace: optimizer %s left the finite region (%s); restarting", method, exc
                 )

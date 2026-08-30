@@ -212,14 +212,18 @@ def test_init_falls_back_to_zeros_when_the_mode_is_unverified() -> None:
     data = {"y": 2.0 + rng.normal(0.0, 0.5, unit.size), "unit_index": unit}
     z, source, note = nb._init_z(hierarchical(), data, None, from_mode=True, seed=5)
     assert source == "zeros"
-    assert note is not None and "mode search" in note
+    # The note has to explain itself and name the optimizer; it does not have to
+    # pick a particular one of the three ways this mode can be unusable. Which
+    # one the funnel takes -- search did not converge, or converged onto an
+    # indefinite Hessian -- is a floating-point detail of the platform.
+    assert note is not None and note.startswith("mode") and "optimizer" in note
     assert set(z) == {"a_mean", "a_sd", "alpha", "sigma"}
     for name, v in z.items():
         assert np.all(v == 0.0), name
     assert z["alpha"].shape == (3,)
     post = nb.sample(hierarchical(), data, draws=30, tune=30, chains=1, seed=5)
     assert post.provenance["init"] == "zeros"
-    assert "mode search" in post.provenance["init_note"]
+    assert post.provenance["init_note"].startswith("mode")
 
 
 @needs_numpyro

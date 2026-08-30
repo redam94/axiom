@@ -358,9 +358,11 @@ def test_ratio_marginal_elasticity_area_recover_truth(
         assert r.dimension == _dim(kind, D.outcome, D.currency)
     area = realize(_world_estimand(arms, "area"), arms_fit)
     assert isinstance(area, EstimandResult)
-    assert (
-        area.detail["n_nodes"] == float(QUADRATURE_NODES) and area.detail["dose_difference"] == 80.0
-    )
+    assert area.detail["n_nodes"] == float(QUADRATURE_NODES)
+    # approx, not ==: the dose difference is a sum over quadrature nodes, so it
+    # lands on 80.00000000000001 as readily as on 80.0 and which one depends on
+    # the numpy build. Every sibling assertion on this key already uses approx.
+    assert area.detail["dose_difference"] == pytest.approx(80.0)
     # the closed-form check on the kernel: marginal at the half-saturation dose is beta·s/(4k)
     r = realize(
         _world_estimand(arms, "marginal", intervention=Intervention(doses={"dose": 50.0})),
