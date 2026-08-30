@@ -104,6 +104,7 @@ from axiom.core import (
     unconstrain,
     value,
 )
+from axiom.design.weighting import Weighting
 
 __all__ = [
     "Combination",
@@ -161,17 +162,37 @@ class Observation:
     expr: Expr
     data: Mapping[str, Any] = field(default_factory=dict)
     noise_sd: float = 1.0
+    weighting: Weighting | None = None
 
     def __post_init__(self) -> None:
         if not self.label.strip():
             raise ValueError("an observation needs a label")
         if not self.noise_sd > 0:
             raise ValueError(f"observation {self.label!r}: noise_sd must be positive")
+        if self.weighting is not None and self.noise_sd != 1.0:
+            raise ValueError(
+                f"observation {self.label!r}: a {self.weighting.family} weighting already "
+                "carries its dispersion; set either weighting= or noise_sd=, not both"
+            )
 
     def evaluate(self, theta: Theta) -> Array:
         return np.atleast_1d(
             np.asarray(value(self.expr, data=self.data, params=theta), float)
         ).ravel()
+
+    def root_weights(self, theta: Theta) -> Array:
+        """``sqrt(w)`` per row, so that ``S = sqrt(W) J`` and ``S'S = J' W J``.
+
+        Applied to the finished difference quotient and never inside it: the
+        weights are a function of the mean, so folding them in before
+        differencing would add a spurious ``mu · d sqrt(w) / d theta`` term.
+        With a constant ``noise_sd`` that distinction does not arise, which is
+        why the Gaussian-only code could scale wherever it liked.
+        """
+        if self.weighting is None:
+            return np.asarray(1.0 / self.noise_sd, dtype=np.float64).reshape(1)
+        w = np.asarray(self.weighting.at(self.evaluate(theta), self.data), dtype=np.float64)
+        return np.sqrt(np.atleast_1d(w).ravel())
 
 
 def observation_from_model(
@@ -181,6 +202,7 @@ def observation_from_model(
     noise_sd: float | None = None,
     theta: Theta | None = None,
     label: str = "",
+    weighted: bool = False,
 ) -> Observation:
     """The observation a fitted ``ModelSpec`` represents: its mean over the panel's rows.
 
@@ -188,7 +210,25 @@ def observation_from_model(
     when the model names one and it is available, and to ``1.0`` otherwise —
     which only rescales the information, so the rank statements are
     unaffected and the precision ones are in units of that scale.
+
+    ``weighted=True`` instead takes the model's likelihood at its word and
+    weights each row by ``1 / (phi V(mu))`` (see ``design.weighting``). For a
+    normal likelihood the two agree; for any other family the unweighted form
+    is measuring a Gaussian that is not there, so the rank statements survive
+    but the precision ones do not.
     """
+    if weighted:
+        if model.likelihood.family != "normal" and noise_sd is not None:
+            raise ValueError(
+                f"a weighted {model.likelihood.family} observation carries its own "
+                "dispersion; do not also pass noise_sd"
+            )
+        return Observation(
+            label=label or model.name or "mean",
+            expr=model.mean,
+            data=dict(data),
+            weighting=Weighting.from_model(model, theta),
+        )
     scale = noise_sd
     if scale is None and model.likelihood.scale and theta is not None:
         found = theta.get(model.likelihood.scale)
@@ -315,7 +355,12 @@ def sensitivity_matrix(
                 missing=tuple(undecided),
             )
 
-    base = np.concatenate([o.evaluate(theta) / o.noise_sd for o in observations])
+    # Unweighted throughout: J is the derivative of the observation itself, and the
+    # rows are scaled by sqrt(w) once the differences are formed (Observation.
+    # root_weights). The round-off test below is invariant to that scaling anyway --
+    # both the difference and the floor carry the same factor -- so the zero-column
+    # verdict is identical to the one the noise_sd-scaled code reached.
+    base = np.concatenate([o.evaluate(theta) for o in observations])
     if not np.all(np.isfinite(base)):
         return Unsupported(
             reason="the observations are not finite at this parameter point",
@@ -339,13 +384,13 @@ def sensitivity_matrix(
             denominator = 2.0 * delta
         up = np.concatenate(
             [
-                o.evaluate(_perturbed(theta, name, position, delta, scaling=scaling)) / o.noise_sd
+                o.evaluate(_perturbed(theta, name, position, delta, scaling=scaling))
                 for o in observations
             ]
         )
         down = np.concatenate(
             [
-                o.evaluate(_perturbed(theta, name, position, -delta, scaling=scaling)) / o.noise_sd
+                o.evaluate(_perturbed(theta, name, position, -delta, scaling=scaling))
                 for o in observations
             ]
         )
@@ -357,6 +402,20 @@ def sensitivity_matrix(
             continue
         columns.append(difference / denominator)
     matrix = np.column_stack(columns) if columns else np.zeros((base.size, 0))
+    try:
+        root_w = np.concatenate(
+            [np.broadcast_to(o.root_weights(theta), o.evaluate(theta).shape) for o in observations]
+        )
+    except ValueError as exc:
+        return Unsupported(
+            reason=f"an observation's weighting is undefined at this parameter point: {exc}",
+            detail={
+                "weighting": ", ".join(
+                    o.weighting.label for o in observations if o.weighting is not None
+                )
+            },
+        )
+    matrix = root_w[:, None] * matrix
     if not np.all(np.isfinite(matrix)):
         return Unsupported(
             reason="the sensitivity is not finite; the model is not differentiable at this point",
@@ -1084,22 +1143,26 @@ def simulated_identifiability(
     that is unbounded on that side: identified in principle, not in practice,
     at this design and this noise.
 
-    Only the ``normal`` likelihood family is simulated here; anything else
-    comes back ``Unsupported`` rather than being approximated by one.
+    ``normal``, ``poisson``, ``gamma`` and ``lognormal`` outcomes are drawn
+    from their own likelihood. ``binomial`` is ``Unsupported``: its outcome is
+    a count against a trials column rather than a draw around the mean, so
+    simulating one here would be inventing a column the caller did not give.
+    ``student_t`` is likewise refused rather than approximated by a normal.
     """
-    if model.likelihood.family != "normal":
+    family = model.likelihood.family
+    if family not in ("normal", "poisson", "gamma", "lognormal"):
         return Unsupported(
             reason=(
-                f"simulating a {model.likelihood.family} outcome is not implemented; "
+                f"simulating a {family} outcome is not implemented; "
                 "supply simulated data and call profile_likelihood directly"
             ),
-            detail={"family": model.likelihood.family},
+            detail={"family": family},
         )
     scale = noise_sd
     if scale is None and model.likelihood.scale:
         found = truth.get(model.likelihood.scale)
         scale = float(np.mean(np.asarray(found, dtype=float))) if found is not None else None
-    if scale is None or not scale > 0:
+    if family != "poisson" and (scale is None or not scale > 0):
         return Unsupported(
             reason=(
                 "simulation needs a positive noise scale: give noise_sd=, or a value for the "
@@ -1110,7 +1173,29 @@ def simulated_identifiability(
     mean = np.atleast_1d(np.asarray(value(model.mean, data=data, params=truth), dtype=float))
     rng = np.random.default_rng(seed)
     simulated = dict(data)
-    simulated[model.outcome.name] = mean + rng.normal(0.0, scale, size=mean.shape)
+    positive = ("poisson", "gamma", "lognormal")
+    if family in positive and np.any(mean <= 0.0):
+        return Unsupported(
+            reason=(
+                f"a {family} mean must be positive to simulate from; it is not at this "
+                "design and truth"
+            ),
+            detail={"family": family},
+        )
+    match family:
+        case "normal":
+            assert scale is not None
+            draw = mean + rng.normal(0.0, scale, size=mean.shape)
+        case "poisson":
+            draw = rng.poisson(mean).astype(float)
+        case "lognormal":
+            assert scale is not None
+            draw = rng.lognormal(np.log(mean), scale, size=mean.shape)
+        case _:  # gamma; ``scale`` is the coefficient of variation
+            assert scale is not None
+            shape = 1.0 / scale**2
+            draw = rng.gamma(shape, mean / shape, size=mean.shape)
+    simulated[model.outcome.name] = draw
 
     names = list(targets) if targets is not None else list(_free_names(model))
     unknown = [n for n in names if n not in _free_names(model)]
@@ -1169,7 +1254,12 @@ def simulated_identifiability(
         n_observations=int(mean.size),
         seed=seed,
         converged=converged,
-        detail={"noise_sd": f"{scale:.6g}", "range_factor": f"{range_factor:g}"},
+        detail={
+            # A poisson outcome has no scale parameter: its dispersion is its mean.
+            "noise_sd": f"{scale:.6g}" if scale is not None else "n/a (poisson)",
+            "family": family,
+            "range_factor": f"{range_factor:g}",
+        },
     )
 
 

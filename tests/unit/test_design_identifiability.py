@@ -344,11 +344,38 @@ def test_only_a_log_combination_can_be_held_fixed() -> None:
         profile_combination(hill_model(), {}, {}, absolute, grid=[1.0])
 
 
-def test_a_non_normal_likelihood_is_not_simulated_silently() -> None:
-    model = hill_model().model_copy(update={"likelihood": Likelihood(family="poisson")})
-    out = simulated_identifiability(model, {"dose": np.array([1.0])}, {"alpha": 1.0, "k": 1.0})
-    assert isinstance(out, Unsupported)
-    assert "poisson" in out.reason
+def test_a_family_that_cannot_be_drawn_from_is_not_simulated_silently() -> None:
+    """The boundary is "can this outcome be drawn around its own mean", not "is it normal"."""
+    # student_t is refused rather than approximated by a normal, and binomial because
+    # its outcome is a count against a trials column this function was never given.
+    for lik in (
+        Likelihood(family="student_t", scale="sigma", df=4.0),
+        Likelihood(family="binomial"),
+    ):
+        model = hill_model().model_copy(update={"likelihood": lik})
+        out = simulated_identifiability(
+            model, {"dose": np.array([1.0])}, {"alpha": 1.0, "k": 1.0, "sigma": 0.1}
+        )
+        assert isinstance(out, Unsupported)
+        assert lik.family in out.reason
+
+    # poisson, gamma and lognormal are drawn from their own likelihood. A poisson
+    # model has no scale parameter at all, so it drops sigma as well as the family.
+    base = hill_model()
+    poisson = base.model_copy(
+        update={
+            "likelihood": Likelihood(family="poisson"),
+            "parameters": tuple(p for p in base.parameters if p.name != "sigma"),
+        }
+    )
+    out = simulated_identifiability(
+        poisson,
+        {"dose": np.linspace(0.5, 40.0, 24)},
+        {"alpha": 30.0, "k": 8.0},
+        targets=["alpha"],
+        seed=0,
+    )
+    assert isinstance(out, ProfileReport), out
 
 
 def test_simulation_without_a_noise_scale_says_what_is_missing() -> None:

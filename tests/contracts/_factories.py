@@ -135,6 +135,7 @@ from axiom.design import (
     StudySummary,
     TreatmentCandidate,
     ValuePerOutcome,
+    Weighting,
     alpha_spending,
     anchor_draws,
     assign,
@@ -1682,6 +1683,7 @@ EXAMPLES: dict[type[Spec], Callable[[], Spec]] = {
         powers=((_simulated_power(),),),
     ),
     FisherInformation: _fisher,
+    Weighting: lambda: Weighting(family="binomial", trials="n_exposed"),
     IdentifiabilityRidge: lambda: IdentifiabilityRidge(
         parameters=("alpha", "beta_a", "k_a"),
         direction={"alpha": 0.1, "beta_a": 0.7, "k_a": 0.707},

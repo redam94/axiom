@@ -326,6 +326,23 @@ def _likelihood_pt(family: str, y: Any, mu: Any, scale: Any, df: float) -> Any:
         case "poisson":
             k = pt.round(y)
             return k * pt.log(mu) - mu - pt.gammaln(k + 1.0)
+        case "binomial":
+            # mu is the success probability; y the successes out of ``trials``
+            # (``scale`` carries the denominators for this family, see the caller).
+            k = pt.round(y)
+            n = scale
+            return (
+                pt.gammaln(n + 1.0)
+                - pt.gammaln(k + 1.0)
+                - pt.gammaln(n - k + 1.0)
+                + k * pt.log(mu)
+                + (n - k) * pt.log1p(-mu)
+            )
+        case "gamma":
+            # ``scale`` is the coefficient of variation: shape = 1 / cv².
+            shape = 1.0 / scale**2
+            rate = shape / mu
+            return shape * pt.log(rate) - pt.gammaln(shape) + (shape - 1.0) * pt.log(y) - rate * y
     raise ValueError(f"unknown likelihood family {family!r}")
 
 
@@ -354,9 +371,21 @@ def compile_log_density(
     columns = {str(k): np.asarray(v, dtype=np.float64) for k, v in data.items()}
 
     def scale(theta: Mapping[str, Any]) -> Any:
+        """The likelihood's second argument, whatever the family calls it.
+
+        For ``binomial`` that is the trial counts, not a dispersion. For
+        ``poisson`` there is none: this used to be ``theta[lik.scale or ""]``,
+        which raised ``KeyError('')`` for every scale-free family the moment
+        the compiled density was *called* — building it succeeded, so no test
+        that only compiled a Poisson model ever saw it.
+        """
+        if lik.family == "binomial":
+            return pt.as_tensor_variable(columns[lik.trials]) if lik.trials else _f64(1.0)
         if scale_expr is not None:
             return scale_expr(columns, theta)
-        return theta[lik.scale or ""]
+        if lik.scale:
+            return theta[lik.scale]
+        return _f64(1.0)
 
     def constrain(z: Mapping[str, Any]) -> tuple[dict[str, Any], Any]:
         theta: dict[str, Any] = {}
