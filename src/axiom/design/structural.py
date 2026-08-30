@@ -12,6 +12,12 @@ A Gaussian likelihood with scale ``noise_sd`` then gives
 
     FI = J' J / noise_sd²
 
+and any exponential family gives the same thing with one diagonal weight
+per row, ``FI = J' W J``, ``w_i = 1 / (phi V(mu_i))`` — a ``Weighting``
+(see ``design.weighting``, which derives the variance functions). The
+Gaussian case is ``W = I / noise_sd²``; nothing downstream of the matrix
+knows or needs to know which family produced it.
+
 and the Laplace approximation to the expected posterior covariance under
 independent Gaussian priors is ``(diag(1 / prior_sd²) + FI)⁻¹``. The
 design that identifies a target parameter best is the one that minimizes
@@ -60,6 +66,7 @@ from axiom.core import (
     jax_available,
     require_jax,
 )
+from axiom.design.weighting import Weighting
 from axiom.surface import Design
 
 __all__ = [
@@ -89,7 +96,7 @@ _EPS = float(np.finfo(np.float64).eps)
 
 
 class FisherInformation(Spec):
-    """``J'J / noise_sd²`` for the named parameters at one design and one ``theta``.
+    """``J' W J / noise_sd²`` for the named parameters at one design and one ``theta``.
 
     ``parameters`` are the scalar coordinates: a bare name for a scalar, and
     ``name[i]`` per element of a vector parameter, in ``linearize`` column
@@ -103,6 +110,7 @@ class FisherInformation(Spec):
     parameters: tuple[NonEmptyStr, ...] = Field(min_length=1)
     matrix: tuple[tuple[float, ...], ...]
     noise_sd: float = Field(gt=0)
+    weighting: Weighting = Weighting()
     n_observations: int = Field(ge=1)
     det: float
     min_eigenvalue: float
@@ -146,6 +154,12 @@ class FisherInformation(Spec):
             raise ValueError("can only add information matrices over the same parameters")
         if self.noise_sd != other.noise_sd:
             raise ValueError("can only add information matrices with the same noise_sd")
+        if self.weighting != other.weighting:
+            raise ValueError(
+                "can only add information matrices with the same weighting; "
+                f"{self.weighting.label!r} and {other.weighting.label!r} are different "
+                "likelihoods and their rows are not in the same units of information"
+            )
         return _fisher_from_matrix(
             self.as_array() + other.as_array(),
             self.parameters,
@@ -153,6 +167,7 @@ class FisherInformation(Spec):
             self.n_observations + other.n_observations,
             self.method if self.method == other.method else "finite",
             {**other.detail, **self.detail},
+            self.weighting,
         )
 
 
@@ -211,6 +226,7 @@ class IdentifyingDesign(Spec):
     expected_sds: dict[str, float]
     prior_sds: dict[str, float] = {}
     noise_sd: float = Field(gt=0)
+    weighting: Weighting = Weighting()
     seed: int | None = None
     n_restarts: int = Field(ge=1)
     passes: int = Field(ge=0)
@@ -280,6 +296,7 @@ def _fisher_from_matrix(
     n_obs: int,
     method: Source,
     detail: Mapping[str, str],
+    weighting: Weighting | None = None,
 ) -> FisherInformation:
     M = 0.5 * (M + M.T)
     w = np.linalg.eigvalsh(M)
@@ -289,6 +306,7 @@ def _fisher_from_matrix(
         parameters=names,
         matrix=tuple(tuple(float(v) for v in row) for row in M),
         noise_sd=noise_sd,
+        weighting=weighting if weighting is not None else Weighting(),
         n_observations=n_obs,
         det=det,
         min_eigenvalue=float(w[0]),
@@ -478,13 +496,14 @@ def fisher_information(
     surface: SupportsForward,
     design_doses: Theta,
     theta: Theta,
-    noise_sd: float,
+    noise_sd: float = 1.0,
     *,
+    weighting: Weighting | None = None,
     parameters: Sequence[str] | None = None,
     method: DerivativeMethod = "auto",
     parameter_scales: Mapping[str, float] | None = None,
 ) -> FisherInformation | Unsupported:
-    """``J'J / noise_sd²`` at ``design_doses`` and ``theta`` for the mean's parameters.
+    """``J' W J / noise_sd²`` at ``design_doses`` and ``theta`` for the mean's parameters.
 
     ``design_doses`` is the data mapping ``forward`` reads (every column the
     mean needs — treatment doses, the unit index, nuisance columns) laid out
@@ -497,11 +516,24 @@ def fisher_information(
     not in the mean is a ``ValueError``); ``parameter_scales`` gives a
     finite-difference scale to a parameter sitting at zero.
 
+    ``weighting`` gives the likelihood a non-Gaussian variance function:
+    ``W = diag(w_i)`` with ``w_i = 1 / (phi V(mu_i))`` evaluated at this
+    design's own mean, so a Poisson or binomial design is weighted where it
+    sits rather than at some reference point. The default ``W = I`` with
+    ``noise_sd`` is the homoscedastic Gaussian case and is unchanged. The
+    two are alternatives, not layers: passing a ``weighting`` *and* a
+    ``noise_sd`` other than 1 would apply a dispersion twice, and raises.
+
     Returns ``Unsupported`` when a derivative cannot be formed honestly: a
     zero parameter with no scale, or a non-finite forward under perturbation.
     """
     if not noise_sd > 0.0 or not math.isfinite(noise_sd):
         raise ValueError(f"noise_sd must be positive and finite, got {noise_sd}")
+    if weighting is not None and noise_sd != 1.0:
+        raise ValueError(
+            f"a {weighting.family} weighting already carries its dispersion; pass either "
+            f"weighting= or noise_sd=, not both (got noise_sd={noise_sd})"
+        )
     got = _jacobian(surface, design_doses, theta, method, parameter_scales)
     if isinstance(got, Unsupported):
         return got
@@ -518,8 +550,28 @@ def fisher_information(
         names = wanted
     if not names:
         raise ValueError("the mean has no parameters to inform")
-    M = (J.T @ J) / (noise_sd**2)
-    return _fisher_from_matrix(M, names, noise_sd, int(J.shape[0]), source, detail)
+    if weighting is None or weighting.is_unit:
+        M = (J.T @ J) / (noise_sd**2)
+    else:
+        # The weights are a function of the mean at *this* design, so they are
+        # computed here rather than handed in. J is the unweighted Jacobian of
+        # the mean; the weighting never touches the derivative.
+        try:
+            w = np.broadcast_to(
+                np.asarray(
+                    weighting.at(_forward_flat(surface, design_doses, theta), design_doses),
+                    dtype=np.float64,
+                ).ravel(),
+                (J.shape[0],),
+            )
+        except ValueError as exc:
+            return Unsupported(
+                reason=f"the {weighting.family} weighting is undefined at this design: {exc}",
+                detail={"weighting": weighting.label},
+            )
+        M = J.T @ (w[:, None] * J)
+        detail = {**detail, "weighting": weighting.label}
+    return _fisher_from_matrix(M, names, noise_sd, int(J.shape[0]), source, detail, weighting)
 
 
 def _prior_precision(
@@ -575,8 +627,9 @@ def identifiability_ridge(
     surface: SupportsForward,
     design_doses: Theta,
     theta: Theta,
-    noise_sd: float,
+    noise_sd: float = 1.0,
     *,
+    weighting: Weighting | None = None,
     pairs: Sequence[tuple[str, str]] = (),
     parameters: Sequence[str] | None = None,
     method: DerivativeMethod = "auto",
@@ -596,6 +649,7 @@ def identifiability_ridge(
         design_doses,
         theta,
         noise_sd,
+        weighting=weighting,
         parameters=parameters,
         method=method,
         parameter_scales=parameter_scales,
@@ -680,6 +734,7 @@ def design_to_identify(
     target: str,
     n: int,
     *,
+    weighting: Weighting | None = None,
     prior_sds: Mapping[str, float] | None = None,
     seed: int | None = None,
     n_restarts: int = 3,
@@ -716,7 +771,13 @@ def design_to_identify(
             for j, t in enumerate(candidates.treatments)
         }
         fi = fisher_information(
-            surface, dose, theta, noise_sd, method=method, parameter_scales=parameter_scales
+            surface,
+            dose,
+            theta,
+            noise_sd,
+            weighting=weighting,
+            method=method,
+            parameter_scales=parameter_scales,
         )
         if isinstance(fi, Unsupported):
             where = dict(zip(candidates.treatments, rows[i], strict=True))
@@ -811,6 +872,7 @@ def design_to_identify(
         expected_sds=sds,
         prior_sds=used,
         noise_sd=noise_sd,
+        weighting=weighting if weighting is not None else Weighting(),
         seed=seed,
         n_restarts=n_restarts,
         passes=best_passes,

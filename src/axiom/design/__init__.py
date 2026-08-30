@@ -262,6 +262,7 @@ from axiom.design.structural import (
     identifiability_ridge,
     ridge_of,
 )
+from axiom.design.weighting import Weighting
 
 __all__ = [
     "ARBITRARY_DEPENDENCE",
@@ -358,6 +359,7 @@ __all__ = [
     "TreatmentCandidate",
     "ValueFn",
     "ValuePerOutcome",
+    "Weighting",
     "alpha_spending",
     "alternating",
     "anchor_draws",

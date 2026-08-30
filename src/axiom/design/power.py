@@ -50,6 +50,7 @@ __all__ = [
     "power",
     "power_curve",
     "power_from_se",
+    "proportion_difference_se",
     "sample_size",
 ]
 
@@ -193,6 +194,39 @@ def difference_se(n: int, sd: float, allocation: float = 0.5) -> float:
     _check_sd(sd)
     _check_allocation(allocation)
     return sd / math.sqrt(n * allocation * (1.0 - allocation))
+
+
+def proportion_difference_se(
+    p_control: float, p_treated: float, n: int, allocation: float = 0.5
+) -> float:
+    """``sqrt(p_t(1-p_t)/n_t + p_c(1-p_c)/n_c)`` — the SE of a difference in proportions.
+
+    Not reachable through :func:`difference_se`. That one is
+    ``sd / sqrt(n · a · (1 − a))``: one outcome standard deviation shared by
+    both arms, which is what a homoscedastic Gaussian gives. A binary
+    outcome's variance is a *function of its own mean*, so the two arms have
+    different variances unless ``p_control == p_treated`` — and if they were
+    equal there would be no effect to power for. Passing a single ``sd`` here
+    is therefore wrong precisely in proportion to the effect being looked
+    for, which is the wrong direction for the error to run.
+
+    Feed the result to :func:`power_from_se`, or to the ``coefficient_*``
+    functions, like any other design standard error.
+    """
+    for name, p in (("p_control", p_control), ("p_treated", p_treated)):
+        if not 0.0 <= p <= 1.0 or not math.isfinite(p):
+            raise ValueError(f"{name} must be a probability in [0, 1], got {p}")
+    if n < 2:
+        raise ValueError(f"n must be at least 2, got {n}")
+    _check_allocation(allocation)
+    n_t, n_c = _arms(n, allocation)
+    var = p_treated * (1.0 - p_treated) / n_t + p_control * (1.0 - p_control) / n_c
+    if var <= 0.0:
+        raise ValueError(
+            "both proportions are at 0 or 1, so the difference has no sampling variance "
+            "and no power calculation is meaningful"
+        )
+    return math.sqrt(var)
 
 
 def _arms(n: int, allocation: float) -> tuple[int, int]:

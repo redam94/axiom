@@ -57,3 +57,4 @@ plan in `docs/plan/`. One file per topic, numbered in the order opened.
 | 0041 | [The two components without a sampler, and the prior that knows whose it is](0041-the-two-components-without-a-sampler.md) | decision |
 | 0042 | [The thing that files it](0042-the-thing-that-files-it.md) | decision |
 | 0043 | [The environment nobody had ever run](0043-the-environment-nobody-had-ever-run.md) | decision |
+| 0044 | [One diagonal matrix](0044-one-diagonal-matrix.md) | decision |

@@ -791,4 +791,21 @@ def _noise(
         case "poisson":
             _require_positive_mean(spec, mean)
             return np.asarray(rng.poisson(mean) - mean, dtype=np.float64)
+        case "gamma":
+            # ``scale`` is the coefficient of variation: shape = 1 / cv², and the
+            # numpy scale is mean / shape, so Var = (cv · mean)².
+            _require_positive_mean(spec, mean)
+            shape = 1.0 / scale**2
+            draw = rng.gamma(shape, mean / shape, size=mean.shape)
+            return np.asarray(draw - mean, dtype=np.float64)
+        case "binomial":
+            raise ValueError(
+                "surface_world cannot simulate a binomial outcome: its panel is "
+                "`mean + noise` on one outcome column, and a binomial needs a second "
+                "column of trial counts that the mean (a success probability) is not "
+                "measured in. Build the panel directly — draw "
+                "`rng.binomial(n, forward(...))` and carry `n` as a data column — or, "
+                "if you only want the design math, use design.Weighting(family='binomial'), "
+                "which needs no simulated outcome at all"
+            )
     raise ValueError(f"unknown likelihood family {lik.family!r}")  # pragma: no cover

@@ -243,6 +243,7 @@ def compile_log_density(
     the outcome likelihood, and every soft ``Constraint``.
     """
     import jax.numpy as jnp
+    from jax.scipy import special as jsp
     from jax.scipy import stats as jst
 
     mean = compile(model.mean, opaque=opaque)
@@ -310,6 +311,27 @@ def compile_log_density(
                 ll = jst.t.logpdf(y, df=float(lik.df or 0.0), loc=mu, scale=scale(data, theta))
             case "poisson":
                 ll = jst.poisson.logpmf(jnp.round(y), mu)
+            case "binomial":
+                # mu is the success probability; y the successes out of n.
+                k = jnp.round(y)
+                n = jnp.asarray(data[lik.trials]) if lik.trials else jnp.ones_like(k)
+                ll = (
+                    jsp.gammaln(n + 1.0)
+                    - jsp.gammaln(k + 1.0)
+                    - jsp.gammaln(n - k + 1.0)
+                    + k * jnp.log(mu)
+                    + (n - k) * jnp.log1p(-mu)
+                )
+            case "gamma":
+                # scale is the coefficient of variation: shape = 1 / cv².
+                shape = 1.0 / scale(data, theta) ** 2
+                rate = shape / mu
+                ll = (
+                    shape * jnp.log(rate)
+                    - jsp.gammaln(shape)
+                    + (shape - 1.0) * jnp.log(y)
+                    - rate * y
+                )
         out = lp + jnp.sum(ll)
         for c, fn in constraints:
             out = out + _log_constraint_jax(c, fn(data, theta))

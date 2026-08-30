@@ -40,8 +40,11 @@ __all__ = [
     "Likelihood",
     "LikelihoodFamily",
     "ModelSpec",
+    "binomial_trials",
     "constrain",
     "free_parameters",
+    "information_weight",
+    "variance_weight",
     "likelihood_scale",
     "log_constraint",
     "log_density",
@@ -50,9 +53,10 @@ __all__ = [
     "unconstrain",
 ]
 
-LikelihoodFamily = Literal["normal", "lognormal", "student_t", "poisson"]
+LikelihoodFamily = Literal["normal", "lognormal", "student_t", "poisson", "binomial", "gamma"]
 ConstraintFamily = Literal["normal", "lognormal"]
 Array = npt.NDArray[np.float64]
+_TINY = float(np.finfo(np.float64).tiny)
 
 
 class Likelihood(Spec):
@@ -60,6 +64,18 @@ class Likelihood(Spec):
 
     ``scale`` names the scale parameter (``sigma``) for the continuous
     families; ``df`` is the Student-t degrees of freedom (fixed, not inferred).
+
+    **What ``mean`` is, per family.** For ``normal``, ``student_t`` and
+    ``poisson`` it is ``E[y]``. For ``lognormal`` it is the *median*
+    (scipy's ``lognorm`` scale), so ``log y ~ N(log mean, scale²)``. For
+    ``gamma`` it is ``E[y]`` and ``scale`` is the **coefficient of
+    variation**, so ``Var[y] = (scale · mean)²`` — dimensionless, like
+    ``lognormal``'s, and the two families then share an information
+    geometry. For ``binomial`` it is the **success probability**, not the
+    expected count: the outcome column holds successes out of ``trials``,
+    and ``E[y] = trials · mean``. That is the GLM convention (the mean
+    expression is what a ``sigmoid`` produces) and it is what makes
+    ``d mean / d theta`` the Jacobian the design math wants.
 
     ``scale_expr`` is the alternative to ``scale`` for a **known or
     structured per-observation scale**: an expression over ``Data`` and
@@ -75,19 +91,22 @@ class Likelihood(Spec):
     scale: str | None = None
     scale_expr: Expr | None = None
     df: float | None = None
+    trials: str | None = None
 
     @model_validator(mode="after")
     def _consistent(self) -> Likelihood:
         if self.scale and self.scale_expr is not None:
             raise ValueError("a likelihood takes either a scale parameter name or a scale_expr")
-        if self.family in ("normal", "lognormal", "student_t") and not (
+        if self.family in ("normal", "lognormal", "student_t", "gamma") and not (
             self.scale or self.scale_expr is not None
         ):
             raise ValueError(f"{self.family} likelihood needs a scale parameter name or scale_expr")
-        if self.family == "poisson" and (self.scale or self.scale_expr is not None):
-            raise ValueError("poisson likelihood has no scale parameter")
+        if self.family in ("poisson", "binomial") and (self.scale or self.scale_expr is not None):
+            raise ValueError(f"{self.family} likelihood has no scale parameter")
         if self.family == "student_t" and (self.df is None or self.df <= 0):
             raise ValueError("student_t likelihood needs df > 0")
+        if self.trials is not None and self.family != "binomial":
+            raise ValueError(f"trials is a binomial column; a {self.family} likelihood has none")
         return self
 
 
@@ -253,9 +272,10 @@ class ModelSpec(Spec):
         return tuple(out)
 
     def _scale_columns(self) -> tuple[str, ...]:
+        trials = (self.likelihood.trials,) if self.likelihood.trials else ()
         if self.likelihood.scale_expr is None:
-            return ()
-        return data_names(self.likelihood.scale_expr)
+            return trials
+        return (*data_names(self.likelihood.scale_expr), *trials)
 
     def _constraint_columns(self) -> tuple[str, ...]:
         return tuple(n for c in self.constraints for n in data_names(c.expr))
@@ -446,6 +466,127 @@ def likelihood_scale(
     raise ValueError(f"a {lik.family} likelihood has no scale")
 
 
+def binomial_trials(model: ModelSpec, data: Mapping[str, npt.ArrayLike]) -> Array:
+    """The binomial trial counts: the ``trials`` column, or ones (Bernoulli).
+
+    ``ValueError`` for a family that has none, so a caller cannot silently
+    treat a Poisson model as one-trial binomial.
+    """
+    lik = model.likelihood
+    if lik.family != "binomial":
+        raise ValueError(f"a {lik.family} likelihood has no trials")
+    if lik.trials is None:
+        return np.ones(1, dtype=float)
+    n = np.asarray(data[lik.trials], dtype=float)
+    if np.any(n <= 0) or np.any(n != np.round(n)):
+        raise ValueError(f"trials column {lik.trials!r} must be positive whole numbers")
+    return n
+
+
+def variance_weight(
+    family: str,
+    mu: npt.ArrayLike,
+    *,
+    scale: npt.ArrayLike | None = None,
+    df: float | None = None,
+    trials: npt.ArrayLike | None = None,
+) -> Array:
+    """``w = 1 / (phi · V(mu))`` for one family — the whole of what design needs.
+
+    Split out from :func:`information_weight` because the design layer asks
+    this question at candidate designs where there is no fitted model to
+    read a mean off: it has ``mu`` from ``forward()`` already. Both callers
+    go through here, so the variance functions live in exactly one place.
+    """
+    m = np.asarray(mu, dtype=float)
+    match family:
+        case "normal":
+            return 1.0 / _scale_of(scale, family) ** 2
+        case "student_t":
+            d = float(df or 0.0)
+            if d <= 0.0:
+                raise ValueError("student_t needs df > 0 to weight an observation")
+            return ((d + 1.0) / (d + 3.0)) / _scale_of(scale, family) ** 2
+        case "lognormal" | "gamma":
+            _positive(m, family, "mean")
+            return np.asarray(1.0 / (_scale_of(scale, family) ** 2 * m**2), dtype=np.float64)
+        case "poisson":
+            _positive(m, family, "mean")
+            return 1.0 / m
+        case "binomial":
+            if np.any(m <= 0.0) or np.any(m >= 1.0):
+                raise ValueError(
+                    "a binomial mean is a success probability and must lie strictly inside "
+                    "(0, 1); it is outside at this point, so the information is undefined"
+                )
+            n = 1.0 if trials is None else np.asarray(trials, dtype=float)
+            return n / (m * (1.0 - m))
+        case _:
+            raise ValueError(f"no variance function for likelihood family {family!r}")
+
+
+def _scale_of(scale: npt.ArrayLike | None, family: str) -> Array:
+    if scale is None:
+        raise ValueError(f"a {family} weight needs the likelihood's scale")
+    s = np.asarray(scale, dtype=float)
+    if np.any(s <= 0.0):
+        raise ValueError(f"a {family} scale must be positive")
+    return s
+
+
+def _positive(mu: Array, family: str, what: str) -> None:
+    if np.any(mu <= 0.0):
+        raise ValueError(
+            f"a {family} {what} must be positive; it is not at this point, so the "
+            "information is undefined there"
+        )
+
+
+def information_weight(
+    model: ModelSpec, data: Mapping[str, npt.ArrayLike], theta: Mapping[str, npt.ArrayLike]
+) -> Array:
+    """``w_i = 1 / (phi · V(mu_i))`` — the diagonal of ``W`` in ``FI = J' W J``.
+
+    ``J = d mean / d theta``. Because axiom differentiates the **mean**
+    rather than a linear predictor, the link function never appears here:
+    it is already inside ``J``. All that distinguishes one family from
+    another at this level is its variance function.
+
+    ==============  ===================  ==========================
+    family          ``phi · V(mu)``      ``w``
+    ==============  ===================  ==========================
+    ``normal``      ``sigma²``           ``1 / sigma²``
+    ``student_t``   —                    ``(df+1) / ((df+3) sigma²)``
+    ``lognormal``   ``(sigma · mu)²``    ``1 / (sigma · mu)²``
+    ``gamma``       ``(cv · mu)²``       ``1 / (cv · mu)²``
+    ``poisson``     ``mu``               ``1 / mu``
+    ``binomial``    ``mu(1-mu) / n``     ``n / (mu(1-mu))``
+    ==============  ===================  ==========================
+
+    ``student_t`` is not an exponential family, but its location
+    information is still a constant multiple of the Gaussian one — the
+    score is bounded, which is what buys the robustness — so it fits the
+    same shape. It tends to ``1 / sigma²`` as ``df`` grows, which is the
+    check to make when changing this. ``lognormal`` and ``gamma`` share a
+    weight because both put a constant coefficient of variation on a
+    positive mean; they differ in their density, not in this geometry.
+
+    Returns an array broadcastable against the outcome. ``Unsupported`` is
+    not used here: a mean outside its family's support is a modelling
+    error, and raises.
+    """
+    lik = model.likelihood
+    mu = value(model.mean, data=data, params=theta)
+    has_scale = bool(lik.scale) or lik.scale_expr is not None
+    return variance_weight(
+        lik.family,
+        mu,
+        scale=likelihood_scale(model, data, theta) if has_scale else None,
+        df=lik.df,
+        trials=binomial_trials(model, data) if lik.family == "binomial" else None,
+    )
+
+
 def log_likelihood(
     model: ModelSpec, data: Mapping[str, npt.ArrayLike], theta: Mapping[str, npt.ArrayLike]
 ) -> float:
@@ -463,6 +604,26 @@ def log_likelihood(
             ll = _st.t.logpdf(y, df=df, loc=mu, scale=likelihood_scale(model, data, theta))
         case "poisson":
             ll = _st.poisson.logpmf(np.round(y), mu)
+        case "binomial":
+            # ``mu`` is the success probability; ``y`` the successes out of ``trials``.
+            n = binomial_trials(model, data)
+            p = np.asarray(mu, dtype=float)
+            ll = np.where(
+                (p > 0.0) & (p < 1.0),
+                _st.binom.logpmf(np.round(y), n, np.clip(p, _TINY, 1.0 - _TINY)),
+                -np.inf,
+            )
+        case "gamma":
+            # ``scale`` is the coefficient of variation: shape = 1 / cv², and the
+            # scipy scale is mean / shape, so Var = (cv · mean)².
+            cv = likelihood_scale(model, data, theta)
+            shape = 1.0 / np.asarray(cv, dtype=float) ** 2
+            m = np.asarray(mu, dtype=float)
+            ll = np.where(
+                m > 0.0,
+                _st.gamma.logpdf(y, a=shape, scale=np.where(m > 0.0, m, 1.0) / shape),
+                -np.inf,
+            )
     total = float(np.sum(ll))
     for c in model.constraints:
         total += log_constraint(c, data, theta)
