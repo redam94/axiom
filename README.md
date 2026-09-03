@@ -41,10 +41,14 @@ demonstrated in an executed notebook under `nbs/`, and the twelve contract
 gates plus the recovery suites are green. Start with the **tutorial** in
 `nbs/tutorial/` — one decision carried from "what are we asking" through
 identification, design, measurement, calibration and the follow-up to a written
-report — then the **case study** in `nbs/case-studies/hypertension/` (a
-sequential dose-finding trial that has to stop a dose arm early if it is harming
-people, worked end to end in six notebooks), the end-to-end notebooks in
-`nbs/end-to-end/`, and the subpackage series. The plan that produced the code is
+report — then the **case studies** in `nbs/case-studies/`: three that carry
+one experiment each (a sequential dose-finding trial that has to stop a dose
+arm early, a tutoring programme on a fixed budget, a physics experiment designed
+before it exists) and three that carry a *programme* of several — a century of
+speed-of-light measurements, four income-maintenance experiments, and a
+measurement house's year of incrementality tests for three advertisers — every
+one filed, corrected as a book, and pooled with a party level. Then the
+end-to-end notebooks in `nbs/end-to-end/`, and the subpackage series. The plan that produced the code is
 in `docs/plan/`, the decisions taken along the way in `docs/notes/`.
 
 **1.3 added the layer a house running experiments for many parties needs.** An

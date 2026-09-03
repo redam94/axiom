@@ -30,7 +30,8 @@ in reading order:
 Each [API page](api/index.md) links its own series.
 
 For what using all of it at once looks like, read the **case studies** under
-`nbs/case-studies/`. There are two, deliberately different in shape.
+`nbs/case-studies/`. There are six, deliberately different in shape: three
+carry one experiment each, and three carry a *programme* of several.
 
 `hypertension/` — **HYPER-3**, a sequential dose-finding trial that must stop a
 dose arm early if it is harming people. Six notebooks, one synthetic world, from
@@ -42,6 +43,35 @@ experiment planning, measurement and reporting to a recommendation a board can
 act on: how much tutoring to fund, for how many students, on a fixed budget.
 Five notebooks, two dosed treatments and a budget line. Design notes:
 [0009](notes/0009-case-study-tutoring.md).
+
+`rutherford/` — **GEIGER-1911**, an experiment designed before it exists: which
+scattering angles, what shape of aperture, how long, and when to stop. Five
+notebooks; nothing is analysed until the last. Design notes:
+[0018](notes/0018-case-study-rutherford.md).
+
+The next three are the multi-party layer (`docs/notes/0027`–`0042`) in use:
+several parties, several experiments on one estimand, every one filed under
+its scope with a committed plan behind it, read out, corrected as a book, and
+pooled with a party level. Design notes for all three:
+[0045](notes/0045-three-programmes.md).
+
+`lightspeed/` — **LUMEN-299**, one constant and five instruments across a
+century: laboratories as parties, the rotating mirror designed with the
+information calculus, a corpus of readouts whose 1930s pool excludes the truth
+because a shared systematic error is a party-level variance component.
+
+`income-guarantee/` — **NIT-4**, four income-maintenance experiments over a
+two-dimensional dose (a guarantee and a tax rate): the allocation problem, the
+deviations history actually filed, attrition that blocks and the bound that
+survives it, a guardrail finding that does not survive the quarter's
+correction, and the surface that answers the national question.
+
+`media-measurement/` — **HOUSE-3**, one measurement house running incrementality
+experiments for three advertisers over a year: the calendar and its collisions,
+peeking priced, delivery and compliance checked, a quarter of go/no-go decisions
+corrected as a quarter, a party-level pool, and each party's observational model
+calibrated by its own experiment — through `axiom.adapters.marketing`, which is
+the one place that vocabulary is allowed.
 
 ## Layering
 
