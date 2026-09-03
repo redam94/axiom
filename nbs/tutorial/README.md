@@ -36,6 +36,9 @@ uv run pytest --nbmake nbs/tutorial/
 ## Where to go next
 
 - `nbs/end-to-end/` — the same phases, each taken further on its own.
-- `nbs/case-studies/` — three full studies: a sequential dose-finding trial, a tutoring
-  programme with a budget, and a physics experiment.
+- `nbs/case-studies/` — six full studies: a sequential dose-finding trial, a tutoring
+  programme with a budget, a physics experiment designed before it exists, and three
+  *programmes* of several experiments each — a century of speed-of-light measurements,
+  four income-maintenance experiments, and a measurement house's year of incrementality
+  tests.
 - `nbs/<subpackage>/` — every public symbol of every subpackage, executed.
